@@ -1,0 +1,19 @@
+@charset "ISO-8859-1";
+.custom-box-header {
+	color: #fff !important;
+	padding: 0.25px 3px 0.1px 3px !important;
+	background-color: #007bff !important;
+	font-size:12px;
+}
+
+.custom-box {
+	border: 1px solid #4e595f !important;
+}
+.table td, .table th {
+    padding: 10px !important;
+ }
+ .cardHeight{
+ margin:0;
+ height:110px;
+ 
+ }
