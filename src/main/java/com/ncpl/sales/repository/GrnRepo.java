@@ -28,16 +28,24 @@ public interface GrnRepo extends JpaRepository<Grn, String>{
 	public List<Grn> findByPoNumberIn(List<String> poNumbers);
 	
 	// Search methods for pagination
-	@Query("SELECT g FROM Grn g WHERE g.archive = 0 AND " +
-		   "(LOWER(g.grnId) LIKE LOWER(:keyword) OR " +
-		   "LOWER(g.poNumber) LIKE LOWER(:keyword) OR " +
-		   "LOWER(g.invoiceNo) LIKE LOWER(:keyword))")
+	@Query("SELECT g FROM Grn g " +
+			"JOIN PurchaseOrder po ON po.poNumber = g.poNumber " +
+			"JOIN po.party p " +
+			"WHERE g.archive = 0 AND " +
+			"(LOWER(g.grnId) LIKE LOWER(:keyword) OR " +
+			"LOWER(g.poNumber) LIKE LOWER(:keyword) OR " +
+			"LOWER(g.invoiceNo) LIKE LOWER(:keyword) OR " +
+			"LOWER(p.partyName) LIKE LOWER(:keyword))")
 	public Page<Grn> searchGrns(@Param("keyword") String keyword, Pageable pageable);
 	
-	@Query("SELECT COUNT(g) FROM Grn g WHERE g.archive = 0 AND " +
-		   "(LOWER(g.grnId) LIKE LOWER(:keyword) OR " +
-		   "LOWER(g.poNumber) LIKE LOWER(:keyword) OR " +
-		   "LOWER(g.invoiceNo) LIKE LOWER(:keyword))")
+	@Query("SELECT COUNT(g) FROM Grn g " +
+			"JOIN PurchaseOrder po ON po.poNumber = g.poNumber " +
+			"JOIN po.party p " +
+			"WHERE g.archive = 0 AND " +
+			"(LOWER(g.grnId) LIKE LOWER(:keyword) OR " +
+			"LOWER(g.poNumber) LIKE LOWER(:keyword) OR " +
+			"LOWER(g.invoiceNo) LIKE LOWER(:keyword) OR " +
+			"LOWER(p.partyName) LIKE LOWER(:keyword))")
 	public long countSearchGrns(@Param("keyword") String keyword);
 	
 	@Query("SELECT COUNT(g) FROM Grn g WHERE g.archive = 0")

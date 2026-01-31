@@ -35,22 +35,26 @@ $(document).ready(function(){
 			}, {
 				"data" : "created",
 				"defaultContent":"",
-				"class":"hideTd",
-				render : function(datam, type, row) {
-					var date=datam.split("-");
-					var formattedDate = date[1]+"-"+date[0]+"-"+date[2];
-					var newdate = moment(new Date(formattedDate)).format("YYYY-MM-DD HH:mm:ss") ;
-						return  newdate; 
-				}
-
+				"class":"hideTd"
 			}, {
 				"data" : "poDate",
-				"defaultContent":""
-			},
-			{
+				"defaultContent":"",
+				render: function (data) {
+					if (!data) {
+						return "";
+					}
+					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+				}
+			}, {
 				"data" : "created",
-				"defaultContent":""
-			},{
+				"defaultContent":"",
+				render: function (data) {
+					if (!data) {
+						return "";
+					}
+					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+				}
+			}, {
 				"data" : "vendor",
 				"defaultContent":"",
 				

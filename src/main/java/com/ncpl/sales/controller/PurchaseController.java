@@ -853,6 +853,15 @@ public class PurchaseController {
 			int start = Integer.parseInt(request.getParameter("start"));
 			int length = Integer.parseInt(request.getParameter("length"));
 			String searchValue = request.getParameter("search[value]");
+			if (searchValue == null || searchValue.trim().isEmpty()) {
+				for (int i = 0; i < 12; i++) {
+					String columnSearchValue = request.getParameter("columns[" + i + "][search][value]");
+					if (columnSearchValue != null && !columnSearchValue.trim().isEmpty()) {
+						searchValue = columnSearchValue;
+						break;
+					}
+				}
+			}
 			
 			// Calculate page number for database pagination
 			int pageNo = start / length;
