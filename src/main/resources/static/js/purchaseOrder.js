@@ -50,7 +50,14 @@ function calculatePoTotals() {
 	var total = 0;
 	$("#poTable tbody tr, #poTableEdit tbody tr").each(function () {
 		var $row = $(this);
-		var amount = parsePoNumber($row.find(".amtInput").val());
+		var $amountField = $row.find(".amtInput");
+		var amount = parsePoNumber($amountField.val());
+		var qty = parsePoNumber($row.find(".qtyInput").val());
+		var unitPrice = parsePoNumber($row.find(".upInput").val());
+		if (!isNaN(qty) && !isNaN(unitPrice) && (qty !== 0 || unitPrice !== 0)) {
+			amount = Math.round(qty * unitPrice * 100) / 100;
+			$amountField.val(commaSeparateNumber(amount));
+		}
 		if (!isNaN(amount)) {
 			total += amount;
 		}
@@ -111,9 +118,17 @@ $(document).ready(function () {
 		/*if(orderQty>=0 && orderQty!=""){
 			parent.find('.amtInput').val(parseFloat(orderQty) * parseFloat(up1))
 		}else{*/
-		parent.find('.amtInput').val(parseFloat(parent.find('.qtyInput').val()) * parseFloat(up1))
+		// amount set below with NaN-safe parsing
 	//}// var amountPrice = parseFloat($("#amount"+index).val()).toFixed(2);
 		//var up = $("#newPrice"+index).val();
+
+		var qtyValue = parsePoNumber(parent.find('.qtyInput').val());
+		var unitPriceValue = parsePoNumber(up1);
+		if (isNaN(qtyValue) || isNaN(unitPriceValue)) {
+			parent.find('.amtInput').val(0);
+		} else {
+			parent.find('.amtInput').val(qtyValue * unitPriceValue);
+		}
 
 		$("#newPrice" + index).val(commaSeparateNumber(up1));
 		var amountPrice = parseFloat($("#amount" + index).val());
@@ -202,47 +217,7 @@ $(document).ready(function () {
 	$("#poTable").on("click", ".deleteButton", function () {
 		var indexmod = $("table tr"). index(this);
 		$(this).closest("tr").remove();
-	
-		/***Setting name and id to remaining rows**/
-		$('tbody').find('tr').each(function (index) {
-			let prev = index - 1;
-			let firstTdElement = $(this).find('td')[0];
-			$(firstTdElement).text(index + 1);
-			let secondTdElement = $(this).find('td')[1];
-			$(secondTdElement).find('select').attr('id', 'salesOrderDropdown' + index);
-			$(secondTdElement).find('input').attr('id', 'salesOrder' + prev);
-			let thirdTdElement = $(this).find('td')[2];
-			$(thirdTdElement).find('select').attr('name', 'items[' + index + '].description');
-			$(thirdTdElement).find('select').attr('id', 'descriptionDropdown' + index);
-			let poDescriptionElement = $(this).find('td')[4];
-			$(poDescriptionElement).find('input').attr('name', 'items[' + index + '].poDescription');
-			$(poDescriptionElement).find('input').attr('id', 'poDescription' + index);
-			let forthTdElement = $(this).find('td')[3];
-			$(forthTdElement).find('select').attr('name', 'items[' + index + '].modelNo');
-			$(forthTdElement).find('select').attr('id', 'modelNo' + index);
-			let fifthTdElement = $(this).find('td')[5];
-			$(fifthTdElement).find('input').attr('name', 'items[' + index + '].hsnCode');
-			$(fifthTdElement).find('input').attr('id', 'hsnCode' + index);
-			let sixthTdElement = $(this).find('td')[6];
-			$(sixthTdElement).find('input').attr('name', 'items[' + index + '].quantity');
-			$(sixthTdElement).find('input').attr('id', 'newQuantity' + index);
-			let seventhTdElement = $(this).find('td')[7];
-			$(seventhTdElement).find('input').attr('id', 'salesQuantity' + index);
-			let eighthTdElement = $(this).find('td')[8];
-			//$(eighthTdElement).find('input').attr('name', 'items[' + index + '].unit');
-			$(eighthTdElement).find('input').attr('id', 'unit' + index);
-			let ninthTdElement = $(this).find('td')[9];
-			$(ninthTdElement).find('input').attr('name', 'items[' + index + '].unitPrice');
-			$(ninthTdElement).find('input').attr('id', 'newPrice' + index);
-			let tenthTdElement = $(this).find('td')[10];
-			$(tenthTdElement).find('input').attr('id', 'salesUnitPrice' + index);
-			let taxTdElement = $(this).find('td')[11];
-			$(taxTdElement).find('input').attr('id', 'tax' + index);
-			let eleventhTdElement = $(this).find('td')[12];
-			$(eleventhTdElement).find('input').attr('name', 'items[' + index + '].amount');
-			$(eleventhTdElement).find('input').attr('id', 'amount' + index);
-		    
-		});
+		settingNameAndIdAdd();
 		calculatePoTotals();
 	});
 
@@ -1734,6 +1709,7 @@ function deletePurchaseItem(id,row) {
 				row.remove();
 				//window.location.reload();
 				settingNameAndId();
+				calculatePoTotals();
 			}else{
 				$.error("GRN or Dc created for this item");
 			}
@@ -1748,9 +1724,50 @@ function deletePurchaseItem(id,row) {
 		}  	
 	});
 }
+function settingNameAndIdAdd(){
+	/***Setting name and id to remaining rows for add PO**/
+	$('#poTable tbody').find('tr').each(function (index) {
+		$(this).find('td').eq(0).text(index + 1);
+		var salesOrderTdElement = $(this).find('td').eq(1);
+		$(salesOrderTdElement).find('select').attr('id', 'salesOrderDropdown' + index);
+		var descriptionTdElement = $(this).find('td').eq(2);
+		$(descriptionTdElement).find('select').attr('name', 'items[' + index + '].description');
+		$(descriptionTdElement).find('select').attr('id', 'descriptionDropdown' + index);
+		var modelTdElement = $(this).find('td').eq(3);
+		$(modelTdElement).find('select').attr('name', 'items[' + index + '].modelNo');
+		$(modelTdElement).find('select').attr('id', 'modelNo' + index);
+		var poDescTdElement = $(this).find('td').eq(4);
+		$(poDescTdElement).find('input').attr('name', 'items[' + index + '].poDescription');
+		$(poDescTdElement).find('input').attr('id', 'poDescription' + index);
+		var hsnTdElement = $(this).find('td').eq(5);
+		$(hsnTdElement).find('input').attr('name', 'items[' + index + '].hsnCode');
+		$(hsnTdElement).find('input').attr('id', 'hsnCode' + index);
+		var qtyTdElement = $(this).find('td').eq(6);
+		$(qtyTdElement).find('input').attr('name', 'items[' + index + '].quantity');
+		$(qtyTdElement).find('input').attr('id', 'newQuantity' + index);
+		var salesQtyTdElement = $(this).find('td').eq(7);
+		$(salesQtyTdElement).find('input').attr('id', 'salesQuantity' + index);
+		var unitTdElement = $(this).find('td').eq(8);
+		$(unitTdElement).find('input').attr('id', 'unit' + index);
+		var unitPriceTdElement = $(this).find('td').eq(9);
+		$(unitPriceTdElement).find('input').attr('name', 'items[' + index + '].unitPrice');
+		$(unitPriceTdElement).find('input').attr('id', 'newPrice' + index);
+		var salesUnitPriceTdElement = $(this).find('td').eq(10);
+		$(salesUnitPriceTdElement).find('input').attr('id', 'salesUnitPrice' + index);
+		var taxTdElement = $(this).find('td').eq(11);
+		$(taxTdElement).find('input').attr('id', 'tax' + index);
+		var amountTdElement = $(this).find('td').eq(12);
+		$(amountTdElement).find('input').attr('name', 'items[' + index + '].amount');
+		$(amountTdElement).find('input').attr('id', 'amount' + index);
+		var deleteTdElement = $(this).find('td').eq(13);
+		$(deleteTdElement).find('i.deleteButton').attr('id', 'delete' + index);
+		var totalQtyTdElement = $(this).find('td').eq(14);
+		$(totalQtyTdElement).find('input').attr('id', 'totalQty' + index);
+	});
+}
 function settingNameAndId(){
 	/***Setting name and id to remaining rows**/
-	$('tbody').find('tr').each(function (index) {
+	$('#poTableEdit tbody').find('tr').each(function (index) {
 		let prev = index - 1;
 		let firstTdElement = $(this).find('td')[0];
 		$(firstTdElement).text(index + 1);

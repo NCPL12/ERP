@@ -62,7 +62,23 @@ $(document).ready( function () {
 				}
 		}, {
 			"mData" : "grandTotal",
-			"defaultContent":"NA"
+			"defaultContent":"",
+			render : function(aaData, type, row) {
+				var grandTotal = parseFloat(row.grandTotal);
+				if (isNaN(grandTotal)) {
+					grandTotal = parseFloat(row.total);
+				}
+				if (isNaN(grandTotal) && row.items && row.items.length) {
+					grandTotal = row.items.reduce(function (sum, item) {
+						var amount = parseFloat(item.amount);
+						return sum + (isNaN(amount) ? 0 : amount);
+					}, 0);
+				}
+				if (isNaN(grandTotal)) {
+					grandTotal = 0;
+				}
+				return commaSeparateNumber(Math.round(grandTotal * 100) / 100);
+			}
 		},{
 			"mData" : "created",
 			"class":"hideTd",

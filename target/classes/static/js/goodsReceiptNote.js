@@ -6,7 +6,8 @@ $(document).ready(function(){
 	        $(this).html( '<input type="text" style="width:100%;" placeholder="Search '+title+'" />' );
 	        $( 'input', this ).on( 'keyup change', function () {
 	            grnDataTable
-	            	.search( this.value )
+	            	.column(i)
+	            	.search(this.value)
 	                .draw();
 	        } );
 	    } );
