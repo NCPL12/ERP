@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManagerFactory;
 import javax.servlet.http.HttpServletResponse;
@@ -46,6 +47,7 @@ import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.repository.CompanyAssetsRepo;
 import com.ncpl.sales.repository.PartyRepo;
+import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.PurchaseRepo;
 import com.ncpl.sales.repository.SupplierRepo;
 import com.ncpl.sales.util.JSONArrayPojoUtil;
@@ -75,6 +77,8 @@ public class PurchaseOrderService {
 	DeliveryChallanService dcService;
 	@Autowired
 	PurchaseItemService purchaseItemService;
+	@Autowired
+	PurchaseItemRepo purchaseItemRepo;
 	@Autowired
 	PartyRepo partyRepo;
 	@Autowired
@@ -124,6 +128,29 @@ public class PurchaseOrderService {
 	
 	public List<PurchaseOrder> findAllPO(){
 		List<PurchaseOrder> poList = purchaseRepo.findAllPO();
+		Map<String, Object[]> totalsByPo = new HashMap<>();
+		for (Object[] row : purchaseItemRepo.getActivePoTotals()) {
+			if (row == null || row.length < 3 || row[0] == null) {
+				continue;
+			}
+			totalsByPo.put(row[0].toString(), row);
+		}
+		for (PurchaseOrder po : poList) {
+			Object[] totals = totalsByPo.get(po.getPoNumber());
+			double total = 0;
+			double gstTotal = 0;
+			if (totals != null) {
+				if (totals[1] instanceof Number) {
+					total = ((Number) totals[1]).doubleValue();
+				}
+				if (totals[2] instanceof Number) {
+					gstTotal = ((Number) totals[2]).doubleValue();
+				}
+			}
+			double grandTotal = total + gstTotal;
+			grandTotal = Math.round(grandTotal * 100.0) / 100.0;
+			po.setGrandTotal(grandTotal);
+		}
 		return poList;
 	}
 	//Get purchase order by id
@@ -743,6 +770,29 @@ public class PurchaseOrderService {
 
 	public List<PurchaseOrder> findAllArchivedPOList() {
 		List<PurchaseOrder> poList = purchaseRepo.findAllArchivedPOList();
+		Map<String, Object[]> totalsByPo = new HashMap<>();
+		for (Object[] row : purchaseItemRepo.getArchivedPoTotals()) {
+			if (row == null || row.length < 3 || row[0] == null) {
+				continue;
+			}
+			totalsByPo.put(row[0].toString(), row);
+		}
+		for (PurchaseOrder po : poList) {
+			Object[] totals = totalsByPo.get(po.getPoNumber());
+			double total = 0;
+			double gstTotal = 0;
+			if (totals != null) {
+				if (totals[1] instanceof Number) {
+					total = ((Number) totals[1]).doubleValue();
+				}
+				if (totals[2] instanceof Number) {
+					gstTotal = ((Number) totals[2]).doubleValue();
+				}
+			}
+			double grandTotal = total + gstTotal;
+			grandTotal = Math.round(grandTotal * 100.0) / 100.0;
+			po.setGrandTotal(grandTotal);
+		}
 		return poList;
 	}
 	

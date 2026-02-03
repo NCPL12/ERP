@@ -32,5 +32,27 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 	@Query("SELECT pi FROM PurchaseItem pi WHERE pi.description IN :salesItemIds")
 	List<PurchaseItem> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
 
+	@Query(value = "SELECT po.po_number, " +
+			"COALESCE(SUM(pi.amount), 0) AS total, " +
+			"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gstTotal " +
+			"FROM tbl_purchase_order po " +
+			"LEFT JOIN tbl_purchase_items pi ON pi.po_number = po.po_number " +
+			"LEFT JOIN tbl_item_master im ON im.id = pi.model_no " +
+			"WHERE po.archive = 0 " +
+			"GROUP BY po.po_number",
+			nativeQuery = true)
+	List<Object[]> getActivePoTotals();
+
+	@Query(value = "SELECT po.po_number, " +
+			"COALESCE(SUM(pi.amount), 0) AS total, " +
+			"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gstTotal " +
+			"FROM tbl_purchase_order po " +
+			"LEFT JOIN tbl_purchase_items pi ON pi.po_number = po.po_number " +
+			"LEFT JOIN tbl_item_master im ON im.id = pi.model_no " +
+			"WHERE po.archive = 1 " +
+			"GROUP BY po.po_number",
+			nativeQuery = true)
+	List<Object[]> getArchivedPoTotals();
+
 
 }

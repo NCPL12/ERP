@@ -15,6 +15,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.Version;
 
 import org.hibernate.annotations.GenericGenerator;
@@ -73,6 +74,9 @@ public class PurchaseOrder extends TimeStampEntity implements Comparable<Purchas
 		@Version
 		private int version;
 		
+		@Transient
+		private Double grandTotal;
+		
 		public Party getParty() {
 			return party;
 		}
@@ -113,6 +117,14 @@ public class PurchaseOrder extends TimeStampEntity implements Comparable<Purchas
 			this.version = version;
 		}
 
+		public Double getGrandTotal() {
+			return grandTotal;
+		}
+
+		public void setGrandTotal(Double grandTotal) {
+			this.grandTotal = grandTotal;
+		}
+		
 		public JSONArray getHistory() {
 			return history;
 		}
