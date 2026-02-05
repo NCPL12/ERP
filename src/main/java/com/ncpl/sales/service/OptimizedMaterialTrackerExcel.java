@@ -2,6 +2,7 @@ package com.ncpl.sales.service;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +21,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.web.servlet.view.document.AbstractXlsxView;
 
-import com.ncpl.sales.config.LangConfig;
 import com.ncpl.sales.generator.FileNameGenerator;
 import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
@@ -54,9 +52,8 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
     String s1 = "Complete solution for BMS, Lighting Control, CCTV & Security Systems, DDC Panels, Automation Panels, Lighting,panels, MCC & Starter Panels";
     FileNameGenerator fileNameGenerator = new FileNameGenerator();
     
-    // To read the message source from property file
-    @Autowired
-    private MessageSource messageSource;
+    private transient CellStyle headerCellStyle;
+    private transient CellStyle dataCellStyle;
     
     InvoiceExcelLogoService logoService = new InvoiceExcelLogoService();
     
@@ -73,10 +70,14 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
         String shippingPartyAddress = (String) request.getAttribute("shippingPartyAddr");
         @SuppressWarnings("unchecked")
         Map<String, String> itemsList = (Map<String, String>) request.getAttribute("map");
-        
-        // Get optimized data from the optimized service
-        OptimizedMaterialTrackerService optimizedService = new OptimizedMaterialTrackerService();
-        Map<String, Object> optimizedData = optimizedService.getOptimizedExcelData(salesObj);
+        if (itemsList == null) {
+            itemsList = new HashMap<String, String>();
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> optimizedData = (Map<String, Object>) request.getAttribute("optimizedData");
+        if (optimizedData == null) {
+            optimizedData = new HashMap<String, Object>();
+        }
         
         // Converting date to String
         String dateString = date.toString();
@@ -92,14 +93,19 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
         DateFormat formatter4 = new SimpleDateFormat("dd/MM/yyyy");
         String date4 = formatter4.format(todayDate);
 
-        String fileName = salesObj.getClientPoNumber() + "_SALES_OPTIMIZED.xlsx";
+        String fileName = (String) request.getAttribute("fileName");
+        if (fileName == null || fileName.trim().isEmpty()) {
+            fileName = salesObj.getClientPoNumber() + "_SALES.xlsx";
+        }
         // set excel file name
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
         Sheet editAccountSheet = workbook.createSheet("Sales");
         editAccountSheet.setDefaultColumnWidth(9);
+
+        initStyles(workbook);
         
         // Create header and basic structure
-        createHeader(workbook, editAccountSheet, salesObj, shippingParty, shippingPartyAddress, formattedDate, date4);
+        createHeader(workbook, editAccountSheet, request, salesObj, shippingParty, shippingPartyAddress, formattedDate, date4);
         
         // Process items in chunks to avoid memory issues
         processItemsInChunks(workbook, editAccountSheet, salesItems, itemsList, optimizedData);
@@ -107,8 +113,31 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
         // Apply final formatting
         applyFinalFormatting(workbook, editAccountSheet);
     }
+
+    private void initStyles(Workbook workbook) {
+        // Header style
+        headerCellStyle = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setFontName("Calibri");
+        font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        font.setColor(HSSFColor.WHITE.index);
+        headerCellStyle.setFont(font);
+        headerCellStyle.setFillForegroundColor(IndexedColors.GREY_50_PERCENT.getIndex());
+        headerCellStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
+        headerCellStyle.setBorderTop(CellStyle.BORDER_THIN);
+        headerCellStyle.setBorderBottom(CellStyle.BORDER_THIN);
+        headerCellStyle.setBorderLeft(CellStyle.BORDER_THIN);
+        headerCellStyle.setBorderRight(CellStyle.BORDER_THIN);
+
+        // Data style
+        dataCellStyle = workbook.createCellStyle();
+        dataCellStyle.setBorderTop(CellStyle.BORDER_THIN);
+        dataCellStyle.setBorderBottom(CellStyle.BORDER_THIN);
+        dataCellStyle.setBorderLeft(CellStyle.BORDER_THIN);
+        dataCellStyle.setBorderRight(CellStyle.BORDER_THIN);
+    }
     
-    private void createHeader(Workbook workbook, Sheet sheet, SalesOrder salesObj, 
+    private void createHeader(Workbook workbook, Sheet sheet, HttpServletRequest request, SalesOrder salesObj, 
             String shippingParty, String shippingPartyAddress, String formattedDate, String date4) {
         
         // Create header rows (same as original but optimized)
@@ -125,7 +154,7 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
 
         // Insert Logo
         try {
-            logoService.insertLogoInTemplate(workbook, sheet, null);
+            logoService.insertLogoInTemplate(workbook, sheet, request);
         } catch (Exception e) {
             // Logo insertion failed, continue without logo
         }
@@ -210,13 +239,7 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
                 
                 // Flush to disk periodically to prevent memory issues
                 if (processedRows % MAX_ROWS_BEFORE_FLUSH == 0) {
-                    try {
-                        // Force garbage collection and memory cleanup
-                        System.gc();
-                        Thread.sleep(10); // Small delay to allow GC
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    // no-op
                 }
             }
         }
@@ -266,34 +289,45 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
         // Sl No
         Cell slNo = row.createCell(0);
         slNo.setCellValue(salesItem.getSlNo());
+        slNo.setCellStyle(dataCellStyle);
         
         // Description
         Cell description = row.createCell(1);
         description.setCellValue(salesItem.getDescription());
+        description.setCellStyle(dataCellStyle);
         
         // Quantities
         if (!unitName.equals("Heading")) {
             Cell qtyBoq = row.createCell(2);
             qtyBoq.setCellValue(salesItem.getQuantity());
+            qtyBoq.setCellStyle(dataCellStyle);
             
             Cell qtySite = row.createCell(3);
             qtySite.setCellValue(salesItem.getQuantity());
+            qtySite.setCellStyle(dataCellStyle);
             
             Cell orderedQtyCell = row.createCell(4);
             orderedQtyCell.setCellValue(orderedQty);
+            orderedQtyCell.setCellStyle(dataCellStyle);
             
             Cell notOrderedQtyCell = row.createCell(5);
             notOrderedQtyCell.setCellValue(notOrderedQty);
+            notOrderedQtyCell.setCellStyle(dataCellStyle);
             
             Cell deliveredQtyCell = row.createCell(6);
             deliveredQtyCell.setCellValue(dcQty);
+            deliveredQtyCell.setCellStyle(dataCellStyle);
             
             Cell instoreQtyCell = row.createCell(7);
             instoreQtyCell.setCellValue(grnQty);
+            instoreQtyCell.setCellStyle(dataCellStyle);
         }
     }
     
     private void setRelatedData(Row row, SalesItem salesItem, Map<String, Object> optimizedData) {
+        if (optimizedData == null || optimizedData.isEmpty()) {
+            return;
+        }
         String salesItemId = salesItem.getId();
         
         // Get optimized data maps
@@ -313,6 +347,11 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
         Map<String, List<Grn>> grnMap = (Map<String, List<Grn>>) optimizedData.get("grnMap");
         @SuppressWarnings("unchecked")
         Map<Integer, DeliveryChallan> dcMap = (Map<Integer, DeliveryChallan>) optimizedData.get("dcMap");
+
+		if (designItemsMap == null || purchaseItemsMap == null || dcItemsMap == null || itemsMap == null || designsMap == null
+				|| poMap == null || grnMap == null || dcMap == null) {
+			return;
+		}
         
         // Set design data
         List<DesignItems> designItems = designItemsMap.get(salesItemId);
@@ -323,6 +362,7 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
             if (item != null) {
                 Cell modelCell = row.createCell(8);
                 modelCell.setCellValue(item.getModel() + ", qty=" + firstDesign.getQuantity());
+                modelCell.setCellStyle(dataCellStyle);
             }
         }
         
@@ -334,12 +374,15 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
             if (po != null) {
                 Cell poNumberCell = row.createCell(9);
                 poNumberCell.setCellValue(po.getPoNumber());
+                poNumberCell.setCellStyle(dataCellStyle);
                 
                 Cell poDateCell = row.createCell(10);
                 poDateCell.setCellValue(formatDate(po.getCreated()));
+                poDateCell.setCellStyle(dataCellStyle);
                 
                 Cell vendorCell = row.createCell(11);
                 vendorCell.setCellValue(po.getParty().getPartyName());
+                vendorCell.setCellStyle(dataCellStyle);
             }
         }
         
@@ -351,6 +394,7 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
                     Grn firstGrn = grnList.get(0);
                     Cell grnDateCell = row.createCell(12);
                     grnDateCell.setCellValue(formatDate(firstGrn.getCreated()));
+                    grnDateCell.setCellStyle(dataCellStyle);
                     break;
                 }
             }
@@ -365,9 +409,11 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
                 Cell dcDateCell = row.createCell(13);
                 // Use the DC item's created date since DC doesn't have getCreated()
                 dcDateCell.setCellValue(formatDate(firstDcItem.getCreated()));
+                dcDateCell.setCellStyle(dataCellStyle);
                 
                 Cell dcNumberCell = row.createCell(14);
                 dcNumberCell.setCellValue(dc.getDcId());
+                dcNumberCell.setCellStyle(dataCellStyle);
             }
         }
         
@@ -377,6 +423,7 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
             if (design != null) {
                 Cell designDateCell = row.createCell(15);
                 designDateCell.setCellValue(formatDate(design.getCreated()));
+                designDateCell.setCellStyle(dataCellStyle);
             }
         }
     }
@@ -388,45 +435,10 @@ public class OptimizedMaterialTrackerExcel extends AbstractXlsxView {
     }
     
     private void applyHeaderCellStyle(Workbook workbook, Cell cell) {
-        CellStyle style = workbook.createCellStyle();
-        Font font = workbook.createFont();
-        font.setFontName("Calibri");
-        font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-        font.setColor(HSSFColor.WHITE.index);
-        style.setFont(font);
-        style.setFillForegroundColor(IndexedColors.GREY_50_PERCENT.getIndex());
-        style.setFillPattern(CellStyle.SOLID_FOREGROUND);
-        cell.setCellStyle(style);
+        cell.setCellStyle(headerCellStyle);
     }
     
     private void applyFinalFormatting(Workbook workbook, Sheet sheet) {
-        // Auto-size columns for better readability
-        for (int i = 0; i < 16; i++) {
-            sheet.autoSizeColumn(i);
-        }
-        
-        // Apply borders to all cells
-        applyBordersToSheet(workbook, sheet);
-    }
-    
-    private void applyBordersToSheet(Workbook workbook, Sheet sheet) {
-        // Apply borders to all data rows
-        for (int i = 7; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row != null) {
-                for (int j = 0; j < 16; j++) {
-                    Cell cell = row.getCell(j);
-                    if (cell != null) {
-                        CellStyle style = workbook.createCellStyle();
-                        style.cloneStyleFrom(cell.getCellStyle());
-                        style.setBorderTop(CellStyle.BORDER_THIN);
-                        style.setBorderBottom(CellStyle.BORDER_THIN);
-                        style.setBorderLeft(CellStyle.BORDER_THIN);
-                        style.setBorderRight(CellStyle.BORDER_THIN);
-                        cell.setCellStyle(style);
-                    }
-                }
-            }
-        }
+        // no-op
     }
 }

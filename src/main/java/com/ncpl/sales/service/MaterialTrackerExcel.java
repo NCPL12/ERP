@@ -27,11 +27,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFDataFormat;
-import org.springframework.context.MessageSource;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.web.servlet.view.document.AbstractXlsxView;
 
-import com.ncpl.sales.config.LangConfig;
 import com.ncpl.sales.generator.FileNameGenerator;
 import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
@@ -53,10 +50,7 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			+ "E-Mail : accounts@ncpl.co";
 	String s1 = "Complete solution for BMS, Lighting Control, CCTV & Security Systems, DDC Panels, Automation Panels, Lighting,panels, MCC & Starter Panels";
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
-	// To read the message source from property file
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(LangConfig.class);
-		MessageSource messageSource = (MessageSource) context.getBean("messageSource");
-		
+	
 		InvoiceExcelLogoService logoService = new InvoiceExcelLogoService();
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
@@ -76,6 +70,25 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		SalesOrderDesignService soDesignService=(SalesOrderDesignService) request.getAttribute("designService");
 		PurchaseOrderService purchaseOrderService=(PurchaseOrderService) request.getAttribute("poService");
 		ItemMasterService itemService=(ItemMasterService) request.getAttribute("itemMasterService");
+		Map optimizedData = (Map) request.getAttribute("optimizedData");
+		Map designItemsMap = null;
+		Map purchaseItemsMap = null;
+		Map dcItemsMap = null;
+		Map itemsMap = null;
+		Map designsMap = null;
+		Map poMap = null;
+		Map grnMap = null;
+		Map dcMap = null;
+		if (optimizedData != null) {
+			designItemsMap = (Map) optimizedData.get("designItemsMap");
+			purchaseItemsMap = (Map) optimizedData.get("purchaseItemsMap");
+			dcItemsMap = (Map) optimizedData.get("dcItemsMap");
+			itemsMap = (Map) optimizedData.get("itemsMap");
+			designsMap = (Map) optimizedData.get("designsMap");
+			poMap = (Map) optimizedData.get("poMap");
+			grnMap = (Map) optimizedData.get("grnMap");
+			dcMap = (Map) optimizedData.get("dcMap");
+		}
 		
 		// Converting date to String
 		String dateString = date.toString();
@@ -92,7 +105,10 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		String date4=formatter4.format(todayDate);
 
 		
-		String fileName = salesObj.getClientPoNumber() + "_SALES.xlsx";
+		String fileName = (String) request.getAttribute("fileName");
+		if (fileName == null || fileName.trim().isEmpty()) {
+			fileName = salesObj.getClientPoNumber() + "_SALES.xlsx";
+		}
 		// set excel file name
 		response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 		Sheet editAccountSheet = workbook.createSheet("Sales");
@@ -681,6 +697,30 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		CellStyle topborder = workbook.createCellStyle();
 		topborder.setBorderTop(BORDER_THIN);
 		
+		CellStyle descriptionStyle = workbook.createCellStyle();
+		descriptionStyle.setVerticalAlignment((short) (VERTICAL_JUSTIFY));
+		descriptionStyle.setWrapText(true);
+		descriptionStyle.setFont(itemListFont);
+		descriptionStyle.setBorderLeft(BORDER_THIN);
+		descriptionStyle.setBorderRight(BORDER_THIN);
+		descriptionStyle.setBorderTop(BORDER_THIN);
+		descriptionStyle.setBorderBottom(BORDER_THIN);
+		
+		CellStyle descriptionMergeMiddleStyle = workbook.createCellStyle();
+		descriptionMergeMiddleStyle.setVerticalAlignment((short) (VERTICAL_JUSTIFY));
+		descriptionMergeMiddleStyle.setWrapText(true);
+		descriptionMergeMiddleStyle.setFont(itemListFont);
+		descriptionMergeMiddleStyle.setBorderTop(BORDER_THIN);
+		descriptionMergeMiddleStyle.setBorderBottom(BORDER_THIN);
+		
+		CellStyle descriptionMergeRightStyle = workbook.createCellStyle();
+		descriptionMergeRightStyle.setVerticalAlignment((short) (VERTICAL_JUSTIFY));
+		descriptionMergeRightStyle.setWrapText(true);
+		descriptionMergeRightStyle.setFont(itemListFont);
+		descriptionMergeRightStyle.setBorderRight(BORDER_THIN);
+		descriptionMergeRightStyle.setBorderTop(BORDER_THIN);
+		descriptionMergeRightStyle.setBorderBottom(BORDER_THIN);
+		
 		int rowCount = 11;
 		for (SalesItem salesItem : salesItems) {
 			String unitName=salesItem.getItem_units().getName();
@@ -720,16 +760,16 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			slno.setCellStyle(threeSideborder);
 			slno.setCellValue(salesItem.getSlNo());
 			Cell description = row1.createCell(1);
-			CellStyle descriptionStyle = workbook.createCellStyle();
-			descriptionStyle.setVerticalAlignment((short) (VERTICAL_JUSTIFY));
-			descriptionStyle.setWrapText(true);
-			descriptionStyle.setFont(itemListFont);
-			descriptionStyle.setBorderLeft(BORDER_THIN);
-			descriptionStyle.setBorderRight(BORDER_THIN);
-			descriptionStyle.setBorderTop(BORDER_THIN);
-			descriptionStyle.setBorderBottom(BORDER_THIN);
 			description.setCellStyle(descriptionStyle);
 			description.setCellValue(salesItem.getDescription());
+			for (int col = 2; col <= 5; col++) {
+				Cell mergedCell = row1.createCell(col);
+				mergedCell.setCellStyle(descriptionMergeMiddleStyle);
+				mergedCell.setCellValue("");
+			}
+			Cell mergedRightCell = row1.createCell(6);
+			mergedRightCell.setCellStyle(descriptionMergeRightStyle);
+			mergedRightCell.setCellValue("");
 			
 			
 			Cell qtyBoqCell = row1.createCell(7);
@@ -769,7 +809,16 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			
 			String soItemId = salesItem.getId();
 			
-			List<DesignItems> designItemList =soDesignService.getDesignItemListBySOItemId(soItemId);
+			List<DesignItems> designItemList = null;
+			if (designItemsMap != null) {
+				designItemList = (List<DesignItems>) designItemsMap.get(soItemId);
+			}
+			if (designItemList == null) {
+				designItemList = soDesignService.getDesignItemListBySOItemId(soItemId);
+			}
+			if (designItemList == null) {
+				designItemList = new ArrayList<DesignItems>();
+			}
 			if(unitName.equals("Heading")) {
 				Cell modelCell = row1.createCell(13);
 				modelCell.setCellStyle(threeSideborder);
@@ -806,36 +855,72 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			for (DesignItems designItem : designItemList ) {
 				Set purchaseSet = new HashSet();
 				String itemId = designItem.getItemId();
-				Optional<ItemMaster> itemObj = itemService.getItemById(itemId);
-				Optional<SalesOrderDesign> designObj=soDesignService.findSalesOrderDesignById(designItem.getSalesOrderDesign().getId());
+				Optional<ItemMaster> itemObj = Optional.ofNullable(itemsMap != null ? (ItemMaster) itemsMap.get(itemId) : null);
+				if (!itemObj.isPresent()) {
+					itemObj = itemService.getItemById(itemId);
+				}
+				Optional<SalesOrderDesign> designObj = Optional.ofNullable(designsMap != null ? (SalesOrderDesign) designsMap.get(designItem.getSalesOrderDesign().getId()) : null);
+				if (!designObj.isPresent()) {
+					designObj = soDesignService.findSalesOrderDesignById(designItem.getSalesOrderDesign().getId());
+				}
 				
-				Date designDate=designObj.get().getCreated();
-				String designDateString1 = designDate.toString();
-				String[] designDatearr1 = designDateString1.split(" ");
-
-				// Formatting date to a required format
-				String formattedDate5 = designDatearr1[0];
-				formattedDate5 = formattedDate5.substring(formattedDate5.length() - 2, formattedDate5.length()) + "/"
-						+ formattedDate5.substring(formattedDate5.length() - 5, formattedDate5.length() - 3) + "/"
-						+ formattedDate5.substring(0, 4);
+				String formattedDate5 = "";
+				Date designDate = designObj.isPresent() ? designObj.get().getCreated() : null;
+				if (designDate != null) {
+					String designDateString1 = designDate.toString();
+					String[] designDatearr1 = designDateString1.split(" ");
+					// Formatting date to a required format
+					formattedDate5 = designDatearr1[0];
+					formattedDate5 = formattedDate5.substring(formattedDate5.length() - 2, formattedDate5.length()) + "/"
+							+ formattedDate5.substring(formattedDate5.length() - 5, formattedDate5.length() - 3) + "/"
+							+ formattedDate5.substring(0, 4);
+				}
 				
 				Cell modelCell = row1.createCell(13);
 				modelCell.setCellStyle(threeSideborder);
-				modelCell.setCellValue(itemObj.get().getModel()+", qty="+designItem.getQuantity());
+				if (itemObj.isPresent() && itemObj.get().getModel() != null) {
+					modelCell.setCellValue(itemObj.get().getModel()+", qty="+designItem.getQuantity());
+				} else {
+					modelCell.setCellValue("");
+				}
 				
 				Cell designDtCell =row1.createCell(20);
 				designDtCell.setCellStyle(threeSideborder);
 				designDtCell.setCellValue(formattedDate5);
 				
-				List<PurchaseItem> purchaseItemList = poItemService.getPurchaseItemListBySalesItemIdAndItemId(soItemId, itemId);
+				List<PurchaseItem> purchaseItemList = null;
+				if (purchaseItemsMap != null) {
+					List<PurchaseItem> soPurchaseItems = (List<PurchaseItem>) purchaseItemsMap.get(soItemId);
+					if (soPurchaseItems != null) {
+						purchaseItemList = new ArrayList<PurchaseItem>();
+						for (PurchaseItem pi : soPurchaseItems) {
+							if (pi != null && pi.getModelNo() != null && pi.getModelNo().equals(itemId)) {
+								purchaseItemList.add(pi);
+							}
+						}
+					}
+				}
+				if (purchaseItemList == null) {
+					purchaseItemList = poItemService.getPurchaseItemListBySalesItemIdAndItemId(soItemId, itemId);
+				}
+				if (purchaseItemList == null) {
+					purchaseItemList = new ArrayList<PurchaseItem>();
+				}
 			
 				for (PurchaseItem purchaseItem : purchaseItemList) {
 					if(purchaseItem.getPurchaseOrder()!=null) {
 					String purchaseId = purchaseItem.getPurchaseOrder().getPoNumber();
-					System.out.println(purchaseId);
 					if(purchaseId!=null) {
-					Optional<PurchaseOrder> purchaseOrder = purchaseOrderService.findById(purchaseId);
-					purchaseSet.add(purchaseOrder.get());
+					PurchaseOrder purchaseOrderObj = poMap != null ? (PurchaseOrder) poMap.get(purchaseId) : null;
+					if (purchaseOrderObj == null) {
+						Optional<PurchaseOrder> purchaseOrder = purchaseOrderService.findById(purchaseId);
+						if (purchaseOrder.isPresent()) {
+							purchaseOrderObj = purchaseOrder.get();
+						}
+					}
+					if (purchaseOrderObj != null) {
+						purchaseSet.add(purchaseOrderObj);
+					}
 					}
 					}
 				}
@@ -845,7 +930,13 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 				for (PurchaseOrder po : purchaseList) {
 					String poNumb=po.getPoNumber();
 					
-					List<Grn> grnList = grnService.findGrnByPoNumber(poNumb);
+					List<Grn> grnList = grnMap != null ? (List<Grn>) grnMap.get(poNumb) : null;
+					if (grnList == null) {
+						grnList = grnService.findGrnByPoNumber(poNumb);
+					}
+					if (grnList == null) {
+						grnList = new ArrayList<Grn>();
+					}
 					Date poDt = po.getCreated();
 					String vendorPartyName = po.getParty().getPartyName();
 					
@@ -914,13 +1005,27 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			}
 			
 			
-			List<DeliveryChallanItems> dcItemList =dcService.getDcItemListBySoItemId(soItemId); 
+			List<DeliveryChallanItems> dcItemList = dcItemsMap != null ? (List<DeliveryChallanItems>) dcItemsMap.get(soItemId) : null;
+			if (dcItemList == null) {
+				dcItemList = dcService.getDcItemListBySoItemId(soItemId);
+			}
+			if (dcItemList == null) {
+				dcItemList = new ArrayList<DeliveryChallanItems>();
+			}
 			Set dcSet = new HashSet(); 
 			for(DeliveryChallanItems dcItem : dcItemList) { 
 				if(dcItem.getTodaysQty()!=0) {
 					int dcId =dcItem.getDeliveryChallan().getDcId(); 
-					Optional<DeliveryChallan> dcObj =dcService.getDcById(dcId); 
-					dcSet.add(dcObj.get()); 
+					DeliveryChallan dcObj = dcMap != null ? (DeliveryChallan) dcMap.get(dcId) : null;
+					if (dcObj == null) {
+						Optional<DeliveryChallan> dcOpt = dcService.getDcById(dcId);
+						if (dcOpt.isPresent()) {
+							dcObj = dcOpt.get();
+						}
+					}
+					if (dcObj != null) {
+						dcSet.add(dcObj);
+					}
 					}
 				}
 
@@ -972,6 +1077,9 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		int numMerged = sheet.getNumMergedRegions();
 		for (int i = 0; i < numMerged; i++) {
 			CellRangeAddress mergedRegions = sheet.getMergedRegion(i);
+			if (mergedRegions.getFirstRow() >= 11) {
+				break;
+			}
 
 //			if (mergedRegions.getFirstRow() == 18
 //					|| (mergedRegions.getFirstRow() < rowLastItemCount && mergedRegions.getFirstRow() > 18)) {
@@ -993,18 +1101,14 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		RegionUtil.setBorderLeft(CellStyle.BORDER_THIN, range, sheet, workBook);
 		RegionUtil.setBorderRight(CellStyle.BORDER_THIN, range, sheet, workBook);
 		RegionUtil.setBorderBottom(CellStyle.BORDER_THIN, range, sheet, workBook);*/
-		for (int i=11;i<rowLastItemCount;i++) {
-			for (int j = 0; j <= 20; j++) {
-				
-			
-				CellRangeAddress region = new CellRangeAddress(i,rowLastItemCount-1,j,20);
-				
-				RegionUtil.setBorderTop(CellStyle.BORDER_THIN, region, sheet, workBook);
-				RegionUtil.setBorderLeft(CellStyle.BORDER_THIN, region, sheet, workBook);
-				RegionUtil.setBorderRight(CellStyle.BORDER_THIN, region, sheet, workBook);
-				RegionUtil.setBorderBottom(CellStyle.BORDER_THIN, region, sheet, workBook);
-			}
+		if (rowLastItemCount <= 11) {
+			return;
 		}
+		CellRangeAddress region = new CellRangeAddress(11, rowLastItemCount - 1, 0, 20);
+		RegionUtil.setBorderTop(CellStyle.BORDER_THIN, region, sheet, workBook);
+		RegionUtil.setBorderLeft(CellStyle.BORDER_THIN, region, sheet, workBook);
+		RegionUtil.setBorderRight(CellStyle.BORDER_THIN, region, sheet, workBook);
+		RegionUtil.setBorderBottom(CellStyle.BORDER_THIN, region, sheet, workBook);
 		
 	}
 }

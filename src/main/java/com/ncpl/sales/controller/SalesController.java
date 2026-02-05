@@ -1587,75 +1587,31 @@ public class SalesController {
 				 ,@PathVariable("salesOrderNo") String salesOrderNo) throws DocumentException, IOException{
 			
 			 Map<String, Object> salesData = new HashMap<String, Object>();
-			 Optional<SalesOrder> salesOrder =salesService.getSalesOrderById(salesOrderNo);
-			 String shippingPartyId=salesOrder.get().getShippingAddress();
-			 Party party=partyRepo.findById(shippingPartyId);
+			 Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(salesOrderNo);
+			 String shippingPartyId = salesOrder.get().getShippingAddress();
+			 Party party = partyRepo.findById(shippingPartyId);
 			 
-			 if(party==null) {
-					Optional<PartyAddress> partyaddr=addressService.getAddressByAddressId(shippingPartyId);
-					//shippingPartyId=partyaddr.get().getParty().getId();
-					//party= partyRepo.findById(shippingPartyId);
-					request.setAttribute("shippingParty", partyaddr.get().getPartyName());
-					request.setAttribute("shippingPartyAddr", partyaddr.get().getAddr1());
-				 }else {
-					 request.setAttribute("shippingParty", party.getPartyName());
-					 request.setAttribute("shippingPartyAddr", party.getAddr1());
-				 }
-			 List<SalesItem> salesItemList = salesOrder.get().getItems();
-			 Map<String,String> map = new HashMap();
-			 for (SalesItem salesItem : salesItemList) {
-				 float deliveredQty=0;
-				 float purchaseQty=0;
-				 float noOrderQty=0;
-				 float grnQty=0;
-				 float designQty=0;
-				 ArrayList grnItemsList = new ArrayList();
-				 List<DeliveryChallanItems> dcItemList =dcItemRepo.getDcItemListBySalesItemId(salesItem.getId());
-				 List<PurchaseItem> purchaseItemList = purchaseItemService.getPurchaseItemsBySalesItemId(salesItem.getId());
-				 List<DesignItems> designItemsList = designService.getAllDesignItemListBySOItemId(salesItem.getId());
-				 for (DesignItems designItem : designItemsList) {
-					 designQty=designQty+designItem.getQuantity();
-				}
-				 	if(dcItemList.size()>0) {
-						for (DeliveryChallanItems dcItem : dcItemList) {
-							deliveredQty=(int) (deliveredQty+dcItem.getTodaysQty());
-						}
-					}else {
-						deliveredQty=0;
-					}
-					if(purchaseItemList.size()>0) {
-						for (PurchaseItem purchaseItem : purchaseItemList) {
-							purchaseQty=purchaseQty+purchaseItem.getQuantity();
-							List<GrnItems> grnItems = grnService.getGrnItemObjByPoItemId(Integer.toString(purchaseItem.getPurchase_item_id()));
-							if(grnItems.size()>0) {
-								for (GrnItems grnItem : grnItems) {
-									grnQty=grnQty+grnItem.getReceivedQuantity();
-								}
-							}else {
-								grnQty=0;
-							}
-						}
-					}else {
-						purchaseQty=0;
-					}
-					noOrderQty=designQty-purchaseQty;
-					/*if(grnQty>0) {
-						purchaseQty=purchaseQty-grnQty;
-					}*/
-					
-					if(deliveredQty>0) {
-						grnQty=grnQty-deliveredQty;
-					}
-					
-				 map.put(salesItem.getId(), deliveredQty+"$"+purchaseQty+"&"+noOrderQty+"%"+grnQty);
-			}
+			 if (party == null) {
+				 Optional<PartyAddress> partyaddr = addressService.getAddressByAddressId(shippingPartyId);
+				 request.setAttribute("shippingParty", partyaddr.get().getPartyName());
+				 request.setAttribute("shippingPartyAddr", partyaddr.get().getAddr1());
+			 } else {
+				 request.setAttribute("shippingParty", party.getPartyName());
+				 request.setAttribute("shippingPartyAddr", party.getAddr1());
+			 }
+			 
+			 Map<String, String> map = optimizedMaterialTrackerService.getOptimizedMaterialTrackerData(salesOrder.get());
+			 Map<String, Object> optimizedData = optimizedMaterialTrackerService.getOptimizedExcelData(salesOrder.get());
+			 
 			 request.setAttribute("map", map);
+			 request.setAttribute("optimizedData", optimizedData);
+			 request.setAttribute("fileName", salesOrder.get().getClientPoNumber() + "_SALES.xlsx");
 			 request.setAttribute("dcService", deliveryChallanService);
-			 request.setAttribute("grnSrvce",grnService);
-			 request.setAttribute("poItemService",purchaseItemService);
-			 request.setAttribute("designService",designService);
-			 request.setAttribute("poService",purchaseOrderService);
-			 request.setAttribute("itemMasterService",itemMasterService);
+			 request.setAttribute("grnSrvce", grnService);
+			 request.setAttribute("poItemService", purchaseItemService);
+			 request.setAttribute("designService", designService);
+			 request.setAttribute("poService", purchaseOrderService);
+			 request.setAttribute("itemMasterService", itemMasterService);
 			 
 			 salesData.put("salesObj", salesOrder.get());
 			 return new ModelAndView(new MaterialTrackerExcel(), "salesData", salesData);
@@ -1687,8 +1643,11 @@ public class SalesController {
 			 
 			 // Use optimized service for batch queries
 			 Map<String, String> map = optimizedMaterialTrackerService.getOptimizedMaterialTrackerData(salesOrder.get());
+			 Map<String, Object> optimizedData = optimizedMaterialTrackerService.getOptimizedExcelData(salesOrder.get());
 			 
 			 request.setAttribute("map", map);
+			 request.setAttribute("optimizedData", optimizedData);
+			 request.setAttribute("fileName", salesOrder.get().getClientPoNumber() + "_SALES.xlsx");
 			 request.setAttribute("dcService", deliveryChallanService);
 			 request.setAttribute("grnSrvce", grnService);
 			 request.setAttribute("poItemService", purchaseItemService);
@@ -1742,8 +1701,11 @@ public class SalesController {
 			 
 			 // Use optimized service for batch queries
 			 Map<String, String> map = optimizedMaterialTrackerService.getOptimizedMaterialTrackerData(paginatedSalesOrder);
+			 Map<String, Object> optimizedData = optimizedMaterialTrackerService.getOptimizedExcelData(paginatedSalesOrder);
 			 
 			 request.setAttribute("map", map);
+			 request.setAttribute("optimizedData", optimizedData);
+			 request.setAttribute("fileName", salesOrder.get().getClientPoNumber() + "_SALES.xlsx");
 			 request.setAttribute("dcService", deliveryChallanService);
 			 request.setAttribute("grnSrvce", grnService);
 			 request.setAttribute("poItemService", purchaseItemService);

@@ -100,4 +100,7 @@ public interface DeliveryChallanRepo extends
 	@Query("SELECT dc FROM DeliveryChallan dc WHERE dc.dcId IN :dcIds")
 	List<DeliveryChallan> findByDcIdIn(@Param("dcIds") List<Integer> dcIds);
 
+	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc LEFT JOIN FETCH dc.items WHERE dc.dcId IN :dcIds")
+	List<DeliveryChallan> findByDcIdInWithItems(@Param("dcIds") List<Integer> dcIds);
+
 }

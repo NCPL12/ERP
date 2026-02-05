@@ -208,9 +208,9 @@ public class OptimizedMaterialTrackerService {
                 .map(item -> item.getDeliveryChallan().getDcId())
                 .collect(Collectors.toSet());
         
-        Map<Integer, DeliveryChallan> dcMap = dcRepo.findByDcIdIn(new ArrayList<>(dcIds))
+        Map<Integer, DeliveryChallan> dcMap = dcRepo.findByDcIdInWithItems(new ArrayList<>(dcIds))
                 .stream()
-                .collect(Collectors.toMap(DeliveryChallan::getDcId, dc -> dc));
+                .collect(Collectors.toMap(DeliveryChallan::getDcId, dc -> dc, (existing, duplicate) -> existing));
 
         Map<String, Object> result = new HashMap<>();
         result.put("designItemsMap", designItemsMap);

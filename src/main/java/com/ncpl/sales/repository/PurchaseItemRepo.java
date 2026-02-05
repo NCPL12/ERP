@@ -29,7 +29,7 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 	@Query(" from PurchaseItem where model_no=?1 order by unitPrice")
 	List<PurchaseItem> findCheapestPurchaseItem(String modelNo);
 
-	@Query("SELECT pi FROM PurchaseItem pi WHERE pi.description IN :salesItemIds")
+	@Query("SELECT pi FROM PurchaseItem pi LEFT JOIN FETCH pi.purchaseOrder WHERE pi.description IN :salesItemIds")
 	List<PurchaseItem> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
 
 	@Query(value = "SELECT po.po_number, " +

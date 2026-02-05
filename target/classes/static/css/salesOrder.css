@@ -1,0 +1,60 @@
+@charset "ISO-8859-1";
+#table-header {
+  display: table; /* to take the same width as tr */
+  width: calc(100% - 17px); /* - 17px because of the scrollbar width */
+  font-size:12px;
+}
+
+#table-body {
+  display: block; /* to enable vertical scrolling */
+  max-height: 449px; /* e.g. */
+  overflow-y: scroll; /* keeps the scrollbar even if it doesn't need it; display purpose */
+}
+
+#table-footer {
+  display: table; /* to take the same width as tr */
+  width: calc(100% - 17px); /* - 17px because of the scrollbar width */
+}
+.button-div-style{
+	    margin: 1%!important;
+}
+.PositionofTextbox{
+ height: 24px!important;
+ border-radius:0!important;
+ }
+ 
+ .styleOfSlNo{
+width: 5%;
+text-align: center;
+}
+
+ .tfootPos{
+ height: 24px!important;
+ border-radius:0!important;
+ }
+ 
+ #salesTable td{
+ 	padding: .15em !important;
+ }
+ 
+ #itemMasterList tr td {
+    height: 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    padding: 10px;
+}
+.border-color{
+	border-color: red;
+}
+#salesTable{
+  display:block;
+}
+.thStyle{
+   padding-left: 0px!important;
+   padding-right: 0px!important;
+   padding-bottom: 25px!important;
+   text-align: center;
+}
+.hideTd{
+	display:none;
+}

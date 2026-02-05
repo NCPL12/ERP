@@ -22,7 +22,7 @@ public interface SalesOrderDesignItemsRepo extends JpaRepository<DesignItems, Lo
 	@Query(" from DesignItems where item_id=?1 and design_id=?2")
 	Optional<DesignItems> findDesignItemByItemIdAndDesignId(String itemId, long id);
 	
-	@Query("SELECT di FROM DesignItems di WHERE di.salesOrderDesign.salesItemId IN :salesItemIds")
+	@Query("SELECT di FROM DesignItems di JOIN FETCH di.salesOrderDesign sod WHERE sod.salesItemId IN :salesItemIds")
 	List<DesignItems> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
 
 }

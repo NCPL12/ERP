@@ -31,7 +31,7 @@ public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanI
 	@Query( value = "SELECT * FROM  tbl_dc_items WHERE (description IN (:soItemId)) and (delivered_quantity<>0 or todays_qty<>0)",nativeQuery = true)
 	List<DeliveryChallanItems> getDcItemListBySOItemIdWhereDcQtyNonZero(@Param("soItemId") String soItemId);
 	
-	@Query("SELECT dci FROM DeliveryChallanItems dci WHERE dci.description IN :salesItemIds")
+	@Query("SELECT dci FROM DeliveryChallanItems dci LEFT JOIN FETCH dci.deliveryChallan WHERE dci.description IN :salesItemIds")
 	List<DeliveryChallanItems> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
     
     

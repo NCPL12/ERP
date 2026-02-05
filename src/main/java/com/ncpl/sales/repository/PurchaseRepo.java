@@ -39,7 +39,7 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 			"having poQty>grnQty;",nativeQuery = true)
 	public List<PurchaseOrder> getpendingPoList();
 	
-	@Query("SELECT po FROM PurchaseOrder po WHERE po.poNumber IN :poNumbers")
+	@Query("SELECT DISTINCT po FROM PurchaseOrder po LEFT JOIN FETCH po.party WHERE po.poNumber IN :poNumbers")
 	List<PurchaseOrder> findByPoNumberIn(@Param("poNumbers") List<String> poNumbers);
 
 }
