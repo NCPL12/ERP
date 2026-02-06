@@ -114,6 +114,7 @@ public class OptimizedMaterialTrackerService {
     /**
      * Batch query for DC items by sales item IDs
      */
+    
     private Map<String, List<DeliveryChallanItems>> getDcItemsBySalesItemIds(List<String> salesItemIds) {
         List<DeliveryChallanItems> allDcItems = dcItemRepo.findBySalesItemIdIn(salesItemIds);
         return allDcItems.stream()
@@ -174,6 +175,7 @@ public class OptimizedMaterialTrackerService {
         
         Set<Long> designIds = designItemsMap.values().stream()
                 .flatMap(List::stream)
+                .filter(item -> item.getSalesOrderDesign() != null)
                 .map(item -> item.getSalesOrderDesign().getId())
                 .collect(Collectors.toSet());
         
@@ -189,6 +191,7 @@ public class OptimizedMaterialTrackerService {
         // Get all purchase order IDs for batch loading
         Set<String> poIds = purchaseItemsMap.values().stream()
                 .flatMap(List::stream)
+                .filter(item -> item.getPurchaseOrder() != null)
                 .map(item -> item.getPurchaseOrder().getPoNumber())
                 .collect(Collectors.toSet());
         
@@ -205,6 +208,7 @@ public class OptimizedMaterialTrackerService {
         // Get all DC IDs for batch loading
         Set<Integer> dcIds = dcItemsMap.values().stream()
                 .flatMap(List::stream)
+                .filter(item -> item.getDeliveryChallan() != null)
                 .map(item -> item.getDeliveryChallan().getDcId())
                 .collect(Collectors.toSet());
         

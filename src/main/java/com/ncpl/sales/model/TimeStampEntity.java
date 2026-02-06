@@ -42,13 +42,26 @@ public abstract class TimeStampEntity {
 	@PrePersist
 	protected void onCreate() {
 		updated = created = new Date();
-		createdBy = getUsernameOfLoggedInUser();
+		String userName = getUsernameOfLoggedInUser();
+		if (userName != null) {
+			createdBy = userName;
+			lastModifiedBy = userName;
+		}
 	}
 
 	@PreUpdate
 	protected void onUpdate() {
+		if (created == null) {
+			created = new Date();
+		}
 		updated = new Date();
-		lastModifiedBy = getUsernameOfLoggedInUser();
+		String userName = getUsernameOfLoggedInUser();
+		if (userName != null) {
+			if (createdBy == null) {
+				createdBy = userName;
+			}
+			lastModifiedBy = userName;
+		}
 	}
 
 	public Date getCreated() {
@@ -85,9 +98,14 @@ public abstract class TimeStampEntity {
 
 	
 	private String getUsernameOfLoggedInUser() {
-		String userName = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userName;
-    }
+		if (SecurityContextHolder.getContext() == null) {
+			return null;
+		}
+		if (SecurityContextHolder.getContext().getAuthentication() == null) {
+			return null;
+		}
+		return SecurityContextHolder.getContext().getAuthentication().getName();
+	    }
 	
 	
 }

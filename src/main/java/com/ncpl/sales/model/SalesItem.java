@@ -28,7 +28,7 @@ import com.ncpl.sales.generator.SalesIdGenerator;
 
 @Entity
 @Table(name = "tbl_sales_item")
-public class SalesItem implements Comparable<SalesItem>{
+public class SalesItem extends TimeStampEntity implements Comparable<SalesItem>{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sales_seq")
