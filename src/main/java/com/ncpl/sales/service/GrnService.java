@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.DeliveryChallan;
@@ -153,6 +154,70 @@ public class GrnService {
 		
 		if (searchValue != null && !searchValue.trim().isEmpty()) {
 			// Add wildcards for LIKE query (removed CONCAT from HQL query)
+			String searchKeyword = "%" + searchValue.trim() + "%";
+			pagedResult = grnRepo.searchGrns(searchKeyword, paging);
+		} else {
+			pagedResult = grnRepo.findAllGrn(paging);
+		}
+		
+		// Batch load PurchaseOrders to avoid N+1 queries
+		List<Grn> grnList = pagedResult.getContent();
+		if (!grnList.isEmpty()) {
+			List<String> poNumbers = new ArrayList<>();
+			for (Grn grn : grnList) {
+				poNumbers.add(grn.getPoNumber());
+			}
+			
+			// Batch fetch all PurchaseOrders in one query
+			List<PurchaseOrder> purchaseOrders = purchaseOrderService.findByPoNumberIn(poNumbers);
+			Map<String, PurchaseOrder> poMap = new HashMap<>();
+			for (PurchaseOrder po : purchaseOrders) {
+				poMap.put(po.getPoNumber(), po);
+			}
+			
+			// Enrich GRN data
+			for (Grn grn : grnList) {
+				PurchaseOrder poObj = poMap.get(grn.getPoNumber());
+				if (poObj != null) {
+					String vendor = poObj.getParty().getPartyName();
+					Date poDate = poObj.getUpdated();
+					grn.set("vendor", vendor);
+					grn.set("poDate", poDate);
+				}
+				
+				// Calculate total from GRN items
+				float total = 0;
+				List<GrnItems> grnItems = grn.getItems();
+				if (grnItems != null) {
+					for (GrnItems grnItem : grnItems) {
+						total += grnItem.getAmount();
+					}
+				}
+				grn.set("total", total);
+			}
+		}
+		
+		return pagedResult;
+	}
+	
+	/**
+	 * Get paginated list of GRNs with sorting support
+	 * @param pageNo - page number (0-based)
+	 * @param pageSize - number of items per page
+	 * @param searchValue - optional search term
+	 * @param sortField - field to sort by
+	 * @param sortDirection - sort direction (asc/desc)
+	 * @return paginated list of GRNs with enriched data
+	 */
+	public Page<Grn> getPaginatedGrnList(int pageNo, int pageSize, String searchValue, String sortField, String sortDirection) {
+		// Create sort object
+		Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+		Sort sort = Sort.by(direction, sortField);
+		Pageable paging = PageRequest.of(pageNo, pageSize, sort);
+		Page<Grn> pagedResult;
+		
+		if (searchValue != null && !searchValue.trim().isEmpty()) {
+			// Add wildcards for LIKE query
 			String searchKeyword = "%" + searchValue.trim() + "%";
 			pagedResult = grnRepo.searchGrns(searchKeyword, paging);
 		} else {

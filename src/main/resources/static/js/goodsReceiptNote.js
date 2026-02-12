@@ -5,26 +5,59 @@ $(document).ready(function(){
 	        var title = $(this).text();
 	        $(this).html( '<input type="text" style="width:100%;" placeholder="Search '+title+'" />' );
 	        $( 'input', this ).on( 'keyup change', function () {
-	            grnDataTable
-	            	.column(i)
-	            	.search(this.value)
-	                .draw();
+	            if (grnDataTable && grnDataTable.column(i).search() !== this.value) {
+	                grnDataTable.column(i).search(this.value).draw();
+	            }
 	        } );
 	    } );
+	    function getSortFieldForColumn(colIdx) {
+	        var map = { 0: "grnId", 1: "poNumber", 4: "created", 6: "invoiceNo", 7: "invoiceDate" };
+	        return map[colIdx] || "created";
+	    }
 	    grnDataTable= $('#grnList').DataTable({
 	    	processing: true,
 	    	serverSide: true,
 	    	orderCellsTop: true,
 		    fixedHeader: true,
-		    order:[[ 2, "desc" ]],
+		    order:[[ 4, "desc" ]],
 		    'columnDefs': [ {
-	    	    'targets': [0,1,2,3,4,5,6,7,8], /* table column index */
-	    	    'orderable': false, /* here set the true or false */
+	    	    'targets': [2,3,5,7,8,9,10],
+	    	    'orderable': false,
 	    	 }],
-	    	"ajax": {
-	    		"url": pageContext+"/api/grn/datatable",
-	    		"type": "GET",
-	    		"dataSrc": "data"
+	    	ajax: function (data, callback, settings) {
+	    		var keyword = (data.search && data.search.value) ? data.search.value.trim() : "";
+	    		if (!keyword) {
+	    		    for (var i = 0; i < 11; i++) {
+	    		        var colSearch = ($('#grnList thead tr:eq(1) th:eq(' + i + ') input').val() || '').trim();
+	    		        if (colSearch) { keyword = colSearch; break; }
+	    		    }
+	    		}
+	    		var sortIdx = (data.order && data.order.length) ? data.order[0].column : 4;
+	    		var sortDir = (data.order && data.order.length && data.order[0].dir) ? data.order[0].dir : "desc";
+	    		var sortField = getSortFieldForColumn(sortIdx);
+	    		$.ajax({
+	    		    url: pageContext + "/api/grn/datatable",
+	    		    type: "GET",
+	    		    data: {
+	    		        draw: data.draw,
+	    		        start: data.start,
+	    		        length: data.length,
+	    		        keyword: keyword,
+	    		        sortField: sortField,
+	    		        sortDir: sortDir
+	    		    },
+	    		    success: function (resp) {
+	    		        callback({
+	    		            draw: resp.draw,
+	    		            recordsTotal: resp.recordsTotal,
+	    		            recordsFiltered: resp.recordsFiltered,
+	    		            data: resp.data || []
+	    		        });
+	    		    },
+	    		    error: function (xhr) {
+	    		        callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+	    		    }
+	    		});
 	    	},
 	    	"columns": [ {
 				"data" : "grnId",
@@ -36,10 +69,12 @@ $(document).ready(function(){
 			}, {
 				"data" : "created",
 				"defaultContent":"",
-				"class":"hideTd"
+				"class":"hideTd",
+				"type": "date"
 			}, {
 				"data" : "poDate",
 				"defaultContent":"",
+				"type": "date",
 				render: function (data) {
 					if (!data) {
 						return "";
@@ -49,6 +84,7 @@ $(document).ready(function(){
 			}, {
 				"data" : "created",
 				"defaultContent":"",
+				"type": "date",
 				render: function (data) {
 					if (!data) {
 						return "";
@@ -75,7 +111,8 @@ $(document).ready(function(){
 			
 			{
 				"data" : "total",
-				"defaultContent":""
+				"defaultContent":"",
+				"type": "num"
 			},
 			
 			{

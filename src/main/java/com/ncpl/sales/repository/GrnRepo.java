@@ -19,7 +19,7 @@ public interface GrnRepo extends JpaRepository<Grn, String>{
 	public List<Grn> findGrnListByPoNumber(String poNumber);
 	@Query(" from Grn where archive=0 order by created desc ")
 	public List<Grn> findAllGrn();
-	@Query("SELECT g FROM Grn g WHERE g.archive = 0 order by g.created desc")
+	@Query("SELECT g FROM Grn g WHERE g.archive = 0")
 	public Page<Grn> findAllGrn(Pageable pageable);
 	@Query(" from Grn where archive=1 ")
 	public List<Grn> findAllGrnArchived();

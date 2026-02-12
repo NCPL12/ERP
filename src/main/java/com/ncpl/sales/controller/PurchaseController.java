@@ -849,10 +849,36 @@ public class PurchaseController {
 	public ResponseEntity<?> getGrnDataTable(HttpServletRequest request) {
 		try {
 			// DataTables parameters
-			int draw = Integer.parseInt(request.getParameter("draw"));
-			int start = Integer.parseInt(request.getParameter("start"));
-			int length = Integer.parseInt(request.getParameter("length"));
+			int draw = Integer.parseInt(request.getParameter("draw") != null ? request.getParameter("draw") : "1");
+			int start = Integer.parseInt(request.getParameter("start") != null ? request.getParameter("start") : "0");
+			int length = Integer.parseInt(request.getParameter("length") != null ? request.getParameter("length") : "10");
 			String searchValue = request.getParameter("search[value]");
+
+			// Optional query params (frontend may send sortField/sortDir when using custom ajax)
+			String sortFieldParam = request.getParameter("sortField");
+			String sortDirParam = request.getParameter("sortDir");
+
+			// Sorting parameters (null-safe: DataTables sends order[0][column] and order[0][dir])
+			int sortColumn = 4;
+			String sortDirection = "desc";
+			String sortField;
+			if (sortFieldParam != null && !sortFieldParam.trim().isEmpty() && sortDirParam != null && !sortDirParam.trim().isEmpty()) {
+				sortField = sortFieldParam.trim();
+				sortDirection = sortDirParam.trim();
+			} else {
+				String orderCol = request.getParameter("order[0][column]");
+				String orderDir = request.getParameter("order[0][dir]");
+				if (orderCol != null && !orderCol.trim().isEmpty()) {
+					try {
+						sortColumn = Integer.parseInt(orderCol.trim());
+					} catch (NumberFormatException ignored) {}
+				}
+				if (orderDir != null && !orderDir.trim().isEmpty()) {
+					sortDirection = orderDir.trim();
+				}
+				sortField = getSortField(sortColumn);
+			}
+
 			if (searchValue == null || searchValue.trim().isEmpty()) {
 				for (int i = 0; i < 12; i++) {
 					String columnSearchValue = request.getParameter("columns[" + i + "][search][value]");
@@ -862,12 +888,18 @@ public class PurchaseController {
 					}
 				}
 			}
-			
+
+			// Support explicit keyword param from custom ajax
+			String keywordParam = request.getParameter("keyword");
+			if (keywordParam != null && !keywordParam.trim().isEmpty()) {
+				searchValue = keywordParam.trim();
+			}
+
 			// Calculate page number for database pagination
 			int pageNo = start / length;
-			
-			// Get paginated GRN list
-			Page<Grn> grnPage = grnService.getPaginatedGrnList(pageNo, length, searchValue);
+
+			// Get paginated GRN list with sorting
+			Page<Grn> grnPage = grnService.getPaginatedGrnList(pageNo, length, searchValue, sortField, sortDirection);
 			List<Grn> grnList = grnPage.getContent();
 			
 			// Get total counts
@@ -886,6 +918,18 @@ public class PurchaseController {
 			System.err.println("ERROR in getGrnDataTable: " + e.getMessage());
 			e.printStackTrace();
 			return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}	
+	
+	// Helper method to map DataTables column index to field name
+	private String getSortField(int columnIndex) {
+		switch (columnIndex) {
+			case 0: return "grnId";
+			case 1: return "poNumber";
+			case 4: return "created"; // GRN date (from TimeStampEntity)
+			case 6: return "invoiceNo";
+			case 7: return "invoiceDate"; // Use actual database field for total sorting fallback
+			default: return "created"; // default sort by created date
 		}
 	}	
 	
