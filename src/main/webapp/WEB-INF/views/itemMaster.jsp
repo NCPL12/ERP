@@ -534,13 +534,7 @@ var user = ${user};
     </form>
     <div id="response"></div> --%>
 			</div>
-					<!-- /.modal-content -->
-				</div>
-				
+</div>
 			</div>
-	
-	<!-- /.make modal ends -->
-
 </body>
-
-</html>git 
+</html> 
