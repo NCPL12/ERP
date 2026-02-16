@@ -26,6 +26,12 @@ $(document).ready(function(){
 	    	 }],
 	    	ajax: function (data, callback, settings) {
 	    		var keyword = (data.search && data.search.value) ? data.search.value.trim() : "";
+	    		if (!keyword && data.columns) {
+	    		    for (var i = 0; i < data.columns.length; i++) {
+	    		        var colSearch = (data.columns[i].search && data.columns[i].search.value) ? data.columns[i].search.value.trim() : "";
+	    		        if (colSearch) { keyword = colSearch; break; }
+	    		    }
+	    		}
 	    		if (!keyword) {
 	    		    for (var i = 0; i < 11; i++) {
 	    		        var colSearch = ($('#grnList thead tr:eq(1) th:eq(' + i + ') input').val() || '').trim();
@@ -35,17 +41,24 @@ $(document).ready(function(){
 	    		var sortIdx = (data.order && data.order.length) ? data.order[0].column : 4;
 	    		var sortDir = (data.order && data.order.length && data.order[0].dir) ? data.order[0].dir : "desc";
 	    		var sortField = getSortFieldForColumn(sortIdx);
-	    		$.ajax({
-	    		    url: pageContext + "/api/grn/datatable",
-	    		    type: "GET",
-	    		    data: {
+	    		var ajaxData = {
 	    		        draw: data.draw,
 	    		        start: data.start,
 	    		        length: data.length,
 	    		        keyword: keyword,
 	    		        sortField: sortField,
 	    		        sortDir: sortDir
-	    		    },
+	    		};
+	    		// Send column-specific search so backend can filter by column (e.g. Grn No. only)
+	    		for (var c = 0; c < 11; c++) {
+	    		    var colVal = (data.columns && data.columns[c] && data.columns[c].search && data.columns[c].search.value) ? data.columns[c].search.value.trim() : "";
+	    		    if (!colVal) colVal = ($('#grnList thead tr:eq(1) th:eq(' + c + ') input').val() || '').trim();
+	    		    if (colVal) ajaxData["columns[" + c + "][search][value]"] = colVal;
+	    		}
+	    		$.ajax({
+	    		    url: pageContext + "/api/grn/datatable",
+	    		    type: "GET",
+	    		    data: ajaxData,
 	    		    success: function (resp) {
 	    		        callback({
 	    		            draw: resp.draw,

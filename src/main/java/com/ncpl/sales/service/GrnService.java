@@ -280,6 +280,68 @@ public class GrnService {
 		}
 	}
 
+	/**
+	 * Column-specific search: only non-empty params are applied (each filters its own column).
+	 * Pass null or empty for columns that should not filter.
+	 * searchPoDate: raw string (e.g. "13-05-25"); repo adds LIKE wildcards.
+	 */
+	public Page<Grn> getPaginatedGrnListByColumns(int pageNo, int pageSize,
+			String searchGrnId, String searchPoNumber, String searchPoDate, String searchInvoiceNo, String searchVendor,
+			String sortField, String sortDirection) {
+		Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+		Sort sort = Sort.by(direction, sortField);
+		Pageable paging = PageRequest.of(pageNo, pageSize, sort);
+		String grnIdKw = (searchGrnId != null && !searchGrnId.trim().isEmpty()) ? "%" + searchGrnId.trim() + "%" : null;
+		String poNumberKw = (searchPoNumber != null && !searchPoNumber.trim().isEmpty()) ? "%" + searchPoNumber.trim() + "%" : null;
+		String poDateKw = (searchPoDate != null && !searchPoDate.trim().isEmpty()) ? searchPoDate.trim() : null; // repo uses CONCAT('%', :searchPoDate, '%')
+		String invoiceNoKw = (searchInvoiceNo != null && !searchInvoiceNo.trim().isEmpty()) ? "%" + searchInvoiceNo.trim() + "%" : null;
+		String vendorKw = (searchVendor != null && !searchVendor.trim().isEmpty()) ? "%" + searchVendor.trim() + "%" : null;
+		boolean hasColumnFilter = (grnIdKw != null || poNumberKw != null || poDateKw != null || invoiceNoKw != null || vendorKw != null);
+		Page<Grn> pagedResult = hasColumnFilter
+				? grnRepo.searchGrnsByColumns(grnIdKw, poNumberKw, poDateKw, invoiceNoKw, vendorKw, paging)
+				: grnRepo.findAllGrn(paging);
+		List<Grn> grnList = pagedResult.getContent();
+		if (!grnList.isEmpty()) {
+			List<String> poNumbers = new ArrayList<>();
+			for (Grn grn : grnList) {
+				poNumbers.add(grn.getPoNumber());
+			}
+			List<PurchaseOrder> purchaseOrders = purchaseOrderService.findByPoNumberIn(poNumbers);
+			Map<String, PurchaseOrder> poMap = new HashMap<>();
+			for (PurchaseOrder po : purchaseOrders) {
+				poMap.put(po.getPoNumber(), po);
+			}
+			for (Grn grn : grnList) {
+				PurchaseOrder poObj = poMap.get(grn.getPoNumber());
+				if (poObj != null) {
+					grn.set("vendor", poObj.getParty().getPartyName());
+					grn.set("poDate", poObj.getUpdated());
+				}
+				float total = 0;
+				List<GrnItems> grnItems = grn.getItems();
+				if (grnItems != null) {
+					for (GrnItems grnItem : grnItems) {
+						total += grnItem.getAmount();
+					}
+				}
+				grn.set("total", total);
+			}
+		}
+		return pagedResult;
+	}
+
+	public long getGrnCountByColumns(String searchGrnId, String searchPoNumber, String searchPoDate, String searchInvoiceNo, String searchVendor) {
+		String grnIdKw = (searchGrnId != null && !searchGrnId.trim().isEmpty()) ? "%" + searchGrnId.trim() + "%" : null;
+		String poNumberKw = (searchPoNumber != null && !searchPoNumber.trim().isEmpty()) ? "%" + searchPoNumber.trim() + "%" : null;
+		String poDateKw = (searchPoDate != null && !searchPoDate.trim().isEmpty()) ? searchPoDate.trim() : null;
+		String invoiceNoKw = (searchInvoiceNo != null && !searchInvoiceNo.trim().isEmpty()) ? "%" + searchInvoiceNo.trim() + "%" : null;
+		String vendorKw = (searchVendor != null && !searchVendor.trim().isEmpty()) ? "%" + searchVendor.trim() + "%" : null;
+		boolean hasColumnFilter = (grnIdKw != null || poNumberKw != null || poDateKw != null || invoiceNoKw != null || vendorKw != null);
+		return hasColumnFilter
+				? grnRepo.countSearchGrnsByColumns(grnIdKw, poNumberKw, poDateKw, invoiceNoKw, vendorKw)
+				: grnRepo.countAllNonArchivedGrns();
+	}
+
 	public Optional<Grn> getGrnById(String grnId) {
 		Optional<Grn> grn = grnRepo.findById(grnId);
 		String poNumber = grn.get().getPoNumber();

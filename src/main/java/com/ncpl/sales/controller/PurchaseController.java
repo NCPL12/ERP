@@ -879,32 +879,47 @@ public class PurchaseController {
 				sortField = getSortField(sortColumn);
 			}
 
-			if (searchValue == null || searchValue.trim().isEmpty()) {
-				for (int i = 0; i < 12; i++) {
-					String columnSearchValue = request.getParameter("columns[" + i + "][search][value]");
-					if (columnSearchValue != null && !columnSearchValue.trim().isEmpty()) {
-						searchValue = columnSearchValue;
-						break;
+			// Column-specific search (0=Grn No., 1=PO Number, 3=PO Date, 5=Vendor, 6=Inv No)
+			String col0 = trimParam(request.getParameter("columns[0][search][value]"));
+			String col1 = trimParam(request.getParameter("columns[1][search][value]"));
+			String col3 = trimParam(request.getParameter("columns[3][search][value]"));
+			String col5 = trimParam(request.getParameter("columns[5][search][value]"));
+			String col6 = trimParam(request.getParameter("columns[6][search][value]"));
+			boolean hasColumnSearch = isNotEmpty(col0) || isNotEmpty(col1) || isNotEmpty(col3) || isNotEmpty(col5) || isNotEmpty(col6);
+
+			// Fallback: global search / keyword (single search across all fields)
+			if (!hasColumnSearch) {
+				searchValue = request.getParameter("search[value]");
+				if (searchValue == null || searchValue.trim().isEmpty()) {
+					for (int i = 0; i < 12; i++) {
+						String columnSearchValue = request.getParameter("columns[" + i + "][search][value]");
+						if (columnSearchValue != null && !columnSearchValue.trim().isEmpty()) {
+							searchValue = columnSearchValue;
+							break;
+						}
 					}
 				}
-			}
-
-			// Support explicit keyword param from custom ajax
-			String keywordParam = request.getParameter("keyword");
-			if (keywordParam != null && !keywordParam.trim().isEmpty()) {
-				searchValue = keywordParam.trim();
+				if (searchValue != null) searchValue = searchValue.trim();
+				String keywordParam = request.getParameter("keyword");
+				if (keywordParam != null && !keywordParam.trim().isEmpty()) {
+					searchValue = keywordParam.trim();
+				}
 			}
 
 			// Calculate page number for database pagination
 			int pageNo = start / length;
 
-			// Get paginated GRN list with sorting
-			Page<Grn> grnPage = grnService.getPaginatedGrnList(pageNo, length, searchValue, sortField, sortDirection);
+			Page<Grn> grnPage;
+			long recordsFiltered;
+			if (hasColumnSearch) {
+				grnPage = grnService.getPaginatedGrnListByColumns(pageNo, length, col0, col1, col3, col6, col5, sortField, sortDirection);
+				recordsFiltered = grnService.getGrnCountByColumns(col0, col1, col3, col6, col5);
+			} else {
+				grnPage = grnService.getPaginatedGrnList(pageNo, length, searchValue, sortField, sortDirection);
+				recordsFiltered = grnService.getGrnCount(searchValue);
+			}
 			List<Grn> grnList = grnPage.getContent();
-			
-			// Get total counts
-			long recordsTotal = grnService.getGrnCount(null); // Total GRNs without search
-			long recordsFiltered = grnService.getGrnCount(searchValue); // Total GRNs with search
+			long recordsTotal = grnService.getGrnCount(null);
 			
 			// Prepare response
 			Map<String, Object> response = new HashMap<>();
@@ -931,6 +946,14 @@ public class PurchaseController {
 			case 7: return "invoiceDate"; // Use actual database field for total sorting fallback
 			default: return "created"; // default sort by created date
 		}
+	}
+
+	private static String trimParam(String value) {
+		return value == null ? null : value.trim();
+	}
+
+	private static boolean isNotEmpty(String value) {
+		return value != null && !value.isEmpty();
 	}	
 	
 	//get purchase items by purchseItemId		
