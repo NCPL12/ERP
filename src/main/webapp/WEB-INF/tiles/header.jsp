@@ -67,6 +67,12 @@
 								padding-top: .75rem;
 								padding-bottom: .75rem;
 							}
+							/* Logo/icon: no hover effect - keep same look on hover */
+							.main-sidebar .brand-link:hover,
+							.main-sidebar .brand-link:focus {
+								background-color: transparent !important;
+								opacity: 1;
+							}
 
 							.sidebar-collapse .main-sidebar .brand-link {
 								justify-content: center;
@@ -138,7 +144,7 @@
 								width: 2.1rem;
 								height: 2.1rem;
 								border-radius: 50%;
-								background-color: #007bff;
+								background-color: rgba(255, 255, 255, 0.2);
 								color: #fff;
 								display: flex;
 								align-items: center;
@@ -146,6 +152,9 @@
 								font-weight: bold;
 								font-size: 1.2rem;
 								text-transform: uppercase;
+							}
+							.main-sidebar .user-panel:hover .user-avatar-circle {
+								background-color: rgba(255, 255, 255, 0.25);
 							}
 
 							/* Center user panel when sidebar is collapsed */
@@ -166,10 +175,70 @@
 								overflow: hidden;
 								text-overflow: ellipsis;
 							}
+
+							/* Sidebar hover fix: keep hover subtle, avoid solid blue "button" look */
+							.main-sidebar .user-panel .info a,
+							.main-sidebar .user-panel .info a:hover,
+							.main-sidebar .user-panel .info a:focus {
+								background-color: transparent !important;
+								border: none !important;
+								box-shadow: none !important;
+								border-radius: 0 !important;
+							}
+							.main-sidebar .user-panel .info a:hover,
+							.main-sidebar .user-panel .info a:focus {
+								color: #c2c7d0 !important;
+								opacity: 0.95;
+							}
+							.main-sidebar .nav-sidebar .nav-link:hover,
+							.main-sidebar .nav-sidebar .nav-link:focus,
+							.main-sidebar .nav-treeview .nav-link:hover,
+							.main-sidebar .nav-treeview .nav-link:focus {
+								background-color: rgba(255, 255, 255, 0.1) !important;
+							}
+							/* Only active item gets blue; hover alone must not look like a button */
+							.main-sidebar .nav-sidebar > .nav-item:hover > .nav-link:not(.active),
+							.main-sidebar .nav-treeview > .nav-item > .nav-link:hover:not(.active) {
+								background-color: rgba(255, 255, 255, 0.1) !important;
+							}
+
+							/* Prevent sidebar from expanding on hover - keep narrow (no "moving") */
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover,
+							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused {
+								width: 4.6rem !important;
+								min-width: 4.6rem !important;
+							}
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link,
+							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused .brand-link,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-link,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused .brand-link {
+								width: 4.6rem !important;
+							}
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover .user-panel > .info,
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover .nav-sidebar .nav-link p,
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-text,
+							.sidebar-mini.sidebar-collapse .main-sidebar:hover .logo-xl,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .user-panel > .info,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .nav-sidebar .nav-link p,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-text,
+							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .logo-xl {
+								display: none !important;
+								opacity: 0 !important;
+								visibility: hidden !important;
+								width: 0 !important;
+								overflow: hidden !important;
+							}
 						</style>
 						<script type="text/javascript">
 							$(document).ready(function () {
 								$('body').addClass('sidebar-mini sidebar-mini-md').removeClass('sidebar-collapse');
+
+								// Prevent sidebar from expanding on hover (keep narrow, only icon highlight like 2nd photo)
+								setTimeout(function () {
+									$('.main-sidebar').off('mouseenter mouseleave');
+								}, 0);
 
 								$('.select2').select2({ dropdownAutoWidth: true });
 
