@@ -120,7 +120,9 @@ public class DeliveryChallanService {
 							todayQty =  Float.parseFloat((String) object.get("todayQty"));
 						}
 						
-						DesignItems designItemsList = designItemRepo.findDesignItemObjByItemIdAndDesignId(itemId,designId);
+						DesignItems designItemsList = designItemRepo.findDesignItemListByItemIdAndDesignId(itemId, designId).stream().findFirst().orElse(null);
+						if (designItemsList == null)
+							continue;
 						designItemsList.setDeliveredQty(deliveredQty+todayQty);
 						Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
 						if(stock!=null) {

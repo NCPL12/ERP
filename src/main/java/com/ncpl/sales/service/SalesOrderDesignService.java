@@ -79,7 +79,6 @@ public class SalesOrderDesignService {
 			for (DesignItems designItems : designItemList) {
 				String itemId = designItems.getItemId();
 				Optional<ItemMaster> itemObj = itemService.getItemById(itemId);
-				System.out.println(itemId);
 				designItems.setItemId(itemObj.get().getModel());
 				
 				designItems.setQuantity(designItems.getQuantity());
@@ -201,8 +200,8 @@ public class SalesOrderDesignService {
 	}
 
 	public SalesOrderDesign findSalesOrderDesignObjBysalesItemId(String soItemId) {
-		SalesOrderDesign designObj = designSo.getDesginObjBySoItemId(soItemId);
-		return designObj;
+		List<SalesOrderDesign> list = designSo.getDesginListBySoItemId(soItemId);
+		return list.isEmpty() ? null : list.get(0);
 	}
 
 	public SalesOrderDesign findSalesOrderDesignObjBysalesItemIdAndDate(String soItemId, Timestamp sqlFromDate,

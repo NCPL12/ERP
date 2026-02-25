@@ -470,8 +470,6 @@ public class SalesController {
 	@GetMapping("/api/purchaseOrderDropDown")
 	public ResponseEntity<List<SalesOrder>> purchaseOrderDropDown() {
 		List<SalesOrder> salesList = salesService.getSalesOrderList();
-
-		System.out.println("This is sales list" + salesList);
 		return new ResponseEntity<List<SalesOrder>>(salesList, HttpStatus.OK);
 
 	}
@@ -1049,54 +1047,56 @@ public class SalesController {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@GetMapping("/stock/summary_details/")
-	public ModelAndView stocksummary(HttpServletRequest request, Model model) throws ParseException {
+	public ModelAndView stocksummary(HttpServletRequest request, Model model, RedirectAttributes redirectAttr) throws ParseException {
 		String fromDateString = request.getParameter("reportFromDate");
-		fromDateString = fromDateString.replaceAll("/", "-");
 		String todateString = request.getParameter("reportToDate");
+
+		if (fromDateString == null || fromDateString.trim().isEmpty()
+				|| todateString == null || todateString.trim().isEmpty()) {
+			return new ModelAndView("redirect:/sales_report");
+		}
+
+		fromDateString = fromDateString.replaceAll("/", "-");
 		todateString = todateString.replaceAll("/", "-");
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+		sdf.setLenient(false);
 		Date todaysDate = null;
 		Date fromDate = null;
-		// Parsing date
 		try {
 			todaysDate = sdf.parse(todateString);
 			fromDate = sdf.parse(fromDateString);
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warn("Invalid date format for stock summary: from={}, to={}", fromDateString, todateString, e);
+			return new ModelAndView("redirect:/sales_report");
 		}
 		Calendar c = Calendar.getInstance();
 		Calendar c1 = Calendar.getInstance();
 		c.setTime(todaysDate);
 		c1.setTime(fromDate);
-		// c.add(Calendar.DATE, 0);
 		todaysDate = c.getTime();
-		// c.add(Calendar.DATE, 30); //Last 30 days data
 		fromDate = c1.getTime();
 		c.add(Calendar.HOUR_OF_DAY, +23);
 		c.add(Calendar.MINUTE, 59);
+		c.add(Calendar.SECOND, 59);
 		todaysDate = c.getTime();
 		Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(todaysDate);
 		Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDate);
 
-		// Map<String, Map> pMap =
-		// salesService.getstockSummarydetails(sqlFromDate,sqlToDate);
+		try {
+			Map<String, Map> pMap = grnService.findgrnListByDate(sqlFromDate, sqlToDate);
 
-		Map<String, Map> pMap = grnService.findgrnListByDate(sqlFromDate, sqlToDate);
+			int month = c.get(Calendar.MONTH);
+			Month monthName = Month.of(month + 1);
+			Map stockSummary = new HashMap();
 
-		// Map<String, Map> dcMap =
-		// salesService.getDcdetails(sqlFromDate,sqlToDate,pMap);
-		// Map<String, Map> grnMap =
-		// salesService.getGrnSummarydetails(sqlFromDate,sqlToDate,pMap);
-		int month = c.get(Calendar.MONTH);
-		Month monthName = Month.of(month + 1);
-		Map stockSummary = new HashMap();
-
-		stockSummary.put("stockMap", pMap);
-		stockSummary.put("monthName", monthName);
-		// stockSummary.put("dcMap", dcMap);
-		// stockSummary.put("grnMap", grnMap);
-		return new ModelAndView(new stocksummaryExcel(), "stockSummary", stockSummary);
+			stockSummary.put("stockMap", pMap);
+			stockSummary.put("monthName", monthName);
+			return new ModelAndView(new stocksummaryExcel(), "stockSummary", stockSummary);
+		} catch (Exception e) {
+			log.error("Error generating stock summary report: {}", e.getMessage(), e);
+			redirectAttr.addFlashAttribute("stockSummaryError", "Stock summary report failed. Please try again or contact support.");
+			return new ModelAndView("redirect:/sales_report");
+		}
 	}
 
 	@PostMapping(value = "/api/add/design")
@@ -1857,7 +1857,6 @@ public class SalesController {
 	 @GetMapping("/api/salesItems_with_design_list_partial")
 		public ResponseEntity<?> salesItemsWithDesignPartial(Model model) {
 			List<SalesOrder> soList = salesService.getAllSalesItemListWithDesignForDashboardPartial();
-			System.out.println("soList size"+soList.size());
 			return new ResponseEntity<>(soList, HttpStatus.OK);
 		}
 	
@@ -1997,7 +1996,6 @@ public class SalesController {
 			 Optional<SalesOrder> salesOrder =salesService.getSalesOrderById(salesOrderNo);
 			 String shippingPartyId=salesOrder.get().getShippingAddress();
 			 String billingPartyId=salesOrder.get().getBillingAddress();
-			 System.out.println(billingPartyId);
 			 Party party=partyRepo.findById(shippingPartyId);
 			
 			 if(party==null) {

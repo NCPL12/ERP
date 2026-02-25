@@ -302,7 +302,7 @@
 		DESIGN_LIST:contextRoot+parentApi+"/design_list/by_sales_item_id",
 		SALES_LIST_WITH_STATUS_NOT_CLOSED:parentApi+"/sales_list/with_status_not_closed",
 		SALES_LIST_PENDING:parentApi+"/sales_list/pending",
-		PURCHASE_LIST:parentApi+"/purchase_List",
+		PURCHASE_LIST:contextRoot+parentApi+"/purchase_List",
 		PURCHASE_LIST_PENDING:parentApi+"/purchase_List/pending",
 		INVOICE_LIST:parentApi+"/invoice_List",
 		GET_ALL_SALES_LIST:parentApi+"/get_all_sales_list",
@@ -314,12 +314,12 @@
 
 		GET_SALES_ITEMS_WITHOUT_DESIGN:parentApi+"/sales-items-without-design",
 
-		GET_POITEMSINPO:parentApi+"/purchase/items/list",
+		GET_POITEMSINPO:contextRoot+parentApi+"/purchase/items/list",
 		POITEM_LASTPRICE:contextRoot+parentApi+"/poItem/LastPrice",
 		GET_DCITEMLISTBYAllDC:parentApi+"/dc_itemlist_for_all_dc",
 		STOCK_BYITEMID:contextRoot+parentApi+"/stock/list/ItemId",
 		CHECK_DC_INVOICE_EXIST:contextRoot+parentApi+"/check_dc_invoice_exists",
-		GET_ITEM_LIST:parentApi+"/get/item_list",
+		GET_ITEM_LIST:contextRoot+parentApi+"/get/item_list",
 		UPDATE_PAYMENT_STATUS:parentApi+"/payment_status",
 		GET_PO_BY_PONUMBER:parentApi+"/get_po_by_ponumber",
 		GET_POLIST_BY_ITEMID:parentApi+"/purchase_list/by_item_id",

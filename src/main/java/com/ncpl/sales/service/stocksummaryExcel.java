@@ -25,6 +25,13 @@ import com.ncpl.sales.generator.FileNameGenerator;
 
 public class stocksummaryExcel extends AbstractXlsxView {
 
+	private static float safeFloat(Map<?, ?> map, String key) {
+		Object v = map.get(key);
+		if (v == null) return 0f;
+		if (v instanceof Number) return ((Number) v).floatValue();
+		try { return Float.parseFloat(String.valueOf(v)); } catch (Exception e) { return 0f; }
+	}
+
 	short VERTICAL_TOP = 0x0;
 	short VERTICAL_TOP1 = 0x1;
 	short VERTICAL_JUSTIFY = 0x2;
@@ -71,28 +78,31 @@ public class stocksummaryExcel extends AbstractXlsxView {
 			HttpServletResponse response) throws Exception {
 		// TODO Auto-generated method stub
 
-		Sheet editAccountSheet = workbook.createSheet("Stock summary");
-		editAccountSheet.setDefaultColumnWidth(9);
-		// editAccountSheet.autoSizeColumn(11);
-
-		
-
 		Map stockMap = (Map) model.get("stockSummary");
-		Object month = stockMap.get("monthName");
-		
-		
-		// Generating File Name
-		String fileName = month.toString() + "-" + "Inward_outward_date.xlsx";
-		// set excel file name
-		response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+		if (stockMap == null) {
+			response.setHeader("Content-Disposition", "attachment; filename=Stock_summary_empty.xlsx");
+			workbook.createSheet("Stock summary");
+			return;
+		}
 
-		Map<String, Float> stockSummaryMap = (Map<String, Float>) stockMap.get("stockMap");
+		Object month = stockMap.get("monthName");
+		String monthStr = month != null ? month.toString() : "Report";
+		String fileName = monthStr + "-Inward_outward_date.xlsx";
+		response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+		response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName.replace("\"", "") + "\"");
+
 		Map<String, Map> stockListmap = (Map<String, Map>) stockMap.get("stockMap");
+		if (stockListmap == null) {
+			workbook.createSheet("Stock summary");
+			return;
+		}
 		Map<String, Map> invoicemap = (Map<String, Map>) stockListmap.get("grnlist");
 		Map<String, Map> noGrnmap = (Map<String, Map>) stockListmap.get("nogrnlist");
-		
-		Map<String, Map> dcmap = (Map<String, Map>) stockMap.get("dcMap");
-		Map<String, Map> grnmap = (Map<String, Map>) stockMap.get("grnMap");
+		if (invoicemap == null) invoicemap = new java.util.HashMap<>();
+		if (noGrnmap == null) noGrnmap = new java.util.HashMap<>();
+
+		Sheet editAccountSheet = workbook.createSheet("Stock summary");
+		editAccountSheet.setDefaultColumnWidth(9);
 		
 		
 		
@@ -208,6 +218,22 @@ public class stocksummaryExcel extends AbstractXlsxView {
 		fourSideborder.setBorderBottom(BORDER_THIN);
 		fourSideborder.setBorderTop(BORDER_THIN);
 
+		// Reusable styles for data rows (avoid creating per-row)
+		CellStyle fourSideborderForValues = workbook.createCellStyle();
+		fourSideborderForValues.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
+		fourSideborderForValues.setBorderLeft(BORDER_THIN);
+		fourSideborderForValues.setBorderRight(BORDER_THIN);
+		fourSideborderForValues.setBorderBottom(BORDER_THIN);
+		fourSideborderForValues.setBorderTop(BORDER_THIN);
+		CellStyle coulmnVales = workbook.createCellStyle();
+		coulmnVales.setWrapText(true);
+		coulmnVales.setBorderLeft(BORDER_THIN);
+		coulmnVales.setBorderRight(BORDER_THIN);
+		coulmnVales.setBorderBottom(BORDER_THIN);
+		coulmnVales.setBorderTop(BORDER_THIN);
+		XSSFDataFormat columnstyleformat = (XSSFDataFormat) workbook.createDataFormat();
+		coulmnVales.setDataFormat(columnstyleformat.getFormat("#,###.0"));
+
 		Row columnSubGrp = editAccountSheet.createRow(11);
 		Cell qty = columnSubGrp.createCell(4);
 		qty.setCellStyle(fourSideborder);
@@ -258,47 +284,27 @@ public class stocksummaryExcel extends AbstractXlsxView {
 
 			// valuesRow.createCell(0).setCellValue((String) s.get("particulars"));
 			String desc = (String) s.get("particulars");
-			// desc = "TEKINIKA INFOTECH PVT LTD \n NEPTUNE CONTROLS PVT LIMITED";
-			System.out.println("descc" + desc.length());
-			if (desc.length() > 37) {
+			if (desc != null && desc.length() > 37) {
 				// if(purchaseItem.getDescription().length()>80){
 				valuesRow.setHeightInPoints((float) (2.5 * editAccountSheet.getDefaultRowHeightInPoints()));
 			}
 
-			// valuesRow.createCell(0).setCellValue("TEKINIKA INFOTECH PVT LTD \n NEPTUNE
-			// CONTROLS PVT LIMITED");
-			float openQ1 = (float) s.get("openQ1");
-			float openR1 = (float) s.get("openR1");
-			System.out.println((float) s.get("openV1"));
-			float openV1 = (float) s.get("openV1");
-			float grnQ1 = (float) s.get("grnQ1");
-			float grnR1 = (float) s.get("grnR1");
-			float grnV1 = (float) s.get("grnV1");
-			float dcQ1 = (float) s.get("dcQ1");
-			float dcR1 = (float) s.get("dcR1");
-			float dcV1 = (float) s.get("dcV1");
-			float clQ1 = (float) s.get("clQ1");
-			float clV1 = (float) s.get("clV1");
-			float clR1 = (float) s.get("clR1");
+			float openQ1 = safeFloat(s, "openQ1");
+			float openR1 = safeFloat(s, "openR1");
+			float openV1 = safeFloat(s, "openV1");
+			float grnQ1 = safeFloat(s, "grnQ1");
+			float grnR1 = safeFloat(s, "grnR1");
+			float grnV1 = safeFloat(s, "grnV1");
+			float dcQ1 = safeFloat(s, "dcQ1");
+			float dcR1 = safeFloat(s, "dcR1");
+			float dcV1 = safeFloat(s, "dcV1");
+			float clQ1 = safeFloat(s, "clQ1");
+			float clV1 = safeFloat(s, "clV1");
+			float clR1 = safeFloat(s, "clR1");
 
-			CellStyle fourSideborderForValues = workbook.createCellStyle();
-			fourSideborderForValues.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-			fourSideborderForValues.setBorderLeft(BORDER_THIN);
-			fourSideborderForValues.setBorderRight(BORDER_THIN);
-			fourSideborderForValues.setBorderBottom(BORDER_THIN);
-			fourSideborderForValues.setBorderTop(BORDER_THIN);
-
-			CellStyle coulmnVales = workbook.createCellStyle();
-			coulmnVales.setWrapText(true);
-			coulmnVales.setBorderLeft(BORDER_THIN);
-			coulmnVales.setBorderRight(BORDER_THIN);
-			coulmnVales.setBorderBottom(BORDER_THIN);
-			coulmnVales.setBorderTop(BORDER_THIN);
 			Cell partcularsCell = valuesRow.createCell(0);
 			partcularsCell.setCellStyle(coulmnVales);
-			partcularsCell.setCellValue(desc);
-			XSSFDataFormat columnstyleformat = (XSSFDataFormat) workbook.createDataFormat();
-			coulmnVales.setDataFormat(columnstyleformat.getFormat("#,###.0"));
+			partcularsCell.setCellValue(desc != null ? desc : "");
 			if (openQ1 > 0 || openQ1 < 0) {
 				Cell openQty = valuesRow.createCell(4);
 				openQty.setCellStyle(coulmnVales);
@@ -442,47 +448,27 @@ public class stocksummaryExcel extends AbstractXlsxView {
 
 			// valuesRow.createCell(0).setCellValue((String) s.get("particulars"));
 			String desc = (String) s.get("particulars");
-			// desc = "TEKINIKA INFOTECH PVT LTD \n NEPTUNE CONTROLS PVT LIMITED";
-			System.out.println("descc" + desc.length());
-			if (desc.length() > 37) {
+			if (desc != null && desc.length() > 37) {
 				// if(purchaseItem.getDescription().length()>80){
 				valuesRow.setHeightInPoints((float) (2.5 * editAccountSheet.getDefaultRowHeightInPoints()));
 			}
 
-			// valuesRow.createCell(0).setCellValue("TEKINIKA INFOTECH PVT LTD \n NEPTUNE
-			// CONTROLS PVT LIMITED");
-			float openQ1 = (float) s.get("openQ1");
-			float openR1 = (float) s.get("openR1");
-			System.out.println((float) s.get("openV1"));
-			float openV1 = (float) s.get("openV1");
-			float grnQ1 = (float) s.get("grnQ1");
-			float grnR1 = (float) s.get("grnR1");
-			float grnV1 = (float) s.get("grnV1");
-			float dcQ1 = (float) s.get("dcQ1");
-			float dcR1 = (float) s.get("dcR1");
-			float dcV1 = (float) s.get("dcV1");
-			float clQ1 = (float) s.get("clQ1");
-			float clV1 = (float) s.get("clV1");
-			float clR1 = (float) s.get("clR1");
+			float openQ1 = safeFloat(s, "openQ1");
+			float openR1 = safeFloat(s, "openR1");
+			float openV1 = safeFloat(s, "openV1");
+			float grnQ1 = safeFloat(s, "grnQ1");
+			float grnR1 = safeFloat(s, "grnR1");
+			float grnV1 = safeFloat(s, "grnV1");
+			float dcQ1 = safeFloat(s, "dcQ1");
+			float dcR1 = safeFloat(s, "dcR1");
+			float dcV1 = safeFloat(s, "dcV1");
+			float clQ1 = safeFloat(s, "clQ1");
+			float clV1 = safeFloat(s, "clV1");
+			float clR1 = safeFloat(s, "clR1");
 
-			CellStyle fourSideborderForValues = workbook.createCellStyle();
-			fourSideborderForValues.setAlignment(HSSFCellStyle.ALIGN_RIGHT);
-			fourSideborderForValues.setBorderLeft(BORDER_THIN);
-			fourSideborderForValues.setBorderRight(BORDER_THIN);
-			fourSideborderForValues.setBorderBottom(BORDER_THIN);
-			fourSideborderForValues.setBorderTop(BORDER_THIN);
-
-			CellStyle coulmnVales = workbook.createCellStyle();
-			coulmnVales.setWrapText(true);
-			coulmnVales.setBorderLeft(BORDER_THIN);
-			coulmnVales.setBorderRight(BORDER_THIN);
-			coulmnVales.setBorderBottom(BORDER_THIN);
-			coulmnVales.setBorderTop(BORDER_THIN);
 			Cell partcularsCell = valuesRow.createCell(0);
 			partcularsCell.setCellStyle(coulmnVales);
-			partcularsCell.setCellValue(desc);
-			XSSFDataFormat columnstyleformat = (XSSFDataFormat) workbook.createDataFormat();
-			coulmnVales.setDataFormat(columnstyleformat.getFormat("#,###.0"));
+			partcularsCell.setCellValue(desc != null ? desc : "");
 			if (openQ1 > 0 || openQ1 < 0) {
 				Cell openQty = valuesRow.createCell(4);
 				openQty.setCellStyle(coulmnVales);

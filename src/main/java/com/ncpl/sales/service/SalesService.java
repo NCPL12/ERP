@@ -513,9 +513,10 @@ public class SalesService {
 	}
 
 	public Optional<SalesItem> getSalesItemById(String salesItemid, boolean value) {
-		System.out.println("this is"+ salesItemid);
 		Optional<SalesItem> salesItem = salesItemrepo.findById(salesItemid);
-		System.out.println(salesItem.get().getId());
+		if (!salesItem.isPresent()) {
+			return Optional.empty();
+		}
 		String clientId = salesItem.get().getSalesOrder().getParty().getId();
 		// check for stock list while changing description in dc
 		if (value) {
@@ -920,8 +921,8 @@ public class SalesService {
 					if (designObj != null) {
 						System.out.println("designObject " + designObj);
 						System.out.println("design obj" + designObj);
-						DesignItems designItemsList = designItemRepo.findDesignItemObjByItemIdAndDesignId(itemId,
-								designObj.getId());
+						DesignItems designItemsList = designItemRepo.findDesignItemListByItemIdAndDesignId(itemId,
+								designObj.getId()).stream().findFirst().orElse(null);
 
 						if (designItemsList != null) {
 							if (itemId.equalsIgnoreCase(designItemsList.getItemId())
@@ -1440,6 +1441,7 @@ public class SalesService {
 		Map map = new HashMap();
 		for (int i = 0; i <= 11; i++) {
 			int month=i+1;
+			String monthStr = String.format("%02d", month);
 			if(month==1 || month==2 || month==3) {
 				int yearInt=Integer.parseInt(yearConst);
 				year=String.valueOf(yearInt+1);
@@ -1448,28 +1450,17 @@ public class SalesService {
 			}
 			int yearInInt=Integer.parseInt(year);
 			Month m = Month.of(month);
-			if(((yearInInt % 4 == 0) && (yearInInt % 100!= 0)) || (yearInInt % 400 == 0)){
-				if (m.length(true) > 30) {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year + "-" + "0" + month + "-" + "31";
-				}else if(m.length(true) < 30) {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year + "-" + "0" + month + "-" + "29";
-				} else {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year+ "-" + "0" + month + "-" + "30";
-				}
-			}else {
-				if (m.length(true) > 30) {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year + "-" + "0" + month + "-" + "31";
-				}else if(m.length(true) < 30) {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year + "-" + "0" + month + "-" + "28";
-				} else {
-					from = year + "-" + "0" + month + "-" + "01";
-					to = year+ "-" + "0" + month + "-" + "30";
-				}
+			boolean leapYear = ((yearInInt % 4 == 0) && (yearInInt % 100 != 0)) || (yearInInt % 400 == 0);
+			int monthLen = m.length(leapYear);
+			if (monthLen > 30) {
+				from = year + "-" + monthStr + "-01";
+				to = year + "-" + monthStr + "-31";
+			} else if (monthLen < 30) {
+				from = year + "-" + monthStr + "-01";
+				to = year + "-" + monthStr + "-" + String.format("%02d", monthLen);
+			} else {
+				from = year + "-" + monthStr + "-01";
+				to = year + "-" + monthStr + "-30";
 			}
 			
 			

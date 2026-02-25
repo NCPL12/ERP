@@ -24,9 +24,9 @@
 <script type="text/javascript">
 var clientList=${clientList};
 var vendorList=${vendorList};
+var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>';
 </script>
 </head>
-<body>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
 		<tiles:insertAttribute name="header" />
@@ -66,21 +66,23 @@ var vendorList=${vendorList};
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="stock.summary.report.by.date" />
 							  </h5>
-						  	<form action="${pageContext.request.contextPath}/stock/summary_details/" id="stockSummaryForm" method="get">
-							  <div class="card-body cardHeight">
-								   <div class="form-group row">
-									    <label for="staticEmail" class="col-sm-2 ">From</label>
+						  	<form action="${pageContext.request.contextPath}/stock/summary_details/" id="stockSummaryForm" method="get" target="_blank">
+							  <div class="card-body">
+								   <div class="form-group row mb-1">
+									    <label for="reportFromDate" class="col-sm-2 col-form-label">From</label>
 									    <div class="col-sm-10">
-									     <input type="text" autocomplete="off" name="reportFromDate" id="reportFromDate" class="form-control PositionofTextbox" autocomplete="off">
+									     <input type="text" autocomplete="off" name="reportFromDate" id="reportFromDate" class="form-control PositionofTextbox">
 									    </div>
-									     <label for="staticEmail" class="col-sm-2 ">To</label>
+								   </div>
+								   <div class="form-group row mb-1">
+									    <label for="reportToDate" class="col-sm-2 col-form-label">To</label>
 									    <div class="col-sm-10">
-									     <input type="text" autocomplete="off" name="reportToDate" id="reportToDate" class="form-control PositionofTextbox" autocomplete="off">
+									     <input type="text" autocomplete="off" name="reportToDate" id="reportToDate" class="form-control PositionofTextbox">
 									    </div>
-									  </div>
+								   </div>
 							 </div>
 							<div  class="card-footer">
-								    <button type=submit id="downLoadStockSummaryReportBtn"
+								    <button type="submit" id="downLoadStockSummaryReportBtn"
 														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
 							  </div>
 						  </form>
@@ -98,29 +100,32 @@ var vendorList=${vendorList};
 							  		<spring:message code="stock.report.by.region" />
 							  </h5>
 						  	<form action="${pageContext.request.contextPath}/stock_report_by_region/Download" id="stockRegionFrom" method="get">
-							  <div class="card-body cardHeight">
-								   <div class="form-group row">
-								   		<label for="staticEmail" class="col-sm-2 ">Region</label>
+							  <div class="card-body">
+								   <div class="form-group row mb-1">
+								   		<label for="region" class="col-sm-2 col-form-label">Region</label>
 									    <div class="col-sm-10">
 									     <select class="form-control select2 PositionofTextbox" name="region" id="region" style="padding: 0;">
 									     <option value="" selected>Select Region</option>
 									     <option value="Bangalore">Bangalore</option>
 									     <option value="Mangalore">Mangalore</option>
-									     
 									     </select>
 									    </div>
-									    <label for="staticEmail" class="col-sm-2 ">From</label>
+								   </div>
+								   <div class="form-group row mb-1">
+									    <label for="reportByRegionFromDate" class="col-sm-2 col-form-label">From</label>
 									    <div class="col-sm-10">
 									     <input type="text" name="reportByRegionFromDate" id="reportByRegionFromDate" class="form-control PositionofTextbox" autocomplete="off">
 									    </div>
-									    <label for="staticEmail" class="col-sm-2 ">To</label>
+								   </div>
+								   <div class="form-group row mb-1">
+									    <label for="reportByRegionToDate" class="col-sm-2 col-form-label">To</label>
 									    <div class="col-sm-10">
 									     <input type="text" name="reportByRegionToDate" id="reportByRegionToDate" class="form-control PositionofTextbox" autocomplete="off">
 									    </div>
-									  </div>
-									</div>
+								   </div>
+							  </div>
 								<div  class="card-footer">		  
-								    <button type=submit id=""
+								    <button type="submit" id=""
 														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
 							  </div>
 						  </form>
@@ -386,20 +391,22 @@ var vendorList=${vendorList};
 							  		<spring:message code="po.list.by.date" />
 							  </h5>
 						  	<form  id="poLostByDateForm" action="${pageContext.request.contextPath}/po_list/by_date" method="get">
-								 <div class="card-body cardHeight">
-									   <div class="form-group row">
-										    <label for="staticEmail" class="col-sm-2 ">From</label>
+								 <div class="card-body">
+									   <div class="form-group row mb-1">
+										    <label for="poListByFromDate" class="col-sm-2 col-form-label">From</label>
 										    <div class="col-sm-10">
-										     <input type="text" autocomplete="off" name="poListByFromDate" id="poListByFromDate" class="form-control PositionofTextbox" autocomplete="off">
+										     <input type="text" autocomplete="off" name="poListByFromDate" id="poListByFromDate" class="form-control PositionofTextbox">
 										    </div>
-										     <label for="staticEmail" class="col-sm-2 ">To</label>
+									   </div>
+									   <div class="form-group row mb-1">
+										    <label for="poListByToDate" class="col-sm-2 col-form-label">To</label>
 										    <div class="col-sm-10">
-										     <input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" class="form-control PositionofTextbox" autocomplete="off">
+										     <input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" class="form-control PositionofTextbox">
 										    </div>
-										  </div>
+									   </div>
 								 </div>
 								<div  class="card-footer">		  
-								    <button type=submit id=""
+								    <button type="submit" id=""
 														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
 							  </div>
 						  </form>
@@ -444,29 +451,22 @@ var vendorList=${vendorList};
 							  		<spring:message code="itemwise.grn.report" />
 							  </h5>
 						  	<form  id="grnByDateForm" action="${pageContext.request.contextPath}/grn_itemwise/by_date" method="get">
-							  <div class="card-body cardHeight">
-								   <div class="form-group row">
-								   			<!-- <label for="staticEmail" class="col-sm-2 ">Region</label>
-									    <div class="col-sm-10">
-									     <select class="form-control select2 PositionofTextbox" name="grnregion" id="grnregion" style="padding: 0;">
-									     <option value="" selected>Select Region</option>
-									     <option value="Bangalore">Bangalore</option>
-									     <option value="Mangalore">Mangalore</option>
-									     
-									     </select>
-									    </div> -->
-									    <label for="staticEmail" class="col-sm-2 ">From</label>
+							  <div class="card-body">
+								   <div class="form-group row mb-1">
+									    <label for="grnreportByRegionFromDate" class="col-sm-2 col-form-label">From</label>
 									    <div class="col-sm-10">
 									     <input type="text" name="grnreportByRegionFromDate" id="grnreportByRegionFromDate" class="form-control PositionofTextbox" autocomplete="off">
 									    </div>
-									    <label for="staticEmail" class="col-sm-2 ">To</label>
+								   </div>
+								   <div class="form-group row mb-1">
+									    <label for="grnreportByRegionToDate" class="col-sm-2 col-form-label">To</label>
 									    <div class="col-sm-10">
 									     <input type="text" name="grnreportByRegionToDate" id="grnreportByRegionToDate" class="form-control PositionofTextbox" autocomplete="off">
 									    </div>
-									  </div>
-									</div>
+								   </div>
+							  </div>
 								<div  class="card-footer">		  
-								    <button type=submit id=""
+								    <button type="submit" id=""
 														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
 							  </div>
 						  </form>

@@ -2,10 +2,38 @@
  * 
  */
 $(document).ready(function () {
+	if (typeof clientList === 'undefined') clientList = [];
+	if (typeof vendorList === 'undefined') vendorList = [];
+
+	if (typeof stockSummaryError !== 'undefined' && stockSummaryError) {
+		$.error(stockSummaryError);
+	}
+
 	$("#reportFromDate,#reportToDate,#reportDate,#reportByRegionFromDate,#reportByRegionToDate,#date,#poListByFromDate,#poListByToDate,#grnreportByRegionFromDate,#grnreportByRegionToDate").datepicker({
 		dateFormat: 'dd-mm-yy'
 		
 	});
+
+	$("#reportFromDate").change(function(){ $("#reportFromDate").removeClass("border-color"); });
+	$("#reportToDate").change(function(){ $("#reportToDate").removeClass("border-color"); });
+	$("#reportDate").change(function(){ $("#reportDate").removeClass("border-color"); });
+	$("#reportByRegionFromDate").change(function(){ $("#reportByRegionFromDate").removeClass("border-color"); });
+	$("#reportByRegionToDate").change(function(){ $("#reportByRegionToDate").removeClass("border-color"); });
+	$("#date").change(function(){ $("#date").removeClass("border-color"); });
+	$("#region").change(function(){ $("#region").removeClass("border-color"); });
+	$("#client").change(function(){ $("#client").removeClass("border-color"); });
+	$("#clientDcPEnding").change(function(){ $("#clientDcPEnding").removeClass("border-color"); });
+	$("#clientInPendingReport").change(function(){ $("#clientInPendingReport").removeClass("border-color"); });
+	$("#poNumber").change(function(){ $("#poNumber").removeClass("border-color"); });
+	$("#poItemHistoryReport").change(function(){ $("#poItemHistoryReport").removeClass("border-color"); });
+	$("#itemId").change(function(){ $("#itemId").removeClass("border-color"); });
+	$("#designItemId").change(function(){ $("#designItemId").removeClass("border-color"); });
+	$("#poListByFromDate").change(function(){ $("#poListByFromDate").removeClass("border-color"); });
+	$("#poListByToDate").change(function(){ $("#poListByToDate").removeClass("border-color"); });
+	$("#clientName").change(function(){ $("#clientName").removeClass("border-color"); });
+	$("#grnreportByRegionFromDate").change(function(){ $("#grnreportByRegionFromDate").removeClass("border-color"); });
+	$("#grnreportByRegionToDate").change(function(){ $("#grnreportByRegionToDate").removeClass("border-color"); });
+
 	//getPartyList();
 	getPoItemList();
 	getDesignItemList();
@@ -47,9 +75,6 @@ $(document).on('submit', '#stockHistoryForm',function(e){
 		e.preventDefault();
 		$("#reportDate").addClass("border-color");
 	}
-	$("#reportDate").change(function(){
-		$("#reportDate").removeClass("border-color");
-	});
 });
 
 //on submit of pending dc report
@@ -60,9 +85,6 @@ $(document).on('submit', '#dcReportForm',function(e){
 		e.preventDefault();
 		$("#clientDcPEnding").addClass("border-color");
 	}
-	$("#clientDcPEnding").change(function(){
-		$("#clientDcPEnding").removeClass("border-color");
-	});
 });
 
 //on submit of pending po report
@@ -73,9 +95,6 @@ $(document).on('submit', '#pendingReportForm',function(e){
 		e.preventDefault();
 		$("#clientInPendingReport").addClass("border-color");
 	}
-	$("#clientInPendingReport").change(function(){
-		$("#clientInPendingReport").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#pendingPoByPoNumberReportForm',function(e){
@@ -85,9 +104,6 @@ $(document).on('submit', '#pendingPoByPoNumberReportForm',function(e){
 		e.preventDefault();
 		$("#poNumber").addClass("border-color");
 	}
-	$("#poNumber").change(function(){
-		$("#poNumber").removeClass("border-color");
-	});
 });
 
 //on submit of oustanding stock report
@@ -98,93 +114,75 @@ $(document).on('submit', '#outtandingReportForm',function(e){
 		e.preventDefault();
 		$("#client").addClass("border-color");
 	}
-	$("#client").change(function(){
-		$("#client").removeClass("border-color");
-	});
 });
 //on submit of stock summary by date form
 $(document).on('submit', '#stockSummaryForm',function(e){
 	var reportFromDate=$("#reportFromDate").val();
 	var reportToDate=$("#reportToDate").val();
-	
-	var toDate = new Date(reportToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	var fromDate = new Date(reportFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	
-	var fromDateInMillis = new Date(fromDate).getTime();
-	var toDateInMillis  = new Date(toDate).getTime();
-	var mm1 = fromDate.getMonth();
-	var mm2 = toDate.getMonth();
-	var yyyy = fromDate.getFullYear();
-	var yyyy = toDate.getFullYear();
-	
+	var isValid = true;
+
 	if(reportFromDate=="" || reportFromDate==undefined){
 		$.error("Please select the From Date");
 		e.preventDefault();
 		$("#reportFromDate").addClass("border-color");
+		isValid = false;
 	}
-	$("#reportFromDate").change(function(){
-		$("#reportFromDate").removeClass("border-color");
-	});
 	if(reportToDate=="" || reportToDate==undefined){
 		$.error("Please select the To Date");
 		e.preventDefault();
 		$("#reportToDate").addClass("border-color");
+		isValid = false;
 	}
-	
-	if(toDateInMillis < fromDateInMillis){
-		$.error("To Date cannot be lesser than From Date");
-		e.preventDefault();
+
+	if(isValid){
+		var toDate = new Date(reportToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDate = new Date(reportFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDateInMillis = fromDate.getTime();
+		var toDateInMillis  = toDate.getTime();
+
+		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
 	}
-	
-	$("#reportToDate").change(function(){
-		$("#reportToDate").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#stockRegionFrom',function(e){
 	var reportByRegionFromDate=$("#reportByRegionFromDate").val();
 	var reportByRegionToDate=$("#reportByRegionToDate").val();
-	
-	var toDate = new Date(reportByRegionToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	var fromDate = new Date(reportByRegionFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	
-	var fromDateInMillis = new Date(fromDate).getTime();
-	var toDateInMillis  = new Date(toDate).getTime();
-	
-	
-	
+	var isValid = true;
+
 	var region=$("#region").val();
 	if(region=="" || region==undefined){
 		$.error("Please select the Region");
 		e.preventDefault();
 		$("#region").addClass("border-color");
+		isValid = false;
 	}
-	$("#region").change(function(){
-		$("#region").removeClass("border-color");
-	});
 	if(reportByRegionFromDate=="" || reportByRegionFromDate==undefined){
 		$.error("Please select the From Date");
 		e.preventDefault();
 		$("#reportByRegionFromDate").addClass("border-color");
+		isValid = false;
 	}
-	$("#reportByRegionFromDate").change(function(){
-		$("#reportByRegionFromDate").removeClass("border-color");
-	});
 	if(reportByRegionToDate=="" || reportByRegionToDate==undefined){
 		$.error("Please select the To Date");
 		e.preventDefault();
 		$("#reportByRegionToDate").addClass("border-color");
+		isValid = false;
 	}
-	
-	if(toDateInMillis < fromDateInMillis){
-		$.error("To Date cannot be lesser than From Date");
-		e.preventDefault();
+
+	if(isValid){
+		var toDate = new Date(reportByRegionToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDate = new Date(reportByRegionFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDateInMillis = fromDate.getTime();
+		var toDateInMillis  = toDate.getTime();
+
+		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
 	}
-	
-	$("#reportByRegionToDate").change(function(){
-		$("#reportByRegionToDate").removeClass("border-color");
-	});
-	
 });
 
 $(document).on('submit', '#stockReportByDateForm',function(e){
@@ -194,9 +192,6 @@ $(document).on('submit', '#stockReportByDateForm',function(e){
 		e.preventDefault();
 		$("#date").addClass("border-color");
 	}
-	$("#date").change(function(){
-		$("#date").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#poItemHistoryForm',function(e){
@@ -206,9 +201,6 @@ $(document).on('submit', '#poItemHistoryForm',function(e){
 		e.preventDefault();
 		$("#poItemHistoryReport").addClass("border-color");
 	}
-	$("#poItemHistoryReport").change(function(){
-		$("#poItemHistoryReport").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#salesListForm',function(e){
@@ -218,9 +210,6 @@ $(document).on('submit', '#salesListForm',function(e){
 		e.preventDefault();
 		$("#itemId").addClass("border-color");
 	}
-	$("#itemId").change(function(){
-		$("#itemId").removeClass("border-color");
-	});
 });
 $(document).on('submit', '#DcListByItemForm',function(e){
 	var item=$("#designItemId").val();
@@ -229,9 +218,6 @@ $(document).on('submit', '#DcListByItemForm',function(e){
 		e.preventDefault();
 		$("#designItemId").addClass("border-color");
 	}
-	$("#designItemId").change(function(){
-		$("#designItemId").removeClass("border-color");
-	});
 });
 
 function getPartyList(){
@@ -355,39 +341,32 @@ function getPoNumberList(){
 $(document).on('submit', '#poLostByDateForm',function(e){
 	var reportFromDate=$("#poListByFromDate").val();
 	var reportToDate=$("#poListByToDate").val();
-	
-	var toDate = new Date(reportToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	var fromDate = new Date(reportFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	
-	var fromDateInMillis = new Date(fromDate).getTime();
-	var toDateInMillis  = new Date(toDate).getTime();
-	var mm1 = fromDate.getMonth();
-	var mm2 = toDate.getMonth();
-	var yyyy = fromDate.getFullYear();
-	var yyyy = toDate.getFullYear();
-	
+	var isValid = true;
+
 	if(reportFromDate=="" || reportFromDate==undefined){
 		$.error("Please select the From Date");
 		e.preventDefault();
 		$("#poListByFromDate").addClass("border-color");
+		isValid = false;
 	}
-	$("#poListByFromDate").change(function(){
-		$("#poListByFromDate").removeClass("border-color");
-	});
 	if(reportToDate=="" || reportToDate==undefined){
 		$.error("Please select the To Date");
 		e.preventDefault();
 		$("#poListByToDate").addClass("border-color");
+		isValid = false;
 	}
-	
-	if(toDateInMillis < fromDateInMillis){
-		$.error("To Date cannot be lesser than From Date");
-		e.preventDefault();
+
+	if(isValid){
+		var toDate = new Date(reportToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDate = new Date(reportFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDateInMillis = fromDate.getTime();
+		var toDateInMillis  = toDate.getTime();
+
+		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
 	}
-	
-	$("#poListByToDate").change(function(){
-		$("#poListByToDate").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#activeSalesOrderForm',function(e){
@@ -397,53 +376,35 @@ $(document).on('submit', '#activeSalesOrderForm',function(e){
 		e.preventDefault();
 		$("#clientName").addClass("border-color");
 	}
-	$("#clientName").change(function(){
-		$("#clientName").removeClass("border-color");
-	});
 });
 
 $(document).on('submit', '#grnByDateForm',function(e){
 	var grnreportByRegionFromDate=$("#grnreportByRegionFromDate").val();
 	var grnreportByRegionToDate=$("#grnreportByRegionToDate").val();
-	
-	var toDate = new Date(grnreportByRegionToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	var fromDate = new Date(grnreportByRegionFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
-	
-	var fromDateInMillis = new Date(fromDate).getTime();
-	var toDateInMillis  = new Date(toDate).getTime();
-	
-	
-	
-	/*var region=$("#grnregion").val();
-	if(region=="" || region==undefined){
-		$.error("Please select the Region");
-		e.preventDefault();
-		$("#grnregion").addClass("border-color");
-	}
-	$("#grnregion").change(function(){
-		$("#grnregion").removeClass("border-color");
-	});*/
+	var isValid = true;
+
 	if(grnreportByRegionFromDate=="" || grnreportByRegionFromDate==undefined){
 		$.error("Please select the From Date");
 		e.preventDefault();
 		$("#grnreportByRegionFromDate").addClass("border-color");
+		isValid = false;
 	}
-	$("#grnreportByRegionFromDate").change(function(){
-		$("#grnreportByRegionFromDate").removeClass("border-color");
-	});
 	if(grnreportByRegionToDate=="" || grnreportByRegionToDate==undefined){
 		$.error("Please select the To Date");
 		e.preventDefault();
 		$("#grnreportByRegionToDate").addClass("border-color");
+		isValid = false;
 	}
-	
-	if(toDateInMillis < fromDateInMillis){
-		$.error("To Date cannot be lesser than From Date");
-		e.preventDefault();
+
+	if(isValid){
+		var toDate = new Date(grnreportByRegionToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDate = new Date(grnreportByRegionFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDateInMillis = fromDate.getTime();
+		var toDateInMillis  = toDate.getTime();
+
+		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
 	}
-	
-	$("#grnreportByRegionToDate").change(function(){
-		$("#grnreportByRegionToDate").removeClass("border-color");
-	});
-	
 });

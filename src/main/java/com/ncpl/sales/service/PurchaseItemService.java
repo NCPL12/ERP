@@ -122,24 +122,27 @@ public class PurchaseItemService {
 
 	// get purchase items by purchaseItemId
 	public Optional<PurchaseItem> getPurchaseItemById(int purchaseItemId) {
-		System.out.println(purchaseItemId);
 		Optional<PurchaseItem> purchaseItem = purchaseItemRepo.findById(purchaseItemId);
+		if (!purchaseItem.isPresent()) {
+			return Optional.empty();
+		}
 		String poItemItd = Integer.toString(purchaseItem.get().getPurchase_item_id());
 		String salesItemId = purchaseItem.get().getDescription();
-		System.out.println("salesitemiddddd" + salesItemId);
 		boolean value = false;
 		Optional<SalesItem> salesItem = salesService.getSalesItemById(salesItemId, value);
-		purchaseItem.get().set("unitName", salesItem.get().getItem_units().getName());
+		if (salesItem.isPresent() && salesItem.get().getItem_units() != null) {
+			purchaseItem.get().set("unitName", salesItem.get().getItem_units().getName());
+		} else {
+			purchaseItem.get().set("unitName", "");
+		}
 		List<GrnItems> grnList = grnService.getGrnItemByPoItemId(poItemItd);
 		float receivedQty = 0;
 
 		if (grnList.isEmpty()) {
-			receivedQty = 0;
 			purchaseItem.get().set("receivedQty", receivedQty);
 		} else {
 			for (GrnItems grnItems : grnList) {
 				receivedQty = receivedQty + grnItems.getReceivedQuantity();
-
 			}
 			purchaseItem.get().set("receivedQty", purchaseItem.get().getQuantity() - receivedQty);
 		}
@@ -196,7 +199,6 @@ public class PurchaseItemService {
 			}
 		}
 
-		System.out.println("poItems" + poItems.size());
 		return itemMap;
 	}
 
