@@ -115,44 +115,111 @@ public class OptimizedMaterialTrackerService {
      * Batch query for DC items by sales item IDs
      */
     
+	/*
+	 * private Map<String, List<DeliveryChallanItems>>
+	 * getDcItemsBySalesItemIds(List<String> salesItemIds) {
+	 * List<DeliveryChallanItems> allDcItems =
+	 * dcItemRepo.findBySalesItemIdIn(salesItemIds); return allDcItems.stream()
+	 * .collect(Collectors.groupingBy(DeliveryChallanItems::getDescription)); }
+	 */
     private Map<String, List<DeliveryChallanItems>> getDcItemsBySalesItemIds(List<String> salesItemIds) {
-        List<DeliveryChallanItems> allDcItems = dcItemRepo.findBySalesItemIdIn(salesItemIds);
+
+        if (salesItemIds == null || salesItemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<DeliveryChallanItems> allDcItems =
+                dcItemRepo.findBySalesItemIdIn(salesItemIds);
+
         return allDcItems.stream()
                 .collect(Collectors.groupingBy(DeliveryChallanItems::getDescription));
     }
-
     /**
      * Batch query for purchase items by sales item IDs
      */
+	/*
+	 * private Map<String, List<PurchaseItem>>
+	 * getPurchaseItemsBySalesItemIds(List<String> salesItemIds) {
+	 * List<PurchaseItem> allPurchaseItems =
+	 * purchaseItemRepo.findBySalesItemIdIn(salesItemIds); return
+	 * allPurchaseItems.stream()
+	 * .collect(Collectors.groupingBy(PurchaseItem::getDescription)); }
+	 */
     private Map<String, List<PurchaseItem>> getPurchaseItemsBySalesItemIds(List<String> salesItemIds) {
-        List<PurchaseItem> allPurchaseItems = purchaseItemRepo.findBySalesItemIdIn(salesItemIds);
+
+        if (salesItemIds == null || salesItemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<PurchaseItem> allPurchaseItems =
+                purchaseItemRepo.findBySalesItemIdIn(salesItemIds);
+
         return allPurchaseItems.stream()
                 .collect(Collectors.groupingBy(PurchaseItem::getDescription));
     }
-
+    
     /**
      * Batch query for design items by sales item IDs
      */
+	/*
+	 * private Map<String, List<DesignItems>>
+	 * getDesignItemsBySalesItemIds(List<String> salesItemIds) { List<DesignItems>
+	 * allDesignItems = designItemsRepo.findBySalesItemIdIn(salesItemIds); return
+	 * allDesignItems.stream() .collect(Collectors.groupingBy(item ->
+	 * item.getSalesOrderDesign().getSalesItemId())); }
+	 */
     private Map<String, List<DesignItems>> getDesignItemsBySalesItemIds(List<String> salesItemIds) {
-        List<DesignItems> allDesignItems = designItemsRepo.findBySalesItemIdIn(salesItemIds);
+
+        if (salesItemIds == null || salesItemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<DesignItems> allDesignItems =
+                designItemsRepo.findBySalesItemIdIn(salesItemIds);
+
         return allDesignItems.stream()
-                .collect(Collectors.groupingBy(item -> item.getSalesOrderDesign().getSalesItemId()));
+                .collect(Collectors.groupingBy(
+                        item -> item.getSalesOrderDesign().getSalesItemId()
+                ));
     }
 
     /**
      * Batch query for GRN items by purchase items
      */
-    private Map<String, List<GrnItems>> getGrnItemsByPurchaseItems(Map<String, List<PurchaseItem>> purchaseItemsMap) {
+	/*
+	 * private Map<String, List<GrnItems>> getGrnItemsByPurchaseItems(Map<String,
+	 * List<PurchaseItem>> purchaseItemsMap) { List<String> purchaseItemIds =
+	 * purchaseItemsMap.values().stream() .flatMap(List::stream) .map(pi ->
+	 * String.valueOf(pi.getPurchase_item_id())) .collect(Collectors.toList());
+	 * 
+	 * List<GrnItems> allGrnItems =
+	 * grnItemsRepo.findByDescriptionIn(purchaseItemIds); return
+	 * allGrnItems.stream()
+	 * .collect(Collectors.groupingBy(GrnItems::getDescription)); }
+	 */
+    private Map<String, List<GrnItems>> getGrnItemsByPurchaseItems(
+            Map<String, List<PurchaseItem>> purchaseItemsMap) {
+
+        if (purchaseItemsMap == null || purchaseItemsMap.isEmpty()) {
+            return new HashMap<>();
+        }
+
         List<String> purchaseItemIds = purchaseItemsMap.values().stream()
                 .flatMap(List::stream)
                 .map(pi -> String.valueOf(pi.getPurchase_item_id()))
                 .collect(Collectors.toList());
-        
-        List<GrnItems> allGrnItems = grnItemsRepo.findByDescriptionIn(purchaseItemIds);
+
+        if (purchaseItemIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<GrnItems> allGrnItems =
+                grnItemsRepo.findByDescriptionIn(purchaseItemIds);
+
         return allGrnItems.stream()
                 .collect(Collectors.groupingBy(GrnItems::getDescription));
     }
-
+    
     /**
      * Get optimized data for Excel generation
      */
@@ -195,10 +262,22 @@ public class OptimizedMaterialTrackerService {
                 .map(item -> item.getPurchaseOrder().getPoNumber())
                 .collect(Collectors.toSet());
         
-        Map<String, PurchaseOrder> poMap = poRepo.findByPoNumberIn(new ArrayList<>(poIds))
-                .stream()
-                .collect(Collectors.toMap(PurchaseOrder::getPoNumber, po -> po));
+		/*
+		 * Map<String, PurchaseOrder> poMap = poRepo.findByPoNumberIn(new
+		 * ArrayList<>(poIds)) .stream()
+		 * .collect(Collectors.toMap(PurchaseOrder::getPoNumber, po -> po));
+		 */
+        Map<String, PurchaseOrder> poMap = new HashMap<>();
 
+        if (poIds != null && !poIds.isEmpty()) {
+            poMap = poRepo.findByPoNumberIn(new ArrayList<>(poIds))
+                    .stream()
+                    .collect(Collectors.toMap(
+                            PurchaseOrder::getPoNumber,
+                            po -> po
+                    ));
+        }
+        
         // Get all GRN IDs for batch loading
         Set<String> grnIds = poIds; // Assuming GRN uses same IDs as PO
         Map<String, List<Grn>> grnMap = grnRepo.findByPoNumberIn(new ArrayList<>(grnIds))
@@ -212,9 +291,24 @@ public class OptimizedMaterialTrackerService {
                 .map(item -> item.getDeliveryChallan().getDcId())
                 .collect(Collectors.toSet());
         
-        Map<Integer, DeliveryChallan> dcMap = dcRepo.findByDcIdInWithItems(new ArrayList<>(dcIds))
-                .stream()
-                .collect(Collectors.toMap(DeliveryChallan::getDcId, dc -> dc, (existing, duplicate) -> existing));
+		/*
+		 * Map<Integer, DeliveryChallan> dcMap = dcRepo.findByDcIdInWithItems(new
+		 * ArrayList<>(dcIds)) .stream()
+		 * .collect(Collectors.toMap(DeliveryChallan::getDcId, dc -> dc, (existing,
+		 * duplicate) -> existing));
+		 */
+        
+        Map<Integer, DeliveryChallan> dcMap = new HashMap<>();
+
+        if (dcIds != null && !dcIds.isEmpty()) {
+            dcMap = dcRepo.findByDcIdInWithItems(new ArrayList<>(dcIds))
+                    .stream()
+                    .collect(Collectors.toMap(
+                            DeliveryChallan::getDcId,
+                            dc -> dc,
+                            (existing, duplicate) -> existing
+                    ));
+        }
 
         Map<String, Object> result = new HashMap<>();
         result.put("designItemsMap", designItemsMap);
