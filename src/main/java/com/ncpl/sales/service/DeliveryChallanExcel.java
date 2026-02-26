@@ -113,9 +113,22 @@ public class DeliveryChallanExcel extends AbstractXlsxView{
 		System.out.println(dcCurrentDate);
 		List<DeliveryChallanItems> items = dcObject.get().getItems();
 		String option = (String) request.getAttribute("option");
+		Party billAddrForName = (Party) request.getAttribute("billAddress");
+		String clientName = "";
+		if (billAddrForName != null && billAddrForName.getPartyName() != null) {
+			String fullName = billAddrForName.getPartyName();
+			clientName = fullName.contains(" ") ? fullName.substring(0, fullName.indexOf(" ")) : fullName;
+		} else {
+			@SuppressWarnings("unchecked")
+			Optional<PartyAddress> partyAddrForName = (Optional<PartyAddress>) request.getAttribute("partyBillAddress");
+			if (partyAddrForName != null && partyAddrForName.isPresent() && partyAddrForName.get().getPartyName() != null) {
+				String fullName = partyAddrForName.get().getPartyName();
+				clientName = fullName.contains(" ") ? fullName.substring(0, fullName.indexOf(" ")) : fullName;
+			}
+		}
 		SimpleDateFormat fileNameDateFormatter = new SimpleDateFormat("dd-MM-yyyy");
 		String fileDate = fileNameDateFormatter.format(dateCreated);
-		String fileName = "Dc_deliveryChallan-" + option + "-" + dcObject.get().getDcId() + "-" + fileDate + ".xlsx";
+		String fileName = "Dc_deliveryChallan-" + option + "-" + dcObject.get().getDcId() + "-" + clientName + "-" + fileDate + ".xlsx";
 		response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 		User user = (User) request.getAttribute("user");
 		Map itemsList = (Map) request.getAttribute("map");
