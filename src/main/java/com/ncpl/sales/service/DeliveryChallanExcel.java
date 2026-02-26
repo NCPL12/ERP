@@ -113,9 +113,9 @@ public class DeliveryChallanExcel extends AbstractXlsxView{
 		System.out.println(dcCurrentDate);
 		List<DeliveryChallanItems> items = dcObject.get().getItems();
 		String option = (String) request.getAttribute("option");
-		//Generating File Name 
-		String fileName = "Dc" + "_deliveryChallan"+"-"+ option+".xlsx";
-		// set excel file name
+		SimpleDateFormat fileNameDateFormatter = new SimpleDateFormat("dd-MM-yyyy");
+		String fileDate = fileNameDateFormatter.format(dateCreated);
+		String fileName = "Dc_deliveryChallan-" + option + "-" + dcObject.get().getDcId() + "-" + fileDate + ".xlsx";
 		response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 		User user = (User) request.getAttribute("user");
 		Map itemsList = (Map) request.getAttribute("map");

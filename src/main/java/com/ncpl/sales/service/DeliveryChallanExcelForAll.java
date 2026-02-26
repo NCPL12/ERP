@@ -245,6 +245,11 @@ public class DeliveryChallanExcelForAll extends AbstractXlsxView{
 			        		shippingPin+ shippingGst;
 		        }
 	        
+	        SimpleDateFormat fileNameDateFormatter = new SimpleDateFormat("dd-MM-yyyy");
+	        String fileDate = fileNameDateFormatter.format(dateCreated);
+	        String fileName = "Dc_deliveryChallan-All-" + dcObject.get().getDcId() + "-" + fileDate + ".xlsx";
+	        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+
 	        // Generate Sheet 1
 	        Sheet originalSheet = workbook.createSheet("Delivery Challan-Original");
 	        String option="Original";
@@ -268,10 +273,6 @@ public class DeliveryChallanExcelForAll extends AbstractXlsxView{
 		//editAccountSheet.getPrintSetup().setLandscape(true);
 		editAccountSheet.setFitToPage(true);
 		editAccountSheet.setAutobreaks(true);
-		//Generating File Name 
-		String fileName = "Dc" + "_deliveryChallan"+".xlsx";
-		// set excel file name
-		response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 		//ps.setFitWidth((short) 1);
 	//	ps.setFitHeight((short) 1);
 		editAccountSheet.getPrintSetup().setPaperSize(HSSFPrintSetup.A4_PAPERSIZE); 
