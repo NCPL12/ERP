@@ -127,10 +127,17 @@
     <groupId>org.springframework.security</groupId>  
     <artifactId>spring-security-taglibs</artifactId>  
 </dependency> 
-<dependency>
+  <dependency>
     <groupId>com.itextpdf</groupId>
     <artifactId>itextpdf</artifactId>
     <version>5.2.0</version>
+  </dependency>
+
+  <!-- Swagger / OpenAPI Documentation -->
+  <dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-boot-starter</artifactId>
+    <version>3.0.0</version>
   </dependency>
   </dependencies>
   	<build>
