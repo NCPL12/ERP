@@ -289,6 +289,20 @@ public class DeliveryChallanService {
 				deliveryChallanItems.set("salesItemIdHidden",salesItem.get().getId());
 				deliveryChallanItems.set("particulars",salesItem.get().getDescription());
 				deliveryChallanItems.set("serialNo",salesItem.get().getSlNo());
+				
+				// Populate soModelNo from DesignItems
+				List<DesignItems> designItemsList = designService.getDesignItemListBySOItemId(soItemId);
+				ArrayList<String> modelList = new ArrayList<String>();
+				for (DesignItems designItem : designItemsList) {
+					String itemId = designItem.getItemId();
+					Optional<ItemMaster> itemMaster = itemService.getItemById(itemId);
+					if (itemMaster.isPresent()) {
+						String modelNumber = itemMaster.get().getModel();
+						modelList.add(modelNumber);
+					}
+				}
+				// Set soModelNo as comma-separated model numbers
+				deliveryChallanItems.setSoModelNo(String.join(", ", modelList));
 			}
 			itemList.addAll(dcItemList);
 		}
@@ -319,6 +333,21 @@ public class DeliveryChallanService {
 				deliveryChallanItems.set("salesItemIdHidden",salesItem.get().getId());
 				deliveryChallanItems.set("particulars",salesItem.get().getDescription());
 				deliveryChallanItems.set("serialNo",salesItem.get().getSlNo());
+				
+				// Populate soModelNo from DesignItems
+				List<DesignItems> designItemsList = designService.getDesignItemListBySOItemId(soItemId);
+				ArrayList<String> modelList = new ArrayList<String>();
+				for (DesignItems designItem : designItemsList) {
+					String itemId = designItem.getItemId();
+					Optional<ItemMaster> itemMaster = itemService.getItemById(itemId);
+					if (itemMaster.isPresent()) {
+						String modelNumber = itemMaster.get().getModel();
+						modelList.add(modelNumber);
+					}
+				}
+				// Set soModelNo as comma-separated model numbers
+				deliveryChallanItems.setSoModelNo(String.join(", ", modelList));
+				
 				itemList.add(deliveryChallanItems);
 				}
 			}

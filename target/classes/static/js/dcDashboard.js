@@ -259,7 +259,12 @@ $(document).on("click",".dcView",function(){
 				var slno=1;
 				$.each(response,function(index,value){
 					var soDesc=value.description;
-					var soModelNo=value.soModelNo;
+					var soModelNo=value.soModelNo || 'N/A';
+					if(soModelNo && soModelNo.trim() !== '') {
+						console.log("SO Model Number:", soModelNo);
+					} else {
+						console.log("SO Model Number: Not Available");
+					}
 					var totalQty=value.totalQuantity;
 					var units=value.unit;
 					var deliveredQty=value.deliveredQuantity;
