@@ -829,4 +829,16 @@ public class ItemMasterService {
 		// Model exists and it's not the current item being edited
 		return true;
 	}
+	
+	/**
+	 * Find item masters by list of model numbers
+	 * @param modelNumbers - list of model numbers to search for
+	 * @return list of ItemMaster objects
+	 */
+	public List<ItemMaster> findByModelNumbers(List<String> modelNumbers) {
+		if (modelNumbers == null || modelNumbers.isEmpty()) {
+			return new ArrayList<>();
+		}
+		return itemMasterRepo.findByModelIn(modelNumbers);
+	}
 }

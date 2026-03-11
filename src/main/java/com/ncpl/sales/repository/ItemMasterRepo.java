@@ -54,4 +54,7 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 		@Query("SELECT im FROM ItemMaster im WHERE im.id IN :itemIds")
 		List<ItemMaster> findByIdIn(@Param("itemIds") List<String> itemIds);
 		
+	@Query("SELECT im FROM ItemMaster im WHERE im.id IN :modelNumbers")
+		List<ItemMaster> findByModelIn(@Param("modelNumbers") List<String> modelNumbers);
+		
 }

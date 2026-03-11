@@ -188,15 +188,18 @@ public class PurchaseItemService {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Map getModelNos() {
-		// TODO Auto-generated method stub
+		// Optimized version - use single query with JOIN
 		Map itemMap = new HashMap();
-		List<PurchaseItem> poItems = purchaseItemRepo.findAll();
-
-		for (PurchaseItem purchaseItem : poItems) {
-			Optional<ItemMaster> itemMasterObject = itemMasterService.getItemListById(purchaseItem.getModelNo());
-			if (itemMasterObject.isPresent()) {
-				itemMap.put(itemMasterObject.get().getId(), itemMasterObject.get().getModel());
-			}
+		
+		// Get distinct model numbers from purchase items first
+		List<String> distinctModelNos = purchaseItemRepo.findDistinctModelNos();
+		
+		// Batch fetch item masters for all model numbers at once
+		List<ItemMaster> itemMasters = itemMasterService.findByModelNumbers(distinctModelNos);
+		
+		// Build the map efficiently
+		for (ItemMaster itemMaster : itemMasters) {
+			itemMap.put(itemMaster.getId(), itemMaster.getModel());
 		}
 
 		return itemMap;
