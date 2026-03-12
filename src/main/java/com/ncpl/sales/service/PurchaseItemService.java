@@ -92,7 +92,7 @@ public class PurchaseItemService {
 				 * 
 				 * }
 				 */
-
+				
 				if (receivedQty == p.getQuantity()) {
 					list.remove(p);
 				}

@@ -25,6 +25,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ncpl.sales.model.Grn;
 import com.ncpl.sales.model.ItemMaster;
 import com.ncpl.sales.model.Make;
 import com.ncpl.sales.model.Party;
@@ -38,6 +39,7 @@ import com.ncpl.sales.service.MakeService;
 import com.ncpl.sales.service.PartyService;
 import com.ncpl.sales.service.StockReportByDateExcel;
 import com.ncpl.sales.service.StockService;
+import com.ncpl.sales.service.GrnService;
 import com.ncpl.sales.service.itemListExcel;
 import com.ncpl.sales.service.stockModifiedExcel;
 import com.ncpl.sales.util.DateConverterUtil;
@@ -57,6 +59,8 @@ public class itemMasterController {
 	DateConverterUtil convertDate;
 	@Autowired
 	MakeService makeService;
+	@Autowired
+	GrnService grnService;
 	@Autowired
 	ItemUploadService excelUploadService;
 
@@ -386,5 +390,25 @@ public class itemMasterController {
 		        }
 		    }
 		    
+		// API endpoint for GRN and PO details by model number
+		@GetMapping("/api/grn_po_by_model")
+		public ResponseEntity<?> getGrnAndPoDetailsByModel(@RequestParam("modelNo") String modelNo) {
+			try {
+				if (modelNo == null || modelNo.trim().isEmpty()) {
+					Map<String, String> error = new HashMap<>();
+					error.put("errorCode", "400");
+					error.put("errorMessage", "Model number is required");
+					return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+				}
+				
+				List<Grn> grnList = grnService.getGrnAndPoDetailsByModel(modelNo.trim());
+				return new ResponseEntity<>(grnList, HttpStatus.OK);
+			} catch (Exception e) {
+				Map<String, String> error = new HashMap<>();
+				error.put("errorCode", "500");
+				error.put("errorMessage", "Error retrieving GRN/PO details: " + e.getMessage());
+				return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		}
 
 }

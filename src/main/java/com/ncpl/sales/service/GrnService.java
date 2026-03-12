@@ -1087,6 +1087,45 @@ public class GrnService {
 		
 	}
 	
+	// Get GRN and PO details by model number
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public List<Grn> getGrnAndPoDetailsByModel(String modelNo) {
+		ItemMaster item = itemMasterService.getItemByModelNo(modelNo.trim());
+		ArrayList<PurchaseOrder> poList = new ArrayList<PurchaseOrder>();
+		ArrayList<Grn> grn;
+		Set set = new HashSet();
+		
+		if (item == null) {
+			grn = new ArrayList<Grn>(set);
+		} else {
+			List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemsByModelNumber(item.getId());
+			
+			for (PurchaseItem purchaseItem : poItemList) {
+				PurchaseOrder po = purchaseItem.getPurchaseOrder();
+				poList.add(po);
+			}
+			
+			for (PurchaseOrder po : poList) {
+				String poNumber = po.getPoNumber();
+				List<Grn> grnList = findGrnByPoNumber(poNumber);
+				for (Grn grnObject : grnList) {
+					String poNum = grnObject.getPoNumber();
+					Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNum);
+					if (poObj.isPresent()) {
+						String vendor = poObj.get().getParty().getPartyName();
+						Date poDate = poObj.get().getUpdated();
+						grnObject.set("vendor", vendor);
+						grnObject.set("poDate", poDate);
+					}
+					set.add(grnObject);
+				}
+			}
+			grn = new ArrayList<Grn>(set);
+		}
+		
+		return grn;
+	}
+	
 	
 	
 	

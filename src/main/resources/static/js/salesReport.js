@@ -33,11 +33,13 @@ $(document).ready(function () {
 	$("#clientName").change(function(){ $("#clientName").removeClass("border-color"); });
 	$("#grnreportByRegionFromDate").change(function(){ $("#grnreportByRegionFromDate").removeClass("border-color"); });
 	$("#grnreportByRegionToDate").change(function(){ $("#grnreportByRegionToDate").removeClass("border-color"); });
+	$("#modelNoSelect").change(function(){ $("#modelNoSelect").removeClass("border-color"); });
 
 	//getPartyList();
 	getPoItemList();
 	getDesignItemList();
 	getPoNumberList();
+	getModelNumberList();
 	$.each(clientList, function (index, value) {
 		var clientPartyList = value.partyName;
 		clientPartyList = clientPartyList.split(' ');
@@ -66,7 +68,143 @@ $(document).ready(function () {
 		}
 		$('#clientInPendingReport').append('<option value=' + value.id + '>' + vendorPartyList + '</option>'); 
 	});
+
+	// Initialize select2 for model number dropdown
+	$('#modelNoSelect').select2({
+		placeholder: "Select Model Number",
+		allowClear: true,
+		width: '100%'
+	});
+
+	// GRN/PO search button click handler
+	$('#searchGrnPoBtn').on('click', function() {
+		var modelNo = $('#modelNoSelect').val();
+		if (!modelNo || modelNo.trim() === '') {
+			$.error("Please select a model number");
+			$('#modelNoSelect').addClass("border-color");
+			return;
+		}
+		
+		searchGrnAndPoByModel(modelNo.trim());
+	});
 });
+
+// Function to populate model number dropdown
+function getModelNumberList(){
+	$.ajax({
+	    Type:'GET',
+	    url : api.GET_ITEM_LIST,
+	    dataType:'json',
+	    async: 'false',
+	    success  : function(response){
+	    	$("#modelNoSelect option:not(:first)").remove();
+	    	$.each(response, function( key, value ) {
+	    		$('#modelNoSelect').append('<option value=' + value.model + '>' + value.model + '</option>'); 
+	    	});
+	    },  
+		complete:function(resp){
+			if(resp.status==500){
+				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+			}
+		},
+		error : function(e) {
+			console.log(e);
+		}  
+	  }); 
+}
+
+// Function to search GRN and PO details by model number
+function searchGrnAndPoByModel(modelNo) {
+	// Show loading spinner
+	$('#grnPoLoading').show();
+	$('#grnPoResultsTable tbody').empty();
+	$('#grnPoNoResults').hide();
+	
+	// Open modal
+	$('#grnPoResultsModal').modal('show');
+	
+	$.ajax({
+		type: 'GET',
+		url: '/ncpl-sales/api/grn_po_by_model',
+		data: { modelNo: modelNo },
+		dataType: 'json',
+		success: function(response) {
+			$('#grnPoLoading').hide();
+			
+			if (response && response.length > 0) {
+				// Populate table with results
+				var tbody = $('#grnPoResultsTable tbody');
+				$.each(response, function(index, grn) {
+					var row = '<tr>' +
+						'<td>' + (grn.grnId || '') + '</td>' +
+						'<td>' + (grn.poNumber || '') + '</td>' +
+						'<td>' + formatDate(grn.created) + '</td>' +
+						'<td>' + (grn.vendor || '') + '</td>' +
+						'<td>' + formatDate(grn.poDate) + '</td>' +
+						'<td>' + (grn.invoiceNo || '') + '</td>' +
+						'</tr>';
+					tbody.append(row);
+				});
+				
+				// Initialize DataTable for sorting functionality
+				if ($.fn.DataTable.isDataTable('#grnPoResultsTable')) {
+					$('#grnPoResultsTable').DataTable().destroy();
+				}
+				$('#grnPoResultsTable').DataTable({
+					"paging": false,
+					"searching": false,
+					"info": false,
+					"ordering": true,
+					"order": [[ 2, "desc" ]], // Sort by GRN Date descending by default
+					"columnDefs": [
+						{ "targets": [0, 1, 3, 4, 5], "orderable": true },
+						{ "targets": 2, "orderable": true, "type": "date" } // GRN Date column
+					]
+				});
+			} else {
+				// Show no results message
+				$('#grnPoNoResults').show();
+			}
+		},
+		error: function(xhr, status, error) {
+			$('#grnPoLoading').hide();
+			var errorMessage = 'Error occurred while fetching data';
+			
+			if (xhr.responseJSON) {
+				if (xhr.responseJSON.errorMessage) {
+					errorMessage = xhr.responseJSON.errorMessage;
+				} else if (xhr.responseJSON.message) {
+					errorMessage = xhr.responseJSON.message;
+				}
+			}
+			
+			$.error(errorMessage);
+			$('#grnPoResultsModal').modal('hide');
+		}
+	});
+}
+
+// Helper function to format dates
+function formatDate(dateString) {
+	if (!dateString) return '';
+	
+	try {
+		var date = new Date(dateString);
+		if (isNaN(date.getTime())) {
+			// Try parsing as string format
+			return dateString;
+		}
+		
+		var day = date.getDate().toString().padStart(2, '0');
+		var month = (date.getMonth() + 1).toString().padStart(2, '0');
+		var year = date.getFullYear();
+		
+		return day + '-' + month + '-' + year;
+	} catch (e) {
+		return dateString;
+	}
+}
+
 //on submit of stockHistory by date form
 $(document).on('submit', '#stockHistoryForm',function(e){
 	var reportDate=$("#reportDate").val();

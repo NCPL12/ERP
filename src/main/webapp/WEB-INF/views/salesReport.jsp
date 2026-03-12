@@ -478,11 +478,85 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 		<!-- Dc List By Item Report ends -->
 			
 			
+		<!-- GRN and PO Details by Model Report starts -->
+		<div class="row" style="padding-top:10px">
+		<security:authorize access="hasAnyAuthority('ADMIN','SALES','PURCHASE','PURCHASE STORE')">
+		<div class="col-md-6">
+				<div class="card w-100">
+						  <h5 class="card-header  bg-light" style="font-size: inherit;">
+						  		GRN and PONumber by Models
+						  </h5>
+					  	<form id="grnPoByModelForm">
+						  <div class="card-body cardHeight">
+							   <div class="form-group row">
+							   		<label for="modelNo" class="col-sm-2 ">Model Number</label>
+								    <div class="col-sm-10">
+								     <select class="form-control select2 PositionofTextbox" name="modelNo" id="modelNoSelect" style="padding: 0;">
+								     <option value="" selected>Select Model Number:</option>
+								     </select>
+								    </div>
+								  </div>
+							</div>
+						<div  class="card-footer">		  
+							    <button type="button" id="searchGrnPoBtn"
+											class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-search'></i> Search</button>
+						  </div>
+					  </form>
+					</div>
+			</div>
+		</security:authorize>
+		</div>
+		
+		<!-- GRN and PO Details by Model Report ends -->
+			
+			
 		</section>
 		</div>
 		</div>
 		<tiles:insertAttribute name="footer" />
 		</div>
-</body>
+		
+		<!-- GRN/PO Results Modal -->
+		<div class="modal fade" id="grnPoResultsModal" tabindex="-1" role="dialog">
+			<div class="modal-dialog modal-xl" role="document">
+				<div class="modal-content">
+					<div class="modal-header custom-box-header-modal">
+						<h5 class="modal-title">GRN and PO Details</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="table-responsive">
+							<table id="grnPoResultsTable" class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>GRN Number</th>
+										<th>PO Number</th>
+										<th>GRN Date</th>
+										<th>Vendor</th>
+										<th>PO Date</th>
+										<th>Invoice Number</th>
+									</tr>
+								</thead>
+								<tbody>
+									<!-- Results will be populated here -->
+								</tbody>
+							</table>
+						</div>
+						<div id="grnPoNoResults" class="alert alert-info" style="display: none;">
+							No records found for the selected model number.
+						</div>
+						<div id="grnPoLoading" class="text-center" style="display: none;">
+							<i class="fa fa-spinner fa-spin"></i> Loading...
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
 
 </html>
