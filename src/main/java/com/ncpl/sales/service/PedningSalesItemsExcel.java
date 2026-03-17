@@ -54,7 +54,7 @@ public class PedningSalesItemsExcel {
 	
 	static List<SalesItem> salesItemsList = null;
 	
-	@Scheduled(cron = "0 30 12 ? * *", zone="IST")
+	//@Scheduled(cron = "0 30 12 ? * *", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

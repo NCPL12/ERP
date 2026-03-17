@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +49,23 @@ public class PurchaseUploadExcel {
 
         List<String> errors = new ArrayList<>();
 
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.trim().isEmpty()) {
+            errors.add("Invalid file. Filename is missing.");
+            return errors;
+        }
+
         try (InputStream is = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(is)) {
+             Workbook workbook = filename.toLowerCase().endsWith(".xls")
+                     ? new HSSFWorkbook(is)
+                     : filename.toLowerCase().endsWith(".xlsx")
+                             ? new XSSFWorkbook(is)
+                             : null) {
+
+            if (workbook == null) {
+                errors.add("Invalid file format. Only .xls and .xlsx files are supported.");
+                return errors;
+            }
 
             Sheet sheet = workbook.getSheetAt(0);
             if (sheet == null) {
@@ -94,6 +110,10 @@ public class PurchaseUploadExcel {
                 String modelNo = getStringCellValue(row.getCell(5));
                 String hsn = getStringCellValue(row.getCell(6));
 
+				if (clientPoNum.isEmpty() && description.isEmpty() && modelNo.isEmpty() && hsn.isEmpty()) {
+					continue;
+				}
+
                 if (clientPoNum.isEmpty()) rowErrors.add("Client PO Number is mandatory.");
                 if (description.isEmpty()) rowErrors.add("Description is mandatory.");
                 if (modelNo.isEmpty()) rowErrors.add("Model Number is mandatory.");
@@ -112,15 +132,17 @@ public class PurchaseUploadExcel {
 
                 float salesQty = 0;
                 float orderedQty = 0;
+                boolean matchedSalesItem = false;
 
                 if (item != null && salesOrder != null) {
 
                     SalesItem salesItem =
-                            salesService.getSalesItemByName(description, clientPoNum, item.getId());
+                            salesService.getSalesItemByName(normalizeText(description), clientPoNum, item.getId());
 
                     if (salesItem == null) {
-                        rowErrors.add("Description does not match Sales Item.");
+                        rowErrors.add("Description does not match Sales Item for Client PO: " + clientPoNum + " and Model: " + modelNo);
                     } else {
+						matchedSalesItem = true;
 
                         poItem.setDescription(salesItem.getId());
 
@@ -150,10 +172,12 @@ public class PurchaseUploadExcel {
 
                 if (qty < 0) {
                     rowErrors.add("Quantity cannot be negative.");
-                } else if (qty > salesQty) {
-                    rowErrors.add("Entered quantity exceeds Design Quantity.");
-                } else if (qty > remainingQty) {
-                    rowErrors.add("Remaining Quantity available: " + remainingQty);
+                } else if (matchedSalesItem) {
+                    if (qty > salesQty) {
+                        rowErrors.add("Entered quantity exceeds Design Quantity. DesignQty: " + salesQty + ", Entered: " + qty);
+                    } else if (qty > remainingQty) {
+                        rowErrors.add("Remaining Quantity available: " + remainingQty + ", Entered: " + qty);
+                    }
                 }
 
                 Float unitPrice = getFloatCellValue(row.getCell(8), rowErrors, "Unit Price");
@@ -255,5 +279,12 @@ public class PurchaseUploadExcel {
         errors.add(field + " must be a valid date.");
         return null;
     }
+
+	private String normalizeText(String input) {
+		if (input == null) {
+			return "";
+		}
+		return input.trim().replaceAll("\\s+", " ");
+	}
 
 }

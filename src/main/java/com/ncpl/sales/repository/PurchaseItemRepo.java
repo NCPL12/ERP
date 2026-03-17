@@ -14,7 +14,7 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 	
 	@Query(" from PurchaseItem where po_number=?1 ")
 	List<PurchaseItem> findByPurchaseOrder_PoNumber(String poNumber);
-	@Query(" from PurchaseItem where model_no=?1 ")
+	@Query("SELECT pi FROM PurchaseItem pi JOIN FETCH pi.purchaseOrder WHERE pi.modelNo=?1")
 	List<PurchaseItem> findByModelNumber(String model);
 	@Query(" from PurchaseItem where sales_item_id=?1 ")
 	List<PurchaseItem> findBySalesItemId(String soItemId);

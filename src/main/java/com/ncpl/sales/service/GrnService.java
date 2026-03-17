@@ -1102,11 +1102,16 @@ public class GrnService {
 			
 			for (PurchaseItem purchaseItem : poItemList) {
 				PurchaseOrder po = purchaseItem.getPurchaseOrder();
-				poList.add(po);
+				if (po != null) {
+					poList.add(po);
+				}
 			}
 			
 			for (PurchaseOrder po : poList) {
-				String poNumber = po.getPoNumber();
+				if (po == null || po.getPoNumber() == null || po.getPoNumber().trim().isEmpty()) {
+					continue;
+				}
+				String poNumber = po.getPoNumber().trim();
 				List<Grn> grnList = findGrnByPoNumber(poNumber);
 				for (Grn grnObject : grnList) {
 					String poNum = grnObject.getPoNumber();

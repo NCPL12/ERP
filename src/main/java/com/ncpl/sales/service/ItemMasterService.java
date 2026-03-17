@@ -325,6 +325,9 @@ public class ItemMasterService {
 
 	public Optional<ItemMaster> getItemById(String id) {
 		Optional<ItemMaster> itemMasterObject = itemMasterRepo.findById(id);
+		if (!itemMasterObject.isPresent()) {
+			return itemMasterObject;
+		}
 									
 		List<Supplier> supplier = getSupplierList(itemMasterObject.get().getId());
 		
@@ -650,23 +653,6 @@ public class ItemMasterService {
 
 
 
-	public ItemMaster getItemByModelNo(String model) {
-		// TODO Auto-generated method stub
-							
-		ItemMaster itemMasterObject = itemMasterRepo.getItemByModelNo(model);
-		return itemMasterObject;
-	}
-
-
-
-	public Optional<ItemMaster> getItemListById(String id) {
-		// TODO Auto-generated method stub
-		Optional<ItemMaster> itemMasterObject = itemMasterRepo.findById(id);
-		return itemMasterObject;
-	}
-
-
-
 	public List<Supplier> findItemsForSelectedVendor(String itemId, String supplierName) {
 		List<Supplier> supplierList=supplierRepo.findSupplierListBySupplierName(itemId,supplierName);
 		return supplierList;
@@ -829,16 +815,64 @@ public class ItemMasterService {
 		// Model exists and it's not the current item being edited
 		return true;
 	}
-	
-	/**
-	 * Find item masters by list of model numbers
-	 * @param modelNumbers - list of model numbers to search for
-	 * @return list of ItemMaster objects
-	 */
-	public List<ItemMaster> findByModelNumbers(List<String> modelNumbers) {
-		if (modelNumbers == null || modelNumbers.isEmpty()) {
-			return new ArrayList<>();
+
+	public ItemMaster getItemByModelNo(String model) {
+		if (model == null) {
+			return null;
 		}
-		return itemMasterRepo.findByModelIn(modelNumbers);
+		String trimmed = model.trim();
+		if (trimmed.isEmpty()) {
+			return null;
+		}
+		ItemMaster exact = itemMasterRepo.getItemByModelNoNormalized(trimmed);
+		if (exact != null) {
+			return exact;
+		}
+		List<ItemMaster> candidates = itemMasterRepo.findByModelContainingIgnoreCase(trimmed);
+		if (candidates == null || candidates.isEmpty()) {
+			return null;
+		}
+		String normalizedInput = normalizeModel(trimmed);
+		ItemMaster best = null;
+		int bestScore = -1;
+		for (ItemMaster c : candidates) {
+			String normalizedCandidate = normalizeModel(c.getModel());
+			int score = tokenOverlapScore(normalizedInput, normalizedCandidate);
+			if (score > bestScore) {
+				bestScore = score;
+				best = c;
+			}
+		}
+		return best;
+	}
+
+	private String normalizeModel(String input) {
+		if (input == null) {
+			return "";
+		}
+		String normalized = input.toLowerCase().trim();
+		normalized = normalized.replaceAll("[^a-z0-9]+", " ");
+		return normalized.trim().replaceAll("\\s+", " ");
+	}
+
+	private int tokenOverlapScore(String a, String b) {
+		if (a == null || b == null) {
+			return 0;
+		}
+		String[] aTokens = a.split("\\s+");
+		String[] bTokens = b.split("\\s+");
+		java.util.HashSet<String> aSet = new java.util.HashSet<>();
+		for (String t : aTokens) {
+			if (t != null && !t.trim().isEmpty()) {
+				aSet.add(t);
+			}
+		}
+		int score = 0;
+		for (String t : bTokens) {
+			if (t != null && !t.trim().isEmpty() && aSet.contains(t)) {
+				score++;
+			}
+		}
+		return score;
 	}
 }

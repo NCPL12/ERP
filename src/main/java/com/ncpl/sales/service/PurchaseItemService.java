@@ -92,7 +92,7 @@ public class PurchaseItemService {
 				 * 
 				 * }
 				 */
-				
+
 				if (receivedQty == p.getQuantity()) {
 					list.remove(p);
 				}
@@ -188,18 +188,18 @@ public class PurchaseItemService {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Map getModelNos() {
-		// Optimized version - use single query with JOIN
+		// TODO Auto-generated method stub
 		Map itemMap = new HashMap();
-		
-		// Get distinct model numbers from purchase items first
-		List<String> distinctModelNos = purchaseItemRepo.findDistinctModelNos();
-		
-		// Batch fetch item masters for all model numbers at once
-		List<ItemMaster> itemMasters = itemMasterService.findByModelNumbers(distinctModelNos);
-		
-		// Build the map efficiently
-		for (ItemMaster itemMaster : itemMasters) {
-			itemMap.put(itemMaster.getId(), itemMaster.getModel());
+		List<PurchaseItem> poItems = purchaseItemRepo.findAll();
+
+		for (PurchaseItem purchaseItem : poItems) {
+			if (purchaseItem.getModelNo() == null || purchaseItem.getModelNo().trim().isEmpty()) {
+				continue;
+			}
+			Optional<ItemMaster> itemMasterObject = itemMasterService.getItemById(purchaseItem.getModelNo().trim());
+			if (itemMasterObject.isPresent()) {
+				itemMap.put(itemMasterObject.get().getId(), itemMasterObject.get().getModel());
+			}
 		}
 
 		return itemMap;

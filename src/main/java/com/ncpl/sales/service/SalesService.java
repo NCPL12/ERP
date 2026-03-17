@@ -517,6 +517,7 @@ public class SalesService {
 		if (!salesItem.isPresent()) {
 			return Optional.empty();
 		}
+		
 		String clientId = salesItem.get().getSalesOrder().getParty().getId();
 		// check for stock list while changing description in dc
 		if (value) {
@@ -1678,28 +1679,92 @@ public class SalesService {
 	}
 	
 	public SalesItem getSalesItemByName(String description, String clientPoNum, String itemId) {
-	    // 1. Fetch all SalesItems matching the description and clientPoNum
-	    List<SalesItem> salesItems = salesItemrepo.findByDescriptionAndClientPoNumber(description, clientPoNum);
+		if (clientPoNum == null || description == null || itemId == null) {
+			return null;
+		}
+		SalesOrder salesOrder = salesrepo.getSalesOrderByClientPoNumber(clientPoNum);
+		if (salesOrder == null) {
+			return null;
+		}
+		List<SalesItem> salesItems = salesItemrepo.findSalesItemsBySalesOrderId(salesOrder.getId());
+		String normalizedInputDesc = normalizeText(description);
+		SalesItem bestByDesc = null;
+		for (SalesItem salesItem : salesItems) {
+			String normalizedSalesDesc = normalizeText(salesItem.getDescription());
+			boolean descMatch = normalizedSalesDesc.equalsIgnoreCase(normalizedInputDesc)
+					|| normalizedSalesDesc.contains(normalizedInputDesc)
+					|| normalizedInputDesc.contains(normalizedSalesDesc);
+			if (!descMatch) {
+				continue;
+			}
+			List<DesignItems> designItemList = soDesignService.getAllDesignItemListBySOItemId(salesItem.getId());
+			for (DesignItems designItem : designItemList) {
+				if (itemId.equals(designItem.getItemId())) {
+					bestByDesc = salesItem;
+					break;
+				}
+			}
+			if (bestByDesc != null) {
+				break;
+			}
+		}
+		if (bestByDesc != null) {
+			return bestByDesc;
+		}
 
-	    for (SalesItem salesItem : salesItems) {
-	        String salesItemId = salesItem.getId();
+		// Fallback: match by itemId present in design list, then pick the closest description.
+		SalesItem best = null;
+		int bestScore = -1;
+		for (SalesItem salesItem : salesItems) {
+			List<DesignItems> designItemList = soDesignService.getAllDesignItemListBySOItemId(salesItem.getId());
+			boolean hasItem = false;
+			for (DesignItems designItem : designItemList) {
+				if (itemId.equals(designItem.getItemId())) {
+					hasItem = true;
+					break;
+				}
+			}
+			if (!hasItem) {
+				continue;
+			}
+			String normalizedSalesDesc = normalizeText(salesItem.getDescription());
+			int score = tokenOverlapScore(normalizedInputDesc, normalizedSalesDesc);
+			if (score > bestScore) {
+				bestScore = score;
+				best = salesItem;
+			}
+		}
+		return best;
+	}
 
-	        // 2. Find designs linked to this SalesItem
-	        List<DesignItems> designItemList = soDesignService.getAllDesignItemListBySOItemId(salesItemId);
+	private int tokenOverlapScore(String a, String b) {
+		if (a == null || b == null) {
+			return 0;
+		}
+		String[] aTokens = a.split("\\s+");
+		String[] bTokens = b.split("\\s+");
+		java.util.HashSet<String> aSet = new java.util.HashSet<>();
+		for (String t : aTokens) {
+			if (t != null && !t.trim().isEmpty()) {
+				aSet.add(t);
+			}
+		}
+		int score = 0;
+		for (String t : bTokens) {
+			if (t != null && !t.trim().isEmpty() && aSet.contains(t)) {
+				score++;
+			}
+		}
+		return score;
+	}
 
-	        
-	            // 4. Check if any design item matches the itemId
-	            for (DesignItems designItem : designItemList) {
-	                if (designItem.getItemId().equals(itemId)) {
-	                    // ✅ Found matching SalesItem
-	                    return salesItem;
-	                }
-	            
-	        }
-	    }
-
-	    // ❌ No match found
-	    return null;
+	private String normalizeText(String input) {
+		if (input == null) {
+			return "";
+		}
+		String normalized = input.toLowerCase().trim();
+		normalized = normalized.replaceAll("[^a-z0-9]+", " ");
+		return normalized.trim().replaceAll("\\s+", " ");
 	}
 	
 	 public int archiveSalesList(List<String> ids) {

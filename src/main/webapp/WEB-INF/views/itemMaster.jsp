@@ -122,7 +122,7 @@ var user = ${user};
  						 </div>
  						 <div class="row" style="padding: 10px;">
  						 <label for="units" class="col-form-label form-control-sm col-sm-1">Units</label>
-   								 <div class="col-sm-10">
+   								 <div class="col-sm-2">
      								 <select name="units" id="units"  class="form-control form-control-sm select2">
      								 <option value="" selected>Not selected</option>
      								 </select>

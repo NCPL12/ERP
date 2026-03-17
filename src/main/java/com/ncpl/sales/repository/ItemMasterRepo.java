@@ -18,6 +18,12 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 
 	@Query(" from ItemMaster where model=?1 ")
 	public ItemMaster getItemByModelNo(String model);
+	
+	@Query(" from ItemMaster where lower(trim(model)) = lower(trim(:model)) ")
+	public ItemMaster getItemByModelNoNormalized(@Param("model") String model);
+
+	@Query(" from ItemMaster where lower(model) like concat('%', lower(:model), '%') ")
+	public List<ItemMaster> findByModelContainingIgnoreCase(@Param("model") String model);
 	@Query(value="SELECT * from tbl_item_master WHERE created>=:fromDate and created<=:toDate",nativeQuery = true)
 	List<ItemMaster> findItemListByDateUpdated(Timestamp fromDate, Timestamp toDate);
 	@Query(value = "SELECT * FROM  tbl_item_master WHERE id IN (SELECT item_master_id from tbl_stock where quantity>0)",nativeQuery = true)
@@ -53,8 +59,5 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 		
 		@Query("SELECT im FROM ItemMaster im WHERE im.id IN :itemIds")
 		List<ItemMaster> findByIdIn(@Param("itemIds") List<String> itemIds);
-		
-	@Query("SELECT im FROM ItemMaster im WHERE im.id IN :modelNumbers")
-		List<ItemMaster> findByModelIn(@Param("modelNumbers") List<String> modelNumbers);
 		
 }
