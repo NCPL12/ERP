@@ -184,8 +184,9 @@ public class SalesService {
 				Optional<Units> unitObj = itemService.getUnitsById(unitId);
 			    salesItem.setItem_units(unitObj.get());
 				salesItem.setSalesOrder(salesorder);
-			
 				
+				// ❌ REMOVED: Manual save - JPA cascade will save via SalesOrder
+				// salesItemrepo.save(salesItem);
 			}
 			
 			
@@ -579,6 +580,12 @@ public class SalesService {
 	}
 
 	public void deleteSalesItemById(String salesItemId) {
+		// Get the sales item before deletion to capture sales order ID
+		Optional<SalesItem> salesItem = salesItemrepo.findById(salesItemId);
+		String salesOrderId = "UNKNOWN_SO";
+		if (salesItem.isPresent()) {
+			salesOrderId = salesItem.get().getSalesOrder().getId();
+		}
 		salesItemrepo.deleteById(salesItemId);
 	}
 

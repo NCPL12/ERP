@@ -34,6 +34,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
+import java.beans.PropertyEditorSupport;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +51,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.ncpl.sales.service.SalesOrderAuditService;
+import com.ncpl.sales.model.SalesOrderAudit;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -123,6 +128,7 @@ import com.ncpl.sales.service.SalesOrderDownloadExcel;
 import com.ncpl.sales.service.SalesOrderExcel;
 import com.ncpl.sales.service.SalesOrderUploadService;
 import com.ncpl.sales.service.SalesService;
+import com.ncpl.sales.service.SalesOrderAuditService;
 import com.ncpl.sales.service.StateService;
 import com.ncpl.sales.service.StockService;
 import com.ncpl.sales.service.StockSummaryByRegionExcel;
@@ -161,8 +167,49 @@ public class SalesController {
 	PartyCategoryService partyCategoryService;
 	@Autowired
 	PartyAddressService partyAddressService;
+
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+	    System.out.println("InitBinder called for Party conversion");
+	    
+	    // Custom editor for Party object
+	    binder.registerCustomEditor(Party.class, new PropertyEditorSupport() {
+	        @Override
+	        public void setAsText(String text) throws IllegalArgumentException {
+	            System.out.println("Converting Party ID: " + text);
+	            if (text != null && !text.isEmpty()) {
+	                Party party = partyService.getPartyById(text);
+	                System.out.println("Found Party: " + (party != null ? party.getPartyName() : "null"));
+	                setValue(party);
+	            }
+	        }
+	    });
+	    
+	    // Custom editor for Date objects
+	    binder.registerCustomEditor(Date.class, new PropertyEditorSupport() {
+	        @Override
+	        public void setAsText(String text) throws IllegalArgumentException {
+	            if (text == null || text.trim().isEmpty() || text.equals("Invalid Date")) {
+                setValue(null); // Set null for empty or invalid dates
+                return;
+            }
+            
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+                Date parsedDate = dateFormat.parse(text);
+                setValue(parsedDate);
+            } catch (Exception e) {
+                System.out.println("Date parsing error for: " + text);
+                setValue(null); // Set null for invalid dates
+            }
+        }
+    });
+	}
+
 	@Autowired
 	PartyBankService partyBankService;
+	@Autowired
+	SalesOrderAuditService auditService;
 
 	@Autowired
 	TypeService typeService;
@@ -294,9 +341,17 @@ public class SalesController {
 	}
 
 	@PostMapping("/add/salesOrder")
-	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req)
+	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req, @RequestParam("party") String partyId)
 			throws Exception {
-		String partyId = req.getParameter("party");
+		
+		System.out.println("Party ID from request: " + partyId);
+		
+		// Manually set the Party object
+		if (partyId != null && !partyId.isEmpty()) {
+			Party party = partyService.getPartyById(partyId);
+			System.out.println("Found Party: " + (party != null ? party.getPartyName() : "null"));
+			salesOrder.setParty(party);
+		}
 
 		if (errors.hasErrors()) {
 			System.out.println("Error....." + errors.getFieldError());
@@ -2098,52 +2153,74 @@ public class SalesController {
 			return new ResponseEntity<>(userList, HttpStatus.OK);
 		}
 	    
-	    /*@PostMapping("/api/sales/upload")
-	    public ResponseEntity<String> updateToolTackle(@RequestParam("file") MultipartFile file){
-	        
-	            // Save the uploaded file locally
-	    	 try {
-	             List<String> ids = itemMasterService.readIdsFromExcel(file);
-	             int updatedCount = itemMasterService.updateToolTackleStatus(ids);
-	             return ResponseEntity.ok(updatedCount + " records updated successfully.");
-	         } catch (Exception e) {
-	             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	         }
-	    }*/
+	    // ==================== AUDIT LOG ENDPOINTS ====================
 	    
-	    @PostMapping("/api/sales/archive")
-	    public ResponseEntity<String> archiveSalesList(@RequestParam("file") MultipartFile file){
-	        
-	            // Save the uploaded file locally
-	    	 try {
-	             List<String> ids = salesService.readIdsFromExcel(file);
-	             int updatedCount = salesService.archiveSalesList(ids);
-	             return ResponseEntity.ok(updatedCount + " records updated successfully.");
-	         } catch (Exception e) {
-	             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
-	         }
+	    @GetMapping("/audit/sales-order")
+	    public String salesOrderAuditPage(Model model) {
+	        List<SalesOrderAudit> recentAudits = auditService.getAllAuditLogs();
+	        model.addAttribute("audits", recentAudits);
+	        model.addAttribute("actions", getAuditActions());
+	        return "sales-order-audit";
 	    }
 	    
-	    @GetMapping("/api/get_salesItem_list_by_id")
-		public ResponseEntity<?> getSalesItemListById(@RequestParam("soId") String soId,
-				Model model) {
-			List<SalesItem> itemList = salesService.getAllSalesItemListWithouPOBySoId(soId);
-			return new ResponseEntity<>(itemList, HttpStatus.OK);
-		}
+	    @GetMapping("/api/audit/sales-order/all")
+	    public ResponseEntity<List<SalesOrderAudit>> getAllAuditLogs() {
+	        List<SalesOrderAudit> audits = auditService.getAllAuditLogs();
+	        return new ResponseEntity<>(audits, HttpStatus.OK);
+	    }
 	    
-	    @PostMapping("/api/design/upload")
-	    public ResponseEntity<?> designUpload(@RequestParam("file") MultipartFile file, @RequestParam("clientPONum") String clientPONum) throws Exception {
-	    	 if (file.isEmpty()) {
-	             return ResponseEntity.badRequest().body("Please upload a file.");
-	         }
-
-	         List<String> errors = designUploadService.processExcelFile(file,clientPONum);
-
-	         if (!errors.isEmpty()) {
-	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-	         }
-
-	         return ResponseEntity.ok("File uploaded and processed successfully.");
+	    @GetMapping("/api/audit/sales-order/by-so-id")
+	    public ResponseEntity<List<SalesOrderAudit>> getAuditBySalesOrderId(@RequestParam("salesOrderId") String salesOrderId) {
+	        List<SalesOrderAudit> audits = auditService.getAuditBySalesOrderId(salesOrderId);
+	        return new ResponseEntity<>(audits, HttpStatus.OK);
+	    }
+	    
+	    @GetMapping("/api/audit/sales-order/by-user")
+	    public ResponseEntity<List<SalesOrderAudit>> getAuditByUser(@RequestParam("performedBy") String performedBy) {
+	        List<SalesOrderAudit> audits = auditService.getAuditByPerformedBy(performedBy);
+	        return new ResponseEntity<>(audits, HttpStatus.OK);
+	    }
+	    
+	    @GetMapping("/api/audit/sales-order/by-action")
+	    public ResponseEntity<List<SalesOrderAudit>> getAuditByAction(@RequestParam("action") String action) {
+	        List<SalesOrderAudit> audits = auditService.getAuditByAction(action);
+	        return new ResponseEntity<>(audits, HttpStatus.OK);
+	    }
+	    
+	    @GetMapping("/api/audit/sales-order/search")
+	    public ResponseEntity<List<SalesOrderAudit>> searchAuditLogs(
+	            @RequestParam(value = "salesOrderId", required = false) String salesOrderId,
+	            @RequestParam(value = "performedBy", required = false) String performedBy,
+	            @RequestParam(value = "action", required = false) String action,
+	            @RequestParam(value = "startDate", required = false) String startDate,
+	            @RequestParam(value = "endDate", required = false) String endDate) {
+	        
+	        try {
+	            java.sql.Timestamp startTimestamp = null;
+	            java.sql.Timestamp endTimestamp = null;
+	            
+	            if (startDate != null && !startDate.isEmpty()) {
+	                startTimestamp = java.sql.Timestamp.valueOf(startDate + " 00:00:00");
+	            }
+	            if (endDate != null && !endDate.isEmpty()) {
+	                endTimestamp = java.sql.Timestamp.valueOf(endDate + " 23:59:59");
+	            }
+	            
+	            List<SalesOrderAudit> audits = auditService.getAuditByMultipleCriteria(
+	                salesOrderId, performedBy, action, startTimestamp, endTimestamp);
+	            
+	            return new ResponseEntity<>(audits, HttpStatus.OK);
+	        } catch (Exception e) {
+	            log.error("Error searching audit logs", e);
+	            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+	        }
+	    }
+	    
+	    private List<String> getAuditActions() {
+	        List<String> actions = new ArrayList<>();
+	        actions.add("CREATE_SALES_ITEM");  // Sales Item creation
+	        actions.add("DELETE_SALES_ITEM");  // Sales Item deletion
+	        return actions;
 	    }
 	    
 }
