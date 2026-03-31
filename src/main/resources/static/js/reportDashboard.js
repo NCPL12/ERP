@@ -636,6 +636,11 @@ function getSalesItemsWithoutDesignList(){
 	})
 }
 
+
+function hari() {
+console.log("hari");
+}
+
 var salesItemsWithoutDesignTabe = null;
 function loadSalesItemsWithoutDesignTable(response) {
 	if (response != undefined || response != null) {
