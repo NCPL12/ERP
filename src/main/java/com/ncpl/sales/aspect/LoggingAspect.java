@@ -37,6 +37,10 @@ public class LoggingAspect {
 	public void salesServiceSaveMethod() {
 	}
 
+	@Pointcut(value = "execution(* com.ncpl.sales.service.SalesOrderDesignService.save(..))")
+	public void designServiceSaveMethod() {
+	}
+
 	@Around("salesServiceDeleteItemMethod()")
 	public Object auditSalesServiceDeleteItemMethod(ProceedingJoinPoint pjp) throws Throwable {
 		String methodName = pjp.getSignature().getName();
@@ -186,6 +190,77 @@ public class LoggingAspect {
 				
 			} catch (Exception e) {
 				log.error("Error creating audit log for Sales Item creation: " + e.getMessage());
+			}
+		}
+		
+		return result;
+	}
+
+	@Around("designServiceSaveMethod()")
+	public Object auditDesignServiceSaveMethod(ProceedingJoinPoint pjp) throws Throwable {
+		String methodName = pjp.getSignature().getName();
+		Object[] args = pjp.getArgs();
+		String className = pjp.getTarget().getClass().toString();
+		
+		log.info("Method Invoked " + className + " : " + methodName + "()" + " arguments");
+		
+		// Get design details for audit
+		String salesItemId = null;
+		int designItemsCount = 0;
+		
+		if (methodName.equals("save") && args.length > 0) {
+			com.ncpl.sales.model.SalesOrderDesign design = (com.ncpl.sales.model.SalesOrderDesign) args[0];
+			
+			if (design != null) {
+				salesItemId = design.getSalesItemId();
+				if (design.getItems() != null) {
+					designItemsCount = design.getItems().size();
+				}
+			}
+		}
+		
+		Object result = pjp.proceed();
+		
+		log.info(className + ":" + methodName + "()" + "Response");
+		
+		// Audit logging for design creation - only if auditService is available
+		if (auditService != null && salesItemId != null && designItemsCount > 0) {
+			try {
+				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+				String currentUser = getCurrentUsername();
+				String clientIp = request.getRemoteAddr();
+				
+				// Create audit log for Design creation
+				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
+				audit.setSalesOrderId(salesItemId);  // Use sales item ID as reference
+				audit.setAction("CREATE_DESIGN");
+				audit.setPerformedBy(currentUser);
+				audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+				audit.setIpAddress(clientIp);
+				audit.setSessionId(request.getSession().getId());
+				
+				// Set old and new values
+				if (mapper != null) {
+					try {
+						String oldValues = mapper.writeValueAsString(null);
+						String newValues = mapper.writeValueAsString(
+							java.util.Map.of("designItemsCount", designItemsCount, "salesItemId", salesItemId)
+						);
+						audit.setOldValues(oldValues);
+						audit.setNewValues(newValues);
+					} catch (Exception e) {
+						log.warn("Could not serialize audit data: " + e.getMessage());
+					}
+				}
+				
+				audit.setDescription("Created Design with " + designItemsCount + " items for Sales Item: " + salesItemId);
+				
+				// Save audit log
+				auditService.saveAuditLog(audit);
+				log.info("Audit log created for Design creation: " + salesItemId);
+				
+			} catch (Exception e) {
+				log.error("Error creating audit log for Design creation: " + e.getMessage());
 			}
 		}
 		

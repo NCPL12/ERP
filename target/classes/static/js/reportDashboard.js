@@ -111,12 +111,11 @@ function loadSalesTableWithStatusNotClosed(response) {
 				},
 				{
 					"title": "Client Name",
-					"data": "client Name",
+					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -240,9 +239,8 @@ function loadPurchaseTable(response) {
 					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 
 					}
@@ -355,9 +353,7 @@ function loadInvoiceTable(response) {
 					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.clientName.length > 15 ?
-								row.clientName.substr( 0, 15 ) +'...' :
-									row.clientName;
+						return row.clientName;
 
 
 					}
@@ -450,12 +446,11 @@ function loadSalesTable(response) {
 				},
 				{
 					"title": "Client Name",
-					"data": "client Name",
+					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -564,9 +559,8 @@ function loadTdsApprovedTable(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -682,9 +676,8 @@ function loadSalesItemsWithoutDesignTable(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -800,9 +793,8 @@ function loadSalesItemsWithDesignTable(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -1618,12 +1610,11 @@ function loadPartialPendingSalesTable(response){
 				},
 				{
 					"title": "Client Name",
-					"data": "client Name",
+					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -1740,9 +1731,8 @@ function loadPurchaseTablePartial(response) {
 					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 
 					}
@@ -1848,9 +1838,7 @@ function loadInvoiceTablePartial(response) {
 					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.clientName.length > 15 ?
-								row.clientName.substr( 0, 15 ) +'...' :
-									row.clientName;
+						return row.clientName;
 
 
 					}
@@ -1937,12 +1925,11 @@ function loadSalesTablePartial(response) {
 				},
 				{
 					"title": "Client Name",
-					"data": "client Name",
+					"data": "clientName",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								row.party.partyName.substr( 0, 15 ) +'...' :
-									row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -2044,9 +2031,8 @@ function loadTdsApprovedTablePartial(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -2155,9 +2141,8 @@ function loadSalesItemsWithoutDesignTablePartial(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},
@@ -2267,9 +2252,8 @@ function loadSalesItemsWithDesignTablePartial(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
-						return row.party.partyName.length > 15 ?
-								 row.party.partyName.substr( 0, 15 ) +'...' :
-									 row.party.partyName;
+						var clientName = row.party ? row.party.partyName : '';
+return clientName;
 
 					}
 				},

@@ -2220,6 +2220,7 @@ public class SalesController {
 	        List<String> actions = new ArrayList<>();
 	        actions.add("CREATE_SALES_ITEM");  // Sales Item creation
 	        actions.add("DELETE_SALES_ITEM");  // Sales Item deletion
+	        actions.add("CREATE_DESIGN");      // Design creation
 	        return actions;
 	    }
 	    
