@@ -17,7 +17,7 @@ public class SalesOrderAudit {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "salesitem_id", nullable = false)
+	@Column(name = "salesorder_id", nullable = false)
 	private String salesOrderId;
 
 	@Column(name = "action", nullable = false)

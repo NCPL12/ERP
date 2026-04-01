@@ -74,6 +74,8 @@ import com.ncpl.sales.model.Stages;
 import com.ncpl.sales.model.Stock;
 import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.model.Units;
+import com.ncpl.sales.security.User;
+import com.ncpl.sales.security.UserService;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.DeliveryChallanRepo;
 import com.ncpl.sales.repository.FileRepo;
@@ -135,6 +137,10 @@ public class SalesService {
 	ItemsWithMinQtyRepo itemsWithMinQtyRepo;
 	@Autowired
 	FileRepo fileRepository;
+	@Autowired
+	SalesOrderAuditService auditService;
+	@Autowired
+	UserService userService;
 	
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "sales_list_.xlsx";
@@ -199,6 +205,12 @@ public class SalesService {
 
 		if(salesorder.getId().isEmpty()) {
 			soObj=salesrepo.save(salesorder);
+			// Log audit for new sales order creation
+			try {
+				auditService.logSalesOrderCreation(soObj, getCurrentUser(), null);
+			} catch (Exception e) {
+				System.err.println("Error logging audit for sales order creation: " + e.getMessage());
+			}
 
 			//Map<String, Object> emailContents = null;
 			//SalesOrder salesOrderObj = salesrepo.getSalesOrderByClientPoNumber(salesorder.getClientPoNumber());
@@ -210,6 +222,12 @@ public class SalesService {
 			salesorder.setCreated(createdDate);
 			// salesItemList.addAll(updatedso.get().getItems());
 			soObj = salesrepo.save(salesorder);
+			// Log audit for sales order update
+			try {
+				auditService.logSalesOrderUpdate(updatedso.get(), soObj, getCurrentUser(), null);
+			} catch (Exception e) {
+				System.err.println("Error logging audit for sales order update: " + e.getMessage());
+			}
 			//SalesExcel.buildExcelDocument(soObj,filePath);
 			//Map<String, Object> emailContents = null;
 			//SalesOrder salesOrderObj = salesrepo.getSalesOrderByClientPoNumber(salesorder.getClientPoNumber());
@@ -220,8 +238,17 @@ public class SalesService {
 		Stages status = Stages.DESIGN;
 		updateSoStatus(status, soObj.getId());
 
-		return null;
+		return soObj;
 
+	}
+
+	private String getCurrentUser() {
+		try {
+			User user = userService.getCurrentUser();
+			return user != null ? user.getUsername() : "system";
+		} catch (Exception e) {
+			return "system";
+		}
 	}
 
 	private Map<String, Object> salesorderupdatedDetails(String clientPoNo, Date clientPoDate, double clientPoValue,

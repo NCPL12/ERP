@@ -141,7 +141,7 @@ public class LoggingAspect {
 			String partyId = args[1].toString();
 			
 			if (salesOrder != null) {
-				salesOrderId = salesOrder.getId();
+				// Get items count for audit logging
 				if (salesOrder.getItems() != null) {
 					itemsCount = salesOrder.getItems().size();
 				}
@@ -151,6 +151,14 @@ public class LoggingAspect {
 		Object result = pjp.proceed();
 		
 		log.info(className + ":" + methodName + "()" + "Response");
+		
+		// Get sales order ID from result after save operation
+		if (methodName.equals("savesales") && result instanceof com.ncpl.sales.model.SalesOrder) {
+			com.ncpl.sales.model.SalesOrder savedSalesOrder = (com.ncpl.sales.model.SalesOrder) result;
+			if (savedSalesOrder != null && savedSalesOrder.getId() != null) {
+				salesOrderId = savedSalesOrder.getId();
+			}
+		}
 		
 		// Audit logging for sales item creation - only if auditService is available
 		if (auditService != null && salesOrderId != null && itemsCount > 0) {
@@ -173,7 +181,7 @@ public class LoggingAspect {
 					try {
 						String oldValues = mapper.writeValueAsString(null);
 						String newValues = mapper.writeValueAsString(
-							java.util.Map.of("itemsCount", itemsCount, "salesOrderId", salesOrderId)
+							java.util.Map.of("itemsCount", itemsCount, "salesOrderId", salesOrderId != null ? salesOrderId : "")
 						);
 						audit.setOldValues(oldValues);
 						audit.setNewValues(newValues);
