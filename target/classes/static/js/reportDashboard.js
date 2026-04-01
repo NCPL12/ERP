@@ -636,6 +636,8 @@ function getSalesItemsWithoutDesignList(){
 	})
 }
 
+
+
 var salesItemsWithoutDesignTabe = null;
 function loadSalesItemsWithoutDesignTable(response) {
 	if (response != undefined || response != null) {

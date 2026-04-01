@@ -2153,6 +2153,22 @@ public class SalesController {
 			return new ResponseEntity<>(userList, HttpStatus.OK);
 		}
 	    
+	    @PostMapping("/api/design/upload")
+	    public ResponseEntity<?> designUpload(@RequestParam("file") MultipartFile file, @RequestParam("clientPONum") String clientPONum) throws Exception {
+	    	 if (file.isEmpty()) {
+	             return ResponseEntity.badRequest().body("Please upload a file.");
+	         }
+
+	         List<String> errors = designUploadService.processExcelFile(file,clientPONum);
+
+	         if (!errors.isEmpty()) {
+	             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+	         }
+
+	         return ResponseEntity.ok("File uploaded and processed successfully.");
+	    }
+	    
+	    
 	    // ==================== AUDIT LOG ENDPOINTS ====================
 	    
 	    @GetMapping("/audit/sales-order")
