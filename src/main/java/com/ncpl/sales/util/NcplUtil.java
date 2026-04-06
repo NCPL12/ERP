@@ -14,7 +14,7 @@ public class NcplUtil {
 
 	public ObjectMapper getObjectMapper() {
 		ObjectMapper mapper=new ObjectMapper();
-		DateFormat df = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 		mapper.setDateFormat(df);
 		mapper.setTimeZone(TimeZone.getTimeZone("IST"));
 		return mapper;

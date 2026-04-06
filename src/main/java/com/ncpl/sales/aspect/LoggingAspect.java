@@ -41,6 +41,14 @@ public class LoggingAspect {
 	public void designServiceSaveMethod() {
 	}
 
+	@Pointcut(value = "execution(* com.ncpl.sales.service.PartyAddressService.updatePartyAddress(..))")
+	public void partyAddressUpdateMethod() {
+	}
+
+	@Pointcut(value = "execution(* com.ncpl.sales.service.PartyAddressService.savePartyAddress(..))")
+	public void partyAddressSaveMethod() {
+	}
+
 	@Around("salesServiceDeleteItemMethod()")
 	public Object auditSalesServiceDeleteItemMethod(ProceedingJoinPoint pjp) throws Throwable {
 		String methodName = pjp.getSignature().getName();
@@ -135,12 +143,16 @@ public class LoggingAspect {
 		// Get sales order details for audit
 		String salesOrderId = null;
 		int itemsCount = 0;
+		boolean isUpdate = false;
 		
 		if (methodName.equals("savesales") && args.length >= 2) {
 			com.ncpl.sales.model.SalesOrder salesOrder = (com.ncpl.sales.model.SalesOrder) args[0];
 			String partyId = args[1].toString();
 			
 			if (salesOrder != null) {
+				// Check if this is an update (ID is not empty)
+				isUpdate = salesOrder.getId() != null && !salesOrder.getId().isEmpty();
+				
 				// Get items count for audit logging
 				if (salesOrder.getItems() != null) {
 					itemsCount = salesOrder.getItems().size();
@@ -160,14 +172,15 @@ public class LoggingAspect {
 			}
 		}
 		
-		// Audit logging for sales item creation - only if auditService is available
-		if (auditService != null && salesOrderId != null && itemsCount > 0) {
+		// Only log audit for CREATION - let service layer handle UPDATES
+		// This prevents duplicate logging and allows proper old/new value tracking
+		if (auditService != null && salesOrderId != null && !isUpdate && itemsCount > 0) {
 			try {
 				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 				String currentUser = getCurrentUsername();
 				String clientIp = request.getRemoteAddr();
 				
-				// Create audit log for Sales Item creation
+				// Create audit log for Sales Item creation ONLY
 				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
 				audit.setSalesOrderId(salesOrderId);
 				audit.setAction("CREATE_SALES_ITEM");
@@ -269,6 +282,158 @@ public class LoggingAspect {
 				
 			} catch (Exception e) {
 				log.error("Error creating audit log for Design creation: " + e.getMessage());
+			}
+		}
+		
+		return result;
+	}
+
+	@Around("partyAddressUpdateMethod()")
+	public Object auditPartyAddressUpdateMethod(ProceedingJoinPoint pjp) throws Throwable {
+		String methodName = pjp.getSignature().getName();
+		Object[] args = pjp.getArgs();
+		String className = pjp.getTarget().getClass().toString();
+		
+		log.info("#### PartyAddress UPDATE method invoked: " + className + " : " + methodName + "()");
+		
+		com.ncpl.sales.model.PartyAddress newPartyAddress = (com.ncpl.sales.model.PartyAddress) args[0];
+		String addressId = newPartyAddress.getId();
+		
+		log.info("#### addressId = " + addressId);
+		
+		com.ncpl.sales.model.PartyAddress oldPartyAddress = null;
+		if (addressId != null && !addressId.isEmpty()) {
+			try {
+				java.lang.reflect.Method getMethod = pjp.getTarget().getClass().getMethod("getAddressByAddressId", String.class);
+				java.util.Optional<?> result = (java.util.Optional<?>) getMethod.invoke(pjp.getTarget(), addressId);
+				if (result.isPresent()) {
+					oldPartyAddress = (com.ncpl.sales.model.PartyAddress) result.get();
+				}
+			} catch (Exception e) {
+				log.warn("Could not retrieve old PartyAddress for audit logging: " + e.getMessage());
+			}
+		}
+		
+		String oldValuesJson = null;
+		String newValuesJson = null;
+		
+		if (mapper != null && oldPartyAddress != null) {
+			try {
+				oldValuesJson = mapper.writeValueAsString(java.util.Map.of(
+					"addr1", oldPartyAddress.getAddr1() != null ? oldPartyAddress.getAddr1() : "",
+					"addr2", oldPartyAddress.getAddr2() != null ? oldPartyAddress.getAddr2() : "",
+					"city", oldPartyAddress.getPartyaddr_city() != null ? oldPartyAddress.getPartyaddr_city().getName() : "",
+					"phone1", oldPartyAddress.getPhone1() != null ? oldPartyAddress.getPhone1() : "",
+					"email1", oldPartyAddress.getEmail1() != null ? oldPartyAddress.getEmail1() : ""
+				));
+				newValuesJson = mapper.writeValueAsString(java.util.Map.of(
+					"addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "",
+					"addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "",
+					"city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "",
+					"phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "",
+					"email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : ""
+				));
+			} catch (Exception e) {
+				log.warn("Could not serialize audit data: " + e.getMessage());
+			}
+		}
+		
+		Object result = pjp.proceed();
+		
+		log.info(className + ":" + methodName + "()" + "Response");
+		
+		log.info("#### auditService is: " + (auditService != null ? "NOT NULL" : "NULL"));
+		
+		if (auditService != null) {
+			log.info("#### Attempting to save audit for Party Address update");
+			log.info("#### addressId = " + addressId);
+			log.info("#### oldPartyAddress partyName = " + (oldPartyAddress != null && oldPartyAddress.getParty() != null ? oldPartyAddress.getParty().getPartyName() : "null"));
+			try {
+				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+				String currentUser = getCurrentUsername();
+				String clientIp = request.getRemoteAddr();
+				
+				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
+				audit.setSalesOrderId(addressId);
+				audit.setAction("UPDATE_ADDRESS");
+				audit.setPerformedBy(currentUser);
+				audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+				audit.setIpAddress(clientIp);
+				audit.setSessionId(request.getSession().getId());
+				audit.setOldValues(oldValuesJson);
+				audit.setNewValues(newValuesJson);
+				audit.setDescription("Updated Party Address: " + addressId);
+				
+				auditService.saveAuditLog(audit);
+				log.info("Audit log created for Party Address update: " + addressId);
+				
+			} catch (Exception e) {
+				log.error("Error creating audit log for Party Address update: " + e.getMessage());
+			}
+		}
+		
+		return result;
+	}
+
+	@Around("partyAddressSaveMethod()")
+	public Object auditPartyAddressSaveMethod(ProceedingJoinPoint pjp) throws Throwable {
+		String methodName = pjp.getSignature().getName();
+		Object[] args = pjp.getArgs();
+		String className = pjp.getTarget().getClass().toString();
+		
+		log.info("#### PartyAddress SAVE method invoked: " + className + " : " + methodName + "()");
+		
+		com.ncpl.sales.model.PartyAddress newPartyAddress = (com.ncpl.sales.model.PartyAddress) args[0];
+		
+		log.info("#### Party ID = " + (newPartyAddress.getParty() != null ? newPartyAddress.getParty().getId() : "null"));
+		
+		String newValuesJson = null;
+		if (mapper != null) {
+			try {
+				newValuesJson = mapper.writeValueAsString(java.util.Map.of(
+					"addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "",
+					"addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "",
+					"city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "",
+					"phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "",
+					"email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : ""
+				));
+			} catch (Exception e) {
+				log.warn("Could not serialize audit data: " + e.getMessage());
+			}
+		}
+		
+		Object result = pjp.proceed();
+		
+		log.info(className + ":" + methodName + "()" + "Response");
+		
+		log.info("#### auditService is: " + (auditService != null ? "NOT NULL" : "NULL"));
+		
+		if (auditService != null) {
+			log.info("#### Attempting to save audit for Party Address save");
+			try {
+				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+				String currentUser = getCurrentUsername();
+				String clientIp = request.getRemoteAddr();
+				
+				com.ncpl.sales.model.PartyAddress savedAddress = (com.ncpl.sales.model.PartyAddress) result;
+				String savedAddressId = savedAddress != null ? savedAddress.getId() : "UNKNOWN";
+				
+				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
+				audit.setSalesOrderId(savedAddressId);
+				audit.setAction("CREATE_ADDRESS");
+				audit.setPerformedBy(currentUser);
+				audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+				audit.setIpAddress(clientIp);
+				audit.setSessionId(request.getSession().getId());
+				audit.setOldValues(null);
+				audit.setNewValues(newValuesJson);
+				audit.setDescription("Created New Party Address for: " + (newPartyAddress.getParty() != null ? newPartyAddress.getParty().getPartyName() : "Unknown Party"));
+				
+				auditService.saveAuditLog(audit);
+				log.info("Audit log created for Party Address creation: " + savedAddressId);
+				
+			} catch (Exception e) {
+				log.error("Error creating audit log for Party Address creation: " + e.getMessage());
 			}
 		}
 		

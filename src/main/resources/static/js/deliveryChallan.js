@@ -1032,6 +1032,7 @@ function getClientPOList(clientPoList){
 	clientPOTable= $('#clientPOTable').DataTable({
 		"order": [[ 2, "desc" ]],
 		destroy:true,
+		"dom": '<"panel panel-default"<"panel-heading"<"row"<"col-md-6"l><"col-md-6 text-right"f>>>t<"panel-footer"<"row"<"col-md-6"i><"col-md-6 text-right"p>>>>',
 		"aaData": clientPoList,
 		"aoColumns": [
 			{

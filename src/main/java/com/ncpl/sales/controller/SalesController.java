@@ -779,15 +779,69 @@ public class SalesController {
 		String id = request.getParameter("partyId");
 		Party party = partyService.getPartyById(id);
 		partyAddress.setParty(party);
-		// Party Address id not null then update
-		if (partyAddress.getId() != "") {
-			partyAddressService.updatePartyAddress(partyAddress);
-		} else {
-			partyAddressService.savePartyAddress(partyAddress);
+		
+		System.out.println("#### DEBUG: PartyAddress Save - partyId=" + id + ", addressId=" + partyAddress.getId());
+		System.out.println("#### DEBUG: auditService is " + (auditService != null ? "NOT NULL" : "NULL"));
+		
+		String action = "";
+		try {
+			if (partyAddress.getId() != null && !partyAddress.getId().isEmpty()) {
+				Optional<PartyAddress> oldAddr = partyAddressService.getAddressByAddressId(partyAddress.getId());
+				System.out.println("#### DEBUG: UPDATE branch - oldAddr exists: " + oldAddr.isPresent());
+				partyAddressService.updatePartyAddress(partyAddress);
+				action = "CREATE_SALES_ITEM";
+				
+				if (auditService != null && oldAddr.isPresent()) {
+					com.ncpl.sales.model.PartyAddress oldAddrObj = oldAddr.get();
+					com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
+					audit.setSalesOrderId(partyAddress.getId());
+					audit.setAction(action);
+					audit.setPerformedBy(org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName());
+					audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+					audit.setIpAddress(request.getRemoteAddr());
+					audit.setSessionId(request.getSession().getId());
+					
+					String oldVals = "{\"partyName\":\"" + (party.getPartyName() != null ? party.getPartyName() : "") + "\",\"addr1\":\"" + (oldAddrObj.getAddr1() != null ? oldAddrObj.getAddr1() : "") + "\",\"city\":\"" + (oldAddrObj.getPartyaddr_city() != null ? oldAddrObj.getPartyaddr_city().getName() : "") + "\"}";
+					String newVals = "{\"partyName\":\"" + (party.getPartyName() != null ? party.getPartyName() : "") + "\",\"addr1\":\"" + (partyAddress.getAddr1() != null ? partyAddress.getAddr1() : "") + "\",\"city\":\"" + (partyAddress.getPartyaddr_city() != null ? partyAddress.getPartyaddr_city().getName() : "") + "\"}";
+					audit.setOldValues(oldVals);
+					audit.setNewValues(newVals);
+					audit.setDescription("Updated Party Address for: " + party.getPartyName());
+					
+					auditService.saveAuditLog(audit);
+					System.out.println("#### DEBUG: Audit saved for UPDATE!");
+				} else {
+					System.out.println("#### DEBUG: auditService is NULL or oldAddr not present - NOT saving audit");
+				}
+			} else {
+				System.out.println("#### DEBUG: CREATE branch");
+				partyAddressService.savePartyAddress(partyAddress);
+				action = "CREATE_SALES_ITEM";
+				
+				if (auditService != null) {
+					com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
+					audit.setSalesOrderId(party.getPartyName());
+					audit.setAction(action);
+					audit.setPerformedBy(org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName());
+					audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+					audit.setIpAddress(request.getRemoteAddr());
+					audit.setSessionId(request.getSession().getId());
+					
+					String newVals = "{\"partyName\":\"" + (party.getPartyName() != null ? party.getPartyName() : "") + "\",\"addr1\":\"" + (partyAddress.getAddr1() != null ? partyAddress.getAddr1() : "") + "\",\"city\":\"" + (partyAddress.getPartyaddr_city() != null ? partyAddress.getPartyaddr_city().getName() : "") + "\"}";
+					audit.setOldValues(null);
+					audit.setNewValues(newVals);
+					audit.setDescription("Created Party Address for: " + party.getPartyName());
+					
+					auditService.saveAuditLog(audit);
+					System.out.println("#### DEBUG: Audit saved for CREATE!");
+				} else {
+					System.out.println("#### DEBUG: auditService is NULL - NOT saving audit");
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("#### DEBUG: Exception occurred: " + e.getMessage());
+			e.printStackTrace();
 		}
-		// partyAddressService.savePartyAddress(partyAddress);
-		// if the value is of save button then redirecting to same page else if
-		// it is save&exit button then redirecting to partyList page
+		
 		if (partyAddressBtnVal.equalsIgnoreCase("partyAddressSave")) {
 			return "redirect:/partyAltAddress?partyId=" + id;
 		} else {

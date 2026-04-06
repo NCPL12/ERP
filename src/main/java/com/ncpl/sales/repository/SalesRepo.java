@@ -33,7 +33,7 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	public SalesOrder getSalesOrderByClientPoNumber(String clientPoNO);
 	@Query(" from SalesOrder where region=:region  AND updated >= :sqlFromDate and updated <= :sqlToDate and archive=0")
 	public List<SalesOrder> findByRegion( String region,Timestamp sqlFromDate, Timestamp sqlToDate);
-	@Query(" from SalesOrder where archive=0 ")
+	@Query(" from SalesOrder where archive=0 order by updated desc")
 	public List<SalesOrder> findAllSalesOrder();
 	@Query(" from SalesOrder where archive=1 ")
 	public List<SalesOrder> findArchivedSalesList();

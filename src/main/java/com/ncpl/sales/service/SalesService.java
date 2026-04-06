@@ -217,16 +217,66 @@ public class SalesService {
 			//emailContents = salesorderDetails(salesorder.getClientPoNumber(), salesorder.getClientPoDate(),salesOrderObj.getGrandTotal(), party.getPartyName(),salesOrderObj.getGst());
 			//emailService.sendSalesOrderEmailToServer(emailContents);
 		} else {
-			Optional<SalesOrder> updatedso = getSalesOrderById(salesorder.getId());
-			Date createdDate = updatedso.get().getCreated();
+			// Capture old state IMMEDIATELY before any modifications
+			Optional<SalesOrder> existingOrder = getSalesOrderById(salesorder.getId());
+			SalesOrder oldOrder = existingOrder.get();
+			
+			// Create a defensive copy of old values to ensure they don't get modified
+			SalesOrder oldOrderCopy = createSalesOrderCopy(oldOrder);
+			
+			Date createdDate = oldOrder.getCreated();
 			salesorder.setCreated(createdDate);
+			
+			// COMPREHENSIVE DEBUG: Track object references and states
+			System.out.println("=== SALES ORDER UPDATE DEBUG ===");
+			System.out.println("existingOrder hash: " + System.identityHashCode(existingOrder.get()));
+			System.out.println("oldOrder hash: " + System.identityHashCode(oldOrder));
+			System.out.println("oldOrderCopy hash: " + System.identityHashCode(oldOrderCopy));
+			System.out.println("salesorder hash: " + System.identityHashCode(salesorder));
+			System.out.println("oldOrder.shippingAddress: " + oldOrder.getShippingAddress());
+			System.out.println("oldOrderCopy.shippingAddress: " + oldOrderCopy.getShippingAddress());
+			System.out.println("salesorder.shippingAddress: " + salesorder.getShippingAddress());
+			System.out.println("oldOrder.billingAddress: " + oldOrder.getBillingAddress());
+			System.out.println("oldOrderCopy.billingAddress: " + oldOrderCopy.getBillingAddress());
+			System.out.println("salesorder.billingAddress: " + salesorder.getBillingAddress());
+			System.out.println("oldOrder.total: " + oldOrder.getTotal());
+			System.out.println("oldOrderCopy.total: " + oldOrderCopy.getTotal());
+			System.out.println("salesorder.total: " + salesorder.getTotal());
+			System.out.println("================================");
+			
 			// salesItemList.addAll(updatedso.get().getItems());
 			soObj = salesrepo.save(salesorder);
+			
+			// DEBUG: Print new address after save
+			System.out.println("DEBUG: soObj hash after save: " + System.identityHashCode(soObj));
+			System.out.println("DEBUG: soObj.shippingAddress after save: " + soObj.getShippingAddress());
+			System.out.println("DEBUG: soObj.billingAddress after save: " + soObj.getBillingAddress());
+			System.out.println("DEBUG: soObj.total after save: " + soObj.getTotal());
+			System.out.println("================================");
+			
 			// Log audit for sales order update
 			try {
-				auditService.logSalesOrderUpdate(updatedso.get(), soObj, getCurrentUser(), null);
+				System.out.println("=== PRE-AUDIT DEBUG ===");
+				System.out.println("oldOrderCopy ID: " + oldOrderCopy.getId());
+				System.out.println("soObj ID: " + soObj.getId());
+				System.out.println("oldOrderCopy hash: " + System.identityHashCode(oldOrderCopy));
+				System.out.println("soObj hash: " + System.identityHashCode(soObj));
+				System.out.println("oldOrderCopy == soObj: " + (oldOrderCopy == soObj));
+				System.out.println("oldOrderCopy.shippingAddress: '" + oldOrderCopy.getShippingAddress() + "'");
+				System.out.println("soObj.shippingAddress: '" + soObj.getShippingAddress() + "'");
+				System.out.println("oldOrderCopy.billingAddress: '" + oldOrderCopy.getBillingAddress() + "'");
+				System.out.println("soObj.billingAddress: '" + soObj.getBillingAddress() + "'");
+				System.out.println("Addresses equal: " + (oldOrderCopy.getShippingAddress().equals(soObj.getShippingAddress()) && 
+					oldOrderCopy.getBillingAddress().equals(soObj.getBillingAddress())));
+				System.out.println("About to call auditService.logSalesOrderUpdate");
+				System.out.println("=====================");
+				
+				auditService.logSalesOrderUpdate(oldOrderCopy, soObj, getCurrentUser(), null);
+				
+				System.out.println("DEBUG: auditService.logSalesOrderUpdate completed");
 			} catch (Exception e) {
 				System.err.println("Error logging audit for sales order update: " + e.getMessage());
+				e.printStackTrace();
 			}
 			//SalesExcel.buildExcelDocument(soObj,filePath);
 			//Map<String, Object> emailContents = null;
@@ -236,7 +286,7 @@ public class SalesService {
 		}
 
 		Stages status = Stages.DESIGN;
-		updateSoStatus(status, soObj.getId());
+		updateSoStatus(status, soObj.getId(), false);
 
 		return soObj;
 
@@ -317,10 +367,26 @@ public class SalesService {
 	}
 
 	private void updateSoStatus(Stages status, String soId) {
-		Optional<SalesOrder> updatedso = getSalesOrderById(soId);
-		updatedso.get().setStatus(status.name());
-		salesrepo.save(updatedso.get());
-
+		updateSoStatus(status, soId, true);
+	}
+	
+	private void updateSoStatus(Stages status, String soId, boolean logAudit) {
+		Optional<SalesOrder> existingOrder = getSalesOrderById(soId);
+		SalesOrder oldOrder = existingOrder.get(); // Capture old state before any changes
+		
+		// Create a new object for the update to avoid reference issues
+		SalesOrder orderToUpdate = existingOrder.get();
+		orderToUpdate.setStatus(status.name());
+		SalesOrder newOrder = salesrepo.save(orderToUpdate);
+		
+		// Log audit for status update only if requested
+		if (logAudit) {
+			try {
+				auditService.logSalesOrderUpdate(oldOrder, newOrder, getCurrentUser(), null);
+			} catch (Exception e) {
+				System.err.println("Error logging audit for status update: " + e.getMessage());
+			}
+		}
 	}
 
 	/**
@@ -655,8 +721,19 @@ public class SalesService {
 			}
 		}
 		if (soItems.size() == items.size()) {
-			salesOrder.get().setStatus(status.name());
-			salesrepo.save(salesOrder.get());
+			SalesOrder oldOrder = salesOrder.get(); // Capture old state before any changes
+			
+			// Create a new object for the update to avoid reference issues
+			SalesOrder orderToUpdate = salesOrder.get();
+			orderToUpdate.setStatus(status.name());
+			SalesOrder newOrder = salesrepo.save(orderToUpdate);
+			
+			// Log audit for status update to work in progress
+			try {
+				auditService.logSalesOrderUpdate(oldOrder, newOrder, getCurrentUser(), null);
+			} catch (Exception e) {
+				System.err.println("Error logging audit for work in progress status update: " + e.getMessage());
+			}
 		}
 
 	}
@@ -1391,16 +1468,32 @@ public class SalesService {
 
 	public void archiveSO(String soId) {
 		Optional<SalesOrder> so = salesrepo.findById(soId);
+		SalesOrder oldOrder = so.get();
 		so.get().setArchive(true);
+		SalesOrder newOrder = so.get();
 		salesrepo.save(so.get());
 		
+		// Log audit for archiving
+		try {
+			auditService.logSalesOrderArchive(soId, getCurrentUser(), null);
+		} catch (Exception e) {
+			System.err.println("Error logging audit for archive: " + e.getMessage());
+		}
 	}
 	
 	public void unArchiveSO(String soId) {
 		Optional<SalesOrder> so = salesrepo.findById(soId);
+		SalesOrder oldOrder = so.get();
 		so.get().setArchive(false);
+		SalesOrder newOrder = so.get();
 		salesrepo.save(so.get());
 		
+		// Log audit for unarchiving
+		try {
+			auditService.logSalesOrderUnarchive(soId, getCurrentUser(), null);
+		} catch (Exception e) {
+			System.err.println("Error logging audit for unarchive: " + e.getMessage());
+		}
 	}
 	
 	public List<SalesOrder> getSalesOrderWithoutDesignByPartyIdBan(String partyId){
@@ -1840,5 +1933,36 @@ public class SalesService {
 			
 			return list;
 		}
+	
+	/**
+	 * Create a defensive copy of SalesOrder to preserve old values
+	 */
+	private SalesOrder createSalesOrderCopy(SalesOrder original) {
+		if (original == null) {
+			return null;
+		}
+		
+		SalesOrder copy = new SalesOrder();
+		copy.setId(original.getId());
+		copy.setCity(original.getCity());
+		copy.setTotal(original.getTotal());
+		copy.setTotalItems(original.getTotalItems());
+		copy.setGst(original.getGst());
+		copy.setGrandTotal(original.getGrandTotal());
+		copy.setShippingAddress(original.getShippingAddress());
+		copy.setBillingAddress(original.getBillingAddress());
+		copy.setOtherTermsAndConditions(original.getOtherTermsAndConditions());
+		copy.setModeOfPayment(original.getModeOfPayment());
+		copy.setJurisdiction(original.getJurisdiction());
+		copy.setFreight(original.getFreight());
+		copy.setDelivery(original.getDelivery());
+		copy.setCreated(original.getCreated());
+		copy.setUpdated(original.getUpdated());
+		copy.setCreatedBy(original.getCreatedBy());
+		copy.setLastModifiedBy(original.getLastModifiedBy());
+		// Note: Items list is not copied to avoid deep copy issues
+		
+		return copy;
+	}
 
 }

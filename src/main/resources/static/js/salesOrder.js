@@ -334,17 +334,16 @@ function getPartyList(){
 	
 	var poDate=salesOrderObj.clientPoDate;
 	$("#clientPoDate").replaceWith('<input type="text" class="form-control PositionofTextbox" style="width:150px" id="poDateVal" name="clientPoDate">');
-	if(poDate==null){
+	if(poDate==null || poDate==""){
 		$("#poDateVal").val("");
 	}else{
-		poDate=new Date(poDate);
-		var date= new Date(poDate).getUTCDate() ;
-		var month= new Date(poDate).getUTCMonth()+1;
-		var year=new Date(poDate).getUTCFullYear();
-		//poDate=poDate.toLocaleDateString();
-		//var poDateFormat = poDate.split("/"); //split date by "/"
-		poDate=date+"-"+month+"-"+year; //change the format to dd/mm/yyyy to display in view page
-		$("#poDateVal,#clientPoDate").val(poDate);
+		var dateObj = new Date(poDate);
+		var day = String(dateObj.getDate()).padStart(2, '0');
+		var month = String(dateObj.getMonth() + 1).padStart(2, '0');
+		var year = dateObj.getFullYear();
+		var formattedDate = day + "-" + month + "-" + year;
+		$("#poDateVal,#clientPoDate").val(formattedDate);
+		$("input#clientPoDate").val(formattedDate);
 	}
 	if(userName!="surendra"){
 		$('#poDateVal,clientPoDate').attr("readonly","readonly");
@@ -1257,6 +1256,7 @@ function designTable2Json(){
 		  }
 		else {
 		   $("#shippingAddressContent").empty();
+		   var formattedAddress = "";
 		   
 		   if(addressId == shippingAddressObj.mainParty.id) {
 		   
@@ -1269,6 +1269,16 @@ function designTable2Json(){
 			if(pincode==null || pincode == undefined){
 				pincode = ' ';
 			}
+			
+			// Create formatted address string
+			formattedAddress = shippingAddressObj.mainParty.partyName + " , " +
+			                  shippingAddressObj.mainParty.addr1 + " , " +
+			                  addr2 + " , " +
+			                  shippingAddressObj.mainParty.party_city.name + " , " +
+			                  shippingAddressObj.mainParty.party_city.state.name + " , " +
+			                  shippingAddressObj.mainParty.party_city.state.country.name + " - " +
+			                  pincode;
+			
 			$("#shippingAddressContent").append( 
 			          			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
 			          			"<span class=''>"+shippingAddressObj.mainParty.addr1+" ,</span>" +
@@ -1291,6 +1301,15 @@ function designTable2Json(){
 		        			if(altpincode==null || altpincode == undefined){
 		        				altpincode = '';
 		        			}
+		        		
+		        		// Create formatted address string
+		        		formattedAddress = shippingAddressObj.mainParty.partyName + " , " +
+		        		                  alternateAddressArr[i].addr1 + " , " +
+		        		                  addr2 + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.name + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.state.name + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.state.country.name + " - " +
+		        		                  altpincode;
 		        	  $("#shippingAddressContent").append( 
 			          			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
 			          			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
@@ -1302,6 +1321,9 @@ function designTable2Json(){
 		        	  }
 		          }
 		   }
+		   
+		   // Store the formatted address text in the hidden field
+		   $("#shippingAddress").val(formattedAddress);
 		}
 	});
 	
@@ -1309,6 +1331,7 @@ function designTable2Json(){
 	$(document).on("change","#billingAddressDropdown",function(){
 		   var addressId = $(this).val();
 		   $("#billingAddressContent").empty();
+		   var formattedAddress = "";
 		   
 		   if(addressId == addressObj.mainParty.id) {
 		   
@@ -1321,6 +1344,15 @@ function designTable2Json(){
 			if(pincode==null || pincode == undefined){
 				pincode = '';
 			}
+			
+			// Create formatted address string
+			formattedAddress = addressObj.mainParty.partyName + " , " +
+			                  addressObj.mainParty.addr1 + " , " +
+			                  addr2 + " , " +
+			                  addressObj.mainParty.party_city.name + " , " +
+			                  addressObj.mainParty.party_city.state.name + " , " +
+			                  addressObj.mainParty.party_city.state.country.name + " - " +
+			                  pincode;
 			
 			$("#billingAddressContent").append( 
 			          			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
@@ -1343,6 +1375,15 @@ function designTable2Json(){
 		        			if(altpincode==null || altpincode == undefined){
 		        				altpincode = '';
 		        			}
+		        		
+		        		// Create formatted address string
+		        		formattedAddress = addressObj.mainParty.partyName + " , " +
+		        		                  alternateAddressArr[i].addr1 + " , " +
+		        		                  addr2 + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.name + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.state.name + " , " +
+		        		                  alternateAddressArr[i].partyaddr_city.state.country.name + " - " +
+		        		                  altpincode;
 		        	  $("#billingAddressContent").append( 
 			          			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
 			          			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
@@ -1354,6 +1395,9 @@ function designTable2Json(){
 		        	  }
 		          }
 		   }
+		   
+		   // Store the formatted address text in the hidden field
+		   $("#billingAddress").val(formattedAddress);
 		});
 	function getUserList(){
 		$.ajax({

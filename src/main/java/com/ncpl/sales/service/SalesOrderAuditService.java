@@ -28,6 +28,7 @@ public class SalesOrderAuditService {
 	public static final String ACTION_ARCHIVE = "ARCHIVE";
 	public static final String ACTION_UNARCHIVE = "UNARCHIVE";
 	public static final String ACTION_DELETE_ITEM = "DELETE_ITEM";
+	public static final String ACTION_ADDRESS_UPDATED = "ADDRESS_UPDATED";
 
 	public void logAudit(String salesOrderId, String action, String performedBy, Object oldValues, Object newValues,
 			String description, HttpServletRequest request) {
@@ -108,8 +109,93 @@ public class SalesOrderAuditService {
 
 	public void logSalesOrderUpdate(SalesOrder oldSalesOrder, SalesOrder newSalesOrder, String performedBy,
 			HttpServletRequest request) {
-		logAudit(newSalesOrder.getId(), ACTION_UPDATE, performedBy, oldSalesOrder, newSalesOrder,
-				"Sales Order updated: " + newSalesOrder.getClientPoNumber(), request);
+		
+		// DEBUG: Track what's being passed to audit
+		System.out.println("=== AUDIT SERVICE DEBUG ===");
+		System.out.println("oldSalesOrder hash: " + System.identityHashCode(oldSalesOrder));
+		System.out.println("newSalesOrder hash: " + System.identityHashCode(newSalesOrder));
+		System.out.println("oldSalesOrder.shippingAddress: " + oldSalesOrder.getShippingAddress());
+		System.out.println("newSalesOrder.shippingAddress: " + newSalesOrder.getShippingAddress());
+		System.out.println("oldSalesOrder.billingAddress: " + oldSalesOrder.getBillingAddress());
+		System.out.println("newSalesOrder.billingAddress: " + newSalesOrder.getBillingAddress());
+		System.out.println("hasAddressChanges result: " + hasAddressChanges(oldSalesOrder, newSalesOrder));
+		System.out.println("================================");
+		
+		// Create snapshots to ensure proper old/new value capture
+		java.util.Map<String, Object> oldSnapshot = createSalesOrderSnapshot(oldSalesOrder);
+		java.util.Map<String, Object> newSnapshot = createSalesOrderSnapshot(newSalesOrder);
+		
+		System.out.println("OLD SNAPSHOT: " + oldSnapshot);
+		System.out.println("NEW SNAPSHOT: " + newSnapshot);
+		
+		// Check if this is specifically an address update
+		if (hasAddressChanges(oldSalesOrder, newSalesOrder)) {
+			System.out.println("DEBUG: Logging as ADDRESS_UPDATED");
+			logAudit(newSalesOrder.getId(), ACTION_ADDRESS_UPDATED, performedBy, oldSnapshot, newSnapshot,
+					"Address updated: " + newSalesOrder.getClientPoNumber(), request);
+		} else {
+			System.out.println("DEBUG: Logging as UPDATE");
+			logAudit(newSalesOrder.getId(), ACTION_UPDATE, performedBy, oldSnapshot, newSnapshot,
+					"Sales Order updated: " + newSalesOrder.getClientPoNumber(), request);
+		}
+	}
+	
+	/**
+	 * Check if shipping or billing addresses have changed between old and new sales orders
+	 */
+	private boolean hasAddressChanges(SalesOrder oldOrder, SalesOrder newOrder) {
+		if (oldOrder == null || newOrder == null) {
+			return false;
+		}
+		
+		// Check shipping address changes
+		String oldShipping = oldOrder.getShippingAddress();
+		String newShipping = newOrder.getShippingAddress();
+		
+		// Handle null values and trim whitespace to avoid false positives
+		String oldShippingClean = (oldShipping != null) ? oldShipping.trim() : "";
+		String newShippingClean = (newShipping != null) ? newShipping.trim() : "";
+		boolean shippingChanged = !java.util.Objects.equals(oldShippingClean, newShippingClean);
+		
+		// Check billing address changes
+		String oldBilling = oldOrder.getBillingAddress();
+		String newBilling = newOrder.getBillingAddress();
+		
+		// Handle null values and trim whitespace to avoid false positives
+		String oldBillingClean = (oldBilling != null) ? oldBilling.trim() : "";
+		String newBillingClean = (newBilling != null) ? newBilling.trim() : "";
+		boolean billingChanged = !java.util.Objects.equals(oldBillingClean, newBillingClean);
+		
+		return shippingChanged || billingChanged;
+	}
+	
+	/**
+	 * Create a snapshot map of sales order fields for audit purposes
+	 */
+	private java.util.Map<String, Object> createSalesOrderSnapshot(SalesOrder salesOrder) {
+		java.util.Map<String, Object> snapshot = new java.util.HashMap<>();
+		
+		if (salesOrder != null) {
+			snapshot.put("id", salesOrder.getId());
+			snapshot.put("city", salesOrder.getCity());
+			snapshot.put("total", salesOrder.getTotal());
+			snapshot.put("totalItems", salesOrder.getTotalItems());
+			snapshot.put("gst", salesOrder.getGst());
+			snapshot.put("grandTotal", salesOrder.getGrandTotal());
+			snapshot.put("shippingAddress", salesOrder.getShippingAddress());
+			snapshot.put("billingAddress", salesOrder.getBillingAddress());
+			snapshot.put("otherTermsAndConditions", salesOrder.getOtherTermsAndConditions());
+			snapshot.put("modeOfPayment", salesOrder.getModeOfPayment());
+			snapshot.put("jurisdiction", salesOrder.getJurisdiction());
+			snapshot.put("freight", salesOrder.getFreight());
+			snapshot.put("delivery", salesOrder.getDelivery());
+			snapshot.put("created", salesOrder.getCreated());
+			snapshot.put("updated", salesOrder.getUpdated());
+			snapshot.put("createdBy", salesOrder.getCreatedBy());
+			snapshot.put("lastModifiedBy", salesOrder.getLastModifiedBy());
+		}
+		
+		return snapshot;
 	}
 
 	public void logSalesOrderArchive(String salesOrderId, String performedBy, HttpServletRequest request) {

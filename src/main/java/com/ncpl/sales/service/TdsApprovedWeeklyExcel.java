@@ -58,7 +58,7 @@ public class TdsApprovedWeeklyExcel {
 	
 	static List<TdsItems> tdsItemList = null;
 	
-	@Scheduled(cron = "0 30 09 ? * MON", zone="IST")
+//	@Scheduled(cron = "0 30 09 ? * MON", zone="IST")
 	//@Scheduled(cron = "0 51 17 ? * TUE", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

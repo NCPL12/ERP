@@ -5,8 +5,14 @@ import java.io.InputStream;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -16,6 +22,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ncpl.sales.model.DesignItems;
@@ -25,6 +33,7 @@ import com.ncpl.sales.model.PurchaseItem;
 import com.ncpl.sales.model.PurchaseOrder;
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
+import com.ncpl.sales.model.SalesOrderAudit;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
@@ -50,10 +59,15 @@ public class DesignUploadService {
 	SalesOrderDesignRepo designRepo;
 	@Autowired
 	SalesOrderDesignItemsRepo designItemRepo;
+	@Autowired
+	SalesOrderAuditService auditService;
 	
 	@SuppressWarnings("unused")
 	public List<String> processExcelFile(MultipartFile file, String clientPoNum) {
         List<String> errors = new ArrayList<>();
+        Set<String> salesItemIdsWithDesigns = new HashSet<>();
+        Map<String, Integer> designItemCounts = new HashMap<>();
+        Map<String, String> salesOrderIdsMap = new HashMap<>();
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -109,12 +123,18 @@ public class DesignUploadService {
 				            	DesignItems existing = designItemOpt.get();
 				                existing.setQuantity(quantity);
 				                designItemRepo.save(existing);
+				                salesItemIdsWithDesigns.add(salesItem.getId());
+				                designItemCounts.merge(salesItem.getId(), 1, Integer::sum);
+				                salesOrderIdsMap.put(salesItem.getId(), salesItem.getSalesOrder().getId());
 				            } else {
 				            	DesignItems newItem = new DesignItems();
 				                newItem.setSalesOrderDesign(design);
 				                newItem.setItemId(item.getId());
 				                newItem.setQuantity(quantity);
 				                designItemRepo.save(newItem);
+				                salesItemIdsWithDesigns.add(salesItem.getId());
+				                designItemCounts.merge(salesItem.getId(), 1, Integer::sum);
+				                salesOrderIdsMap.put(salesItem.getId(), salesItem.getSalesOrder().getId());
 				            }
 			            }
 		            }
@@ -122,7 +142,33 @@ public class DesignUploadService {
 	        
 
 	        }
-           
+	        
+	        for (String salesItemId : salesItemIdsWithDesigns) {
+	            try {
+	                String salesOrderId = salesOrderIdsMap.get(salesItemId);
+	                Integer itemCount = designItemCounts.get(salesItemId);
+	                
+	                SalesOrderAudit audit = new SalesOrderAudit();
+	                audit.setSalesOrderId(salesOrderId);
+	                audit.setAction("UPLOAD_DESIGN");
+	                audit.setPerformedBy(getCurrentUsername());
+	                audit.setActionPerformed(new java.sql.Timestamp(System.currentTimeMillis()));
+	                audit.setDescription("Design uploaded via Excel for Client PO: " + clientPoNum + ", Sales Item: " + salesItemId + ", Items: " + itemCount);
+	                
+	                try {
+	                    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+	                    audit.setIpAddress(request.getRemoteAddr());
+	                    audit.setSessionId(request.getSession().getId());
+	                } catch (Exception e) {
+	                    audit.setIpAddress("UNKNOWN");
+	                    audit.setSessionId("UNKNOWN");
+	                }
+	                
+	                auditService.saveAuditLog(audit);
+	            } catch (Exception e) {
+	                errors.add("Error creating audit log for sales item: " + salesItemId);
+	            }
+	        }
             
 
         } catch (IOException e) {
@@ -217,6 +263,15 @@ public class DesignUploadService {
 	    	    } else {
 	    	        errors.add("Row " + rowNum + ": " + columnName + " must be a valid date (MM/DD/YYYY).");
 	    	        return null;
+	    	    }
+	    	}
+	    	
+	    	private String getCurrentUsername() {
+	    	    try {
+	    	        return org.springframework.security.core.context.SecurityContextHolder.getContext()
+	    	                .getAuthentication().getName();
+	    	    } catch (Exception e) {
+	    	        return "SYSTEM";
 	    	    }
 	    	}
 }
