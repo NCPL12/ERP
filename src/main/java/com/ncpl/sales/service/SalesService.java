@@ -49,6 +49,8 @@ import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.query.AuditEntity;
 import org.hibernate.envers.query.AuditQuery;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -91,6 +93,8 @@ import com.ncpl.sales.util.DateConverterUtil;
 @SuppressWarnings({ "rawtypes", "unchecked", "unused" })
 @Service
 public class SalesService {
+
+	private static final Logger log = LoggerFactory.getLogger(SalesService.class);
 
 	@Autowired
 	private SalesRepo salesrepo;
@@ -146,6 +150,19 @@ public class SalesService {
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "sales_list_.xlsx";
 	String filePath = Constants.FILE_LOCATION + File.separator + fileName;
 
+	private static String fmtPoDateForLog(Date d) {
+		if (d == null) {
+			return "null";
+		}
+		SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		f.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+		return f.format(d);
+	}
+
+	private static void consoleDiag(String msg) {
+		System.out.println(msg);
+	}
+
 	public List<SalesOrder> getSalesOrderList() {
 		boolean archive;
 		List<SalesOrder> salesOrderList = salesrepo.findAllSalesOrder();
@@ -178,6 +195,10 @@ public class SalesService {
 		salesorder.setParty(party);
 		salesorder.setClientPoNumber(salesorder.getClientPoNumber().trim());
 		salesorder.setOtherTermsAndConditions(salesorder.getOtherTermsAndConditions().trim());
+		log.info("[CLIENT_PO_DATE] savesales start | soId={} (empty=new) | incoming clientPoDate={}",
+				salesorder.getId(), fmtPoDateForLog(salesorder.getClientPoDate()));
+		consoleDiag(String.format("[CLIENT_PO_DATE] savesales start | soId=%s (empty=new) | incoming clientPoDate=%s",
+				salesorder.getId(), fmtPoDateForLog(salesorder.getClientPoDate())));
 		ArrayList<SalesItem> itemList= new ArrayList<SalesItem>();
 		if(salesorder.getItems()!=null) {
 			salesorder.setTotalItems(salesorder.getItems().size());
@@ -226,6 +247,16 @@ public class SalesService {
 			
 			Date createdDate = oldOrder.getCreated();
 			salesorder.setCreated(createdDate);
+			if (salesorder.getClientPoDate() == null && oldOrder.getClientPoDate() != null) {
+				salesorder.setClientPoDate(oldOrder.getClientPoDate());
+				log.info("[CLIENT_PO_DATE] savesales update | request had null clientPoDate; kept DB value {}",
+						fmtPoDateForLog(oldOrder.getClientPoDate()));
+				consoleDiag("[CLIENT_PO_DATE] savesales update | request had null clientPoDate; kept DB value "
+						+ fmtPoDateForLog(oldOrder.getClientPoDate()));
+			} else if (salesorder.getClientPoDate() == null && oldOrder.getClientPoDate() == null) {
+				log.warn("[CLIENT_PO_DATE] savesales update | clientPoDate still null (request and DB both null)");
+				consoleDiag("[CLIENT_PO_DATE] savesales update | clientPoDate still null (request and DB both null)");
+			}
 			
 			// COMPREHENSIVE DEBUG: Track object references and states
 			System.out.println("=== SALES ORDER UPDATE DEBUG ===");
@@ -287,6 +318,11 @@ public class SalesService {
 
 		Stages status = Stages.DESIGN;
 		updateSoStatus(status, soObj.getId(), false);
+
+		log.info("[CLIENT_PO_DATE] savesales done | soId={} | persisted clientPoDate={}",
+				soObj.getId(), fmtPoDateForLog(soObj.getClientPoDate()));
+		consoleDiag(String.format("[CLIENT_PO_DATE] savesales done | soId=%s | persisted clientPoDate=%s",
+				soObj.getId(), fmtPoDateForLog(soObj.getClientPoDate())));
 
 		return soObj;
 

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
@@ -144,6 +145,11 @@ public class SalesController {
 
 	private static final Logger log = LoggerFactory.getLogger(SalesController.class);
 
+	/** Mirrors PO-date diagnostics to stdout (IDE console / catalina.out) alongside SLF4J. */
+	private static void consoleDiag(String msg) {
+		System.out.println(msg);
+	}
+
 	@Autowired
 	NcplUtil utilService;
 
@@ -185,25 +191,42 @@ public class SalesController {
 	        }
 	    });
 	    
-	    // Custom editor for Date objects
+	    // Date binding: salesOrder.js sets hidden #poDate to yyyy-MM-dd; legacy forms may send dd-MM-yyyy
 	    binder.registerCustomEditor(Date.class, new PropertyEditorSupport() {
 	        @Override
 	        public void setAsText(String text) throws IllegalArgumentException {
 	            if (text == null || text.trim().isEmpty() || text.equals("Invalid Date")) {
-                setValue(null); // Set null for empty or invalid dates
-                return;
-            }
-            
-            try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
-                Date parsedDate = dateFormat.parse(text);
-                setValue(parsedDate);
-            } catch (Exception e) {
-                System.out.println("Date parsing error for: " + text);
-                setValue(null); // Set null for invalid dates
-            }
-        }
-    });
+	                log.warn("[DATE_BIND] Date property → null (empty/invalid string) | raw={}", text);
+	                consoleDiag("[DATE_BIND] Date property → null (empty/invalid string) | raw=" + text);
+	                setValue(null);
+	                return;
+	            }
+	            String trimmed = text.trim();
+	            SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd");
+	            iso.setLenient(false);
+	            try {
+	                Date parsed = iso.parse(trimmed);
+	                log.info("[DATE_BIND] parsed yyyy-MM-dd | raw={} → {}", trimmed, parsed);
+	                consoleDiag("[DATE_BIND] parsed yyyy-MM-dd | raw=" + trimmed + " → " + parsed);
+	                setValue(parsed);
+	                return;
+	            } catch (ParseException ignored) {
+	                // try legacy display format
+	            }
+	            SimpleDateFormat dmy = new SimpleDateFormat("dd-MM-yyyy");
+	            dmy.setLenient(false);
+	            try {
+	                Date parsed = dmy.parse(trimmed);
+	                log.info("[DATE_BIND] parsed dd-MM-yyyy | raw={} → {}", trimmed, parsed);
+	                consoleDiag("[DATE_BIND] parsed dd-MM-yyyy | raw=" + trimmed + " → " + parsed);
+	                setValue(parsed);
+	            } catch (ParseException e) {
+	                log.warn("[DATE_BIND] FAILED both yyyy-MM-dd and dd-MM-yyyy | raw='{}' → binding null", text, e);
+	                consoleDiag("[DATE_BIND] FAILED both yyyy-MM-dd and dd-MM-yyyy | raw='" + text + "' → binding null | " + e);
+	                setValue(null);
+	            }
+	        }
+	    });
 	}
 
 	@Autowired
@@ -345,6 +368,15 @@ public class SalesController {
 			throws Exception {
 		
 		System.out.println("Party ID from request: " + partyId);
+
+		SimpleDateFormat logFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		logFmt.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+		String rawClientPoDateParam = req.getParameter("clientPoDate");
+		String boundPoDateStr = salesOrder.getClientPoDate() == null ? "null" : logFmt.format(salesOrder.getClientPoDate());
+		log.info("[CLIENT_PO_DATE] POST /add/salesOrder | soId={} | request param clientPoDate='{}' | @ModelAttribute clientPoDate={}",
+				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr);
+		consoleDiag(String.format("[CLIENT_PO_DATE] POST /add/salesOrder | soId=%s | request param clientPoDate='%s' | @ModelAttribute clientPoDate=%s",
+				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr));
 		
 		// Manually set the Party object
 		if (partyId != null && !partyId.isEmpty()) {
@@ -354,6 +386,14 @@ public class SalesController {
 		}
 
 		if (errors.hasErrors()) {
+			org.springframework.validation.FieldError fe = errors.getFieldError("clientPoDate");
+			if (fe != null) {
+				log.warn("[CLIENT_PO_DATE] validation error on clientPoDate | code={} | rejected={} | defaultMessage={}",
+						fe.getCode(), fe.getRejectedValue(), fe.getDefaultMessage());
+				consoleDiag(String.format(
+						"[CLIENT_PO_DATE] validation error on clientPoDate | code=%s | rejected=%s | defaultMessage=%s",
+						fe.getCode(), fe.getRejectedValue(), fe.getDefaultMessage()));
+			}
 			System.out.println("Error....." + errors.getFieldError());
 		}
 		salesService.savesales(salesOrder, partyId);
@@ -1146,10 +1186,9 @@ public class SalesController {
 	 * @return salesOrder
 	 */
 	@GetMapping("/api/sales_order/by_id")
-	public ResponseEntity<?> getSalesOrderById(@RequestParam("salesOrderId") String salesOrderId) {
-
+	public ResponseEntity<SalesOrder> getSalesOrderByIdApi(@RequestParam("salesOrderId") String salesOrderId) {
 		Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(salesOrderId);
-		return new ResponseEntity<>(salesOrder, HttpStatus.OK);
+		return salesOrder.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
 	}
 
 	// For getting the excel report between two dates

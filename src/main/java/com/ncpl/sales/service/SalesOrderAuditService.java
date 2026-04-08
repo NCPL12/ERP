@@ -184,6 +184,9 @@ public class SalesOrderAuditService {
 			snapshot.put("grandTotal", salesOrder.getGrandTotal());
 			snapshot.put("shippingAddress", salesOrder.getShippingAddress());
 			snapshot.put("billingAddress", salesOrder.getBillingAddress());
+			snapshot.put("clientPoNumber", salesOrder.getClientPoNumber());
+			snapshot.put("clientPoDate", salesOrder.getClientPoDate());
+			snapshot.put("projectClosureDate", salesOrder.getProjectClosureDate());
 			snapshot.put("otherTermsAndConditions", salesOrder.getOtherTermsAndConditions());
 			snapshot.put("modeOfPayment", salesOrder.getModeOfPayment());
 			snapshot.put("jurisdiction", salesOrder.getJurisdiction());

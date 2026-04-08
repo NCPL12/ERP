@@ -31,6 +31,7 @@ import com.ncpl.sales.model.Units;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesRepo;
+import com.ncpl.sales.service.SalesOrderAuditService;
 
 @Service
 public class SOUploadService {
@@ -46,6 +47,8 @@ public class SOUploadService {
 	 	SalesService salesService;
 	 @Autowired
 	 	ItemMasterService itemService;
+	@Autowired
+	 	SalesOrderAuditService auditService;
 
 	  @SuppressWarnings("resource")
 	public List<String> parseExcelFile(MultipartFile file) throws Exception {
@@ -243,7 +246,26 @@ public class SOUploadService {
 	    	                
 	    	               
 	    	                if (errors.isEmpty()) {
-	    	                    salesOrderRepository.save(salesOrder);
+	    	                	// Use SalesService for proper audit logging instead of direct repository save
+	    	                	if (salesOrder.getId() == null || salesOrder.getId().isEmpty()) {
+	    	                		// New sales order - use savesales method which includes audit logging
+	    	                		salesService.savesales(salesOrder, party.getId());
+	    	                	} else {
+	    	                		// Existing sales order - use update method which includes audit logging
+	    	                		salesOrderRepository.save(salesOrder);
+	    	                		// Log audit for the update
+	    	                		try {
+	    	                			auditService.logSalesOrderUpdate(
+	    	                				salesOrder, // Both old and new are the same for upload
+	    	                				salesOrder, 
+	    	                				"system", // Performed by system during upload
+	    	                				null
+	    	                			);
+	    	                		} catch (Exception e) {
+	    	                			System.err.println("Error logging audit for sales order upload: " + e.getMessage());
+	    	                			e.printStackTrace();
+	    	                		}
+	    	                	}
 	    	                }
 
 	    	            } catch (IOException e) {
