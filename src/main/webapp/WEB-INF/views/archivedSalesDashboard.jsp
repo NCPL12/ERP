@@ -90,7 +90,6 @@ var pageContext = '${pageContext.request.contextPath}';
 							<th width="4%">Client PO Upload</th>
 							<th width="3%">Client PO Download</th>
 							<th width="3%">Design Upload</th>
-							<th width="2%">Archive</th>
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">

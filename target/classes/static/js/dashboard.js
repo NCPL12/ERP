@@ -136,29 +136,7 @@ $(document).ready( function () {
 				//url ="/ncpl-sales/api/clientPo/upload/"+row.id;
 				return "<button type='button'  class='btn btn-default btn-flat btn-xs designUploadBtn' ><i class='fa fa-fw fa-upload'></i> Upload</button>";				
 			}
-		},
-		{
-			"mData" : "archive"	,
-			render : function(datam, type, row) {
-				var archive;
-				if(role=="SUPER ADMIN"){
-					if(row.archive==true){
-						return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
-					}else{
-						return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
-					}
-				}else{
-					if(row.archive==true){
-						return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
-					}else{
-						return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
-					}
-				}
-			}
 		}
-		
-		
-		
 		]
     });
    
@@ -182,85 +160,6 @@ $(document).on('click',".statusButton",function(){
 		
 	});
 });
-
-$(document).on('click',".archiveCheckbox",function(){
-	var soNum=$(this).closest("tr").find("td:eq(0)").text();
-	var archiveinput= $(this).closest("tr").find("td").eq(10).find('input');
-	const isChecked = $(this).is(":checked");
-		if(isChecked==true) {
-		bootbox.confirm({
-			message: "Do you want to archive this SO?",
-			buttons: {
-				cancel: {
-					label: 'Cancel'
-				},
-				confirm: {
-					label: 'Confirm'
-				}
-			},
-			callback: function (result) {
-				result ? archiveSalesOrder(soNum):window.location.reload();;
-			}
-		});	
-	}else{
-		bootbox.confirm({
-			message: "Do you want to remove this SO from archive?",
-			buttons: {
-				cancel: {
-					label: 'Cancel'
-				},
-				confirm: {
-					label: 'Confirm'
-				}
-			},
-			callback: function (result) {
-				result ? unArchiveSalesOrder(soNum):window.location.reload();;
-			}
-		});	
-	}
-});
-
-
-
-function archiveSalesOrder(soId){
-	//window.location.href = pageContext+"/api/update_so_archive?soId="+soId;
-	//window.location=pageContext+"/salesList";
-	$.ajax({
-		type : "POST",  
-		url : api.UPDATE_SO_ARCHIVE +"?soId="+soId,
-		success : function(response) {
-				window.location.reload();
-			
-		},  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-		error : function(e) {
-			console.log(e);
-		}  
-	});
-}
-
-function unArchiveSalesOrder(soId){
-	$.ajax({
-		type : "POST",  
-		url : api.UPDATE_SO_UNARCHIVE +"?soId="+soId,
-		success : function(response) {
-				window.location.reload();
-			
-		},  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-		error : function(e) {
-			console.log(e);
-		}  
-	});
-}
 
 /*$(document).on("click","#submitCloseProjectBtn",function (event) {
 
