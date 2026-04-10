@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec"%>
 <!DOCTYPE html>
@@ -38,9 +39,14 @@
         }
         .action-CREATE { background-color: #d4edda; color: #155724; }
         .action-UPDATE { background-color: #cce5ff; color: #004085; }
+        .action-ADDRESS_UPDATED { background-color: #e2e3f5; color: #383874; }
         .action-ARCHIVE { background-color: #fff3cd; color: #856404; }
         .action-UNARCHIVE { background-color: #d1ecf1; color: #0c5460; }
         .action-DELETE_ITEM { background-color: #f8d7da; color: #721c24; }
+        .action-CREATE_SALES_ITEM { background-color: #d1f2eb; color: #0c5460; }
+        .action-UPDATE_SALES_ITEM { background-color: #cfe2ff; color: #052c65; }
+        .action-DELETE_SALES_ITEM { background-color: #f8d7da; color: #721c24; }
+        .action-CREATE_DESIGN { background-color: #e7f1ff; color: #084298; }
         .search-panel {
             background: white;
             border-radius: 10px;
@@ -137,6 +143,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Sales Order ID</th>
+                        <th>Sales Item ID</th>
                         <th>Action</th>
                         <th>Performed By</th>
                         <th>Date & Time</th>
@@ -151,13 +158,22 @@
                         <tr>
                             <td>${audit.id}</td>
                             <td><strong>${audit.salesOrderId}</strong></td>
+                            <td><c:out value="${empty audit.salesItemId ? '—' : audit.salesItemId}"/></td>
                             <td>
                                 <span class="action-badge action-${audit.action}">
                                     ${audit.action}
                                 </span>
                             </td>
                             <td>${audit.performedBy}</td>
-                            <td>${audit.actionPerformed}</td>
+                            <td>
+                                <c:choose>
+                                    <c:when test="${not empty audit.actionPerformed}">
+                                        <fmt:formatDate value="${audit.actionPerformed}" pattern="dd-MM-yyyy HH:mm:ss" timeZone="Asia/Kolkata"/>
+                                        <span class="text-muted small"> (IST)</span>
+                                    </c:when>
+                                    <c:otherwise>—</c:otherwise>
+                                </c:choose>
+                            </td>
                             <td>${audit.description}</td>
                             <td>
                                 <c:if test="${not empty audit.oldValues}">
@@ -253,7 +269,14 @@
             
             audits.forEach(audit => {
                 const row = document.createElement('tr');
-                const formattedDate = new Date(audit.actionPerformed).toLocaleString();
+                let formattedDate = '—';
+                if (audit.actionPerformed) {
+                    formattedDate = new Date(audit.actionPerformed).toLocaleString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                    }) + ' (IST)';
+                }
                 
                 // Build HTML content properly
                 let oldValuesHtml = '';
@@ -271,8 +294,9 @@
                 row.innerHTML = 
                     '<td>' + audit.id + '</td>' +
                     '<td><strong>' + audit.salesOrderId + '</strong></td>' +
+                    '<td>' + (audit.salesItemId || '—') + '</td>' +
                     '<td><span class="action-badge action-' + audit.action + '">' + audit.action + '</span></td>' +
-                    '<td>' + audit.performedBy + '</td>' +
+                    '<td>' + (audit.performedBy || '—') + '</td>' +
                     '<td>' + formattedDate + '</td>' +
                     '<td>' + audit.description + '</td>' +
                     '<td>' + oldValuesHtml + '</td>' +
@@ -317,10 +341,18 @@
             fetch('/ncpl-sales/api/audit/sales-order/all')
                 .then(response => response.json())
                 .then(data => {
-                    let csv = 'ID,Sales Order ID,Action,Performed By,Date & Time,Description,Old Values,New Values,IP Address\n';
+                    let csv = 'ID,Sales Order ID,Sales Item ID,Action,Performed By,Date & Time,Description,Old Values,New Values,IP Address\n';
                     
                     data.forEach(audit => {
-                        csv += `${audit.id},"${audit.salesOrderId}","${audit.action}","${audit.performedBy}","${audit.actionPerformed}","${audit.description}","${audit.oldValues || ''}","${audit.newValues || ''}","${audit.ipAddress || ''}"\n`;
+                        let dt = '';
+                        if (audit.actionPerformed) {
+                            dt = new Date(audit.actionPerformed).toLocaleString('en-IN', {
+                                timeZone: 'Asia/Kolkata',
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+                            }) + ' IST';
+                        }
+                        csv += `${audit.id},"${audit.salesOrderId}","${audit.salesItemId || ''}","${audit.action}","${audit.performedBy || ''}","${dt}","${(audit.description || '').replace(/"/g, '""')}","${(audit.oldValues || '').replace(/"/g, '""')}","${(audit.newValues || '').replace(/"/g, '""')}","${audit.ipAddress || ''}"\n`;
                     });
                     
                     const blob = new Blob([csv], { type: 'text/csv' });

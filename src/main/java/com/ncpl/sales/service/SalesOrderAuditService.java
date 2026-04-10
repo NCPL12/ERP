@@ -1,15 +1,26 @@
 package com.ncpl.sales.service;
 
 import java.sql.Timestamp;
-import java.util.Date;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderAudit;
 import com.ncpl.sales.repository.SalesOrderAuditRepo;
@@ -30,15 +41,58 @@ public class SalesOrderAuditService {
 	public static final String ACTION_DELETE_ITEM = "DELETE_ITEM";
 	public static final String ACTION_ADDRESS_UPDATED = "ADDRESS_UPDATED";
 
+	/** Per–sales-line audit (tbl_sales_order_audit) */
+	public static final String ACTION_CREATE_SALES_ITEM = "CREATE_SALES_ITEM";
+	public static final String ACTION_UPDATE_SALES_ITEM = "UPDATE_SALES_ITEM";
+	public static final String ACTION_DELETE_SALES_ITEM = "DELETE_SALES_ITEM";
+
+	/**
+	 * Excluded from line-item diff equality: JPA refreshes these on every cascade save even when the user did
+	 * not change the line, which caused spurious UPDATE_SALES_ITEM rows for all lines.
+	 */
+	private static final Set<String> SALES_ITEM_DIFF_IGNORE_KEYS;
+	static {
+		Set<String> s = new HashSet<>();
+		s.add("created");
+		s.add("updated");
+		s.add("createdBy");
+		s.add("lastModifiedBy");
+		SALES_ITEM_DIFF_IGNORE_KEYS = Collections.unmodifiableSet(s);
+	}
+
+	/** Map copy for comparison only; logged audit rows still use full {@link #toAuditMap(SalesItem)}. */
+	private static Map<String, Object> salesItemMapForDiffCompare(Map<String, Object> full) {
+		if (full == null) {
+			return Collections.emptyMap();
+		}
+		Map<String, Object> m = new LinkedHashMap<>();
+		for (Map.Entry<String, Object> e : full.entrySet()) {
+			if (!SALES_ITEM_DIFF_IGNORE_KEYS.contains(e.getKey())) {
+				m.put(e.getKey(), e.getValue());
+			}
+		}
+		return m;
+	}
+
 	public void logAudit(String salesOrderId, String action, String performedBy, Object oldValues, Object newValues,
 			String description, HttpServletRequest request) {
+		logAudit(salesOrderId, action, performedBy, oldValues, newValues, description, request, null);
+	}
+
+	public void logAudit(String salesOrderId, String action, String performedBy, Object oldValues, Object newValues,
+			String description, HttpServletRequest request, String salesItemId) {
 		try {
+			HttpServletRequest req = request != null ? request : resolveCurrentRequest();
+
 			SalesOrderAudit audit = new SalesOrderAudit();
 			audit.setSalesOrderId(salesOrderId);
 			audit.setAction(action);
-			audit.setPerformedBy(performedBy);
-			audit.setActionPerformed(new Timestamp(new Date().getTime()));
+			audit.setPerformedBy(resolvePerformedBy(performedBy));
+			audit.setActionPerformed(new Timestamp(System.currentTimeMillis()));
 			audit.setDescription(description);
+			if (salesItemId != null && !salesItemId.trim().isEmpty()) {
+				audit.setSalesItemId(salesItemId.trim());
+			}
 
 			if (oldValues != null) {
 				audit.setOldValues(objectMapper.writeValueAsString(oldValues));
@@ -47,9 +101,9 @@ public class SalesOrderAuditService {
 				audit.setNewValues(objectMapper.writeValueAsString(newValues));
 			}
 
-			if (request != null) {
-				audit.setIpAddress(getClientIpAddress(request));
-				audit.setSessionId(request.getSession().getId());
+			if (req != null) {
+				audit.setIpAddress(getClientIpAddress(req));
+				audit.setSessionId(req.getSession().getId());
 			}
 
 			auditRepo.save(audit);
@@ -58,6 +112,38 @@ public class SalesOrderAuditService {
 			System.err.println("Error logging audit: " + e.getMessage());
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Current HTTP request when code runs in a web request thread (even if callers pass null).
+	 */
+	private HttpServletRequest resolveCurrentRequest() {
+		try {
+			ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+			return attrs != null ? attrs.getRequest() : null;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Prefer explicit username; otherwise Spring Security principal; otherwise "system".
+	 */
+	private String resolvePerformedBy(String performedBy) {
+		if (performedBy != null) {
+			String t = performedBy.trim();
+			if (!t.isEmpty()) {
+				return t;
+			}
+		}
+		try {
+			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+			if (auth != null && auth.isAuthenticated() && auth.getName() != null && !auth.getName().isEmpty()) {
+				return auth.getName();
+			}
+		} catch (Exception ignored) {
+		}
+		return "system";
 	}
 
 	public void logAudit(String salesOrderId, String action, String performedBy, Object oldValues, Object newValues,
@@ -109,34 +195,120 @@ public class SalesOrderAuditService {
 
 	public void logSalesOrderUpdate(SalesOrder oldSalesOrder, SalesOrder newSalesOrder, String performedBy,
 			HttpServletRequest request) {
-		
-		// DEBUG: Track what's being passed to audit
-		System.out.println("=== AUDIT SERVICE DEBUG ===");
-		System.out.println("oldSalesOrder hash: " + System.identityHashCode(oldSalesOrder));
-		System.out.println("newSalesOrder hash: " + System.identityHashCode(newSalesOrder));
-		System.out.println("oldSalesOrder.shippingAddress: " + oldSalesOrder.getShippingAddress());
-		System.out.println("newSalesOrder.shippingAddress: " + newSalesOrder.getShippingAddress());
-		System.out.println("oldSalesOrder.billingAddress: " + oldSalesOrder.getBillingAddress());
-		System.out.println("newSalesOrder.billingAddress: " + newSalesOrder.getBillingAddress());
-		System.out.println("hasAddressChanges result: " + hasAddressChanges(oldSalesOrder, newSalesOrder));
-		System.out.println("================================");
-		
-		// Create snapshots to ensure proper old/new value capture
+
 		java.util.Map<String, Object> oldSnapshot = createSalesOrderSnapshot(oldSalesOrder);
 		java.util.Map<String, Object> newSnapshot = createSalesOrderSnapshot(newSalesOrder);
-		
-		System.out.println("OLD SNAPSHOT: " + oldSnapshot);
-		System.out.println("NEW SNAPSHOT: " + newSnapshot);
-		
-		// Check if this is specifically an address update
+
 		if (hasAddressChanges(oldSalesOrder, newSalesOrder)) {
-			System.out.println("DEBUG: Logging as ADDRESS_UPDATED");
 			logAudit(newSalesOrder.getId(), ACTION_ADDRESS_UPDATED, performedBy, oldSnapshot, newSnapshot,
 					"Address updated: " + newSalesOrder.getClientPoNumber(), request);
 		} else {
-			System.out.println("DEBUG: Logging as UPDATE");
 			logAudit(newSalesOrder.getId(), ACTION_UPDATE, performedBy, oldSnapshot, newSnapshot,
 					"Sales Order updated: " + newSalesOrder.getClientPoNumber(), request);
+		}
+	}
+
+	/**
+	 * JSON-safe snapshot of a sales line (no lazy graphs beyond item_units).
+	 */
+	public Map<String, Object> toAuditMap(SalesItem item) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		if (item == null) {
+			return m;
+		}
+		m.put("id", item.getId());
+		m.put("salesItemId", item.getId());
+		m.put("description", item.getDescription());
+		m.put("hsnCode", item.getHsnCode());
+		m.put("servicehsnCode", item.getServicehsnCode());
+		m.put("slNo", item.getSlNo());
+		m.put("modelNo", item.getModelNo());
+		m.put("quantity", item.getQuantity());
+		m.put("unitPrice", item.getUnitPrice());
+		m.put("amount", item.getAmount());
+		m.put("servicePrice", item.getServicePrice());
+		m.put("status", item.getStatus());
+		m.put("archive", item.isArchive());
+		m.put("amendedQuantity", item.getAmendedQuantity());
+		if (item.getItem_units() != null) {
+			m.put("unitsId", item.getItem_units().getId());
+			m.put("unitsName", item.getItem_units().getName());
+		} else {
+			m.put("unitsId", null);
+			m.put("unitsName", null);
+		}
+		m.put("salesOrderId", item.getSalesOrder() != null ? item.getSalesOrder().getId() : null);
+		m.put("created", item.getCreated());
+		m.put("updated", item.getUpdated());
+		m.put("createdBy", item.getCreatedBy());
+		m.put("lastModifiedBy", item.getLastModifiedBy());
+		return m;
+	}
+
+	public Map<String, Map<String, Object>> buildSalesItemSnapshotMap(List<SalesItem> items) {
+		Map<String, Map<String, Object>> byId = new LinkedHashMap<>();
+		if (items == null) {
+			return byId;
+		}
+		for (SalesItem it : items) {
+			if (it != null && it.getId() != null) {
+				byId.put(it.getId(), toAuditMap(it));
+			}
+		}
+		return byId;
+	}
+
+	public void logSalesItemChange(String salesOrderId, String salesItemId, String action, String performedBy,
+			Object oldPayload, Object newPayload, String description, HttpServletRequest request) {
+		logAudit(salesOrderId, action, performedBy, oldPayload, newPayload, description, request, salesItemId);
+	}
+
+	/**
+	 * Compares snapshots built with the same rules (non-archived lines only in both lists when loaded from
+	 * {@link com.ncpl.sales.model.SalesOrder#getItems()}).
+	 */
+	public void diffAndLogSalesItemChanges(String salesOrderId, Map<String, Map<String, Object>> oldById,
+			Map<String, Map<String, Object>> newById, String performedBy, HttpServletRequest request) {
+		Map<String, Map<String, Object>> oldM = oldById != null ? oldById : Collections.emptyMap();
+		Map<String, Map<String, Object>> newM = newById != null ? newById : Collections.emptyMap();
+
+		for (String id : newM.keySet()) {
+			if (!oldM.containsKey(id)) {
+				logSalesItemChange(salesOrderId, id, ACTION_CREATE_SALES_ITEM, performedBy, null, newM.get(id),
+						"Sales line created: " + id, request);
+			}
+		}
+		Map<String, Object> removedMarker = new HashMap<>();
+		removedMarker.put("removed", true);
+		for (String id : oldM.keySet()) {
+			if (!newM.containsKey(id)) {
+				logSalesItemChange(salesOrderId, id, ACTION_DELETE_SALES_ITEM, performedBy, oldM.get(id), removedMarker,
+						"Sales line removed: " + id, request);
+			}
+		}
+		for (String id : oldM.keySet()) {
+			if (!newM.containsKey(id)) {
+				continue;
+			}
+			Map<String, Object> o = oldM.get(id);
+			Map<String, Object> n = newM.get(id);
+			if (!Objects.equals(salesItemMapForDiffCompare(o), salesItemMapForDiffCompare(n))) {
+				logSalesItemChange(salesOrderId, id, ACTION_UPDATE_SALES_ITEM, performedBy, o, n,
+						"Sales line updated: " + id, request);
+			}
+		}
+	}
+
+	public void logCreatedSalesItemsAfterSave(SalesOrder savedOrder, String performedBy, HttpServletRequest request) {
+		if (savedOrder == null || savedOrder.getItems() == null) {
+			return;
+		}
+		for (SalesItem it : savedOrder.getItems()) {
+			if (it == null || it.getId() == null) {
+				continue;
+			}
+			logSalesItemChange(savedOrder.getId(), it.getId(), ACTION_CREATE_SALES_ITEM, performedBy, null,
+					toAuditMap(it), "Sales line created: " + it.getId(), request);
 		}
 	}
 	
@@ -213,11 +385,30 @@ public class SalesOrderAuditService {
 
 	public void logSalesItemDeletion(String salesItemId, String salesOrderId, String performedBy,
 			HttpServletRequest request) {
-		logAudit(salesOrderId, ACTION_DELETE_ITEM, performedBy, salesItemId, null,
-				"Sales Item deleted: " + salesItemId, request);
+		Map<String, Object> removed = new HashMap<>();
+		removed.put("removed", true);
+		logAudit(salesOrderId, ACTION_DELETE_SALES_ITEM, performedBy,
+				Collections.singletonMap("salesItemId", salesItemId), removed,
+				"Sales Item deleted: " + salesItemId, request, salesItemId);
 	}
 	
 	public void saveAuditLog(SalesOrderAudit audit) {
+		if (audit == null) {
+			return;
+		}
+		if (audit.getActionPerformed() == null) {
+			audit.setActionPerformed(new Timestamp(System.currentTimeMillis()));
+		}
+		audit.setPerformedBy(resolvePerformedBy(audit.getPerformedBy()));
+		HttpServletRequest req = resolveCurrentRequest();
+		if (req != null) {
+			if (audit.getIpAddress() == null || audit.getIpAddress().isEmpty()) {
+				audit.setIpAddress(getClientIpAddress(req));
+			}
+			if (audit.getSessionId() == null || audit.getSessionId().isEmpty()) {
+				audit.setSessionId(req.getSession().getId());
+			}
+		}
 		auditRepo.save(audit);
 	}
 }

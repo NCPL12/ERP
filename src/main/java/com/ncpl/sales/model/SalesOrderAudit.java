@@ -44,6 +44,10 @@ public class SalesOrderAudit {
 	@Column(name = "session_id")
 	private String sessionId;
 
+	/** Set for line-level actions (CREATE/UPDATE/DELETE_SALES_ITEM); null for header-only audit rows. */
+	@Column(name = "sales_item_id")
+	private String salesItemId;
+
 	public SalesOrderAudit() {
 	}
 
@@ -136,6 +140,14 @@ public class SalesOrderAudit {
 
 	public void setSessionId(String sessionId) {
 		this.sessionId = sessionId;
+	}
+
+	public String getSalesItemId() {
+		return salesItemId;
+	}
+
+	public void setSalesItemId(String salesItemId) {
+		this.salesItemId = salesItemId;
 	}
 
 	@Override

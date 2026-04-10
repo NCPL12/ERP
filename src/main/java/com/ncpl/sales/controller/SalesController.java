@@ -19,6 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -150,6 +151,42 @@ public class SalesController {
 		System.out.println(msg);
 	}
 
+	/**
+	 * Binds form / request date strings: ISO, Indian dd-MM-yyyy, and JS {@code Date.toString()} /
+	 * {@code toDateString()} (e.g. {@code Tue Mar 24 2026}).
+	 */
+	private static Date parseSalesFormDate(String text) throws ParseException {
+		if (text == null) {
+			throw new ParseException("null", 0);
+		}
+		String trimmed = text.trim();
+		if (trimmed.isEmpty() || "invalid date".equalsIgnoreCase(trimmed)) {
+			throw new ParseException(trimmed, 0);
+		}
+		String[] patterns = new String[] {
+				"yyyy-MM-dd",
+				"dd-MM-yyyy",
+				"EEE MMM dd yyyy",
+				"EEE MMM d yyyy",
+				"EEE MMM dd yyyy HH:mm:ss zzz",
+				"EEE, dd MMM yyyy HH:mm:ss zzz",
+		};
+		ParseException last = null;
+		for (String pattern : patterns) {
+			try {
+				SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
+				sdf.setLenient(false);
+				return sdf.parse(trimmed);
+			} catch (ParseException e) {
+				last = e;
+			}
+		}
+		if (last != null) {
+			throw last;
+		}
+		throw new ParseException(trimmed, 0);
+	}
+
 	@Autowired
 	NcplUtil utilService;
 
@@ -191,38 +228,23 @@ public class SalesController {
 	        }
 	    });
 	    
-	    // Date binding: salesOrder.js sets hidden #poDate to yyyy-MM-dd; legacy forms may send dd-MM-yyyy
+	    // Date binding: ISO / dd-MM-yyyy; JS often sends Date.toString() / toDateString() e.g. "Tue Mar 24 2026"
 	    binder.registerCustomEditor(Date.class, new PropertyEditorSupport() {
 	        @Override
 	        public void setAsText(String text) throws IllegalArgumentException {
-	            if (text == null || text.trim().isEmpty() || text.equals("Invalid Date")) {
+	            if (text == null || text.trim().isEmpty() || "invalid date".equalsIgnoreCase(text.trim())) {
 	                log.warn("[DATE_BIND] Date property → null (empty/invalid string) | raw={}", text);
 	                consoleDiag("[DATE_BIND] Date property → null (empty/invalid string) | raw=" + text);
 	                setValue(null);
 	                return;
 	            }
-	            String trimmed = text.trim();
-	            SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd");
-	            iso.setLenient(false);
 	            try {
-	                Date parsed = iso.parse(trimmed);
-	                log.info("[DATE_BIND] parsed yyyy-MM-dd | raw={} → {}", trimmed, parsed);
-	                consoleDiag("[DATE_BIND] parsed yyyy-MM-dd | raw=" + trimmed + " → " + parsed);
-	                setValue(parsed);
-	                return;
-	            } catch (ParseException ignored) {
-	                // try legacy display format
-	            }
-	            SimpleDateFormat dmy = new SimpleDateFormat("dd-MM-yyyy");
-	            dmy.setLenient(false);
-	            try {
-	                Date parsed = dmy.parse(trimmed);
-	                log.info("[DATE_BIND] parsed dd-MM-yyyy | raw={} → {}", trimmed, parsed);
-	                consoleDiag("[DATE_BIND] parsed dd-MM-yyyy | raw=" + trimmed + " → " + parsed);
+	                Date parsed = parseSalesFormDate(text);
+	                log.debug("[DATE_BIND] parsed | raw={} → {}", text.trim(), parsed);
 	                setValue(parsed);
 	            } catch (ParseException e) {
-	                log.warn("[DATE_BIND] FAILED both yyyy-MM-dd and dd-MM-yyyy | raw='{}' → binding null", text, e);
-	                consoleDiag("[DATE_BIND] FAILED both yyyy-MM-dd and dd-MM-yyyy | raw='" + text + "' → binding null | " + e);
+	                log.warn("[DATE_BIND] Unrecognized date format → null | raw='{}'", text.trim());
+	                consoleDiag("[DATE_BIND] Unrecognized date format → null | raw='" + text.trim() + "'");
 	                setValue(null);
 	            }
 	        }
@@ -2327,9 +2349,14 @@ public class SalesController {
 	    
 	    private List<String> getAuditActions() {
 	        List<String> actions = new ArrayList<>();
-	        actions.add("CREATE_SALES_ITEM");  // Sales Item creation
-	        actions.add("DELETE_SALES_ITEM");  // Sales Item deletion
-	        actions.add("CREATE_DESIGN");      // Design creation
+	        actions.add("CREATE");
+	        actions.add("UPDATE");
+	        actions.add("ADDRESS_UPDATED");
+	        actions.add("CREATE_SALES_ITEM");
+	        actions.add("UPDATE_SALES_ITEM");
+	        actions.add("DELETE_SALES_ITEM");
+	        actions.add("CREATE_DESIGN");
+	        actions.add("DELETE_ITEM");
 	        return actions;
 	    }
 	    

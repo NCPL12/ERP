@@ -229,6 +229,7 @@ public class SalesService {
 			// Log audit for new sales order creation
 			try {
 				auditService.logSalesOrderCreation(soObj, getCurrentUser(), null);
+				auditService.logCreatedSalesItemsAfterSave(soObj, getCurrentUser(), null);
 			} catch (Exception e) {
 				System.err.println("Error logging audit for sales order creation: " + e.getMessage());
 			}
@@ -241,6 +242,17 @@ public class SalesService {
 			// Capture old state IMMEDIATELY before any modifications
 			Optional<SalesOrder> existingOrder = getSalesOrderById(salesorder.getId());
 			SalesOrder oldOrder = existingOrder.get();
+
+			// Sales line snapshots (@Where archive=0 — same as persisted collection visibility)
+			java.util.Map<String, java.util.Map<String, Object>> oldItemSnapshots = java.util.Collections.emptyMap();
+			try {
+				if (oldOrder.getItems() != null) {
+					oldOrder.getItems().size();
+					oldItemSnapshots = auditService.buildSalesItemSnapshotMap(oldOrder.getItems());
+				}
+			} catch (Exception e) {
+				log.warn("Could not snapshot sales items before save: {}", e.getMessage());
+			}
 			
 			// Create a defensive copy of old values to ensure they don't get modified
 			SalesOrder oldOrderCopy = createSalesOrderCopy(oldOrder);
@@ -258,53 +270,18 @@ public class SalesService {
 				consoleDiag("[CLIENT_PO_DATE] savesales update | clientPoDate still null (request and DB both null)");
 			}
 			
-			// COMPREHENSIVE DEBUG: Track object references and states
-			System.out.println("=== SALES ORDER UPDATE DEBUG ===");
-			System.out.println("existingOrder hash: " + System.identityHashCode(existingOrder.get()));
-			System.out.println("oldOrder hash: " + System.identityHashCode(oldOrder));
-			System.out.println("oldOrderCopy hash: " + System.identityHashCode(oldOrderCopy));
-			System.out.println("salesorder hash: " + System.identityHashCode(salesorder));
-			System.out.println("oldOrder.shippingAddress: " + oldOrder.getShippingAddress());
-			System.out.println("oldOrderCopy.shippingAddress: " + oldOrderCopy.getShippingAddress());
-			System.out.println("salesorder.shippingAddress: " + salesorder.getShippingAddress());
-			System.out.println("oldOrder.billingAddress: " + oldOrder.getBillingAddress());
-			System.out.println("oldOrderCopy.billingAddress: " + oldOrderCopy.getBillingAddress());
-			System.out.println("salesorder.billingAddress: " + salesorder.getBillingAddress());
-			System.out.println("oldOrder.total: " + oldOrder.getTotal());
-			System.out.println("oldOrderCopy.total: " + oldOrderCopy.getTotal());
-			System.out.println("salesorder.total: " + salesorder.getTotal());
-			System.out.println("================================");
-			
-			// salesItemList.addAll(updatedso.get().getItems());
 			soObj = salesrepo.save(salesorder);
 			
-			// DEBUG: Print new address after save
-			System.out.println("DEBUG: soObj hash after save: " + System.identityHashCode(soObj));
-			System.out.println("DEBUG: soObj.shippingAddress after save: " + soObj.getShippingAddress());
-			System.out.println("DEBUG: soObj.billingAddress after save: " + soObj.getBillingAddress());
-			System.out.println("DEBUG: soObj.total after save: " + soObj.getTotal());
-			System.out.println("================================");
-			
-			// Log audit for sales order update
+			// Log audit for sales order update + line-item diffs
 			try {
-				System.out.println("=== PRE-AUDIT DEBUG ===");
-				System.out.println("oldOrderCopy ID: " + oldOrderCopy.getId());
-				System.out.println("soObj ID: " + soObj.getId());
-				System.out.println("oldOrderCopy hash: " + System.identityHashCode(oldOrderCopy));
-				System.out.println("soObj hash: " + System.identityHashCode(soObj));
-				System.out.println("oldOrderCopy == soObj: " + (oldOrderCopy == soObj));
-				System.out.println("oldOrderCopy.shippingAddress: '" + oldOrderCopy.getShippingAddress() + "'");
-				System.out.println("soObj.shippingAddress: '" + soObj.getShippingAddress() + "'");
-				System.out.println("oldOrderCopy.billingAddress: '" + oldOrderCopy.getBillingAddress() + "'");
-				System.out.println("soObj.billingAddress: '" + soObj.getBillingAddress() + "'");
-				System.out.println("Addresses equal: " + (oldOrderCopy.getShippingAddress().equals(soObj.getShippingAddress()) && 
-					oldOrderCopy.getBillingAddress().equals(soObj.getBillingAddress())));
-				System.out.println("About to call auditService.logSalesOrderUpdate");
-				System.out.println("=====================");
-				
 				auditService.logSalesOrderUpdate(oldOrderCopy, soObj, getCurrentUser(), null);
-				
-				System.out.println("DEBUG: auditService.logSalesOrderUpdate completed");
+				if (soObj.getItems() != null) {
+					soObj.getItems().size();
+				}
+				java.util.Map<String, java.util.Map<String, Object>> newItemSnapshots = auditService
+						.buildSalesItemSnapshotMap(soObj.getItems());
+				auditService.diffAndLogSalesItemChanges(soObj.getId(), oldItemSnapshots, newItemSnapshots,
+						getCurrentUser(), null);
 			} catch (Exception e) {
 				System.err.println("Error logging audit for sales order update: " + e.getMessage());
 				e.printStackTrace();
@@ -709,13 +686,26 @@ public class SalesService {
 	}
 
 	public void deleteSalesItemById(String salesItemId) {
-		// Get the sales item before deletion to capture sales order ID
 		Optional<SalesItem> salesItem = salesItemrepo.findById(salesItemId);
 		String salesOrderId = "UNKNOWN_SO";
+		java.util.Map<String, Object> oldSnapshot = null;
 		if (salesItem.isPresent()) {
-			salesOrderId = salesItem.get().getSalesOrder().getId();
+			SalesItem si = salesItem.get();
+			salesOrderId = si.getSalesOrder() != null ? si.getSalesOrder().getId() : "UNKNOWN_SO";
+			oldSnapshot = auditService.toAuditMap(si);
 		}
 		salesItemrepo.deleteById(salesItemId);
+		if (oldSnapshot != null) {
+			try {
+				java.util.Map<String, Object> removed = new java.util.HashMap<>();
+				removed.put("removed", true);
+				auditService.logSalesItemChange(salesOrderId, salesItemId,
+						SalesOrderAuditService.ACTION_DELETE_SALES_ITEM, getCurrentUser(), oldSnapshot, removed,
+						"Sales line deleted: " + salesItemId, null);
+			} catch (Exception e) {
+				log.warn("Audit log for delete sales item failed: {}", e.getMessage());
+			}
+		}
 	}
 
 	public List<SalesOrder> getSalesOrderListWithStatusNotClosed() {
