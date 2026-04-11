@@ -303,7 +303,7 @@ obj = obj.replace(/\&/g, "\"");
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="width: 950px;">
             <div class="modal-header custom-box-header-modal">
-                <h5 style="height: 18px;"><span>Billing and Shipping Details : </span></h5><button type="button" class="close buttonDismiss" data-dismiss="modal" style="outline: none;">�</button>
+                <h5 style="height: 18px;"><span>Billing and Shipping Details : </span></h5><button type="button" class="close buttonDismiss" data-dismiss="modal" style="outline: none;">&times;</button>
             </div>
             <div class="modal-body">
             <div class="row" style="padding: 10px;">
