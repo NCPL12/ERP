@@ -1,4 +1,26 @@
 var table;
+
+function getSortableDateValue(value) {
+	if (!value) {
+		return 0;
+	}
+
+	var parsedDate = moment(value, moment.ISO_8601, true);
+	if (!parsedDate.isValid()) {
+		parsedDate = moment(value, ["DD-MM-YYYY HH:mm:ss", "DD-MM-YYYY", "YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD"], true);
+	}
+	if (!parsedDate.isValid()) {
+		parsedDate = moment(new Date(value));
+	}
+
+	return parsedDate.isValid() ? parsedDate.valueOf() : 0;
+}
+
+function formatSalesCreatedDate(value) {
+	var sortableDateValue = getSortableDateValue(value);
+	return sortableDateValue ? moment(sortableDateValue).format("DD-MM-YYYY") : "";
+}
+
 $(document).ready( function () {
 	
 	if(role=="STORE"){
@@ -28,7 +50,7 @@ $(document).ready( function () {
     	"aaData": dataObj,
     	"order": [[ 5, "desc" ]],
     	'columnDefs': [ {
-    	    'targets': [0,1,2,3,4,5,6,7], 
+    	    'targets': [0,1,2,3,4,6,7], 
     	    /* 'targets': [0,1,2,3,4,5,6,7],  table column index */
     	    'orderable': false, /* here set the true or false */
     	 }],
@@ -73,15 +95,17 @@ $(document).ready( function () {
 			"mData" : "created",
 			"class":"hideTd",
 			render : function(datam, type, row) {
-				var date=datam.split("-");
-				var formattedDate = date[1]+"-"+date[0]+"-"+date[2];
-				var newdate = moment(new Date(formattedDate)).format("YYYY-MM-DD HH:mm:ss") ;
-					return  newdate; 
+				return getSortableDateValue(datam);
 			}
 		},
 		{
 			"mData" : "created",
-			
+			render : function(datam, type, row) {
+				if (type === 'sort' || type === 'type') {
+					return getSortableDateValue(datam);
+				}
+				return formatSalesCreatedDate(datam);
+			}
 		},
 		/*{
 			"mData" : "clientPoNumber",
