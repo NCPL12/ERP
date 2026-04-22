@@ -1,5 +1,30 @@
+function loadDashboardCountsFromApi() {
+	$.ajax({
+		url: api.DASHBOARD_COUNTS,
+		type: "GET",
+		dataType: "json",
+		success: function (data) {
+			if (!data) {
+				return;
+			}
+			$("#salesOrderCount").text(data.salesOrderCount != null ? data.salesOrderCount : "");
+			$("#purchaseOrderCount").text(data.purchaseOrderCount != null ? data.purchaseOrderCount : "");
+			$("#invoiceCount").text(data.invoiceCount != null ? data.invoiceCount : "");
+			$("#projectPreviewCount").text(data.projectPreviewCount != null ? data.projectPreviewCount : "");
+			$("#tdsItemsCount").text(data.tdsItemsCount != null ? data.tdsItemsCount : "");
+			$("#sowithoutDesignCount").text(data.sowithoutDesignCount != null ? data.sowithoutDesignCount : "");
+			$("#sowithDesignCount").text(data.sowithDesignCount != null ? data.sowithDesignCount : "");
+		},
+		error: function (e) {
+			console.log(e);
+		}
+	});
+}
+
 $(document).ready(function () {
-	
+
+	loadDashboardCountsFromApi();
+
 	//getAllSalesListWithStatusNotClosed();
 	//getAllPurchaseList();
 	//getAllInvoiceList();
@@ -54,7 +79,6 @@ function getAllSalesListWithStatusNotClosed(){
 			console.log(response);
 
 			loadSalesTableWithStatusNotClosed(response);
-			$("#salesOrderCount").html(response.length)
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -155,7 +179,7 @@ return clientName;
 				},
 				{
 					"title": "View",
-					"data": "soNumber",
+					"data": "id",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
 						url="";
@@ -181,7 +205,6 @@ function getAllPurchaseList(){
 			console.log(response);
 
 			loadPurchaseTable(response);
-			$("#purchaseOrderCount").html(response.length);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -298,7 +321,6 @@ function getAllInvoiceList(){
 			console.log(response);
 
 			loadInvoiceTable(response);
-			$("#invoiceCount").html(response.length);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -380,17 +402,9 @@ function getAllSalesList(){
 		type: 'GET',
 
 		success: function (response) {
-			var projectCount=response.length;
 			console.log(response);
 
 			loadSalesTable(response);
-			$.each(response,function(index,value){
-				if(value.clientPoNumber.includes("A1") || value.clientPoNumber.includes("Non Billable")
-						|| value.clientPoNumber.includes("non billable") || value.clientPoNumber.includes("Nonbillable") || value.clientPoNumber.includes("Non-Billable")){
-					projectCount=projectCount-1;
-				}
-			})
-			$("#projectPreviewCount").html(projectCount);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -487,7 +501,7 @@ return clientName;
 				,
 				{
 					"title": "View",
-					"data": "soNumber",
+					"data": "id",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
 						url="";
@@ -517,7 +531,6 @@ function getTdsApprovedList(){
 			console.log(response);
 
 			loadTdsApprovedTable(response);
-			$("#tdsItemsCount").html(response.length);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -622,7 +635,6 @@ function getSalesItemsWithoutDesignList(){
 			console.log(response);
 
 			loadSalesItemsWithoutDesignTable(response);
-			$("#sowithoutDesignCount").html(response.length);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -645,18 +657,31 @@ function loadSalesItemsWithoutDesignTable(response) {
 
 
 			processing : true,
-			'columnDefs': [ {
-	    	    'targets': [0,1,2], /* table column index */
-	    	    'orderable': false, /* here set the true or false */
-	    	 }],
+			'columnDefs': [
+				{ 'targets': [0, 1, 4], 'orderable': false },
+				{ 'targets': [0, 1], 'className': 'so-without-design-col-text' },
+				{ 'targets': 2, 'className': 'so-without-design-col-created' },
+				{ 'targets': 3, 'className': 'so-without-design-col-numeric' },
+				{ 'targets': 4, 'className': 'so-without-design-col-view' }
+			],
 	    	 dom: 'Bfrtip',
-	    	 buttons: [{
+	    	 buttons: [
+				{
+					text: 'View',
+					className: 'buttons-html5 btn btn-default btn-sm',
+					action: function (e, dt, node) {
+						var show = !dt.column(3).visible();
+						dt.columns([3, 4]).visible(show);
+						$(node).text(show ? 'Hide' : 'View');
+					}
+				},
+				{
 	    		 text : 'Download',
 	 			extend: 'excel',
 	 			filename: 'SO without Design',
 	 			title: 'SO without Design',
 	 			exportOptions: {
-	                columns: [0,1,3]
+	                columns: [0, 1, 2, 3]
 	            }
 	 		}
 	 		],
@@ -678,21 +703,11 @@ function loadSalesItemsWithoutDesignTable(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
+						if (row.partyName) {
+							return row.partyName;
+						}
 						var clientName = row.party ? row.party.partyName : '';
-return clientName;
-
-					}
-				},
-				
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					"class":"hideTd",
-					render: function (aaData, type, row) {
-						//var date= new Date(row.created).toLocaleDateString();
-						var newdate = moment(row.created).format("YYYY-MM-DD HH:mm:ss") ;
-						return newdate;
+						return clientName;
 
 					}
 				},
@@ -710,12 +725,18 @@ return clientName;
 					}
 				},
 				{
+					"title": "Pending Designs",
+					"data": "pendingDesigns",
+					"defaultContent": 0,
+					"visible": false
+				},
+				{
 					"title": "View",
 					"data": "soNumber",
 					"defaultContent": "",
+					"visible": false,
 					render: function (aaData, type, row) {
 						url="";
-						//url = pageContext+"/api/salesOrder/view?salesOrderId="+row.id;
 						return "<button type='button' id='"+row.id+"' class='btn btn-default btn-flat btn-xs salesItemWithoutDesignView'><i class='fa fa-eye'></i></button>";;
 					}
 
@@ -742,7 +763,6 @@ function getAllSOWithDesignAndPONotDoneList(){
 			console.log(response);
 
 			loadSalesItemsWithDesignTable(response);
-			$("#sowithDesignCount").html(response.length);
 			hideLoader();
 		},  
 		complete:function(resp){
@@ -763,7 +783,7 @@ function loadSalesItemsWithDesignTable(response) {
 
 			processing : true,
 			'columnDefs': [ {
-	    	    'targets': [0,1,2], /* table column index */
+	    	    'targets': [0,1,2,4,5,6], /* table column index */
 	    	    'orderable': false, /* here set the true or false */
 	    	 }],
 	    	 dom: 'Bfrtip',
@@ -2113,18 +2133,31 @@ function loadSalesItemsWithoutDesignTablePartial(response) {
 		salesItemsWithoutDesignTabe = $('#salesItemsWithoutDesignTble').DataTable({
 
 
-			'columnDefs': [ {
-	    	    'targets': [0,1,2], /* table column index */
-	    	    'orderable': false, /* here set the true or false */
-	    	 }],
+			'columnDefs': [
+				{ 'targets': [0, 1, 4], 'orderable': false },
+				{ 'targets': [0, 1], 'className': 'so-without-design-col-text' },
+				{ 'targets': 2, 'className': 'so-without-design-col-created' },
+				{ 'targets': 3, 'className': 'so-without-design-col-numeric' },
+				{ 'targets': 4, 'className': 'so-without-design-col-view' }
+			],
 	    	 dom: 'Bfrtip',
-	    	 buttons: [{
+	    	 buttons: [
+				{
+					text: 'View',
+					className: 'buttons-html5 btn btn-default btn-sm',
+					action: function (e, dt, node) {
+						var show = !dt.column(3).visible();
+						dt.columns([3, 4]).visible(show);
+						$(node).text(show ? 'Hide' : 'View');
+					}
+				},
+				{
 	    		 text : 'Download',
 	 			extend: 'excel',
 	 			filename: 'SO without Design',
 	 			title: 'SO without Design',
 	 			exportOptions: {
-	                columns: [0,1,3]
+	                columns: [0, 1, 2, 3]
 	            }
 	 		}
 	 		],
@@ -2143,21 +2176,11 @@ function loadSalesItemsWithoutDesignTablePartial(response) {
 					"data": "salesOrderObj",
 					"defaultContent": "",
 					render: function (aaData, type, row) {
+						if (row.partyName) {
+							return row.partyName;
+						}
 						var clientName = row.party ? row.party.partyName : '';
-return clientName;
-
-					}
-				},
-				
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					"class":"hideTd",
-					render: function (aaData, type, row) {
-						//var date= new Date(row.created).toLocaleDateString();
-						var newdate = moment(row.created).format("YYYY-MM-DD HH:mm:ss") ;
-						return newdate;
+						return clientName;
 
 					}
 				},
@@ -2175,12 +2198,18 @@ return clientName;
 					}
 				},
 				{
+					"title": "Pending Designs",
+					"data": "pendingDesigns",
+					"defaultContent": 0,
+					"visible": false
+				},
+				{
 					"title": "View",
 					"data": "soNumber",
 					"defaultContent": "",
+					"visible": false,
 					render: function (aaData, type, row) {
 						url="";
-						//url = pageContext+"/api/salesOrder/view?salesOrderId="+row.id;
 						return "<button type='button' id='"+row.id+"' class='btn btn-default btn-flat btn-xs salesItemWithoutDesignView'><i class='fa fa-eye'></i></button>";;
 					}
 

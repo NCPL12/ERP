@@ -12,5 +12,6 @@ import com.ncpl.sales.model.WorkOrder;
 public interface WorkOrderRepo extends JpaRepository<WorkOrder, String>{
 	@Query( value = "SELECT * FROM  tbl_work_order WHERE id IN (:id)",nativeQuery = true)
 	List<WorkOrder> findWorkOrderListById(@Param("id") String woId);
-
+	
+	long count();
 }

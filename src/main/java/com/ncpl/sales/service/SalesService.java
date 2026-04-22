@@ -1181,6 +1181,23 @@ public class SalesService {
 		List<SalesOrder> salesOrderList = salesrepo.getSalesOrderWithoutDesign();
 		return salesOrderList;
 	}
+
+	public List<Map<String, Object>> getSoWithoutDesignSummaryForDashboard(){
+		List<Object[]> rows = salesrepo.getSoWithoutDesignSummaryForDashboard();
+		ArrayList<Map<String, Object>> result = new ArrayList<>();
+		for (Object[] row : rows) {
+			Map<String, Object> summary = new HashMap<>();
+			summary.put("id", row[0] == null ? null : row[0].toString());
+			summary.put("clientPoNumber", row[1] == null ? null : row[1].toString());
+			summary.put("partyName", row[2] == null ? null : row[2].toString());
+			summary.put("created", row[3]);
+			summary.put("totalItems", row[4] == null ? 0L : ((Number) row[4]).longValue());
+			summary.put("itemsWithDesign", row[5] == null ? 0L : ((Number) row[5]).longValue());
+			summary.put("pendingDesigns", row[6] == null ? 0L : ((Number) row[6]).longValue());
+			result.add(summary);
+		}
+		return result;
+	}
 	
 	public List<SalesOrder> getAllSalesOrderQithDesignAndPoNotDoneForDashboard(){
 		List<SalesOrder> salesOrderList = salesrepo.getSalesOrderWithDesign();
@@ -1363,6 +1380,23 @@ public class SalesService {
 		}
 		
 		return list;
+	}
+
+	public List<Map<String, Object>> getSoWithoutDesignSummaryForDashboardPartial() {
+		List<Object[]> rows = salesrepo.getSoWithoutDesignSummaryForDashboardPartial();
+		ArrayList<Map<String, Object>> result = new ArrayList<>();
+		for (Object[] row : rows) {
+			Map<String, Object> summary = new HashMap<>();
+			summary.put("id", row[0] == null ? null : row[0].toString());
+			summary.put("clientPoNumber", row[1] == null ? null : row[1].toString());
+			summary.put("partyName", row[2] == null ? null : row[2].toString());
+			summary.put("created", row[3]);
+			summary.put("totalItems", row[4] == null ? 0L : ((Number) row[4]).longValue());
+			summary.put("itemsWithDesign", row[5] == null ? 0L : ((Number) row[5]).longValue());
+			summary.put("pendingDesigns", row[6] == null ? 0L : ((Number) row[6]).longValue());
+			result.add(summary);
+		}
+		return result;
 	}
 	
 	public List<SalesItem> getPendingItemsToBeDeliveredInSo(){

@@ -19,9 +19,40 @@ var pageContext = '${pageContext.request.contextPath}';
 .hideTd{
  display:none !important;
 }
+/* SO Without Design table: padding inside borders, consistent vertical alignment */
+#salesItemsWithoutDesignTble thead th,
+#salesItemsWithoutDesignTble tbody td {
+  padding: 0.7rem 0.95rem;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+#salesItemsWithoutDesignTble .so-without-design-col-text {
+  text-align: left;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+#salesItemsWithoutDesignTble .so-without-design-col-created {
+  text-align: left;
+  white-space: nowrap;
+}
+#salesItemsWithoutDesignTble thead .so-without-design-col-numeric,
+#salesItemsWithoutDesignTble tbody .so-without-design-col-numeric {
+  text-align: center;
+}
+#salesItemsWithoutDesignTble thead .so-without-design-col-view,
+#salesItemsWithoutDesignTble tbody .so-without-design-col-view {
+  text-align: center;
+  width: 3.75rem;
+  white-space: nowrap;
+}
+#salesItemsWithoutDesignTble tbody .so-without-design-col-view .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 <div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -37,7 +68,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-info">
               <div class="inner">
-                <h3 id="salesOrderCount"></h3>
+                <h3 id="salesOrderCount">${salesOrderCount}</h3>
 
                 <p>Client Sales Order</p>
               </div>
@@ -54,7 +85,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-success">
               <div class="inner">
-                <h3 id="purchaseOrderCount"></h3>
+                <h3 id="purchaseOrderCount">${purchaseOrderCount}</h3>
 
                 <p>Vendor Purchase Order</p>
               </div>
@@ -70,7 +101,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-warning">
               <div class="inner">
-                <h3 id="invoiceCount"></h3>
+                <h3 id="invoiceCount">${invoiceCount}</h3>
 
                 <p>Total Invoice</p>
               </div>
@@ -86,7 +117,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-danger">
               <div class="inner">
-                <h3 id="projectPreviewCount"></h3>
+                <h3 id="projectPreviewCount">${projectPreviewCount}</h3>
 
                 <p>Projects</p>
               </div>
@@ -100,7 +131,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-red">
               <div class="inner">
-                <h3 id="tdsItemsCount"></h3>
+                <h3 id="tdsItemsCount">${tdsItemsCount}</h3>
 
                 <p>Tds Approved items</p>
               </div>
@@ -114,7 +145,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-primary">
               <div class="inner">
-                <h3 id="sowithoutDesignCount"></h3>
+                <h3 id="sowithoutDesignCount">${sowithoutDesignCount}</h3>
 
                 <p>SO Without Design</p>
               </div>
@@ -129,7 +160,7 @@ var pageContext = '${pageContext.request.contextPath}';
             <!-- small box -->
             <div class="small-box bg-primary">
               <div class="inner">
-                <h3 id="sowithDesignCount"></h3>
+                <h3 id="sowithDesignCount">${sowithDesignCount}</h3>
 
                 <p>SO With Design</p>
               </div>

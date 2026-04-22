@@ -19,6 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +64,7 @@ import com.itextpdf.text.DocumentException;
 import com.ncpl.sales.model.Category;
 import com.ncpl.sales.model.City;
 import com.ncpl.sales.model.Country;
+import com.ncpl.sales.model.DashboardCountDto;
 import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
 import com.ncpl.sales.model.DesignItems;
@@ -97,12 +99,20 @@ import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.PartyContactRepo;
 import com.ncpl.sales.repository.PartyRepo;
+import com.ncpl.sales.repository.SalesRepo;
+import com.ncpl.sales.repository.PurchaseRepo;
+import com.ncpl.sales.repository.InvoiceRepo;
+import com.ncpl.sales.repository.TdsItemRepo;
+import com.ncpl.sales.repository.WorkOrderRepo;
+import com.ncpl.sales.repository.SalesItemRepo;
+import com.ncpl.sales.repository.SalesOrderDesignRepo;
 import com.ncpl.sales.security.User;
 import com.ncpl.sales.security.UserService;
 import com.ncpl.sales.service.ActiveSalesItemExcel;
 import com.ncpl.sales.service.CategoryService;
 import com.ncpl.sales.service.CityService;
 import com.ncpl.sales.service.CountryService;
+import com.ncpl.sales.service.DashboardService;
 import com.ncpl.sales.service.DeliveryChallanService;
 import com.ncpl.sales.service.DesignUploadService;
 import com.ncpl.sales.service.DesignationService;
@@ -287,6 +297,22 @@ public class SalesController {
 	SalesOrderDesignService designService;
 	@Autowired
 	PartyRepo partyRepo;
+	@Autowired
+	SalesRepo salesRepo;
+	@Autowired
+	PurchaseRepo purchaseRepo;
+	@Autowired
+	InvoiceRepo invoiceRepo;
+	@Autowired
+	TdsItemRepo tdsItemRepo;
+	@Autowired
+	WorkOrderRepo workOrderRepo;
+	@Autowired
+	DashboardService dashboardService;
+	@Autowired
+	SalesItemRepo salesItemRepo;
+	@Autowired
+	SalesOrderDesignRepo salesOrderDesignRepo;
 	@Autowired
 	InvoiceService invoiceService;
 	@Autowired
@@ -1317,7 +1343,14 @@ public class SalesController {
 
 	@GetMapping("/dashboard")
 	public String dashboard(Model model) throws JsonProcessingException {
-
+		DashboardCountDto counts = dashboardService.getDashboardCounts();
+		model.addAttribute("salesOrderCount", counts.getSalesOrderCount());
+		model.addAttribute("purchaseOrderCount", counts.getPurchaseOrderCount());
+		model.addAttribute("invoiceCount", counts.getInvoiceCount());
+		model.addAttribute("tdsItemsCount", counts.getTdsItemsCount());
+		model.addAttribute("sowithDesignCount", counts.getSowithDesignCount());
+		model.addAttribute("sowithoutDesignCount", counts.getSowithoutDesignCount());
+		model.addAttribute("projectPreviewCount", counts.getProjectPreviewCount());
 		model.addAttribute("pageHeader", "Dashboard");
 		return "dashboard";
 	}
@@ -1970,7 +2003,7 @@ public class SalesController {
 	 
 	 @GetMapping("/api/salesItems_without_design_list")
 		public ResponseEntity<?> salesItemsWithoutDesign(Model model) {
-			List<SalesOrder> soList = salesService.getAllSalesItemListWithoutDesignForDashboard();
+			List<Map<String, Object>> soList = salesService.getSoWithoutDesignSummaryForDashboard();
 			return new ResponseEntity<>(soList, HttpStatus.OK);
 		}
 	 
@@ -2021,7 +2054,7 @@ public class SalesController {
 		}
 	 @GetMapping("/api/salesItems_without_design_list_partial")
 		public ResponseEntity<?> salesItemsWithoutDesignPartial(Model model) {
-			List<SalesOrder> soList = salesService.getAllSalesItemListWithoutDesignForDashboardPartial();
+			List<Map<String, Object>> soList = salesService.getSoWithoutDesignSummaryForDashboardPartial();
 			return new ResponseEntity<>(soList, HttpStatus.OK);
 		}
 	 @GetMapping("/api/salesItems_with_design_list_partial")

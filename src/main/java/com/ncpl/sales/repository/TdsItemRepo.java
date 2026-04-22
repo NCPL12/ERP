@@ -8,5 +8,5 @@ import com.ncpl.sales.model.TdsItems;
 
 @Repository
 public interface TdsItemRepo extends JpaRepository<TdsItems, Integer>{
-
+    long countByTdsApprovedTrue();
 }

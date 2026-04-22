@@ -305,6 +305,7 @@
 		PURCHASE_LIST:contextRoot+parentApi+"/purchase_List",
 		PURCHASE_LIST_PENDING:parentApi+"/purchase_List/pending",
 		INVOICE_LIST:parentApi+"/invoice_List",
+		DASHBOARD_COUNTS:parentApi+"/dashboard/counts",
 		GET_ALL_SALES_LIST:parentApi+"/get_all_sales_list",
 		UPLOAD:parentApi+"/upload",
 		STOCK_LIST_BY_ITEMID:parentApi+"/stock-list/by_itemId",

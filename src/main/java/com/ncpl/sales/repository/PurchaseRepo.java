@@ -41,5 +41,18 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	
 	@Query("SELECT DISTINCT po FROM PurchaseOrder po LEFT JOIN FETCH po.party WHERE po.poNumber IN :poNumbers")
 	List<PurchaseOrder> findByPoNumberIn(@Param("poNumbers") List<String> poNumbers);
+	
+	long countByArchiveFalse();
+	
+	@Query(value = "SELECT COUNT(*) FROM tbl_purchase_order WHERE archive = 0", nativeQuery = true)
+	long countActivePurchaseOrders();
 
+	@Query(value = "SELECT COUNT(*) FROM tbl_purchase_order po WHERE po.archive = 0 AND NOT EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number)", nativeQuery = true)
+	long countPurchaseOrdersWithoutGRN();
+
+	@Query(value = "SELECT COUNT(DISTINCT po.po_number) FROM tbl_purchase_order po " +
+			"WHERE po.archive = 0 AND EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number) " +
+			"AND (SELECT SUM(pi.quantity) FROM tbl_purchase_items pi WHERE pi.po_number = po.po_number) > " +
+			"(SELECT COALESCE(SUM(gi.received_quantity), 0) FROM tbl_grn g JOIN tbl_grn_items gi ON g.grn_id = gi.grn_id WHERE g.po_number = po.po_number)", nativeQuery = true)
+	long countPendingPurchaseOrdersPartialGRN();
 }

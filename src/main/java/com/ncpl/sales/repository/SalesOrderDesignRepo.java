@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.ncpl.sales.model.SalesOrderDesign;
 
@@ -23,18 +24,8 @@ public interface SalesOrderDesignRepo extends JpaRepository<SalesOrderDesign, Lo
 	@Query(" from SalesOrderDesign where sales_item_id=?1 ")
 	Optional<SalesOrderDesign> getDesginObjBySalesItemId(String salesItemId);
 	
-	// Batch fetch by primary keys
 	List<SalesOrderDesign> findByIdIn(List<Long> ids);
 	
-
-	/*
-	 * @Query("select a from SalesOrderDesign a join a.DesignItems b where b.sales_order_design_id = :prop1 and b.item_id=:prop2"
-	 * ) SalesOrderDesign getDesignByItemIdAndDesignId(@Param("prop1") String
-	 * salesOrderDesignId, @Param("prop2") String itemId);
-	 */
-	//@Query("select a from SalesOrderDesign a join a.DesignItems b where b.sales_order_design_id = :prop1 and b.item_id=:prop2")
-	/*@Query(value = "select * from sales_order_design_items s where s.sales_order_design_id = :sales_order_design_id and s.item_id = :item_id",nativeQuery = true) 
-	void getDesignByItemIdAndDesignId(@Param("sales_order_design_id") long sales_order_design_id, @Param("item_id") String item_id);*/
-
-
+	@Query("SELECT DISTINCT sod.salesItemId FROM SalesOrderDesign sod")
+	List<String> findDistinctSalesItemIds();
 }

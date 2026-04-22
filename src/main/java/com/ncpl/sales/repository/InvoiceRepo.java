@@ -20,5 +20,5 @@ public interface InvoiceRepo extends JpaRepository<Invoice,String>{
 	@Query(" from Invoice where  soNumber =?1 and dcNumber=?2")
 	List<Invoice> findInvoiceBySoIdWhereDcNoIsAll(String soId,String dcNumber);
 	
-
+	long count();
 }
