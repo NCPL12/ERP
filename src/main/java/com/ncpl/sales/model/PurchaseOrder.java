@@ -56,10 +56,10 @@ public class PurchaseOrder extends TimeStampEntity implements Comparable<Purchas
 		 @Convert(converter= JSONObjectConverter.class)
 		 private JSONArray history;
 		
-		@OneToMany(cascade = CascadeType.ALL)
-		@JoinColumn(name = "po_number")
-		@JsonBackReference
-		private List<PurchaseItem> items;
+	@OneToMany(cascade = CascadeType.ALL)
+	@JoinColumn(name = "po_number")
+	@JsonBackReference
+	private List<PurchaseItem> items;
 		
 	/*
 	 * @ManyToOne

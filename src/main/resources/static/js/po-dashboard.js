@@ -121,14 +121,14 @@ $(document).ready( function () {
     });
     var purchaseOrderId;
     var  version;
-    //On double click of row navigate to edit page
-   $('#purchaseList tbody').on('dblclick', 'tr', function () {
-	   var data1 = table.row(this).data();
-	   var poNumber = data1.poNumber;
+   //On double click of row navigate to edit page
+    $('#purchaseList tbody').on('dblclick', 'tr', function () {
+        var data1 = table.row(this).data();
+        var poNumber = data1.poNumber;
 	    purchaseOrderId = data1.poNumber;
-	    version = data1.version;
-	    var versionIndex = version;
-	   getPurchasecopy(poNumber,purchaseOrderId,version,versionIndex);
+	    version = data1.version || 0;
+	    var versionIndex = (version == 0) ? 0 : version;
+	    getPurchasecopy(poNumber,purchaseOrderId,version,versionIndex);
 	   //getPurchasecopyItems(poNumber);
 	  // getVendorAddressForPreview(poNumber);
 	  // 	 $("#poPreviewModal").modal("show");
@@ -527,12 +527,15 @@ function sendingPoPdfAddress(){
 
 
 function getPurchasecopy(poNumber,purchaseOrderId,version,versionIndex){
+	// Handle undefined values
+	version = version || 0;
+	versionIndex = versionIndex || 0;
 	$.ajax({
 		type:'GET',
-		url : api.PO_PURCHASECOPY  + poNumber,
+		url : api.PO_PURCHASECOPY + poNumber,
 		success : function(response) {
 			if(response == undefined || response.poNumber == undefined || response ==""){
-				 window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&version="+version+"&versionIndex="+versionIndex;
+					window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&version="+version+"&versionIndex="+versionIndex;
 			}else{
 			$("#PonoInPreview").html("PO No: "+response.poNumber);
 			$("#podateInPreview").html("Po Date: "+response.created);
@@ -710,8 +713,9 @@ function getCurrentVersion(poNumber){
 }
 
 $(document).on("click","#editPoBtn",function(){
-	   var versionIndex = version;
-	   window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&version="+version+"&versionIndex="+versionIndex;
+    var currentVersion = version || 0;
+    var versionIndex = currentVersion;
+    window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&version="+currentVersion+"&versionIndex="+versionIndex;
 });
 
 

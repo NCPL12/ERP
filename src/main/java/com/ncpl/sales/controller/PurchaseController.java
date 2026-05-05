@@ -201,19 +201,22 @@ public class PurchaseController {
 	@PostMapping("/save/purchaseOrder")
 	public  String savePurchaseOrder(PurchaseOrder purchaseOrder,HttpServletRequest req) {
 		System.out.println(purchaseOrder);
-	String salesOrderId = req.getParameter("salesOrder");
-	String partyId = req.getParameter("partyByType");
-	//String poNumber = req.getParameter("poNumber");
-	if(purchaseOrder.getPoNumber()!=null){
-		purchaseService.updatePo(purchaseOrder);
-	}else{
-	purchaseService.savePurchaseOrder(purchaseOrder,salesOrderId,partyId);
+		String salesOrderId = req.getParameter("salesOrder");
+		String partyId = req.getParameter("partyByType");
+		//String poNumber = req.getParameter("poNumber");
+		if(purchaseOrder.getPoNumber()!=null){
+			// Set the party on the purchase order before updating
+			if(partyId != null && !partyId.isEmpty()){
+				Party party = partyService.getPartyById(partyId);
+				purchaseOrder.setParty(party);
+			}
+			purchaseService.updatePo(purchaseOrder);
+		}else{
+			purchaseService.savePurchaseOrder(purchaseOrder,salesOrderId,partyId);
+		}
+		//System.out.println(purchaseOrder.getItems().size());
+		return "redirect:/purchase";
 	}
-	//System.out.println(purchaseOrder.getItems().size());
-	return "redirect:/purchase";
-	
-
-  }   
 		
 	// Get all purchase Orders
 	public List<PurchaseOrder> findAll() {
@@ -229,6 +232,14 @@ public class PurchaseController {
 		@RequestParam("version") String version,@RequestParam("versionIndex") String versionIndex, Model model) throws JsonProcessingException {
 		
 		
+
+		// Handle "undefined" values from JavaScript
+		if ("undefined".equals(version) || version == null) {
+			version = "0";
+		}
+		if ("undefined".equals(versionIndex) || versionIndex == null) {
+			versionIndex = "0";
+		}
 		
 		//Get purchase order by version
 		Optional<PurchaseOrder> purchaseOrder = purchaseService.findByIdAndVersion(poNumber, version,versionIndex);
@@ -987,65 +998,18 @@ public class PurchaseController {
 		return new ResponseEntity<>(addressMap,HttpStatus.OK) ;
 	}
 	
-	
-	/*private static final String EXTERNAL_FILE_PATH = Constants.FILE_LOCATION + File.separator;
-	//String filePath = Constants.FILE_LOCATION + File.separator + fileName;
-	//@RequestMapping("/file/")
-	@RequestMapping("/prevpurchaseOrder/file/{poid}")
-	public String downloadPDFResource(HttpServletRequest request, HttpServletResponse response,
-			@PathVariable("poid") String fileName) throws IOException {
-		fileName= fileName+"_purchaseOrder.xlsx";
-		pofileName = fileName;
-		File file = new File(EXTERNAL_FILE_PATH + fileName);
-		String f = file.getAbsolutePath();
-		boolean f1 = file.exists();
-		if (file.exists()) {
-
-			//get the mimetype
-			String mimeType = URLConnection.guessContentTypeFromName(file.getName());
-			if (mimeType == null) {
-				//unknown mimetype so set the mimetype to application/octet-stream
-				mimeType = "application/octet-stream";
-			}
-
-			response.setContentType(mimeType);
-
-			*//**
-			 * In a regular HTTP response, the Content-Disposition response header is a
-			 * header indicating if the content is expected to be displayed inline in the
-			 * browser, that is, as a Web page or as part of a Web page, or as an
-			 * attachment, that is downloaded and saved locally.
-			 * 
-			 *//*
-
-			*//**
-			 * Here we have mentioned it to show inline
-			 *//*
-			response.setHeader("Content-Disposition", String.format("inline; filename=\"" + file.getName() + "\""));
-
-			 //Here we have mentioned it to show as attachment
-			 //response.setHeader("Content-Disposition", String.format("attachment; filename=\"" + file.getName() + "\""));
-
-			response.setContentLength((int) file.length());
-
-			InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-
-			FileCopyUtils.copy(inputStream, response.getOutputStream());
-
-		//}
-		return null;
-		}else{
-			return "redirect:/purchase";
-		}
+	// API endpoint for party dropdown
+	@GetMapping("/purchase/api/partyListDropdown")
+	public ResponseEntity<?> getPartyListForDropdown() {
+		List<Party> partyList = partyService.getPartyListbyTypeSupplier();
+		return new ResponseEntity<>(partyList, HttpStatus.OK);
 	}
-	*/
 	
-	@GetMapping("/api/po/purchaseCopy/{id}")
-	public ResponseEntity<?> getPurchaseCopy(@PathVariable("id") String poNumber){
-		PurchaseCopy purchasecopy = purchasecopyservice.getPurchaseCopyByPoNumber(poNumber);
-		
-		
-		return new ResponseEntity<>(purchasecopy,HttpStatus.OK) ;
+	// API endpoint for purchase order dropdown
+	@GetMapping("/purchase/api/purchaseOrderDropDown")
+	public ResponseEntity<?> getPurchaseOrderForDropdown() {
+		List<PurchaseOrder> poList = purchaseService.findAllPO();
+		return new ResponseEntity<>(poList, HttpStatus.OK);
 	}
 	
 	/**
