@@ -479,7 +479,6 @@ public class SalesController {
 		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
-		List<SalesOrder> salesList = salesService.getSalesOrderList();
 		List<Party> customerpartyList = partyService.getPartyListByTypeCustomer();
 		List<ItemMaster> itemList = itemMasterService.getItemList();
 		User userObj  = userService.getCurrentUser();
@@ -489,15 +488,15 @@ public class SalesController {
 		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
 		model.addAttribute("unitsList", mapper.writeValueAsString(unitsList));
 		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
-		model.addAttribute("salesOrderList", mapper.writeValueAsString(salesList));
 		model.addAttribute("role", mapper.writeValueAsString(userObj.getRole()));
 		model.addAttribute("pageHeader", "Sales Order");
+		
 		if (flashMap != null) {
 			SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
-
 			model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
-
 		}
+		
+		model.addAttribute("salesOrderList", "[]");
 		return "welcome";
 	}
 

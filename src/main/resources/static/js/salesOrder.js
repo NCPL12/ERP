@@ -317,6 +317,13 @@ function getPartyList(){
 	/**get sales item list by sales order id and display on double click of sales list **/
 	function getSalesOrderById(soId){
 		showLoader();
+		
+		// Show table loading overlay
+		$("#salesTable").closest('.card').css('position', 'relative');
+		if($("#salesTableOverlay").length === 0) {
+			$("#salesTable").before('<div id="salesTableOverlay" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.8);z-index:10;display:flex;align-items:center;justify-content:center;"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><span style="margin-left:10px;font-size:16px;">Loading Sales Items...</span></div>');
+		}
+		$("#salesTableOverlay").show();
 		//className String is used to differentiate. since this api is used many places 
 		var className="so";
 		var partyId=salesOrderObj.party.id;
@@ -449,15 +456,18 @@ function getPartyList(){
 		    		});
 		    },  
 			complete:function(resp){
+				hideLoader();
+				$("#salesTableOverlay").hide();
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 				}
 			},
 			error : function(e) {
+				hideLoader();
+				$("#salesTableOverlay").hide();
 				console.log(e);
 			}  
 		  }); 
-		hideLoader();
 	}
 	
 	
@@ -1182,6 +1192,10 @@ function designTable2Json(){
 				$('#warrantyDropdown').select2(salesOrderObj, {id: salesOrderObj.warranty, a_key:salesOrderObj.warranty});
 				$("#otherTermsAndCondition").val(salesOrderObj.otherTermsAndConditions);
 				
+				// Initialize billing address dropdown when editing
+				if(salesOrderObj.billingAddress && salesOrderObj.party && salesOrderObj.party.id) {
+					getBillingAddressTermsAndConditionForEdit(salesOrderObj.party.id, salesOrderObj.billingAddress);
+				}
 				
 			}else{ 
 				$("#clientsDropdown").val('').trigger('change');
@@ -1333,6 +1347,23 @@ function designTable2Json(){
 		   $("#billingAddressContent").empty();
 		   var formattedAddress = "";
 		   
+		   // Handle "other" custom address - keep existing value
+		   if(addressId === "other" || addressId === "Other") {
+			   var existingAddress = $("#billingAddress").val();
+			   if(existingAddress) {
+				   formattedAddress = existingAddress;
+				   var addressLines = existingAddress.split(',');
+				   for(var i=0; i<addressLines.length; i++) {
+					   $("#billingAddressContent").append("<span class=''>"+addressLines[i].trim()+"</span>");
+				   }
+			   } else {
+				   // Prompt user to enter custom address
+				   $("#billingAddressContent").append("<span class=''>Please enter custom billing address</span>");
+			   }
+			   $("#billingAddress").val(formattedAddress);
+			   return;
+		   }
+		   
 		   if(addressId == addressObj.mainParty.id) {
 		   
 			var addr2=addressObj.mainParty.addr2;
@@ -1435,10 +1466,15 @@ function designTable2Json(){
 	    	   
 	    	   addressObj = response;
 	    	   
-	    	   //populate main party address for billing address dropdown.
+//populate main party address for billing address dropdown.
 			   $("#billingAddressDropdown").empty();
 			   var billingMainAddress = response.mainParty.addr1;
 
+			   // Add city name to make it more readable
+			   if(response.mainParty.party_city && response.mainParty.party_city.name) {
+				   billingMainAddress += " - " + response.mainParty.party_city.name;
+			   }
+			   
 			   billingMainAddress = billingMainAddress.split(' ');
 			   if (billingMainAddress.length > 100) {
 				   billingMainAddress.splice(100);
@@ -1446,19 +1482,31 @@ function designTable2Json(){
 			   billingMainAddress = billingMainAddress.join(' ');
 			   var length = $.trim(billingMainAddress).length;
 			   if (length > 50) {
-				   billingMainAddress = $.trim(billingMainAddress).substring(0, 50) + "....";
+				   billingMainAddress = $.trim(billingMainAddress).substring(0, 47) + "...";
 			   }
-   
+    
 			   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + '>' + billingMainAddress + '</option>');
 	    	   
 	    	  
-	    	   //populate other alternative addresses for billing address dropdown.
-	    	   var alternateAddressArr = response.addresses;
-	           for(var i=0; i< alternateAddressArr.length; i++){
-	         	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
-	           }
-	           
-	           //Display auto selected address
+//populate other alternative addresses for billing address dropdown.
+		    	   var alternateAddressArr = response.addresses;
+		           for(var i=0; i< alternateAddressArr.length; i++){
+		        	  // Create a more readable display text
+		        	  var addrText = alternateAddressArr[i].addr1;
+		        	  if(alternateAddressArr[i].partyaddr_city && alternateAddressArr[i].partyaddr_city.name) {
+		        		  addrText += " - " + alternateAddressArr[i].partyaddr_city.name;
+		        	  }
+		        	  // Truncate if too long
+		        	  if(addrText.length > 50) {
+		        		  addrText = addrText.substring(0, 47) + "...";
+		        	  }
+		         	  $("#billingAddressDropdown").append(new Option(addrText, alternateAddressArr[i].id));
+		           }
+		           
+		           // Add "Other Address" option for custom address entry
+		           $("#billingAddressDropdown").append(new Option("Other Address", "other"));
+		           
+		           //Display auto selected address
 	           $("#billingAddressDropdown").change();
 	           
 	          //Populate mode of payment drop downs
@@ -1526,6 +1574,201 @@ function designTable2Json(){
 	       })
 	 }
 	
+	// Function to initialize billing address dropdown when editing existing Sales Order
+	function getBillingAddressTermsAndConditionForEdit(partyId, savedBillingAddress) {
+	    $.ajax({
+	       url:api.GET_SO_ADDRESS+"?partyId="+partyId,
+	       type:'GET',
+	       async: false,
+	       success:function(response) {
+	    	   addressObj = response;
+	    	   
+	    	   // Populate main party address for billing address dropdown.
+			   $("#billingAddressDropdown").empty();
+			   var billingMainAddress = response.mainParty.addr1;
+
+			   // Add city name to make it more readable
+			   if(response.mainParty.party_city && response.mainParty.party_city.name) {
+				   billingMainAddress += " - " + response.mainParty.party_city.name;
+			   }
+
+			   billingMainAddress = billingMainAddress.split(' ');
+			   if (billingMainAddress.length > 100) {
+				   billingMainAddress.splice(100);
+			   }
+			   billingMainAddress = billingMainAddress.join(' ');
+			   var length = $.trim(billingMainAddress).length;
+			   if (length > 50) {
+				   billingMainAddress = $.trim(billingMainAddress).substring(0, 47) + "...";
+			   }
+			   
+			   // Build formatted main party address to compare with saved address
+			   var mainAddr2 = response.mainParty.addr2 ? response.mainParty.addr2 : ' ';
+			   var mainPincode = response.mainParty.pin ? response.mainParty.pin : '';
+			   var mainFormattedAddress = response.mainParty.partyName + " , " +
+			                            response.mainParty.addr1 + " , " +
+			                            mainAddr2 + " , " +
+			                            response.mainParty.party_city.name + " , " +
+			                            response.mainParty.party_city.state.name + " , " +
+			                            response.mainParty.party_city.state.country.name + " - " +
+			                            mainPincode;
+			   
+			   var foundMatch = false;
+			   var savedAddressId = null;
+			   
+			   // Check if savedBillingAddress is an ID (starts with PA-) or formatted address
+			   if (savedBillingAddress && savedBillingAddress.trim().startsWith("PA-")) {
+				   // It's an address ID - try to find matching address
+				   savedAddressId = savedBillingAddress.trim();
+				   
+				   // Check if it matches main party ID
+				   if (savedAddressId === response.mainParty.id) {
+					   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + ' selected>' + billingMainAddress + '</option>');
+					   // Build formatted address for display
+					   $("#billingAddress").val(mainFormattedAddress);
+					   foundMatch = true;
+				   }
+			   } else if (savedBillingAddress && savedBillingAddress.trim() === mainFormattedAddress.trim()) {
+				   // Check if saved address matches main party formatted address
+				   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + ' selected>' + billingMainAddress + '</option>');
+				   foundMatch = true;
+			   } else {
+				   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + '>' + billingMainAddress + '</option>');
+			   }
+	    	   
+			   // Populate other alternative addresses for billing address dropdown.
+			   var alternateAddressArr = response.addresses;
+	           for(var i=0; i< alternateAddressArr.length; i++){
+	         	  var altAddr2 = alternateAddressArr[i].addr2 ? alternateAddressArr[i].addr2 : ' ';
+	         	  var altPincode = alternateAddressArr[i].pin ? alternateAddressArr[i].pin : '';
+	         	  
+	         	  // Build formatted address to compare with saved address
+	         	  var altFormattedAddress = addressObj.mainParty.partyName + " , " +
+	         		                        alternateAddressArr[i].addr1 + " , " +
+	         		                        altAddr2 + " , " +
+	         		                        alternateAddressArr[i].partyaddr_city.name + " , " +
+	         		                        alternateAddressArr[i].partyaddr_city.state.name + " , " +
+	         		                        alternateAddressArr[i].partyaddr_city.state.country.name + " - " +
+	         		                        altPincode;
+	         	  
+	         	  // Create a more readable display text
+		        	  var addrText = alternateAddressArr[i].addr1;
+		        	  if(alternateAddressArr[i].partyaddr_city && alternateAddressArr[i].partyaddr_city.name) {
+		        		  addrText += " - " + alternateAddressArr[i].partyaddr_city.name;
+		        	  }
+		        	  // Truncate if too long
+		        	  if(addrText.length > 50) {
+		        		  addrText = addrText.substring(0, 47) + "...";
+		        	  }
+	         	  
+	         	  // Check if saved address ID matches this address
+	         	  var isSelected = false;
+	         	  if (savedAddressId && savedAddressId === alternateAddressArr[i].id) {
+	        		  isSelected = true;
+	        		  foundMatch = true;
+	        		  // Use formatted address for display
+	        		  $("#billingAddress").val(altFormattedAddress);
+	         	  } else if (savedBillingAddress && savedBillingAddress.trim() === altFormattedAddress.trim()) {
+	        		  isSelected = true;
+	        		  foundMatch = true;
+	         	  }
+	         	  
+	         	  if (isSelected) {
+	         		  $("#billingAddressDropdown").append(new Option(addrText, alternateAddressArr[i].id, true, true));
+	         	  } else {
+	         		  $("#billingAddressDropdown").append(new Option(addrText, alternateAddressArr[i].id));
+	         	  }
+	           }
+	           
+	           // Add "Other Address" option
+	           $("#billingAddressDropdown").append(new Option("Other Address", "other"));
+	           
+	           if (foundMatch) {
+	        	   // Trigger change to update display
+	        	   $("#billingAddressDropdown").trigger('change');
+	           } else {
+	        	   // If no match found, it's a custom/other address
+	        	   $("#billingAddressDropdown").val("other");
+	        	   $("#billingAddressContent").html(savedBillingAddress.replace(/,/g, '<br>'));
+	           }
+	           
+	           // Populate mode of payment dropdowns
+	           var modeOfPaymentArr = response.modeOfPayment.split('$$');
+	           var modeOfPaymentArr1 = response.modeOfPayment.split('&&');
+	           $("#modeOfPaymentDropdown").empty();
+	           var str =  modeOfPaymentArr[modeOfPaymentArr.length -1 ].split('&&')[0];
+	           var str1 =  modeOfPaymentArr1[modeOfPaymentArr1.length -1 ];
+	           for(var i=0; i< modeOfPaymentArr.length-1; i++){
+	        	  if(i==0) {
+	        		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i], modeOfPaymentArr[i]));
+	        	  }else{
+	        		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
+	        	  }
+	           }
+	           $("#modeOfPaymentDropdown").append(new Option(str1, str1));
+	         
+	           // Populate jurisdictionDropdown dropdowns
+	           var jursidictionArr = response.jurisdiction.split('$$');
+	           $("#jurisdictionDropdown").empty();
+	           $("#regionDropdown").empty();
+	           for(var i=0; i< jursidictionArr.length; i++){
+	        	  $("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	        	  $("#regionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	           }
+	           
+	           // Populate freight dropdowns
+	           var frieghtArr = response.frieght.split('$$');
+	           $("#freightDropdown").empty();
+	           for(var i=0; i< frieghtArr.length; i++){
+	        	  $("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
+	           }
+	           
+	           // Populate delivery dropdowns
+	           var deliveryArr = response.delivery.split('$$');
+	           $("#deliveryDropdown").empty();
+	           for(var i=0; i< deliveryArr.length -1 ; i++){
+	        	  var val;
+	        	  if(i  == 0 ){
+	        		  val = deliveryArr[i];
+	        	  }else {
+	        		  val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
+	        	  }
+	        	  $("#deliveryDropdown").append(new Option(val, val));
+	           }
+	           
+	           // Populate warranty dropdowns
+	           var warrantyArr = response.warranty.split('$$');
+	           $("#warrantyDropdown").empty();
+	           for(var i=0; i< warrantyArr.length; i++){
+	        	  $("#warrantyDropdown").append(new Option(warrantyArr[i], warrantyArr[i]));
+	           }
+	           
+	          // Set the selected values for other dropdowns if editing
+	          if(salesOrderObj && salesOrderObj.modeOfPayment) {
+	        	  $("#modeOfPaymentDropdown").val(salesOrderObj.modeOfPayment);
+	          }
+	          if(salesOrderObj && salesOrderObj.jurisdiction) {
+	        	  $("#jurisdictionDropdown").val(salesOrderObj.jurisdiction);
+	          }
+	          if(salesOrderObj && salesOrderObj.freight) {
+	        	  $("#freightDropdown").val(salesOrderObj.freight);
+	          }
+	          if(salesOrderObj && salesOrderObj.delivery) {
+	        	  $("#deliveryDropdown").val(salesOrderObj.delivery);
+	          }
+	          if(salesOrderObj && salesOrderObj.warranty) {
+	        	  $("#warrantyDropdown").val(salesOrderObj.warranty);
+	          }
+	          if(salesOrderObj && salesOrderObj.region) {
+	        	  $("#regionDropdown").val(salesOrderObj.region);
+	          }
+	       },
+			error : function(e) {
+				console.log("Error loading billing addresses for edit: ", e);
+			}  
+	    });
+	}
+	
 	//on click of save button in popup set shipping address billing address and other T&D values to hidden field and submit form with those values
 	$(document).on("click","#saveSoBtn",function(e){
 		
@@ -1534,7 +1777,8 @@ function designTable2Json(){
 		});
 		
 		var shippingAddress = $("#shippingAddressDropdown").val();
-		var billingAddress = $("#billingAddressDropdown").val();
+		// Get formatted billing address from hidden field (contains actual address text)
+		var billingAddress = $("#billingAddress").val();
 		var otherTAndC=$.trim($("#otherTermsAndCondition").val());
 		var modeOfPayment = $("#modeOfPaymentDropdown").val();
 		var jurisdiction = $("#jurisdictionDropdown").val();
