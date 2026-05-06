@@ -339,7 +339,12 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		ByteArrayOutputStream baos = null;
 		String path = null;
 
-		String FILE_LOCATION = System.getProperty("user.home") + File.separator + "PDF_FILES";
+	String FILE_LOCATION = System.getProperty("user.home") + File.separator + "PDF_FILES";
+		// Create directory if it doesn't exist
+		File directory = new File(FILE_LOCATION);
+		if (!directory.exists()) {
+			directory.mkdirs();
+		}
 
 		path = FILE_LOCATION + File.separator + fileName;
 		System.out.println(path + "path>>>>>>>>>");
@@ -363,8 +368,16 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		// paragraph.add(new Chunk(" Email Id :" + "owner@ncpl.co \n"));
 
 		
-			String imgLoc = "http://localhost:8080/ncpl-sales/resources/dist/img/ncpl_logo_pdf.png";
-			  Image img = Image.getInstance(imgLoc);
+			// Load logo from local file path instead of HTTP URL
+		String imgPath = System.getProperty("user.home") + File.separator + "PDF_FILES" + File.separator + "ncpl_logo_pdf.png";
+		File logoFile = new File(imgPath);
+		Image img = null;
+		if (logoFile.exists()) {
+			img = Image.getInstance(imgPath);
+		} else {
+			// Fallback: try to load from classpath/resources
+			img = Image.getInstance(this.getClass().getResource("/static/dist/img/ncpl_logo_pdf.png"));
+		}
       img.setAbsolutePosition(53f, 760f);
       document.add(img);
 		
@@ -1145,18 +1158,34 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		companyCell.addElement(companyName);
 		signTable.addCell(companyCell);
 
-		PdfPCell signCell = new PdfPCell();
+ 	PdfPCell signCell = new PdfPCell();
 		signCell.setBorder(0);
 		//Phrase sign = new Phrase();
-		String imgLoc1;
+		// Load signature from local file path
+		String signPath = System.getProperty("user.home") + File.separator + "PDF_FILES" + File.separator;
+		String signFile = "";
 		if(user.getUsername().equalsIgnoreCase("vighneshwar")) {
-			 imgLoc1 = "http://localhost:8080/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg";
+			 signFile = "vigneshwar_sign.jpg";
 		}else {
-			 //imgLoc1 = "http://localhost:8888/ncpl-sales/resources/dist/img/abhilashSign2.jpg";
-			imgLoc1 = "http://localhost:8080/ncpl-sales/resources/dist/img/sumathySign2.jpg";
-
+			signFile = "sumathySign2.jpg";
 		}
-		  Image img2 = Image.getInstance(imgLoc1);
+		
+		File signatureFile = new File(signPath + signFile);
+		Image img2 = null;
+		if (signatureFile.exists()) {
+			img2 = Image.getInstance(signatureFile.getAbsolutePath());
+		} else {
+			// Fallback: try classpath
+			try {
+				img2 = Image.getInstance(this.getClass().getResource("/static/dist/img/" + signFile));
+			} catch (Exception e) {
+				System.out.println("Signature file not found: " + signPath + signFile);
+			}
+		}
+		if (img2 == null) {
+			// Create empty cell if signature not found
+			signCell.addElement(new Phrase("Signature not available"));
+		}
 		 // img2.scaleAbsoluteHeight(1f);
 		//  img2.scaleAbsoluteWidth(1f);
 		 

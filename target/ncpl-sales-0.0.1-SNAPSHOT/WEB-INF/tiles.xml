@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+       "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+       "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+       
+       <tiles-definitions>
+		     
+		     <definition name="welcome" template="/WEB-INF/views/welcome.jsp"> 
+				<put-attribute name="title" value="Sales Order" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="salesDashboard" template="/WEB-INF/views/salesDashboard.jsp"> 
+				<put-attribute name="title" value="Sales List View" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="purchaseOrder" template="/WEB-INF/views/purchaseOrder.jsp"> 
+				<put-attribute name="title" value="Purchase Order" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="party" template="/WEB-INF/views/party.jsp"> 
+				<put-attribute name="title" value="Party" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="partyList" template="/WEB-INF/views/partyList.jsp"> 
+				<put-attribute name="title" value="Party List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="user" template="/WEB-INF/views/user.jsp"> 
+				<put-attribute name="title" value="User" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="userList" template="/WEB-INF/views/userList.jsp"> 
+				<put-attribute name="title" value="User List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="goodsReceiptNote" template="/WEB-INF/views/goodsReceiptNote.jsp"> 
+				<put-attribute name="title" value="Grn View" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="newGoodsReceiptNote" template="/WEB-INF/views/newGoodsReceiptNote.jsp"> 
+				<put-attribute name="title" value="New Grn" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>  
+			
+			<definition name="purchaseDashboard" template="/WEB-INF/views/purchaseDashboard.jsp"> 
+				<put-attribute name="title" value="Purchase Dashboard" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="displayPurchaseOrder" template="/WEB-INF/views/editPurchaseOrder.jsp"> 
+				<put-attribute name="title" value="Edit Purchase Dashboard" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="itemMaster" template="/WEB-INF/views/itemMaster.jsp"> 
+				<put-attribute name="title" value="Item Master" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>  
+
+			<definition name="partyAddress" template="/WEB-INF/views/partyAddress.jsp"> 
+				<put-attribute name="title" value="Party Address" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="login" template="/WEB-INF/views/login.jsp"> 
+				<put-attribute name="title" value="Login to sales tool" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="partyBank" template="/WEB-INF/views/partyBank.jsp"> 
+				<put-attribute name="title" value="Party Bank" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="deliveryChallan" template="/WEB-INF/views/deliveryChallan.jsp"> 
+				<put-attribute name="title" value="Delivery Challan" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="dcDashboard" template="/WEB-INF/views/dcDashboard.jsp"> 
+				<put-attribute name="title" value="Delivery Challan Dashboard" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="invoice" template="/WEB-INF/views/invoice.jsp"> 
+				<put-attribute name="title" value="Invoice" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="invoiceDashboard" template="/WEB-INF/views/invoiceDashboard.jsp"> 
+				<put-attribute name="title" value="Invoice Dashboard" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="salesReport" template="/WEB-INF/views/salesReport.jsp"> 
+				<put-attribute name="title" value="Sales Reports" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="dashboard" template="/WEB-INF/views/dashboard.jsp"> 
+				<put-attribute name="title" value="Dashboard" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			<definition name="projectPreview" template="/WEB-INF/views/projectPreviewPage.jsp"> 
+				<put-attribute name="title" value="Project Preview" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />  
+			</definition>
+			
+			  <definition name="outstandingreport" template="/WEB-INF/views/oustandingStock.jsp"> 
+				<put-attribute name="title" value="Outstanding Stock Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			  <definition name="pendingporeport" template="/WEB-INF/views/pendingreport.jsp"> 
+				<put-attribute name="title" value="Pending PO Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			  <definition name="pendingdcreport" template="/WEB-INF/views/pendingDcReport.jsp"> 
+				<put-attribute name="title" value="Pending DC Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			 <definition name="poItemHistory" template="/WEB-INF/views/poItemHistory.jsp"> 
+				<put-attribute name="title" value="Purchase Item History Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="salesListReport" template="/WEB-INF/views/salesListReport.jsp"> 
+				<put-attribute name="title" value="Sales List By Item Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="poByItem" template="/WEB-INF/views/poByItem.jsp"> 
+				<put-attribute name="title" value="Purchase List By Item" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="grnListByItem" template="/WEB-INF/views/grnListByItem.jsp"> 
+				<put-attribute name="title" value="Grn List By Item" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="pendingPOReportbyPoNum" template="/WEB-INF/views/pendingPoReportByPoNumber.jsp"> 
+				<put-attribute name="title" value="Pending PO Report" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="returnable" template="/WEB-INF/views/returnable.jsp"> 
+				<put-attribute name="title" value="Returnable Items" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="returnableList" template="/WEB-INF/views/returnableItemsList.jsp"> 
+				<put-attribute name="title" value="Returnable Items List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="workOrder" template="/WEB-INF/views/workOrder.jsp"> 
+				<put-attribute name="title" value="Work Order" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="workOrderList" template="/WEB-INF/views/workOrderList.jsp"> 
+				<put-attribute name="title" value="Work Order List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="dcListByItemReport" template="/WEB-INF/views/dcListByItemReport.jsp"> 
+				<put-attribute name="title" value="DC List By Item" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="tds" template="/WEB-INF/views/tds.jsp"> 
+				<put-attribute name="title" value="Sales Order" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="nonbillable" template="/WEB-INF/views/nonbillable.jsp"> 
+				<put-attribute name="title" value="Non Billable" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="archivedSalesDashboard" template="/WEB-INF/views/archivedSalesDashboard.jsp"> 
+				<put-attribute name="title" value="Archived Sales List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="archivedPurchaseDashboard" template="/WEB-INF/views/archivedPurchaseDashboard.jsp"> 
+				<put-attribute name="title" value="Archived Purchase List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="archivedDcDashboard" template="/WEB-INF/views/archivedDcDashboard.jsp"> 
+				<put-attribute name="title" value="Archived DC List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="archivedGoodsReceiptNote" template="/WEB-INF/views/archivedGoodsReceiptNote.jsp"> 
+				<put-attribute name="title" value="Archived GRN List" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+			<definition name="soChart" template="/WEB-INF/views/soChart.jsp"> 
+				<put-attribute name="title" value="Sales Order Chart" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="toolTracker" template="/WEB-INF/views/toolTracker.jsp"> 
+				<put-attribute name="title" value="Tools And Tackles" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="companyAssets" template="/WEB-INF/views/companyAssets.jsp"> 
+				<put-attribute name="title" value="Company Assets" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			
+        </tiles-definitions>

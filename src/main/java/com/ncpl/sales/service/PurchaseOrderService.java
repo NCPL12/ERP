@@ -230,7 +230,7 @@ public class PurchaseOrderService {
 			JSONObject objectByVersion = (JSONObject) history.get(versionIndexInt);
 			PurchaseOrder poByVersion = new PurchaseOrder();
 			poByVersion.setPoNumber(po.get().getPoNumber());
-			poByVersion.setVersion(Integer.parseInt(version));
+			poByVersion.setVersion(versionInt);
 			
 			String dateStr =  objectByVersion.getString("created");
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -260,21 +260,15 @@ public class PurchaseOrderService {
 		JSONArray history = preparePurchaseOrderHistory(purchaseOrderNumber);
 		PurchaseOrder poToUpdate = purchaseRepo.getOne(purchaseOrderNumber);
 		poToUpdate.setHistory(history);
-		
-		// Clear existing items and add new ones to maintain proper Hibernate relationship
-		poToUpdate.getItems().clear();
-		List<PurchaseItem> newItems = purchaseOrder.getItems();
-		for (PurchaseItem purchaseItem : newItems) {
-			// Set the back-reference to the purchase order
-			purchaseItem.setPurchaseOrder(poToUpdate);
-			// Handle null delivery date issue
-			Date delDate = purchaseItem.getDelivaryDate();
-			if(delDate != null && delDate.toString().equalsIgnoreCase("Wed Dec 31 19:00:00 EST 1969")) {
+		poToUpdate.setItems(purchaseOrder.getItems());
+		List<PurchaseItem> purchaseItems = purchaseOrder.getItems();
+		for (PurchaseItem purchaseItem : purchaseItems) {
+			Date delDate =purchaseItem.getDelivaryDate();
+			System.out.println(delDate);
+			if(delDate.toString().equalsIgnoreCase("Wed Dec 31 19:00:00 EST 1969")) {
 				purchaseItem.setDelivaryDate(null);
 			}
-			poToUpdate.getItems().add(purchaseItem);
 		}
-		
 		PurchaseOrder poToUpdateObj=purchaseRepo.save(poToUpdate);
 		//updateSupplierPrice(poToUpdateObj);
 	}
