@@ -127,10 +127,10 @@ $(document).ready(function () {
           </div>
               
                <div class="col-sm-4" style="padding-top: 8px;">
-               <div class="form-inline float-sm-right">
-               
-               
-          			<span class="m-0 text-dark">Versions: </span>
+<div class="form-inline float-sm-right" style="display:none;">
+                
+                
+           			<span class="m-0 text-dark">Versions: </span>
 						<select class="form-control select2 PositionofTextbox" name="version" id="version" style="width:208px;height: 30px; padding: 1.5px; border-radius: 0;">
 						
 								<!-- if history not available then populate current version. NOTE this version will not be stored in history object -->
@@ -331,9 +331,6 @@ $(document).ready(function () {
 
 </body>
 <script>
-var version = '${version}';
-var highestVersion = '${poLastVersion}'
-	$('#version').val(version);
 
 </script>
 </html>

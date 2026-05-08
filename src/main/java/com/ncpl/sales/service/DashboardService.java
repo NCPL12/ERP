@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.DashboardCountDto;
 import com.ncpl.sales.repository.InvoiceRepo;
-import com.ncpl.sales.repository.PurchaseRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.WorkOrderRepo;
 
@@ -27,9 +26,6 @@ public class DashboardService {
 
     @Autowired
     private SalesRepo salesRepo;
-
-    @Autowired
-    private PurchaseRepo purchaseRepo;
 
     @Autowired
     private InvoiceRepo invoiceRepo;
@@ -85,9 +81,6 @@ public class DashboardService {
     private DashboardCountDto loadCountsViaJpaParallel() {
         CompletableFuture<Long> salesOrderCount = CompletableFuture.supplyAsync(
                 () -> salesRepo.countSalesOrdersWithoutDC() + salesRepo.countPendingSalesOrdersPartialDC());
-        CompletableFuture<Long> purchaseOrderCount = CompletableFuture.supplyAsync(
-                () -> purchaseRepo.countPurchaseOrdersWithoutGRN()
-                        + purchaseRepo.countPendingPurchaseOrdersPartialGRN());
         CompletableFuture<Long> invoiceCount = CompletableFuture.supplyAsync(() -> invoiceRepo.count());
         CompletableFuture<Long> tdsItemsCount = CompletableFuture
                 .supplyAsync(() -> salesRepo.countTdsApprovedAndPoNotDoneListDashboard());
@@ -99,12 +92,11 @@ public class DashboardService {
         CompletableFuture<Long> sowithDesign = CompletableFuture
                 .supplyAsync(() -> salesRepo.countSalesOrderWithDesign());
 
-        CompletableFuture.allOf(salesOrderCount, purchaseOrderCount, invoiceCount, tdsItemsCount,
+        CompletableFuture.allOf(salesOrderCount, invoiceCount, tdsItemsCount,
                 activeSalesOrders, workOrders, sowithoutDesign, sowithDesign).join();
 
         DashboardCountDto dto = new DashboardCountDto();
         dto.setSalesOrderCount(salesOrderCount.join());
-        dto.setPurchaseOrderCount(purchaseOrderCount.join());
         dto.setInvoiceCount(invoiceCount.join());
         dto.setTdsItemsCount(tdsItemsCount.join());
         dto.setProjectPreviewCount(workOrders.join() + activeSalesOrders.join());

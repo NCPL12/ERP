@@ -22,9 +22,7 @@ function loadPoTable() {
 			"mData" : "poNumber",
 			render : function(aaData, type, row) {
 				var poNumber=row.poNumber;
-				var version=row.version;
-				var versionIndex=version;
-				var url=pageContext+"/purchase/view?poNumber="+poNumber+"&version="+version+"&versionIndex="+versionIndex;
+				var url=pageContext+"/purchase/view?poNumber="+poNumber;
 				return "<a href='"+url+"'>"+poNumber+"</a>";
 				
 			}

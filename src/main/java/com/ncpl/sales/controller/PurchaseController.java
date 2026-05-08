@@ -225,22 +225,11 @@ public class PurchaseController {
 	
 	//display purchace items in edit page
 	@GetMapping("/purchase/view")
-	public String displayEditPurchaseOrder(@RequestParam("poNumber") String poNumber,
-		@RequestParam("version") String version,@RequestParam("versionIndex") String versionIndex, Model model) throws JsonProcessingException {
+	public String displayEditPurchaseOrder(@RequestParam("poNumber") String poNumber, Model model) throws JsonProcessingException {
 		
-		// Handle "undefined" values from JavaScript
-		if ("undefined".equals(version) || version == null) {
-			version = "0";
-		}
-		if ("undefined".equals(versionIndex) || versionIndex == null) {
-			versionIndex = "0";
-		}
+		// Get latest purchase order directly (no version lookup)
+		Optional<PurchaseOrder> purchaseOrder = purchaseService.findById(poNumber);
 		
-		//Get purchase order by version
-		Optional<PurchaseOrder> purchaseOrder = purchaseService.findByIdAndVersion(poNumber, version,versionIndex);
-		//model.addAttribute("currentVersion", version);
-	    //To display description as Name in Edit po Page sending sales list and
-		// comparing with the id we are getting in edit page
 		User userObj  = userService.getCurrentUser();
 		String role = userObj.getRole();
 		List<SalesItem> salesItemList = salesService.getAllSalesItemList();
@@ -254,16 +243,11 @@ public class PurchaseController {
 		 model.addAttribute("itemList", mapper.writeValueAsString(itemList));
 		 model.addAttribute("unitsList",mapper.writeValueAsString(unitsList));
 		
-		//Get latest version
-		Optional<PurchaseOrder> purchaseOrderLatest = purchaseService.findById(poNumber);
 		model.addAttribute("role", mapper.writeValueAsString(role));
-		model.addAttribute("purchaseOrder", purchaseOrderLatest.get());
-		model.addAttribute("poLastVersion", purchaseOrderLatest.get().getVersion());
-		model.addAttribute("version", version);
+		model.addAttribute("purchaseOrder", purchaseOrder.get());
 		model.addAttribute("partyId", purchaseOrder.get().getParty().getId());
 		model.addAttribute("poNumber", poNumber);
 
-		
 		List<SalesOrder> salesList = salesService.getSalesOrderList();
 		 model.addAttribute("salesOrderList",mapper.writeValueAsString(salesList));
 
@@ -2108,5 +2092,6 @@ public class PurchaseController {
 			}
 }
 	
+
 
 

@@ -203,56 +203,7 @@ public class PurchaseOrderService {
 	
 	}
 	
-	public Optional<PurchaseOrder> findByIdAndVersion(String poNumber, String version,String versionIndex) {
-		Optional<PurchaseOrder> po = findById(poNumber);
-		
-		// Handle undefined or invalid version values
-		int versionInt = 0;
-		int versionIndexInt = 0;
-		try {
-			versionInt = Integer.parseInt(version);
-		} catch (NumberFormatException e) {
-			versionInt = po.get().getVersion(); // Default to current version
-		}
-		try {
-			versionIndexInt = Integer.parseInt(versionIndex);
-		} catch (NumberFormatException e) {
-			versionIndexInt = 0;
-		}
-			
-		if(po.get().getVersion() == versionInt) {
-			return po;
-		}else {
-			JSONArray history = po.get().getHistory();
-			if (history == null || history.length() == 0 || versionIndexInt >= history.length()) {
-				return po; // Return current version if history is invalid
-			}
-			JSONObject objectByVersion = (JSONObject) history.get(versionIndexInt);
-			PurchaseOrder poByVersion = new PurchaseOrder();
-			poByVersion.setPoNumber(po.get().getPoNumber());
-			poByVersion.setVersion(versionInt);
-			
-			String dateStr =  objectByVersion.getString("created");
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			Date date = null;
-			try {
-				date = sdf.parse(dateStr);
-			} catch (ParseException e) {
-				
-				e.printStackTrace();
-			}
-			
-			poByVersion.setCreated(date);
-			@SuppressWarnings("unchecked")
-			List<PurchaseItem> items = (List<PurchaseItem>) jsonArrayPojoUtil.jsonArrayToPojo(objectByVersion.get("items").toString());
-			poByVersion.setItems(items);
-			poByVersion.setParty(po.get().getParty());
-			
-			Optional<PurchaseOrder> optionalPo = Optional.of(poByVersion); 
-			
-			return optionalPo;
-		}
-	}
+
 
 	//On editing of purchase order updating items..
 	public void updatePo(PurchaseOrder purchaseOrder) {
@@ -262,14 +213,18 @@ public class PurchaseOrderService {
 		poToUpdate.setHistory(history);
 		poToUpdate.setItems(purchaseOrder.getItems());
 		List<PurchaseItem> purchaseItems = purchaseOrder.getItems();
-		for (PurchaseItem purchaseItem : purchaseItems) {
-			Date delDate =purchaseItem.getDelivaryDate();
-			System.out.println(delDate);
-			if(delDate.toString().equalsIgnoreCase("Wed Dec 31 19:00:00 EST 1969")) {
-				purchaseItem.setDelivaryDate(null);
+		// Null check for purchaseItems
+		if (purchaseItems != null) {
+			for (PurchaseItem purchaseItem : purchaseItems) {
+				Date delDate = purchaseItem.getDelivaryDate();
+				System.out.println(delDate);
+				// Null check for delDate
+				if (delDate != null && delDate.toString().equalsIgnoreCase("Wed Dec 31 19:00:00 EST 1969")) {
+					purchaseItem.setDelivaryDate(null);
+				}
 			}
 		}
-		PurchaseOrder poToUpdateObj=purchaseRepo.save(poToUpdate);
+		PurchaseOrder poToUpdateObj = purchaseRepo.save(poToUpdate);
 		//updateSupplierPrice(poToUpdateObj);
 	}
 	

@@ -7,19 +7,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ncpl.sales.model.PurchaseOrder;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-
-@Api(tags = "Purchase API", description = "Endpoints for Purchase Order operations")
 @RestController
 public class PurchaseRestController {
-
-	@ApiOperation(value = "Get Purchase Order by ID", notes = "Returns a Purchase Order matching the given PO number")
+	
 	@PostMapping(value = "/poById")
-	public ResponseEntity<?> getPOById(
-			@ApiParam(value = "Purchase Order object containing the PO number", required = true)
-			PurchaseOrder purchaseOrder) {
+	public ResponseEntity<?> getPOById(PurchaseOrder purchaseOrder){
+		//System.out.println(">>>>>>>>>>>>>>:" +purchaseOrder.getPoNumber());
 		return new ResponseEntity<PurchaseOrder>(HttpStatus.OK);
 	}
 

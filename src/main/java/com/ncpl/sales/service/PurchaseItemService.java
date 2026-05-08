@@ -122,27 +122,24 @@ public class PurchaseItemService {
 
 	// get purchase items by purchaseItemId
 	public Optional<PurchaseItem> getPurchaseItemById(int purchaseItemId) {
+		System.out.println(purchaseItemId);
 		Optional<PurchaseItem> purchaseItem = purchaseItemRepo.findById(purchaseItemId);
-		if (!purchaseItem.isPresent()) {
-			return Optional.empty();
-		}
 		String poItemItd = Integer.toString(purchaseItem.get().getPurchase_item_id());
 		String salesItemId = purchaseItem.get().getDescription();
+		System.out.println("salesitemiddddd" + salesItemId);
 		boolean value = false;
 		Optional<SalesItem> salesItem = salesService.getSalesItemById(salesItemId, value);
-		if (salesItem.isPresent() && salesItem.get().getItem_units() != null) {
-			purchaseItem.get().set("unitName", salesItem.get().getItem_units().getName());
-		} else {
-			purchaseItem.get().set("unitName", "");
-		}
+		purchaseItem.get().set("unitName", salesItem.get().getItem_units().getName());
 		List<GrnItems> grnList = grnService.getGrnItemByPoItemId(poItemItd);
 		float receivedQty = 0;
 
 		if (grnList.isEmpty()) {
+			receivedQty = 0;
 			purchaseItem.get().set("receivedQty", receivedQty);
 		} else {
 			for (GrnItems grnItems : grnList) {
 				receivedQty = receivedQty + grnItems.getReceivedQuantity();
+
 			}
 			purchaseItem.get().set("receivedQty", purchaseItem.get().getQuantity() - receivedQty);
 		}
@@ -193,15 +190,13 @@ public class PurchaseItemService {
 		List<PurchaseItem> poItems = purchaseItemRepo.findAll();
 
 		for (PurchaseItem purchaseItem : poItems) {
-			if (purchaseItem.getModelNo() == null || purchaseItem.getModelNo().trim().isEmpty()) {
-				continue;
-			}
-			Optional<ItemMaster> itemMasterObject = itemMasterService.getItemById(purchaseItem.getModelNo().trim());
+			Optional<ItemMaster> itemMasterObject = itemMasterService.getItemById(purchaseItem.getModelNo());
 			if (itemMasterObject.isPresent()) {
 				itemMap.put(itemMasterObject.get().getId(), itemMasterObject.get().getModel());
 			}
 		}
 
+		System.out.println("poItems" + poItems.size());
 		return itemMap;
 	}
 

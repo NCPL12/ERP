@@ -14,7 +14,7 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 	
 	@Query(" from PurchaseItem where po_number=?1 ")
 	List<PurchaseItem> findByPurchaseOrder_PoNumber(String poNumber);
-	@Query("SELECT pi FROM PurchaseItem pi JOIN FETCH pi.purchaseOrder WHERE pi.modelNo=?1")
+	@Query(" from PurchaseItem where model_no=?1 ")
 	List<PurchaseItem> findByModelNumber(String model);
 	@Query(" from PurchaseItem where sales_item_id=?1 ")
 	List<PurchaseItem> findBySalesItemId(String soItemId);
@@ -31,9 +31,6 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 
 	@Query("SELECT pi FROM PurchaseItem pi LEFT JOIN FETCH pi.purchaseOrder WHERE pi.description IN :salesItemIds")
 	List<PurchaseItem> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
-
-	@Query("SELECT DISTINCT pi.modelNo FROM PurchaseItem pi")
-	List<String> findDistinctModelNos();
 
 	@Query(value = "SELECT po.po_number, " +
 			"COALESCE(SUM(pi.amount), 0) AS total, " +

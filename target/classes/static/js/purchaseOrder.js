@@ -1486,10 +1486,7 @@ function editPoTable() {
 
 $(document).on("change", "#version", function () {
 	var poNumber = $('#poNumberEdit').text();
-	var version = $(this).val();
-	var versionIndex = $(this).prop('selectedIndex')
-	window.location = pageContext + "/purchase/view?poNumber=" + poNumber + "&&version=" + version+ "&versionIndex="+versionIndex;
-
+	window.location = pageContext + "/purchase/view?poNumber=" + poNumber;
 });
 function checkForDcInvoiceCreated(poItemId,salesItemId,index){
 	var row=index+1;
