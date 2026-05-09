@@ -1360,11 +1360,8 @@ function editPoTable() {
 				"class": "qtyData",
 				"width":"8%",
 				render: function (mData, type, row, meta) {
-					if(highestVersion == version){
-						return '<input type="text"  class="form-control PositionofTextbox qtyInput" name="items[' + meta.row + '].quantity" value="' + mData + '" id="newQty' + meta.row + '" style="width:100%" />';
-					}else{
-					return '<input type="text"  class="form-control PositionofTextbox qtyInput" readonly="readonly" name="items[' + meta.row + '].quantity" value="' + mData + '" id="newQty' + meta.row + '" style="width:100%" />';
-				}}
+					return '<input type="text"  class="form-control PositionofTextbox qtyInput" name="items[' + meta.row + '].quantity" value="' + mData + '" id="newQty' + meta.row + '" style="width:100%" />';
+				}
 			},
 			{
 				"class": "hideTd",
@@ -1393,12 +1390,8 @@ function editPoTable() {
 				"width":"6%",
 				render: function (mData, type, row, meta) {
 					var mData = commaSeparateNumber(mData);
-					if(highestVersion == version){
-						return '<input type="text"  class="form-control PositionofTextbox upInput alignright unitprice" name="items[' + meta.row + '].unitPrice" value="' + mData + '" id="newUPrice' + meta.row + '" />';
-					}else{
-					return '<input type="text"  class="form-control PositionofTextbox upInput alignright unitprice" readonly="readonly" name="items[' + meta.row + '].unitPrice" value="' + mData + '" id="newUPrice' + meta.row + '" />';
-				
-					}}
+					return '<input type="text"  class="form-control PositionofTextbox upInput alignright unitprice" name="items[' + meta.row + '].unitPrice" value="' + mData + '" id="newUPrice' + meta.row + '" />';
+				}
 			},
 			{
 				"class": "hideTd",
