@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,7 @@ import com.ncpl.sales.model.Stock;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.GrnRepo;
+import com.ncpl.sales.repository.ItemMasterRepo;
 import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
@@ -87,6 +89,8 @@ public class GrnService {
 	SalesItemRepo salesItemrepo;
 	@Autowired
 	PurchaseItemRepo purchaseItemRepo;
+	@Autowired
+	ItemMasterRepo itemMasterRepo;
   
     
 	public Grn saveGrn(Grn grn) {
@@ -543,7 +547,34 @@ public class GrnService {
 		caches.put("poItemsByModelCache", new HashMap<String, List<PurchaseItem>>());
 		caches.put("designItemObjCache", new HashMap<String, DesignItems>());
 
-		List<DeliveryChallanItems> allDcInRange = dcItemRepo.findByUpdatedBetween(sqlFromDate, sqlToDate);
+		// Collect relevant descriptions from inwardList to filter DC pre-loads
+		Set<String> relevantDescriptions = new HashSet<>();
+		if (!inwardList.isEmpty()) {
+			List<Integer> poItemIdList = new ArrayList<>();
+			for (Object[] obj : inwardList) {
+				poItemIdList.add(Integer.parseInt((String) obj[0]));
+			}
+			List<PurchaseItem> purchaseItems = purchaseItemRepo.findAllById(poItemIdList);
+			Set<String> modelNumbers = new HashSet<>();
+			for (PurchaseItem pi : purchaseItems) {
+				if (pi.getDescription() != null) relevantDescriptions.add(pi.getDescription());
+				if (pi.getModelNo() != null) modelNumbers.add(pi.getModelNo());
+			}
+			if (!modelNumbers.isEmpty()) {
+				List<DesignItems> designItems = designItemRepo.findByItemIdIn(new ArrayList<>(modelNumbers));
+				for (DesignItems di : designItems) {
+					if (di.getSalesOrderDesign() != null && di.getSalesOrderDesign().getSalesItemId() != null) {
+						relevantDescriptions.add(di.getSalesOrderDesign().getSalesItemId());
+					}
+				}
+			}
+		}
+		log.info("Stock summary: {} relevant descriptions to filter DC", relevantDescriptions.size());
+
+		List<String> descList = new ArrayList<>(relevantDescriptions);
+		List<DeliveryChallanItems> allDcInRange = descList.isEmpty()
+			? dcItemRepo.findByUpdatedBetween(sqlFromDate, sqlToDate)
+			: dcItemRepo.findByUpdatedBetweenAndDescriptionIn(sqlFromDate, sqlToDate, descList);
 		Map<String, List<DeliveryChallanItems>> dcByDescription = new HashMap<>();
 		for (DeliveryChallanItems dc : allDcInRange) {
 			dcByDescription.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
@@ -551,14 +582,20 @@ public class GrnService {
 		caches.put("dcItemsBetweenDates", dcByDescription);
 		log.info("Stock summary: {} DC items in date range", allDcInRange.size());
 
-		// Preload all DC items up to toDate/fromDate to avoid N+1 in opening quantity and outward
+		// Preload DC items up to toDate/fromDate for opening quantity
 		Map<String, List<DeliveryChallanItems>> dcUpToToDate = new HashMap<>();
-		for (DeliveryChallanItems dc : dcItemRepo.findDcListLessThanDate(sqlToDate)) {
+		List<DeliveryChallanItems> dcUpToToDateList = descList.isEmpty()
+			? dcItemRepo.findDcListLessThanDate(sqlToDate)
+			: dcItemRepo.findDcListLessThanDateAndDescriptionIn(sqlToDate, descList);
+		for (DeliveryChallanItems dc : dcUpToToDateList) {
 			dcUpToToDate.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
 		}
 		caches.put("dcItemsUpToToDate", dcUpToToDate);
 		Map<String, List<DeliveryChallanItems>> dcUpToFromDate = new HashMap<>();
-		for (DeliveryChallanItems dc : dcItemRepo.findDcListLessThanDate(sqlFromDate)) {
+		List<DeliveryChallanItems> dcUpToFromDateList = descList.isEmpty()
+			? dcItemRepo.findDcListLessThanDate(sqlFromDate)
+			: dcItemRepo.findDcListLessThanDateAndDescriptionIn(sqlFromDate, descList);
+		for (DeliveryChallanItems dc : dcUpToFromDateList) {
 			dcUpToFromDate.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
 		}
 		caches.put("dcItemsUpToFromDate", dcUpToFromDate);
@@ -591,7 +628,9 @@ public class GrnService {
 		Map<String, SalesOrderDesign> soDesignCache = (Map<String, SalesOrderDesign>) caches.get("soDesignCache");
 		Map<String, DesignItems> designItemObjCache = (Map<String, DesignItems>) caches.get("designItemObjCache");
 		@SuppressWarnings("unchecked")
-		Map<String, List<DeliveryChallanItems>> dcUpToToDate = (Map<String, List<DeliveryChallanItems>>) caches.get("dcItemsUpToToDate");
+		Map<String, Float> openingQuantCache = (Map<String, Float>) caches.get("openingQuantCache");
+		@SuppressWarnings("unchecked")
+		Map<String, List<DeliveryChallanItems>> dcByDescription = (Map<String, List<DeliveryChallanItems>>) caches.get("dcItemsBetweenDates");
 		java.util.function.Supplier<List<DeliveryChallanItems>> emptyDcList = () -> java.util.Collections.emptyList();
 		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
 		CriteriaQuery<Object[]> query = criteriaBuilder.createQuery(Object[].class);
@@ -643,7 +682,7 @@ public class GrnService {
 
 			String modelNo = purchaseItem.get().getModelNo();
 			Optional<ItemMaster> items = itemMasterCache.computeIfAbsent(modelNo,
-				mn -> itemMasterService.getItemById(mn));
+				mn -> itemMasterRepo.findById(mn));
 			if (!items.isPresent()) continue;
 
 			String itemId = items.get().getId();
@@ -658,110 +697,67 @@ public class GrnService {
 			if (objects[3] != null) grnTotal = (Float) objects[3];
 
 			String soItemId = purchaseItem.get().getDescription();
-			List<DeliveryChallanItems> dcList = new ArrayList<>(dcUpToToDate != null ? dcUpToToDate.getOrDefault(soItemId, emptyDcList.get()) : emptyDcList.get());
 
+			// DC in period [fromDate, toDate] from preloaded cache, deduplicated
+			float dcPresentQty = 0;
+			Set<String> relevantDescs = new HashSet<>();
+			relevantDescs.add(soItemId);
 			List<DesignItems> designItems = designItemsCache.computeIfAbsent(itemId,
 				id -> designItemRepo.findDesignItemListByItemId(id));
 			for (DesignItems designItemObj : designItems) {
-				if (designItemObj.getSalesOrderDesign() == null) continue;
-				List<DeliveryChallanItems> dcItems = dcUpToToDate != null ? dcUpToToDate.getOrDefault(designItemObj.getSalesOrderDesign().getSalesItemId(), emptyDcList.get()) : emptyDcList.get();
-				for (DeliveryChallanItems dcObj : dcItems) {
-					if (!dcObj.getDescription().equalsIgnoreCase(soItemId)) {
-						dcList.add(dcObj);
-					}
+				if (designItemObj.getSalesOrderDesign() != null && designItemObj.getSalesOrderDesign().getSalesItemId() != null) {
+					relevantDescs.add(designItemObj.getSalesOrderDesign().getSalesItemId());
 				}
 			}
-
-			float dcQuantity = 0;
-			float dcPresentQty = 0;
-			{
-				for (DeliveryChallanItems dcItem : dcList) {
-					String dcDesc = dcItem.getDescription();
-					SalesOrderDesign designObj = soDesignCache.computeIfAbsent(dcDesc,
-						d -> soDesignService.findSalesOrderDesignObjBysalesItemId(d));
-					if (designObj != null) {
-						String diCacheKey = itemId + "_" + designObj.getId();
-						DesignItems designItemsList = designItemObjCache.computeIfAbsent(diCacheKey,
-							k -> designItemRepo.findDesignItemListByItemIdAndDesignId(itemId, designObj.getId()).stream().findFirst().orElse(null));
-						if (designItemsList != null) {
-							if (itemId.equalsIgnoreCase(designItemsList.getItemId()) && designItemsList.getDeliveredQty() > 0) {
-								dcQuantity = dcQuantity + designItemsList.getDeliveredQty();
-								if (dcItem.getUpdated().getTime() >= sqlFromDate.getTime()
-										&& dcItem.getUpdated().getTime() <= sqlToDate.getTime()) {
-									dcPresentQty = dcPresentQty + designItemsList.getDeliveredQty();
-								}
-							} else {
-								float qty = Math.max(dcItem.getTodaysQty(), dcItem.getDeliveredQuantity());
-								dcQuantity = dcQuantity + qty;
-								if (dcItem.getUpdated().getTime() >= sqlFromDate.getTime()
-										&& dcItem.getUpdated().getTime() <= sqlToDate.getTime()) {
-									dcPresentQty = dcPresentQty + dcItem.getTodaysQty();
-								}
-							}
+			List<DeliveryChallanItems> allDc = new ArrayList<>();
+			for (String desc : relevantDescs) {
+				List<DeliveryChallanItems> dcItemsForDesc = dcByDescription != null
+					? dcByDescription.getOrDefault(desc, emptyDcList.get())
+					: emptyDcList.get();
+				allDc.addAll(dcItemsForDesc);
+			}
+			Set<DeliveryChallanItems> dcSet = new HashSet<>(allDc);
+			for (DeliveryChallanItems dcItem : dcSet) {
+				String dcDesc = dcItem.getDescription();
+				SalesOrderDesign designObj = soDesignCache.computeIfAbsent(dcDesc,
+					d -> soDesignService.findSalesOrderDesignObjBysalesItemId(d));
+				if (designObj != null) {
+					String diCacheKey = itemId + "_" + designObj.getId();
+					DesignItems designItemsList = designItemObjCache.computeIfAbsent(diCacheKey,
+						k -> designItemRepo.findDesignItemListByItemIdAndDesignId(itemId, designObj.getId()).stream().findFirst().orElse(null));
+					if (designItemsList != null) {
+						if (itemId.equalsIgnoreCase(designItemsList.getItemId()) && designItemsList.getDeliveredQty() > 0) {
+							dcPresentQty = dcPresentQty + designItemsList.getDeliveredQty();
+						} else {
+							dcPresentQty = dcPresentQty + Math.max(dcItem.getTodaysQty(), dcItem.getDeliveredQuantity());
 						}
 					}
 				}
 			}
-			float closedBalnceQuant = 0;
-			float closedBalnceValue = 0;
-			float openingBalanceQuant = 0;
-			float openingBalValue = 0;
 
-			if (grnQuant > 0) {
-				openingBalanceQuant = grnQuant;
-				openingBalValue = openingBalanceQuant * grnRate;
-			}
+			// Opening = all GRN before fromDate - all DC before fromDate (comprehensive)
+			float openingBalanceQuant = openingQuantCache.computeIfAbsent(
+				itemId + "_" + sqlFromDate + "_" + sqlToDate,
+				k -> getOpeningQuant(itemId, sqlFromDate, sqlToDate, caches));
+			float openingBalValue = openingBalanceQuant * grnRate;
+			float closedBalnceQuant = openingBalanceQuant - dcPresentQty;
+			float closedBalnceValue = closedBalnceQuant * grnRate;
 
-			if (pMap.containsKey(itemKey)) {
-				Map cMap = pMap.get(itemKey);
-
-				float prevGrnQuantity = (float) cMap.get("grnQ1");
-				prevGrnQuantity = (prevGrnQuantity + grnQuant);
-				float prevgrnUnitPrice = (float) cMap.get("grnR1");
-				prevgrnUnitPrice = (prevgrnUnitPrice + grnRate) / 2;
-				float prevgrnValue = prevgrnUnitPrice * prevGrnQuantity;
-
-				float prevDcQuantity = (float) cMap.get("dcQ1") + dcQuantity;
-				float prevDcValue = prevgrnUnitPrice * prevDcQuantity;
-
-				float prevopenQuantity = (float) cMap.get("openQ1") + openingBalanceQuant;
-				float prevOpenValue = prevgrnUnitPrice * prevopenQuantity;
-
-				float preclosingQuantity = prevopenQuantity - prevDcQuantity;
-				float prevcloseValue = prevgrnUnitPrice * preclosingQuantity;
-				cMap.put("grnR1", prevgrnUnitPrice);
-				cMap.put("grnQ1", 0.0f);
-				cMap.put("grnV1", 0.0f);
-				cMap.put("dcR1", prevgrnUnitPrice);
-				cMap.put("dcQ1", prevDcQuantity);
-				cMap.put("dcV1", prevDcValue);
-				cMap.put("clR1", prevgrnUnitPrice);
-				cMap.put("clQ1", preclosingQuantity);
-				cMap.put("clV1", prevcloseValue);
-				cMap.put("openQ1", prevopenQuantity);
-				cMap.put("openR1", prevgrnUnitPrice);
-				cMap.put("openV1", prevOpenValue);
-			} else {
-				Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
-				openingBalanceQuant = openingBalanceQuant - dcQuantity + dcPresentQty;
-				closedBalnceQuant = openingBalanceQuant - dcPresentQty;
-				ExcelcredMap.put("dcR1", grnRate);
-				ExcelcredMap.put("dcQ1", dcPresentQty);
-				ExcelcredMap.put("dcV1", grnRate * dcQuantity);
-				ExcelcredMap.put("grnR1", grnRate);
-				ExcelcredMap.put("grnQ1", 0.0f);
-				ExcelcredMap.put("grnV1", 0.0f);
-				ExcelcredMap.put("clR1", grnRate);
-				ExcelcredMap.put("clQ1", closedBalnceQuant);
-				ExcelcredMap.put("clV1", closedBalnceQuant * grnRate);
-				ExcelcredMap.put("openQ1", openingBalanceQuant);
-				ExcelcredMap.put("openR1", grnRate);
-				ExcelcredMap.put("openV1", openingBalanceQuant * grnRate);
-				ExcelcredMap.put("particulars", itemKey);
-				if (!excelSheetValue.containsKey(itemKey)) {
-					pMap.put(itemKey, ExcelcredMap);
-				}
-			}
+			Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
+			ExcelcredMap.put("dcR1", grnRate);
+			ExcelcredMap.put("dcQ1", dcPresentQty);
+			ExcelcredMap.put("dcV1", grnRate * dcPresentQty);
+			ExcelcredMap.put("grnR1", grnRate);
+			ExcelcredMap.put("grnQ1", 0.0f);
+			ExcelcredMap.put("grnV1", 0.0f);
+			ExcelcredMap.put("clR1", grnRate);
+			ExcelcredMap.put("clQ1", closedBalnceQuant);
+			ExcelcredMap.put("clV1", closedBalnceValue);
+			ExcelcredMap.put("openQ1", openingBalanceQuant);
+			ExcelcredMap.put("openR1", grnRate);
+			ExcelcredMap.put("openV1", openingBalValue);
+			ExcelcredMap.put("particulars", itemKey);
+			pMap.put(itemKey, ExcelcredMap);
 		  } catch (Exception e) {
 			log.warn("Skipping item in opening quantity (no GRN): {}", e.getMessage());
 		  }
@@ -791,7 +787,7 @@ public class GrnService {
 
 			String modelNo = purchaseItem.get().getModelNo();
 			Optional<ItemMaster> item = itemMasterCache.computeIfAbsent(modelNo,
-				mn -> itemMasterService.getItemById(mn));
+				mn -> itemMasterRepo.findById(mn));
 			if (!item.isPresent()) continue;
 
 			String itemId = item.get().getId();
@@ -862,37 +858,37 @@ public class GrnService {
 			if (pMap.containsKey(itemKey)) {
 				Map cMap = pMap.get(itemKey);
 
-				float prevGrnQuantity = (float) cMap.get("grnQ1");
-				prevGrnQuantity = (prevGrnQuantity + grnQuant);
-				float prevgrnUnitPrice = (float) cMap.get("grnR1");
-				prevgrnUnitPrice = (prevgrnUnitPrice + grnRate) / 2;
-				float prevgrnValue = prevgrnUnitPrice * prevGrnQuantity;
+				float prevGrnQty = (float) cMap.get("grnQ1");
+				float prevGrnRate = (float) cMap.get("grnR1");
+				float newTotalQty = prevGrnQty + grnQuant;
+				float newGrnRate = newTotalQty > 0
+					? (prevGrnRate * prevGrnQty + grnRate * grnQuant) / newTotalQty
+					: 0f;
+				float newGrnValue = newGrnRate * newTotalQty;
 
 				float prevDcQuantity = (float) cMap.get("dcQ1");
-				// prevDcQuantity = (prevDcQuantity + dcQuantity) / 2;
 				prevDcQuantity = (prevDcQuantity + dcQuantity);
-				float prevDcValue = prevgrnUnitPrice * prevDcQuantity;
+				float prevDcValue = newGrnRate * prevDcQuantity;
 
 				float preclosingQuantity = (float) cMap.get("clQ1");
 				preclosingQuantity = (preclosingQuantity + closedBalnceQuant);
-				float prevcloseValue = prevgrnUnitPrice * preclosingQuantity;
+				float prevcloseValue = newGrnRate * preclosingQuantity;
 
 				float prevopenQuantity = (float) cMap.get("openQ1");
 				prevopenQuantity = (prevopenQuantity + openingBalanceQuant);
-				float prevOpenValue = prevgrnUnitPrice * prevopenQuantity;
+				float prevOpenValue = newGrnRate * prevopenQuantity;
 
-				// prevDcValue = prevDcValue + (prevdcUnitPrice*prevDcQuantity);
-				cMap.put("grnR1", prevgrnUnitPrice);
-				cMap.put("grnQ1", prevGrnQuantity);
-				cMap.put("grnV1", prevgrnValue);
-				cMap.put("dcR1", prevgrnUnitPrice);
+				cMap.put("grnR1", newGrnRate);
+				cMap.put("grnQ1", newTotalQty);
+				cMap.put("grnV1", newGrnValue);
+				cMap.put("dcR1", newGrnRate);
 				cMap.put("dcQ1", prevDcQuantity);
 				cMap.put("dcV1", prevDcValue);
-				cMap.put("clR1", prevgrnUnitPrice);
+				cMap.put("clR1", newGrnRate);
 				cMap.put("clQ1", preclosingQuantity);
 				cMap.put("clV1", prevcloseValue);
 				cMap.put("openQ1", prevopenQuantity);
-				cMap.put("openR1", prevgrnUnitPrice);
+				cMap.put("openR1", newGrnRate);
 				cMap.put("openV1", prevOpenValue);
 			} else {
 				Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
@@ -931,12 +927,15 @@ public class GrnService {
 		try {
 		List<PurchaseItem> poItemList = poItemsByModelCache.computeIfAbsent(itemId,
 			id -> poItemRepo.findByModelNumber(id));
-		float grn = 0;
 		float dcQuantity = 0;
 		List<DeliveryChallanItems> dcList = new ArrayList<>();
-		for (PurchaseItem purchaseItem : poItemList) {
-			List<GrnItems> grnList = grnItemRepo.findByPoItemIdAndUpdatedDate(Integer.toString(purchaseItem.getPurchase_item_id()), sqlFromDate);
-			for (GrnItems grnItem : grnList) {
+		float grn = 0;
+		if (!poItemList.isEmpty()) {
+			List<String> poItemIds = poItemList.stream()
+				.map(pi -> Integer.toString(pi.getPurchase_item_id()))
+				.collect(Collectors.toList());
+			List<GrnItems> allGrnItems = grnItemRepo.findByPoItemIdInAndUpdatedBefore(poItemIds, sqlFromDate);
+			for (GrnItems grnItem : allGrnItems) {
 				grn = grn + grnItem.getReceivedQuantity();
 			}
 		}

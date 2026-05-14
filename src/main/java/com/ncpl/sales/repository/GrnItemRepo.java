@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ncpl.sales.model.GrnItems;
@@ -38,6 +39,9 @@ public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
 
     @Query(" from GrnItems where po_item_id=:poItemId and updated<=:d2")
     List<GrnItems> findByPoItemIdAndUpdatedDate(String poItemId, Timestamp d2);
+
+    @Query("FROM GrnItems WHERE po_item_id IN :poItemIds AND updated <= :date")
+    List<GrnItems> findByPoItemIdInAndUpdatedBefore(@Param("poItemIds") List<String> poItemIds, @Param("date") Timestamp date);
     
     @Query(" from GrnItems where grn_id=?1 ")
   	List<GrnItems> findGrnItemsByGrnId(String grnId);

@@ -25,4 +25,7 @@ public interface SalesOrderDesignItemsRepo extends JpaRepository<DesignItems, Lo
 	@Query("SELECT di FROM DesignItems di JOIN FETCH di.salesOrderDesign sod WHERE sod.salesItemId IN :salesItemIds")
 	List<DesignItems> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
 
+	@Query("SELECT di FROM DesignItems di LEFT JOIN FETCH di.salesOrderDesign WHERE di.ItemId IN :itemIds")
+	List<DesignItems> findByItemIdIn(@Param("itemIds") List<String> itemIds);
+
 }

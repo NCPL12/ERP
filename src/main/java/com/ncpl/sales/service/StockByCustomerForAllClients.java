@@ -69,7 +69,7 @@ public class StockByCustomerForAllClients {
 	
 	static List list = null;
 	
-	//@Scheduled(cron = "0 15 11 ? * TUE", zone="IST")
+	@Scheduled(cron = "0 15 11 ? * TUE", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

@@ -69,7 +69,7 @@ public class DeliveryDateWeeklyEmailSchedular {
 	
 	static List<SalesItem> salesItemList = null;
 	
-	//@Scheduled(cron = "0 0 11 * * ?", zone="IST")
+	@Scheduled(cron = "0 0 11 * * ?", zone="IST")
 	//@Scheduled(cron = "0 18 17 ? * TUE", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

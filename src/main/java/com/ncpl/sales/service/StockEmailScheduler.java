@@ -74,7 +74,7 @@ public class StockEmailScheduler {
 	static List stockList = null;
 	//send stock info daily by 6pm
 
-	 //@Scheduled(cron = "0 0 10 * * ?", zone="IST")
+	 @Scheduled(cron = "0 0 10 * * ?", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void stockScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

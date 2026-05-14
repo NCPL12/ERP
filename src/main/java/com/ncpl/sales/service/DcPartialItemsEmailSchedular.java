@@ -57,7 +57,7 @@ public class DcPartialItemsEmailSchedular {
 	
 	static List<DeliveryChallanItems> dcItemList = null;
 	
-	//@Scheduled(cron = "0 15 10 * * ?", zone="IST")
+	@Scheduled(cron = "0 15 10 * * ?", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

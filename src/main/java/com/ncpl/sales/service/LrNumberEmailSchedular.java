@@ -53,7 +53,7 @@ public class LrNumberEmailSchedular {
 	
 	static List<PurchaseItem> purchaseItemList = null;
 	
-	//@Scheduled(cron = "0 30 11 * * ?", zone="IST")
+	@Scheduled(cron = "0 30 11 * * ?", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

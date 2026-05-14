@@ -170,7 +170,10 @@ public class DeliveryChallanExcel extends AbstractXlsxView{
 		   }else {
 			   @SuppressWarnings("unchecked")
 			   	Optional<PartyAddress> partyAddressOpt = (Optional<PartyAddress>) request.getAttribute("partyBillAddress");
-		        	PartyAddress partyBillAddress =partyAddressOpt.get();
+		        	if (partyAddressOpt == null || !partyAddressOpt.isPresent()) {
+		        		billingAddress = "";
+		        	} else {
+		        	PartyAddress partyBillAddress = partyAddressOpt.get();
 		        	if(partyBillAddress.getAddr2() == null || partyBillAddress.getAddr2().equalsIgnoreCase("")){
 			        	billingAddr2 = "";
 			        }else{
@@ -196,6 +199,7 @@ public class DeliveryChallanExcel extends AbstractXlsxView{
 			        billingAddress = partyBillAddress.getPartyName()+"\n"+partyBillAddress.getAddr1()+"\n"+
 			        		billingAddr2 + partyBillAddress.getPartyaddr_city().getName()+"-"+
 			        		billingPin+ billingGst;
+		        	}
 		   }
 		        
 		        

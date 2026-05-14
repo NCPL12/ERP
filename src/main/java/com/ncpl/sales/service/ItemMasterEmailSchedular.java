@@ -57,7 +57,7 @@ public class ItemMasterEmailSchedular {
 	
 	static List<ItemMaster> itemList = null;
 	
-	//@Scheduled(cron = "0 0 12 * * ?", zone="IST")
+	@Scheduled(cron = "0 0 12 * * ?", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

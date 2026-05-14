@@ -60,7 +60,7 @@ public class ItemsWithMinQtyEmailSchedular {
 	
 	static List<ItemMaster> list = null;
 	
-	//@Scheduled(cron = "0 45 11 ? * MON", zone="IST")
+	@Scheduled(cron = "0 45 11 ? * MON", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

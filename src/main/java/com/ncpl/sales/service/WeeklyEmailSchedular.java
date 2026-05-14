@@ -56,7 +56,7 @@ public class WeeklyEmailSchedular {
 	
 	static List<PurchaseItem> purchaseItemList = null;
 	
-	//@Scheduled(cron = "0 30 10 ? * SAT", zone="IST")
+	@Scheduled(cron = "0 30 10 ? * SAT", zone="IST")
 	//@Scheduled(cron = "0 51 17 ? * TUE", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());

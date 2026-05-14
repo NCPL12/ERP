@@ -57,7 +57,7 @@ public class ActiveSalesOrderExcel {
 	
 	static List<SalesOrder> salesOrderList = null;
 	
-	//@Scheduled(cron = "0 45 10 ? * MON", zone="IST")
+	@Scheduled(cron = "0 45 10 ? * MON", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());
