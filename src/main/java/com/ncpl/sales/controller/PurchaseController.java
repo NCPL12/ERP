@@ -922,7 +922,9 @@ public class PurchaseController {
 		} catch (Exception e) {
 			System.err.println("ERROR in getGrnDataTable: " + e.getMessage());
 			e.printStackTrace();
-			return new ResponseEntity<>(Map.of("error", e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+			Map<String, String> errorMap = new HashMap<>();
+			errorMap.put("error", e.getMessage());
+			return new ResponseEntity<>(errorMap, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}	
 	

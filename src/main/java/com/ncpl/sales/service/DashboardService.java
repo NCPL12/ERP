@@ -8,9 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.DashboardCountDto;
-import com.ncpl.sales.repository.InvoiceRepo;
-import com.ncpl.sales.repository.SalesRepo;
-import com.ncpl.sales.repository.WorkOrderRepo;
+import com.ncpl.sales.repository.DashboardAggregateJdbcRepository;
 
 import javax.annotation.PostConstruct;
 
@@ -25,13 +23,7 @@ public class DashboardService {
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
 
     @Autowired
-    private SalesRepo salesRepo;
-
-    @Autowired
-    private InvoiceRepo invoiceRepo;
-
-    @Autowired
-    private WorkOrderRepo workOrderRepo;
+    private DashboardAggregateJdbcRepository dashboardAggRepo;
 
     private volatile DashboardCountDto snapshot;
     private final Object snapshotLock = new Object();
@@ -53,7 +45,7 @@ public class DashboardService {
         }
         synchronized (snapshotLock) {
             if (snapshot == null) {
-                snapshot = loadCountsViaJpaParallel();
+                snapshot = loadCounts();
             }
             return DashboardCountDto.copyOf(snapshot);
         }
@@ -74,34 +66,11 @@ public class DashboardService {
 
     private void recomputeSnapshot() {
         synchronized (snapshotLock) {
-            snapshot = loadCountsViaJpaParallel();
+            snapshot = loadCounts();
         }
     }
 
-    private DashboardCountDto loadCountsViaJpaParallel() {
-        CompletableFuture<Long> salesOrderCount = CompletableFuture.supplyAsync(
-                () -> salesRepo.countSalesOrdersWithoutDC() + salesRepo.countPendingSalesOrdersPartialDC());
-        CompletableFuture<Long> invoiceCount = CompletableFuture.supplyAsync(() -> invoiceRepo.count());
-        CompletableFuture<Long> tdsItemsCount = CompletableFuture
-                .supplyAsync(() -> salesRepo.countTdsApprovedAndPoNotDoneListDashboard());
-        CompletableFuture<Long> activeSalesOrders = CompletableFuture
-                .supplyAsync(() -> salesRepo.countActiveSalesOrders());
-        CompletableFuture<Long> workOrders = CompletableFuture.supplyAsync(() -> workOrderRepo.count());
-        CompletableFuture<Long> sowithoutDesign = CompletableFuture
-                .supplyAsync(() -> salesRepo.countSalesOrderWithoutDesign());
-        CompletableFuture<Long> sowithDesign = CompletableFuture
-                .supplyAsync(() -> salesRepo.countSalesOrderWithDesign());
-
-        CompletableFuture.allOf(salesOrderCount, invoiceCount, tdsItemsCount,
-                activeSalesOrders, workOrders, sowithoutDesign, sowithDesign).join();
-
-        DashboardCountDto dto = new DashboardCountDto();
-        dto.setSalesOrderCount(salesOrderCount.join());
-        dto.setInvoiceCount(invoiceCount.join());
-        dto.setTdsItemsCount(tdsItemsCount.join());
-        dto.setProjectPreviewCount(workOrders.join() + activeSalesOrders.join());
-        dto.setSowithoutDesignCount(sowithoutDesign.join());
-        dto.setSowithDesignCount(sowithDesign.join());
-        return dto;
+    private DashboardCountDto loadCounts() {
+        return dashboardAggRepo.fetchAllCounts();
     }
 }

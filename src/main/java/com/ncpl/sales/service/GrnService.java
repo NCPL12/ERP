@@ -1090,44 +1090,37 @@ public class GrnService {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public List<Grn> getGrnAndPoDetailsByModel(String modelNo) {
 		ItemMaster item = itemMasterService.getItemByModelNo(modelNo.trim());
-		ArrayList<PurchaseOrder> poList = new ArrayList<PurchaseOrder>();
-		ArrayList<Grn> grn;
 		Set set = new HashSet();
 		
-		if (item == null) {
-			grn = new ArrayList<Grn>(set);
-		} else {
+		if (item != null) {
 			List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemsByModelNumber(item.getId());
 			
-			for (PurchaseItem purchaseItem : poItemList) {
-				PurchaseOrder po = purchaseItem.getPurchaseOrder();
-				if (po != null) {
-					poList.add(po);
+			if (poItemList != null && !poItemList.isEmpty()) {
+				List<String> poItemIds = new ArrayList<>();
+				for (PurchaseItem purchaseItem : poItemList) {
+					poItemIds.add(String.valueOf(purchaseItem.getPurchase_item_id()));
 				}
-			}
-			
-			for (PurchaseOrder po : poList) {
-				if (po == null || po.getPoNumber() == null || po.getPoNumber().trim().isEmpty()) {
-					continue;
-				}
-				String poNumber = po.getPoNumber().trim();
-				List<Grn> grnList = findGrnByPoNumber(poNumber);
-				for (Grn grnObject : grnList) {
-					String poNum = grnObject.getPoNumber();
-					Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNum);
-					if (poObj.isPresent()) {
-						String vendor = poObj.get().getParty().getPartyName();
-						Date poDate = poObj.get().getUpdated();
-						grnObject.set("vendor", vendor);
-						grnObject.set("poDate", poDate);
+				
+				List<GrnItems> grnItemsList = grnItemRepo.findByDescriptionIn(poItemIds);
+				
+				for (GrnItems grnItem : grnItemsList) {
+					Grn grnObject = grnItem.getGrn();
+					if (grnObject != null) {
+						String poNum = grnObject.getPoNumber();
+						Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNum);
+						if (poObj.isPresent()) {
+							String vendor = poObj.get().getParty().getPartyName();
+							Date poDate = poObj.get().getUpdated();
+							grnObject.set("vendor", vendor);
+							grnObject.set("poDate", poDate);
+						}
+						set.add(grnObject);
 					}
-					set.add(grnObject);
 				}
 			}
-			grn = new ArrayList<Grn>(set);
 		}
 		
-		return grn;
+		return new ArrayList<Grn>(set);
 	}
 	
 	
