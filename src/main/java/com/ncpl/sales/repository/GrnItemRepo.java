@@ -43,6 +43,9 @@ public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
     @Query("FROM GrnItems WHERE po_item_id IN :poItemIds AND updated <= :date")
     List<GrnItems> findByPoItemIdInAndUpdatedBefore(@Param("poItemIds") List<String> poItemIds, @Param("date") Timestamp date);
     
+    @Query("FROM GrnItems WHERE po_item_id IN :poItemIds AND updated >= :fromDate AND updated <= :toDate")
+    List<GrnItems> findByPoItemIdInAndUpdatedBetween(@Param("poItemIds") List<String> poItemIds, @Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
+    
     @Query(" from GrnItems where grn_id=?1 ")
   	List<GrnItems> findGrnItemsByGrnId(String grnId);
     @Query(" from GrnItems where po_item_id=?1 and receivedQuantity!=0")
@@ -50,4 +53,10 @@ public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
     
  // Batch query method for finding GRN items by multiple purchase item IDs (description field maps to po_item_id)
  	List<GrnItems> findByDescriptionIn(List<String> purchaseItemIds);
+ 	
+ 	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated < :date GROUP BY gi.description")
+ 	List<Object[]> getGrnSumGroupedByDescriptionBefore(@Param("date") Timestamp date);
+ 	
+ 	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated >= :fromDate AND gi.updated <= :toDate GROUP BY gi.description")
+ 	List<Object[]> getGrnSumGroupedByDescriptionBetween(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
 }

@@ -106,9 +106,10 @@ public class LoggingAspect {
 				if (mapper != null) {
 					try {
 						String oldValues = mapper.writeValueAsString(null);
-						String newValues = mapper.writeValueAsString(
-							java.util.Map.of("designItemsCount", designItemsCount, "salesItemId", salesItemId)
-						);
+						java.util.Map<String, Object> designMap = new java.util.HashMap<>();
+						designMap.put("designItemsCount", designItemsCount);
+						designMap.put("salesItemId", salesItemId);
+						String newValues = mapper.writeValueAsString(designMap);
 						audit.setOldValues(oldValues);
 						audit.setNewValues(newValues);
 					} catch (Exception e) {
@@ -161,20 +162,20 @@ public class LoggingAspect {
 		
 		if (mapper != null && oldPartyAddress != null) {
 			try {
-				oldValuesJson = mapper.writeValueAsString(java.util.Map.of(
-					"addr1", oldPartyAddress.getAddr1() != null ? oldPartyAddress.getAddr1() : "",
-					"addr2", oldPartyAddress.getAddr2() != null ? oldPartyAddress.getAddr2() : "",
-					"city", oldPartyAddress.getPartyaddr_city() != null ? oldPartyAddress.getPartyaddr_city().getName() : "",
-					"phone1", oldPartyAddress.getPhone1() != null ? oldPartyAddress.getPhone1() : "",
-					"email1", oldPartyAddress.getEmail1() != null ? oldPartyAddress.getEmail1() : ""
-				));
-				newValuesJson = mapper.writeValueAsString(java.util.Map.of(
-					"addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "",
-					"addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "",
-					"city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "",
-					"phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "",
-					"email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : ""
-				));
+				java.util.Map<String, String> oldMap = new java.util.HashMap<>();
+				oldMap.put("addr1", oldPartyAddress.getAddr1() != null ? oldPartyAddress.getAddr1() : "");
+				oldMap.put("addr2", oldPartyAddress.getAddr2() != null ? oldPartyAddress.getAddr2() : "");
+				oldMap.put("city", oldPartyAddress.getPartyaddr_city() != null ? oldPartyAddress.getPartyaddr_city().getName() : "");
+				oldMap.put("phone1", oldPartyAddress.getPhone1() != null ? oldPartyAddress.getPhone1() : "");
+				oldMap.put("email1", oldPartyAddress.getEmail1() != null ? oldPartyAddress.getEmail1() : "");
+				oldValuesJson = mapper.writeValueAsString(oldMap);
+				java.util.Map<String, String> newMap = new java.util.HashMap<>();
+				newMap.put("addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "");
+				newMap.put("addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "");
+				newMap.put("city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "");
+				newMap.put("phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "");
+				newMap.put("email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : "");
+				newValuesJson = mapper.writeValueAsString(newMap);
 			} catch (Exception e) {
 				log.warn("Could not serialize audit data: " + e.getMessage());
 			}
@@ -232,13 +233,13 @@ public class LoggingAspect {
 		String newValuesJson = null;
 		if (mapper != null) {
 			try {
-				newValuesJson = mapper.writeValueAsString(java.util.Map.of(
-					"addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "",
-					"addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "",
-					"city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "",
-					"phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "",
-					"email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : ""
-				));
+				java.util.Map<String, String> newAddrMap = new java.util.HashMap<>();
+				newAddrMap.put("addr1", newPartyAddress.getAddr1() != null ? newPartyAddress.getAddr1() : "");
+				newAddrMap.put("addr2", newPartyAddress.getAddr2() != null ? newPartyAddress.getAddr2() : "");
+				newAddrMap.put("city", newPartyAddress.getPartyaddr_city() != null ? newPartyAddress.getPartyaddr_city().getName() : "");
+				newAddrMap.put("phone1", newPartyAddress.getPhone1() != null ? newPartyAddress.getPhone1() : "");
+				newAddrMap.put("email1", newPartyAddress.getEmail1() != null ? newPartyAddress.getEmail1() : "");
+				newValuesJson = mapper.writeValueAsString(newAddrMap);
 			} catch (Exception e) {
 				log.warn("Could not serialize audit data: " + e.getMessage());
 			}

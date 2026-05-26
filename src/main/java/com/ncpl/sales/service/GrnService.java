@@ -52,6 +52,7 @@ import com.ncpl.sales.repository.ItemMasterRepo;
 import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
+import com.ncpl.sales.repository.StockRepo;
 import com.ncpl.sales.util.DateConverterUtil;
 
 @Service
@@ -91,6 +92,8 @@ public class GrnService {
 	PurchaseItemRepo purchaseItemRepo;
 	@Autowired
 	ItemMasterRepo itemMasterRepo;
+	@Autowired
+	StockRepo stockRepo;
   
     
 	public Grn saveGrn(Grn grn) {
@@ -601,6 +604,33 @@ public class GrnService {
 		caches.put("dcItemsUpToFromDate", dcUpToFromDate);
 		log.info("Stock summary: DC preload done in {}ms", System.currentTimeMillis() - start);
 
+		// Pre-compute stock totals, GRN before, and GRN between maps (batch to avoid per-item queries)
+		Map<String, Float> stockTotalsMap = new HashMap<>();
+		for (Object[] row : stockRepo.getStockTotalsGroupedByItemId()) {
+			stockTotalsMap.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		caches.put("stockTotalsMap", stockTotalsMap);
+
+		// Point-in-time stock totals from Envers audit table for opening balance
+		Map<String, Float> stockTotalsAsOfFromDateMap = new HashMap<>();
+		for (Object[] row : stockRepo.getStockTotalsAsOfDate(sqlFromDate.getTime())) {
+			stockTotalsAsOfFromDateMap.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		caches.put("stockTotalsAsOfFromDateMap", stockTotalsAsOfFromDateMap);
+
+		Map<String, Float> grnBeforeMap = new HashMap<>();
+		for (Object[] row : grnItemRepo.getGrnSumGroupedByDescriptionBefore(sqlFromDate)) {
+			grnBeforeMap.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		caches.put("grnBeforeMap", grnBeforeMap);
+
+		Map<String, Float> grnBetweenMap = new HashMap<>();
+		for (Object[] row : grnItemRepo.getGrnSumGroupedByDescriptionBetween(sqlFromDate, sqlToDate)) {
+			grnBetweenMap.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		caches.put("grnBetweenMap", grnBetweenMap);
+		log.info("Stock summary: batch maps precomputed in {}ms", System.currentTimeMillis() - start);
+
 		Map excelSheetValue = findOutwardQuantity(inwardList, sqlFromDate, sqlToDate, caches);
 		log.info("Stock summary: outward done in {}ms, {} items", System.currentTimeMillis() - start, excelSheetValue.keySet().size());
 
@@ -741,6 +771,7 @@ public class GrnService {
 				k -> getOpeningQuant(itemId, sqlFromDate, sqlToDate, caches));
 			float openingBalValue = openingBalanceQuant * grnRate;
 			float closedBalnceQuant = openingBalanceQuant - dcPresentQty;
+			if (closedBalnceQuant < 0) closedBalnceQuant = 0;
 			float closedBalnceValue = closedBalnceQuant * grnRate;
 
 			Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
@@ -847,11 +878,13 @@ public class GrnService {
 			if (!pMap.containsKey(itemKey)) {
 				openingBalValue = openingBalanceQuant * grnRate;
 				closedBalnceQuant = openingBalanceQuant + grnQuant - dcQuantity;
+				if (closedBalnceQuant < 0) closedBalnceQuant = 0;
 				closedBalnceValue = grnRate * closedBalnceQuant;
 			} else {
 				openingBalanceQuant = 0;
 				openingBalValue = 0;
 				closedBalnceQuant = grnQuant - dcQuantity;
+				if (closedBalnceQuant < 0) closedBalnceQuant = 0;
 				closedBalnceValue = grnRate * closedBalnceQuant;
 			}
 
@@ -872,6 +905,7 @@ public class GrnService {
 
 				float preclosingQuantity = (float) cMap.get("clQ1");
 				preclosingQuantity = (preclosingQuantity + closedBalnceQuant);
+				if (preclosingQuantity < 0) preclosingQuantity = 0;
 				float prevcloseValue = newGrnRate * preclosingQuantity;
 
 				float prevopenQuantity = (float) cMap.get("openQ1");
@@ -914,49 +948,20 @@ public class GrnService {
 		return pMap;
 	}
 
-	@SuppressWarnings({ "rawtypes", "unchecked", "unused" })
-	private float getOpeningQuant(String itemId, Timestamp sqlFromDate, Timestamp sqlToDate, Map<String, Object> caches) {
-		Map<String, List<DesignItems>> designItemsCache = (Map<String, List<DesignItems>>) caches.get("designItemsCache");
-		Map<String, SalesOrderDesign> soDesignCache = (Map<String, SalesOrderDesign>) caches.get("soDesignCache");
-		Map<String, List<PurchaseItem>> poItemsByModelCache = (Map<String, List<PurchaseItem>>) caches.get("poItemsByModelCache");
-		Map<String, DesignItems> designItemObjCache = (Map<String, DesignItems>) caches.get("designItemObjCache");
-		@SuppressWarnings("unchecked")
-		Map<String, List<DeliveryChallanItems>> dcUpToFromDate = (Map<String, List<DeliveryChallanItems>>) caches.get("dcItemsUpToFromDate");
-
-		float openingBalance = 0;
-		try {
-		List<PurchaseItem> poItemList = poItemsByModelCache.computeIfAbsent(itemId,
-			id -> poItemRepo.findByModelNumber(id));
-		float dcQuantity = 0;
+	private float computeDcQuantity(String itemId, List<PurchaseItem> poItemList, List<DesignItems> designItems,
+			Map<String, List<DeliveryChallanItems>> dcMap, Map<String, SalesOrderDesign> soDesignCache,
+			Map<String, DesignItems> designItemObjCache) {
+		if (dcMap == null) return 0;
 		List<DeliveryChallanItems> dcList = new ArrayList<>();
-		float grn = 0;
-		if (!poItemList.isEmpty()) {
-			List<String> poItemIds = poItemList.stream()
-				.map(pi -> Integer.toString(pi.getPurchase_item_id()))
-				.collect(Collectors.toList());
-			List<GrnItems> allGrnItems = grnItemRepo.findByPoItemIdInAndUpdatedBefore(poItemIds, sqlFromDate);
-			for (GrnItems grnItem : allGrnItems) {
-				grn = grn + grnItem.getReceivedQuantity();
-			}
-		}
-
-		List<DesignItems> designItems = designItemsCache.computeIfAbsent(itemId,
-			id -> designItemRepo.findDesignItemListByItemId(id));
-
 		for (PurchaseItem purchaseItem : poItemList) {
-			List<DeliveryChallanItems> dcListByPoItemSo = dcUpToFromDate != null ? dcUpToFromDate.getOrDefault(purchaseItem.getDescription(), java.util.Collections.emptyList()) : java.util.Collections.emptyList();
-			dcList.addAll(dcListByPoItemSo);
-
+			dcList.addAll(dcMap.getOrDefault(purchaseItem.getDescription(), java.util.Collections.emptyList()));
 			for (DesignItems designItemObj : designItems) {
 				if (designItemObj.getSalesOrderDesign() == null) continue;
-				List<DeliveryChallanItems> dcItems = dcUpToFromDate != null ? dcUpToFromDate.getOrDefault(designItemObj.getSalesOrderDesign().getSalesItemId(), java.util.Collections.emptyList()) : java.util.Collections.emptyList();
-				dcList.addAll(dcItems);
+				dcList.addAll(dcMap.getOrDefault(designItemObj.getSalesOrderDesign().getSalesItemId(), java.util.Collections.emptyList()));
 			}
 		}
-
-		Set<DeliveryChallanItems> dcItemSet = new HashSet(dcList);
-		dcQuantity = 0;
-		for (DeliveryChallanItems dcItem : dcItemSet) {
+		float totalDc = 0;
+		for (DeliveryChallanItems dcItem : new HashSet<>(dcList)) {
 			String dcDesc = dcItem.getDescription();
 			SalesOrderDesign designObj = soDesignCache.computeIfAbsent(dcDesc,
 				d -> soDesignService.findSalesOrderDesignObjBysalesItemId(d));
@@ -966,18 +971,21 @@ public class GrnService {
 					k -> designItemRepo.findDesignItemListByItemIdAndDesignId(itemId, designObj.getId()).stream().findFirst().orElse(null));
 				if (designItemsList != null) {
 					if (itemId.equalsIgnoreCase(designItemsList.getItemId()) && designItemsList.getDeliveredQty() > 0) {
-						dcQuantity = dcQuantity + designItemsList.getDeliveredQty();
+						totalDc += designItemsList.getDeliveredQty();
 					} else {
-						dcQuantity = dcQuantity + Math.max(dcItem.getTodaysQty(), dcItem.getDeliveredQuantity());
+						totalDc += Math.max(dcItem.getTodaysQty(), dcItem.getDeliveredQuantity());
 					}
 				}
 			}
 		}
+		return totalDc;
+	}
 
-		openingBalance = grn - dcQuantity;
-		} catch (Exception e) {
-			log.warn("Error calculating opening quantity for item {}: {}", itemId, e.getMessage());
-		}
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private float getOpeningQuant(String itemId, Timestamp sqlFromDate, Timestamp sqlToDate, Map<String, Object> caches) {
+		Map<String, Float> stockTotalsAsOfFromDateMap = (Map<String, Float>) caches.get("stockTotalsAsOfFromDateMap");
+		float openingBalance = stockTotalsAsOfFromDateMap.getOrDefault(itemId, 0f);
+		if (openingBalance < 0) openingBalance = 0;
 		return openingBalance;
 	}
 

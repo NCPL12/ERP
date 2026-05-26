@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ncpl.sales.model.Stock;
@@ -52,5 +53,20 @@ public interface StockRepo extends JpaRepository<Stock,String>{
 
 	@Query("from Stock where item_master_id=:itemId AND quantity>0 AND updated<= :sqlToDate order by updated desc")
 	List<Stock> getStockByItemIdWithDate(String itemId,Timestamp sqlToDate );
-	 
+	
+	@Query("SELECT COALESCE(SUM(s.quantity), 0) FROM Stock s WHERE s.itemMaster.id = :itemId")
+	float getTotalStockQuantityByItemId(@Param("itemId") String itemId);
+	
+	@Query("SELECT s.itemMaster.id, COALESCE(SUM(s.quantity), 0) FROM Stock s GROUP BY s.itemMaster.id")
+	List<Object[]> getStockTotalsGroupedByItemId();
+	
+	@Query(value = "SELECT latest.item_master_id, COALESCE(SUM(latest.quantity), 0) FROM ("
+			+ "SELECT sa.stock_id, sa.quantity, sa.item_master_id, sa.revtype, "
+			+ "ROW_NUMBER() OVER (PARTITION BY sa.stock_id ORDER BY sa.rev DESC) AS rn "
+			+ "FROM tbl_stock_AUD sa JOIN REVINFO r ON sa.rev = r.rev "
+			+ "WHERE r.revtstmp <= :timestampMillis"
+			+ ") latest WHERE latest.rn = 1 AND latest.revtype != 2 AND latest.quantity > 0 "
+			+ "GROUP BY latest.item_master_id", nativeQuery = true)
+	List<Object[]> getStockTotalsAsOfDate(@Param("timestampMillis") long timestampMillis);
+	
 }
