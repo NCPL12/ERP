@@ -1129,38 +1129,23 @@ $(document).on("click",".salesItemWithoutDesignView",function(){
 	    		
 	    		if(value.designItems.length==0){
 	    			if(value.item_units.name=="Heading"){
-	    				slNo=value.slNo;
-	    	    		 description=value.description;
-	    	    		 salesItemId =  value.id;
-	    	    		 modelNumber ="";
-	    	    		 poQty="";
-	    	    		 unitName="";
-	    	    		 model="";
-	    	    		 tds="";
-	    	    		 siteQty="";
-	    	    		 qty="";
-	    	    		 hsn=value.hsnCode;
-	    	    		 sac=value.servicehsnCode;
-	    	    		 supplyprice=value.unitPrice;
-	    	    		 servicePrice=value.servicePrice;
-	    	    		 amount=value.amount;
-	    			}else{
-	    				 slNo=value.slNo;
-	    	    		 description=value.description;
-	    	    		 salesItemId =  value.id;
-	    	    		 modelNumber = value.modelNo;
-	    	    		 poQty=value.quantity;
-	    	    		 unitName=value.item_units.name;
-	    	    		 model="";
-	    	    		 tds="";
-	    	    		 siteQty="";
-	    	    		 qty="";
-	    	    		 hsn=value.hsnCode;
-	    	    		 sac=value.servicehsnCode;
-	    	    		 supplyprice=value.unitPrice;
-	    	    		 servicePrice=value.servicePrice;
-	    	    		 amount=value.amount;
+	    				return;
 	    			}
+	    			slNo=value.slNo;
+	    	    	description=value.description;
+	    	    	salesItemId =  value.id;
+	    	    	modelNumber = value.modelNo;
+	    	    	poQty=value.quantity;
+	    	    	unitName=value.item_units.name;
+	    	    	model="";
+	    	    	tds="";
+	    	    	siteQty="";
+	    	    	qty="";
+	    	    	hsn=value.hsnCode;
+	    	    	sac=value.servicehsnCode;
+	    	    	supplyprice=value.unitPrice;
+	    	    	servicePrice=value.servicePrice;
+	    	    	amount=value.amount;
 	    			 
 	    			var soItems = "<tr><td width='5%'>"+ slNo+"</td><td width='20%' style='word-break: break-word !important; '>" + description + "</td>" +
 					"<td width='10%'>" + modelNumber + "</td><td width='8%'>"+hsn +"</td><td width='8%'>" +sac+ "</td>" +

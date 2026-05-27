@@ -47,36 +47,36 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	public List<SalesOrder> getSalesOrderWithoutDesign();
 	
 	@Query(value = "SELECT so.id AS id, so.client_po_number AS clientPoNumber, p.party_name AS partyName, so.created AS created, " +
-			"COUNT(DISTINCT si.id) AS totalItems, COUNT(DISTINCT sod.design_id) AS itemsWithDesign, " +
-			"(COUNT(DISTINCT si.id) - COUNT(DISTINCT sod.design_id)) AS pendingDesigns " +
+			"COUNT(DISTINCT si.id) AS totalItems, COUNT(DISTINCT sod.sales_item_id) AS itemsWithDesign, " +
+			"(COUNT(DISTINCT si.id) - COUNT(DISTINCT sod.sales_item_id)) AS pendingDesigns " +
 			"FROM tbl_sales_order so " +
 			"LEFT JOIN tbl_party p ON p.id = so.party_id " +
-			"LEFT JOIN tbl_sales_item si ON so.id = si.sales_order_id " +
+			"LEFT JOIN tbl_sales_item si ON so.id = si.sales_order_id AND si.units_id<>20 AND si.quantity<>0 AND si.unit_price>0 " +
 			"LEFT JOIN sales_order_design sod ON si.id = sod.sales_item_id " +
 			"WHERE so.archive = 0 AND so.id IN (" +
 			"SELECT DISTINCT so2.id FROM tbl_sales_order so2 " +
 			"JOIN tbl_sales_item si2 ON si2.sales_order_id = so2.id " +
 			"LEFT JOIN sales_order_design sod2 ON sod2.sales_item_id = si2.id " +
 			"WHERE so2.archive = 0 AND si2.units_id<>20 AND si2.quantity<>0 AND si2.unit_price>0 " +
-			"GROUP BY so2.id HAVING COUNT(DISTINCT si2.id) > COUNT(DISTINCT sod2.design_id)) " +
+			"GROUP BY so2.id HAVING COUNT(DISTINCT si2.id) > COUNT(DISTINCT sod2.sales_item_id)) " +
 			"GROUP BY so.id, so.client_po_number, p.party_name, so.created " +
 			"ORDER BY pendingDesigns DESC, so.client_po_number", nativeQuery = true)
 	List<Object[]> getSoWithoutDesignSummaryForDashboard();
 
 	@Query(value = "SELECT * FROM (" +
 			"SELECT so.id AS id, so.client_po_number AS clientPoNumber, p.party_name AS partyName, so.created AS created, " +
-			"COUNT(DISTINCT si.id) AS totalItems, COUNT(DISTINCT sod.design_id) AS itemsWithDesign, " +
-			"(COUNT(DISTINCT si.id) - COUNT(DISTINCT sod.design_id)) AS pendingDesigns " +
+			"COUNT(DISTINCT si.id) AS totalItems, COUNT(DISTINCT sod.sales_item_id) AS itemsWithDesign, " +
+			"(COUNT(DISTINCT si.id) - COUNT(DISTINCT sod.sales_item_id)) AS pendingDesigns " +
 			"FROM tbl_sales_order so " +
 			"LEFT JOIN tbl_party p ON p.id = so.party_id " +
-			"LEFT JOIN tbl_sales_item si ON so.id = si.sales_order_id " +
+			"LEFT JOIN tbl_sales_item si ON so.id = si.sales_order_id AND si.units_id<>20 AND si.quantity<>0 AND si.unit_price>0 " +
 			"LEFT JOIN sales_order_design sod ON si.id = sod.sales_item_id " +
 			"WHERE so.archive = 0 AND so.id IN (" +
 			"SELECT DISTINCT so2.id FROM tbl_sales_order so2 " +
 			"JOIN tbl_sales_item si2 ON si2.sales_order_id = so2.id " +
 			"LEFT JOIN sales_order_design sod2 ON sod2.sales_item_id = si2.id " +
 			"WHERE so2.archive = 0 AND si2.units_id<>20 AND si2.quantity<>0 AND si2.unit_price>0 " +
-			"GROUP BY so2.id HAVING COUNT(DISTINCT si2.id) > COUNT(DISTINCT sod2.design_id)) " +
+			"GROUP BY so2.id HAVING COUNT(DISTINCT si2.id) > COUNT(DISTINCT sod2.sales_item_id)) " +
 			"GROUP BY so.id, so.client_po_number, p.party_name, so.created " +
 			"ORDER BY so.created DESC) x LIMIT 10", nativeQuery = true)
 	List<Object[]> getSoWithoutDesignSummaryForDashboardPartial();

@@ -1096,6 +1096,9 @@ public class SalesService {
 		List<SalesItem> itemList=salesObj.get().getItems();
 		ArrayList<SalesItem> salesItemList = new ArrayList<SalesItem>();
 		for (SalesItem salesItem : itemList) {
+			if("Heading".equals(salesItem.getItem_units().getName())) {
+				continue;
+			}
 			List<DesignItems> designItemList = soDesignService.getSalesOrderDesignItemListBySalesItemId(salesItem.getId());
 			if(designItemList.isEmpty()) {
 				salesItemList.add(salesItem);
