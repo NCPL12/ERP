@@ -8,6 +8,7 @@ C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\Unit
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\DeliveryChallanItemsRepo.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\CompanyAssetService.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\invoiceExcel.java
+C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\erp\stockreport\MonthlyStockReportService.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\PartyCategoryService.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\GrnExcel.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\UnitsRepo.java
@@ -177,6 +178,7 @@ C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\It
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\TdsApproved.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\Country.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\InvoiceCopy.java
+C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\MonthlyStockReportExcel.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\SalesExcel.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\PurchaseItem.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\FileRepo.java
@@ -186,6 +188,7 @@ C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\St
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\WorkOrder.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\config\AsyncConfig.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\TypeService.java
+C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\model\MonthlyReportStock.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\SalesOrderWithoutDesignExcel.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\WeeklyEmailSchedular.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\PurchaseExcel.java
@@ -209,6 +212,7 @@ C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\Op
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\PartyCategoryRepo.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\api\PurchaseRestController.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\SOUploadService.java
+C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\MonthlyReportStockRepo.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\repository\WorkOrderItemsRepo.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\service\StockValueByItemEmailScedular.java
 C:\Users\tekni\Desktop\ERP-09\ERP-02\ERP\src\main\java\com\ncpl\sales\security\User.java

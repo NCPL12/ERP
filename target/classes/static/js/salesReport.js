@@ -9,7 +9,7 @@ $(document).ready(function () {
 		$.error(stockSummaryError);
 	}
 
-	$("#reportFromDate,#reportToDate,#reportDate,#reportByRegionFromDate,#reportByRegionToDate,#date,#poListByFromDate,#poListByToDate,#grnreportByRegionFromDate,#grnreportByRegionToDate").datepicker({
+	$("#reportFromDate,#reportToDate,#reportDate,#reportByRegionFromDate,#reportByRegionToDate,#date,#poListByFromDate,#poListByToDate,#grnreportByRegionFromDate,#grnreportByRegionToDate,#dcFromDate,#dcToDate").datepicker({
 		dateFormat: 'dd-mm-yy'
 		
 	});
@@ -33,12 +33,16 @@ $(document).ready(function () {
 	$("#clientName").change(function(){ $("#clientName").removeClass("border-color"); });
 	$("#grnreportByRegionFromDate").change(function(){ $("#grnreportByRegionFromDate").removeClass("border-color"); });
 	$("#grnreportByRegionToDate").change(function(){ $("#grnreportByRegionToDate").removeClass("border-color"); });
+	$("#dcFromDate").change(function(){ $("#dcFromDate").removeClass("border-color"); });
+	$("#dcToDate").change(function(){ $("#dcToDate").removeClass("border-color"); });
 	$("#modelNoSelect").change(function(){ $("#modelNoSelect").removeClass("border-color"); });
+	$("#monthlyStockReportDate").change(function(){ $("#monthlyStockReportDate").removeClass("border-color"); });
 
 	//getPartyList();
 	getPoItemList();
 	getDesignItemList();
 	getPoNumberList();
+	getMonthlyStockReportDates();
 	getModelNumberList();
 	$.each(clientList, function (index, value) {
 		var clientPartyList = value.partyName;
@@ -513,6 +517,70 @@ $(document).on('submit', '#activeSalesOrderForm',function(e){
 		$.error("Please select the Client Name");
 		e.preventDefault();
 		$("#clientName").addClass("border-color");
+	}
+});
+
+// Function to populate monthly stock report date dropdown
+function getMonthlyStockReportDates(){
+	$.ajax({
+	    Type:'GET',
+	    url : api.MONTHLY_STOCK_REPORT_DATES,
+	    dataType:'json',
+	    async: 'false',
+	    success  : function(response){
+	    	$("#monthlyStockReportDate option:not(:first)").remove();
+	    	$.each(response, function( key, value ) {
+	    		$('#monthlyStockReportDate').append('<option value=' + value + '>' + value + '</option>');
+	    	});
+	    },
+		complete:function(resp){
+			if(resp.status==500){
+				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+			}
+		},
+		error : function(e) {
+			console.log(e);
+		}
+	  });
+}
+
+$(document).on('submit', '#monthlyStockReportForm',function(e){
+	var reportDate=$("#monthlyStockReportDate").val();
+	if(reportDate=="" || reportDate==undefined){
+		$.error("Please select the Report Date");
+		e.preventDefault();
+		$("#monthlyStockReportDate").addClass("border-color");
+	}
+});
+
+$(document).on('submit', '#dcListByDateForm',function(e){
+	var reportFromDate=$("#dcFromDate").val();
+	var reportToDate=$("#dcToDate").val();
+	var isValid = true;
+
+	if(reportFromDate=="" || reportFromDate==undefined){
+		$.error("Please select the From Date");
+		e.preventDefault();
+		$("#dcFromDate").addClass("border-color");
+		isValid = false;
+	}
+	if(reportToDate=="" || reportToDate==undefined){
+		$.error("Please select the To Date");
+		e.preventDefault();
+		$("#dcToDate").addClass("border-color");
+		isValid = false;
+	}
+
+	if(isValid){
+		var toDate = new Date(reportToDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDate = new Date(reportFromDate.replace( /(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var fromDateInMillis = fromDate.getTime();
+		var toDateInMillis  = toDate.getTime();
+
+		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
 	}
 });
 

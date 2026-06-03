@@ -97,6 +97,7 @@ import com.ncpl.sales.model.WorkOrder;
 import com.ncpl.sales.model.WorkOrderItems;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
+import com.ncpl.sales.repository.MonthlyReportStockRepo;
 import com.ncpl.sales.repository.PartyContactRepo;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesRepo;
@@ -117,10 +118,12 @@ import com.ncpl.sales.service.DeliveryChallanService;
 import com.ncpl.sales.service.DesignUploadService;
 import com.ncpl.sales.service.DesignationService;
 import com.ncpl.sales.service.GrnReportByDateExcel;
+import com.ncpl.sales.service.DcReportByDateExcel;
 import com.ncpl.sales.service.GrnService;
 import com.ncpl.sales.service.InvoiceService;
 import com.ncpl.sales.service.ItemMasterService;
 import com.ncpl.sales.service.MaterialTrackerExcel;
+import com.ncpl.sales.service.MonthlyStockReportExcel;
 import com.ncpl.sales.service.NonBillableService;
 import com.ncpl.sales.service.OptimizedMaterialTrackerService;
 import com.ncpl.sales.service.OptimizedMaterialTrackerExcel;
@@ -317,6 +320,8 @@ public class SalesController {
 	InvoiceService invoiceService;
 	@Autowired
 	DeliveryChallanService dcService;
+	@Autowired
+	MonthlyReportStockRepo monthlyReportStockRepo;
 	@Autowired
 	StockService stockService;
 	
@@ -1730,6 +1735,29 @@ public class SalesController {
 			model.addAttribute("dcList", mapper.writeValueAsString(dcList));
 			return "dcListByItemReport";
 		}
+	 @SuppressWarnings({ "rawtypes" })
+	 @GetMapping("/dc_list/by_date")
+		public ModelAndView dcListByDate(HttpServletRequest request, Model model) throws ParseException {
+			String fromDateString = request.getParameter("fromDate");
+			String toDateString = request.getParameter("toDate");
+			fromDateString = fromDateString.replaceAll("/", "-");
+			toDateString = toDateString.replaceAll("/", "-");
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+			Date fromDate = sdf.parse(fromDateString);
+			Date toDateParsed = sdf.parse(toDateString);
+			Calendar c = Calendar.getInstance();
+			Calendar c1 = Calendar.getInstance();
+			c.setTime(toDateParsed);
+			c1.setTime(fromDate);
+			c.add(Calendar.HOUR_OF_DAY, 23);
+			c.add(Calendar.MINUTE, 59);
+			toDateParsed = c.getTime();
+			Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(toDateParsed);
+			Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDate);
+			List<DeliveryChallanItems> dcItemList = deliveryChallanService.getDcItemListByDate(sqlFromDate, sqlToDate);
+			return new ModelAndView(new DcReportByDateExcel(), "dcItemList", dcItemList);
+		}
+
 	 @GetMapping("/api/dc_list")
 		public ResponseEntity<?> dcList(HttpServletRequest request, Model model) throws JsonProcessingException {
 		 List<DeliveryChallan> dcLists = deliveryChallanService.getDeliveryChallanLists();
@@ -2158,7 +2186,29 @@ public class SalesController {
 			 
 			return new ModelAndView(new GrnReportByDateExcel(), "grnByRegion", grnRegionMap);
 		}
-	 
+
+
+		@GetMapping("/api/monthly_stock_report/dates")
+		@ResponseBody
+		public List<String> getMonthlyStockReportDates() {
+			List<java.time.LocalDate> dates = monthlyReportStockRepo.findDistinctReportDates();
+			java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+			return dates.stream().map(d -> d.format(formatter)).collect(java.util.stream.Collectors.toList());
+		}
+
+		@SuppressWarnings({ "rawtypes" })
+		@GetMapping("/monthly_stock_report/download")
+		public ModelAndView downloadMonthlyStockReport(HttpServletRequest request) {
+			String dateString = request.getParameter("reportDate");
+			java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy");
+			java.time.LocalDate reportDate = java.time.LocalDate.parse(dateString, formatter);
+
+			List<com.ncpl.sales.model.MonthlyReportStock> stockList = monthlyReportStockRepo.findByReportDate(reportDate);
+			request.setAttribute("itemMasterService", itemMasterService);
+			request.setAttribute("reportDate", reportDate);
+			return new ModelAndView(new MonthlyStockReportExcel(), "monthlyStockReport", stockList);
+		}
+
 
 	    @PostMapping("api/clientPo/upload/{salesOrderId}")
 	    public ResponseEntity<String> uploadClientPoFile(@RequestParam("file") MultipartFile file, @PathVariable("salesOrderId") String salesOrderId) throws IOException {

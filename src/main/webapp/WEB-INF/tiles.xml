@@ -289,6 +289,7 @@
 				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
 				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
 			</definition>
+
 			
 			<definition name="tds" template="/WEB-INF/views/tds.jsp"> 
 				<put-attribute name="title" value="Sales Order" />

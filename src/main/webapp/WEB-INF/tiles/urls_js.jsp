@@ -370,7 +370,8 @@
 		DESIGN_UPLOAD:parentApi+"/design/upload",
 		STOCK_QTY_DETAILS:parentApi+"/stock/qty_details",
 		SO_DESIGNITEM_LIST_BY_SOITEMID:parentApi+"/designItem_list/sales_item_id",
-		EMPLOYEE_LIST:parentApi+"/employee_list"
+		EMPLOYEE_LIST:parentApi+"/employee_list",
+		MONTHLY_STOCK_REPORT_DATES:parentApi+"/monthly_stock_report/dates"
 		
 		
 		

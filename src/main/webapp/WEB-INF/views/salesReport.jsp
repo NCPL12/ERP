@@ -415,6 +415,39 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</security:authorize>
 				</div>	
 			
+			<!-- DC Report By Date Starts -->
+			<div class="row" style="padding-top:10px">
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
+			<div class="col-md-6">
+					<div class="card w-100">
+							  <h5 class="card-header  bg-light" style="font-size: inherit;">
+							  		<spring:message code="dc.report.by.date" />
+							  </h5>
+						  	<form id="dcListByDateForm" action="${pageContext.request.contextPath}/dc_list/by_date" method="get">
+								 <div class="card-body">
+									   <div class="form-group row mb-1">
+										    <label for="dcFromDate" class="col-sm-2 col-form-label">From</label>
+										    <div class="col-sm-10">
+										     <input type="text" autocomplete="off" name="fromDate" id="dcFromDate" class="form-control PositionofTextbox">
+										    </div>
+									   </div>
+									   <div class="form-group row mb-1">
+										    <label for="dcToDate" class="col-sm-2 col-form-label">To</label>
+										    <div class="col-sm-10">
+										     <input type="text" autocomplete="off" name="toDate" id="dcToDate" class="form-control PositionofTextbox">
+										    </div>
+									   </div>
+								 </div>
+								<div  class="card-footer">		  
+								    <button type="submit" id=""
+														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
+							  </div>
+						  </form>
+						</div>
+				</div>
+				</security:authorize>
+				</div>
+			
 			
 			<div class="row" style="padding-top:10px">
 			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
@@ -474,6 +507,34 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 				</div>
+			
+			<div class="row" style="padding-top:10px">
+			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE')">
+				<div class="col-md-6">
+					<div class="card w-100">
+						<h5 class="card-header bg-light" style="font-size: inherit;">
+							<spring:message code="monthly.stock.report" />
+						</h5>
+						<form action="${pageContext.request.contextPath}/monthly_stock_report/download" id="monthlyStockReportForm" method="get">
+							<div class="card-body">
+								<div class="form-group row mb-1">
+									<label for="monthlyStockReportDate" class="col-sm-2 col-form-label">Date</label>
+									<div class="col-sm-10">
+										<select class="form-control select2 PositionofTextbox" name="reportDate" id="monthlyStockReportDate" style="padding: 0;">
+											<option value="" selected>Select Date</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="card-footer">
+								<button type="submit" id="downLoadMonthlyStockReportBtn"
+									class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</security:authorize>
+			</div>
 			
 		<!-- Dc List By Item Report ends -->
 			

@@ -57,6 +57,6 @@ public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
  	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated < :date GROUP BY gi.description")
  	List<Object[]> getGrnSumGroupedByDescriptionBefore(@Param("date") Timestamp date);
  	
- 	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated >= :fromDate AND gi.updated <= :toDate GROUP BY gi.description")
- 	List<Object[]> getGrnSumGroupedByDescriptionBetween(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
+	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated >= :fromDate AND gi.updated <= :toDate GROUP BY gi.description")
+	List<Object[]> getGrnSumGroupedByDescriptionBetween(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
 }

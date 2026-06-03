@@ -766,6 +766,27 @@ public class DeliveryChallanService {
 		return dcPage;
 	}
 	
+	public List<DeliveryChallanItems> getDcItemListByDate(Timestamp fromDate, Timestamp toDate) {
+		List<DeliveryChallanItems> dcItemList = dcItemRepo.findByUpdatedBetween(fromDate, toDate);
+		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
+		for (DeliveryChallanItems dcItem : dcItemList) {
+			String soItemId = dcItem.getDescription();
+			boolean value = false;
+			Optional<SalesItem> salesItem = salesService.getSalesItemById(soItemId, value);
+			if (salesItem.isPresent()) {
+				SalesItem si = salesItem.get();
+				DeliveryChallan dc = dcItem.getDeliveryChallan();
+				dcItem.set("itemDescription", si.getDescription());
+				dcItem.set("modelNo", si.getModelNo());
+				dcItem.set("salesPrice", si.getUnitPrice());
+				dcItem.set("dcNum", dc != null ? dc.getDcId() : 0);
+				dcItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
+				enrichedList.add(dcItem);
+			}
+		}
+		return enrichedList;
+	}
+
 	private void enrichDeliveryChallanData(DeliveryChallan dc) {
 		try {
 			String soNumber = dc.getSoNumber();

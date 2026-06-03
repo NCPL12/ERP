@@ -14,11 +14,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import java.time.LocalDate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -49,6 +52,7 @@ import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.GrnRepo;
 import com.ncpl.sales.repository.ItemMasterRepo;
+import com.ncpl.sales.repository.MonthlyReportStockRepo;
 import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
@@ -94,6 +98,8 @@ public class GrnService {
 	ItemMasterRepo itemMasterRepo;
 	@Autowired
 	StockRepo stockRepo;
+	@Autowired
+	MonthlyReportStockRepo monthlyReportStockRepo;
   
     
 	public Grn saveGrn(Grn grn) {
@@ -508,138 +514,105 @@ public class GrnService {
 	 * }
 	 */
 	
-	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Map findgrnListByDate(Timestamp sqlFromDate, Timestamp sqlToDate) throws ParseException {
 		long start = System.currentTimeMillis();
-		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
-		CriteriaQuery<Object[]> query = criteriaBuilder.createQuery(Object[].class);
-		// CriteriaQuery<Object[]> query = criteriaBuilder.createTupleQuery();
-		Root<GrnItems> item = query.from(GrnItems.class);
-		// Root<PurchaseItem> poitem = query.from(PurchaseItem.class);
 
-		// This will add all quantities for same items
-		Expression<Float> totalReceivedQty = criteriaBuilder.sum(item.get("receivedQuantity")).as(Float.class);
-		// Calculate sum of amount for same item
-		Expression<Float> totalAmountEach = criteriaBuilder.sum(item.get("amount")).as(Float.class);
-		// Calculate weighted amount for each item
-		Expression<Number> weightedRate = criteriaBuilder.quot(totalAmountEach, totalReceivedQty);
-		// Calculate total amount
-		Expression<Number> totalAmount = criteriaBuilder.prod(totalReceivedQty, weightedRate);
+		// Batch 1: GRN qty by model_no (CLI's exact query)
+		String grnSql = "SELECT pi.model_no, COALESCE(SUM(gi.received_quantity), 0) " +
+				"FROM tbl_grn_items gi " +
+				"JOIN tbl_purchase_items pi ON gi.po_item_id = pi.purchase_item_id " +
+				"WHERE gi.updated >= ? AND gi.updated <= ? " +
+				"GROUP BY pi.model_no";
+		Query grnQuery = entityManager.createNativeQuery(grnSql);
+		grnQuery.setParameter(1, sqlFromDate);
+		grnQuery.setParameter(2, sqlToDate);
+		List<Object[]> grnResults = grnQuery.getResultList();
+		Map<String, Float> grnByModel = new HashMap<>();
+		for (Object[] row : grnResults) {
+			grnByModel.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		log.info("Stock summary: {} models with GRN found in {}ms", grnByModel.size(), System.currentTimeMillis() - start);
 
-		List<Predicate> conditionsList = new ArrayList<Predicate>();
-		Predicate onStart = criteriaBuilder.greaterThanOrEqualTo(item.get("created"), sqlFromDate);
-		Predicate onEnd = criteriaBuilder.lessThanOrEqualTo(item.get("updated"), sqlToDate);
-		conditionsList.add(onStart);
-		conditionsList.add(onEnd);
+		// Batch 2: DC qty by so_model_no (CLI's exact query)
+		String dcSql = "SELECT so_model_no, COALESCE(SUM(todays_qty), 0) " +
+				"FROM tbl_dc_items " +
+				"WHERE updated >= ? AND updated <= ? " +
+				"GROUP BY so_model_no";
+		Query dcQuery = entityManager.createNativeQuery(dcSql);
+		dcQuery.setParameter(1, sqlFromDate);
+		dcQuery.setParameter(2, sqlToDate);
+		List<Object[]> dcResults = dcQuery.getResultList();
+		Map<String, Float> dcByModel = new HashMap<>();
+		for (Object[] row : dcResults) {
+			dcByModel.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		log.info("Stock summary: {} models with DC found in {}ms", dcByModel.size(), System.currentTimeMillis() - start);
 
-		query.multiselect(item.get("description"), // Purchase item id
-				totalReceivedQty, weightedRate, totalAmount).where(conditionsList.toArray(new Predicate[] {}));
+		// Collect all distinct model numbers with activity
+		Set<String> allModels = new HashSet<>(grnByModel.keySet());
+		allModels.addAll(dcByModel.keySet());
 
-		query.groupBy(item.get("description"));
-
-		TypedQuery<Object[]> typedQuery = entityManager.createQuery(query);
-		List<Object[]> inwardList = typedQuery.getResultList();
-		log.info("Stock summary: {} inward items found in {}ms", inwardList.size(), System.currentTimeMillis() - start);
-
+		// Caches for opening and supply price
 		Map<String, Object> caches = new HashMap<>();
-		caches.put("purchaseItemCache", new HashMap<Integer, Optional<PurchaseItem>>());
-		caches.put("itemMasterCache", new HashMap<String, Optional<ItemMaster>>());
-		caches.put("designItemsCache", new HashMap<String, List<DesignItems>>());
-		caches.put("soDesignCache", new HashMap<String, SalesOrderDesign>());
 		caches.put("openingQuantCache", new HashMap<String, Float>());
-		caches.put("poItemsByModelCache", new HashMap<String, List<PurchaseItem>>());
-		caches.put("designItemObjCache", new HashMap<String, DesignItems>());
+		caches.put("supplyPriceCache", new HashMap<String, Float>());
 
-		// Collect relevant descriptions from inwardList to filter DC pre-loads
-		Set<String> relevantDescriptions = new HashSet<>();
-		if (!inwardList.isEmpty()) {
-			List<Integer> poItemIdList = new ArrayList<>();
-			for (Object[] obj : inwardList) {
-				poItemIdList.add(Integer.parseInt((String) obj[0]));
-			}
-			List<PurchaseItem> purchaseItems = purchaseItemRepo.findAllById(poItemIdList);
-			Set<String> modelNumbers = new HashSet<>();
-			for (PurchaseItem pi : purchaseItems) {
-				if (pi.getDescription() != null) relevantDescriptions.add(pi.getDescription());
-				if (pi.getModelNo() != null) modelNumbers.add(pi.getModelNo());
-			}
-			if (!modelNumbers.isEmpty()) {
-				List<DesignItems> designItems = designItemRepo.findByItemIdIn(new ArrayList<>(modelNumbers));
-				for (DesignItems di : designItems) {
-					if (di.getSalesOrderDesign() != null && di.getSalesOrderDesign().getSalesItemId() != null) {
-						relevantDescriptions.add(di.getSalesOrderDesign().getSalesItemId());
-					}
+		Map<String, Map> grnList = new HashMap<>();
+		Map<String, Map> noGrnList = new HashMap<>();
+
+		for (String modelNo : allModels) {
+			try {
+				ItemMaster item = itemMasterService.getItemByModelNo(modelNo.trim());
+				if (item == null) continue;
+
+				String itemId = item.getId();
+				String itemKey = item.getItemName() + "/" + item.getModel();
+
+				float grnQty = grnByModel.getOrDefault(modelNo, 0f);
+				float dcQty = dcByModel.getOrDefault(modelNo, 0f);
+				float supplyPrice = getSupplyPrice(itemId, caches);
+				float openingQty = getOpeningQuant(itemId, sqlFromDate, sqlToDate, caches);
+
+				float closingQty = openingQty + grnQty - dcQty;
+				if (closingQty < 0) closingQty = 0;
+
+				float openingValue = openingQty * supplyPrice;
+				float closingValue = closingQty * supplyPrice;
+				float dcValue = dcQty * supplyPrice;
+				float grnValue = grnQty * supplyPrice;
+
+				Map<String, Object> record = new HashMap<>();
+				record.put("particulars", itemKey);
+				record.put("openQ1", openingQty);
+				record.put("openR1", supplyPrice);
+				record.put("openV1", openingValue);
+				record.put("grnQ1", grnQty);
+				record.put("grnR1", supplyPrice);
+				record.put("grnV1", grnValue);
+				record.put("dcQ1", dcQty);
+				record.put("dcR1", supplyPrice);
+				record.put("dcV1", dcValue);
+				record.put("clQ1", closingQty);
+				record.put("clR1", supplyPrice);
+				record.put("clV1", closingValue);
+
+				if (grnQty > 0) {
+					grnList.put(itemKey, record);
+				} else {
+					noGrnList.put(itemKey, record);
 				}
+			} catch (Exception e) {
+				log.warn("Skipping model {}: {}", modelNo, e.getMessage());
 			}
 		}
-		log.info("Stock summary: {} relevant descriptions to filter DC", relevantDescriptions.size());
 
-		List<String> descList = new ArrayList<>(relevantDescriptions);
-		List<DeliveryChallanItems> allDcInRange = descList.isEmpty()
-			? dcItemRepo.findByUpdatedBetween(sqlFromDate, sqlToDate)
-			: dcItemRepo.findByUpdatedBetweenAndDescriptionIn(sqlFromDate, sqlToDate, descList);
-		Map<String, List<DeliveryChallanItems>> dcByDescription = new HashMap<>();
-		for (DeliveryChallanItems dc : allDcInRange) {
-			dcByDescription.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
-		}
-		caches.put("dcItemsBetweenDates", dcByDescription);
-		log.info("Stock summary: {} DC items in date range", allDcInRange.size());
-
-		// Preload DC items up to toDate/fromDate for opening quantity
-		Map<String, List<DeliveryChallanItems>> dcUpToToDate = new HashMap<>();
-		List<DeliveryChallanItems> dcUpToToDateList = descList.isEmpty()
-			? dcItemRepo.findDcListLessThanDate(sqlToDate)
-			: dcItemRepo.findDcListLessThanDateAndDescriptionIn(sqlToDate, descList);
-		for (DeliveryChallanItems dc : dcUpToToDateList) {
-			dcUpToToDate.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
-		}
-		caches.put("dcItemsUpToToDate", dcUpToToDate);
-		Map<String, List<DeliveryChallanItems>> dcUpToFromDate = new HashMap<>();
-		List<DeliveryChallanItems> dcUpToFromDateList = descList.isEmpty()
-			? dcItemRepo.findDcListLessThanDate(sqlFromDate)
-			: dcItemRepo.findDcListLessThanDateAndDescriptionIn(sqlFromDate, descList);
-		for (DeliveryChallanItems dc : dcUpToFromDateList) {
-			dcUpToFromDate.computeIfAbsent(dc.getDescription(), k -> new ArrayList<>()).add(dc);
-		}
-		caches.put("dcItemsUpToFromDate", dcUpToFromDate);
-		log.info("Stock summary: DC preload done in {}ms", System.currentTimeMillis() - start);
-
-		// Pre-compute stock totals, GRN before, and GRN between maps (batch to avoid per-item queries)
-		Map<String, Float> stockTotalsMap = new HashMap<>();
-		for (Object[] row : stockRepo.getStockTotalsGroupedByItemId()) {
-			stockTotalsMap.put((String) row[0], ((Number) row[1]).floatValue());
-		}
-		caches.put("stockTotalsMap", stockTotalsMap);
-
-		// Point-in-time stock totals from Envers audit table for opening balance
-		Map<String, Float> stockTotalsAsOfFromDateMap = new HashMap<>();
-		for (Object[] row : stockRepo.getStockTotalsAsOfDate(sqlFromDate.getTime())) {
-			stockTotalsAsOfFromDateMap.put((String) row[0], ((Number) row[1]).floatValue());
-		}
-		caches.put("stockTotalsAsOfFromDateMap", stockTotalsAsOfFromDateMap);
-
-		Map<String, Float> grnBeforeMap = new HashMap<>();
-		for (Object[] row : grnItemRepo.getGrnSumGroupedByDescriptionBefore(sqlFromDate)) {
-			grnBeforeMap.put((String) row[0], ((Number) row[1]).floatValue());
-		}
-		caches.put("grnBeforeMap", grnBeforeMap);
-
-		Map<String, Float> grnBetweenMap = new HashMap<>();
-		for (Object[] row : grnItemRepo.getGrnSumGroupedByDescriptionBetween(sqlFromDate, sqlToDate)) {
-			grnBetweenMap.put((String) row[0], ((Number) row[1]).floatValue());
-		}
-		caches.put("grnBetweenMap", grnBetweenMap);
-		log.info("Stock summary: batch maps precomputed in {}ms", System.currentTimeMillis() - start);
-
-		Map excelSheetValue = findOutwardQuantity(inwardList, sqlFromDate, sqlToDate, caches);
-		log.info("Stock summary: outward done in {}ms, {} items", System.currentTimeMillis() - start, excelSheetValue.keySet().size());
-
-		Map newValues = findOPeningQuantityForGrnNotCreated(excelSheetValue, sqlFromDate, sqlToDate, caches);
-		log.info("Stock summary: opening qty done in {}ms", System.currentTimeMillis() - start);
+		log.info("Stock summary: done in {}ms, {} items ({} with GRN, {} without)",
+				System.currentTimeMillis() - start, grnList.size() + noGrnList.size(), grnList.size(), noGrnList.size());
 
 		Map<String, Map> recordsMap = new HashMap();
-		recordsMap.put("grnlist", excelSheetValue);
-		recordsMap.put("nogrnlist", newValues);
+		recordsMap.put("grnlist", grnList);
+		recordsMap.put("nogrnlist", noGrnList);
 		return recordsMap;
 
 	}
@@ -720,10 +693,9 @@ public class GrnService {
 
 			if (excelSheetValue.containsKey(itemKey) || pMap.containsKey(itemKey)) continue;
 
-			float grnRate = 0.0f;
+			float supplyPrice = getSupplyPrice(itemId, caches);
 			float grnTotal = 0.0f;
 			float grnQuant = (Float) objects[1];
-			if (objects[2] != null) grnRate = (Float) objects[2];
 			if (objects[3] != null) grnTotal = (Float) objects[3];
 
 			String soItemId = purchaseItem.get().getDescription();
@@ -769,23 +741,23 @@ public class GrnService {
 			float openingBalanceQuant = openingQuantCache.computeIfAbsent(
 				itemId + "_" + sqlFromDate + "_" + sqlToDate,
 				k -> getOpeningQuant(itemId, sqlFromDate, sqlToDate, caches));
-			float openingBalValue = openingBalanceQuant * grnRate;
+			float openingBalValue = openingBalanceQuant * supplyPrice;
 			float closedBalnceQuant = openingBalanceQuant - dcPresentQty;
 			if (closedBalnceQuant < 0) closedBalnceQuant = 0;
-			float closedBalnceValue = closedBalnceQuant * grnRate;
+			float closedBalnceValue = closedBalnceQuant * supplyPrice;
 
 			Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
-			ExcelcredMap.put("dcR1", grnRate);
+			ExcelcredMap.put("dcR1", supplyPrice);
 			ExcelcredMap.put("dcQ1", dcPresentQty);
-			ExcelcredMap.put("dcV1", grnRate * dcPresentQty);
-			ExcelcredMap.put("grnR1", grnRate);
+			ExcelcredMap.put("dcV1", supplyPrice * dcPresentQty);
+			ExcelcredMap.put("grnR1", supplyPrice);
 			ExcelcredMap.put("grnQ1", 0.0f);
 			ExcelcredMap.put("grnV1", 0.0f);
-			ExcelcredMap.put("clR1", grnRate);
+			ExcelcredMap.put("clR1", supplyPrice);
 			ExcelcredMap.put("clQ1", closedBalnceQuant);
 			ExcelcredMap.put("clV1", closedBalnceValue);
 			ExcelcredMap.put("openQ1", openingBalanceQuant);
-			ExcelcredMap.put("openR1", grnRate);
+			ExcelcredMap.put("openR1", supplyPrice);
 			ExcelcredMap.put("openV1", openingBalValue);
 			ExcelcredMap.put("particulars", itemKey);
 			pMap.put(itemKey, ExcelcredMap);
@@ -824,10 +796,9 @@ public class GrnService {
 			String itemId = item.get().getId();
 			String itemKey = item.get().getItemName() + "/" + item.get().getModel();
 
-			float grnRate = 0.0f;
+			float supplyPrice = getSupplyPrice(itemId, caches);
 			float grnTotal = 0.0f;
 			float grnQuant = (Float) objects[1];
-			if (objects[2] != null) grnRate = (Float) objects[2];
 			if (objects[3] != null) grnTotal = (Float) objects[3];
 
 			String soItemId = purchaseItem.get().getDescription();
@@ -876,67 +847,63 @@ public class GrnService {
 				itemId + "_" + sqlFromDate + "_" + sqlToDate,
 				k -> getOpeningQuant(itemId, sqlFromDate, sqlToDate, caches));
 			if (!pMap.containsKey(itemKey)) {
-				openingBalValue = openingBalanceQuant * grnRate;
+				openingBalValue = openingBalanceQuant * supplyPrice;
 				closedBalnceQuant = openingBalanceQuant + grnQuant - dcQuantity;
 				if (closedBalnceQuant < 0) closedBalnceQuant = 0;
-				closedBalnceValue = grnRate * closedBalnceQuant;
+				closedBalnceValue = supplyPrice * closedBalnceQuant;
 			} else {
 				openingBalanceQuant = 0;
 				openingBalValue = 0;
 				closedBalnceQuant = grnQuant - dcQuantity;
 				if (closedBalnceQuant < 0) closedBalnceQuant = 0;
-				closedBalnceValue = grnRate * closedBalnceQuant;
+				closedBalnceValue = supplyPrice * closedBalnceQuant;
 			}
 
 			if (pMap.containsKey(itemKey)) {
 				Map cMap = pMap.get(itemKey);
 
 				float prevGrnQty = (float) cMap.get("grnQ1");
-				float prevGrnRate = (float) cMap.get("grnR1");
 				float newTotalQty = prevGrnQty + grnQuant;
-				float newGrnRate = newTotalQty > 0
-					? (prevGrnRate * prevGrnQty + grnRate * grnQuant) / newTotalQty
-					: 0f;
-				float newGrnValue = newGrnRate * newTotalQty;
+				float newGrnValue = supplyPrice * newTotalQty;
 
 				float prevDcQuantity = (float) cMap.get("dcQ1");
 				prevDcQuantity = (prevDcQuantity + dcQuantity);
-				float prevDcValue = newGrnRate * prevDcQuantity;
+				float prevDcValue = supplyPrice * prevDcQuantity;
 
 				float preclosingQuantity = (float) cMap.get("clQ1");
 				preclosingQuantity = (preclosingQuantity + closedBalnceQuant);
 				if (preclosingQuantity < 0) preclosingQuantity = 0;
-				float prevcloseValue = newGrnRate * preclosingQuantity;
+				float prevcloseValue = supplyPrice * preclosingQuantity;
 
 				float prevopenQuantity = (float) cMap.get("openQ1");
 				prevopenQuantity = (prevopenQuantity + openingBalanceQuant);
-				float prevOpenValue = newGrnRate * prevopenQuantity;
+				float prevOpenValue = supplyPrice * prevopenQuantity;
 
-				cMap.put("grnR1", newGrnRate);
+				cMap.put("grnR1", supplyPrice);
 				cMap.put("grnQ1", newTotalQty);
 				cMap.put("grnV1", newGrnValue);
-				cMap.put("dcR1", newGrnRate);
+				cMap.put("dcR1", supplyPrice);
 				cMap.put("dcQ1", prevDcQuantity);
 				cMap.put("dcV1", prevDcValue);
-				cMap.put("clR1", newGrnRate);
+				cMap.put("clR1", supplyPrice);
 				cMap.put("clQ1", preclosingQuantity);
 				cMap.put("clV1", prevcloseValue);
 				cMap.put("openQ1", prevopenQuantity);
-				cMap.put("openR1", newGrnRate);
+				cMap.put("openR1", supplyPrice);
 				cMap.put("openV1", prevOpenValue);
 			} else {
 				Map<String, Object> ExcelcredMap = new HashMap<String, Object>();
-				ExcelcredMap.put("dcR1", grnRate);
+				ExcelcredMap.put("dcR1", supplyPrice);
 				ExcelcredMap.put("dcQ1", dcQuantity);
-				ExcelcredMap.put("dcV1", grnRate * dcQuantity);
-				ExcelcredMap.put("grnR1", grnRate);
+				ExcelcredMap.put("dcV1", supplyPrice * dcQuantity);
+				ExcelcredMap.put("grnR1", supplyPrice);
 				ExcelcredMap.put("grnQ1", grnQuant);
 				ExcelcredMap.put("grnV1", grnTotal);
-				ExcelcredMap.put("clR1", grnRate);
+				ExcelcredMap.put("clR1", supplyPrice);
 				ExcelcredMap.put("clQ1", closedBalnceQuant);
 				ExcelcredMap.put("clV1", closedBalnceValue);
 				ExcelcredMap.put("openQ1", openingBalanceQuant);
-				ExcelcredMap.put("openR1", grnRate);
+				ExcelcredMap.put("openR1", supplyPrice);
 				ExcelcredMap.put("openV1", openingBalValue);
 				ExcelcredMap.put("particulars", itemKey);
 				pMap.put(itemKey, ExcelcredMap);
@@ -982,7 +949,37 @@ public class GrnService {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private float getSupplyPrice(String itemId, Map<String, Object> caches) {
+		Map<String, Float> supplyPriceCache = (Map<String, Float>) caches.get("supplyPriceCache");
+		return supplyPriceCache.computeIfAbsent(itemId, id -> {
+			try {
+				String sql = "SELECT cost_price FROM tbl_supplier WHERE item_master_id = ? ORDER BY CASE WHEN preferred = 'yes' THEN 0 ELSE 1 END LIMIT 1";
+				Query query = entityManager.createNativeQuery(sql);
+				query.setParameter(1, id);
+				@SuppressWarnings("rawtypes")
+				List result = query.getResultList();
+				if (result != null && !result.isEmpty() && result.get(0) != null) {
+					return ((Number) result.get(0)).floatValue();
+				}
+			} catch (Exception e) {
+				log.warn("Failed to get supply price for item {}: {}", id, e.getMessage());
+			}
+			return 0f;
+		});
+	}
+
 	private float getOpeningQuant(String itemId, Timestamp sqlFromDate, Timestamp sqlToDate, Map<String, Object> caches) {
+		// Try tbl_monthly_report_stock first
+		try {
+			LocalDate reportDate = sqlFromDate.toLocalDateTime().toLocalDate();
+			java.util.List<java.math.BigDecimal> prevQty = monthlyReportStockRepo.findPreviousOutstandingQtyByItemAndBeforeDate(itemId, reportDate);
+			if (prevQty != null && !prevQty.isEmpty() && prevQty.get(0) != null) {
+				return prevQty.get(0).floatValue();
+			}
+		} catch (Exception e) {
+			log.warn("Failed to read opening from monthly_report_stock for item {}: {}", itemId, e.getMessage());
+		}
+		// Fallback to Envers audit table
 		Map<String, Float> stockTotalsAsOfFromDateMap = (Map<String, Float>) caches.get("stockTotalsAsOfFromDateMap");
 		float openingBalance = stockTotalsAsOfFromDateMap.getOrDefault(itemId, 0f);
 		if (openingBalance < 0) openingBalance = 0;
