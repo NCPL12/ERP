@@ -33,7 +33,7 @@ public class DeliveryChallan {
 	@Column(name = "dc_comment")
 	private String dcComment;
 	
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	@JoinColumn(name = "dc_id")
 	@JsonBackReference
 	private List<DeliveryChallanItems> items;

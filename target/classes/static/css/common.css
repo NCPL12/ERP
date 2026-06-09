@@ -1,5 +1,9 @@
 @charset "ISO-8859-1";
 
+body {
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
+}
+
 .content-header-padding{
 	padding:2px!important;
 }

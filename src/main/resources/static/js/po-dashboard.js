@@ -824,7 +824,7 @@
 		x=x.toString();
 		x = x.replace(/,/g,"");
 		var afterPoint = '';
-		if(x.indexOf('.') > 0)
+		if(x.indexOf('.') >= 0)
 		afterPoint = x.substring(x.indexOf('.'),x.length);
 		x = Math.floor(x);
 		x=x.toString();

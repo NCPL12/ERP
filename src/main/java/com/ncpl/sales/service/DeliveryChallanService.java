@@ -7,12 +7,14 @@ import java.sql.Timestamp;
 							  
 								  
 import java.util.ArrayList;
-					  
+import java.util.Collections;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-						
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -40,6 +42,8 @@ import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Stock;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.DeliveryChallanRepo;
+import com.ncpl.sales.repository.ItemMasterRepo;
+import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.InvoiceRepo;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
@@ -79,6 +83,10 @@ public class DeliveryChallanService {
 	EmailService emailService;
 	@Autowired
 	UserService userService;
+	@Autowired
+	SalesItemRepo salesItemRepo;
+	@Autowired
+	ItemMasterRepo itemMasterRepo;
 	
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
@@ -767,20 +775,60 @@ public class DeliveryChallanService {
 	}
 	
 	public List<DeliveryChallanItems> getDcItemListByDate(Timestamp fromDate, Timestamp toDate) {
-		List<DeliveryChallanItems> dcItemList = dcItemRepo.findByUpdatedBetween(fromDate, toDate);
+		List<DeliveryChallanItems> dcItemList = dcItemRepo.findByCreatedBetween(fromDate, toDate);
+		if (dcItemList.isEmpty()) {
+			return dcItemList;
+		}
+		List<String> soItemIds = dcItemList.stream()
+			.map(DeliveryChallanItems::getDescription)
+			.filter(Objects::nonNull)
+			.distinct()
+			.collect(Collectors.toList());
+		Map<String, SalesItem> salesItemMap = Collections.emptyMap();
+		Map<String, List<DesignItems>> designItemsBySoItemId = Collections.emptyMap();
+		Map<String, ItemMaster> itemMasterMap = Collections.emptyMap();
+		if (!soItemIds.isEmpty()) {
+			List<SalesItem> salesItems = salesItemRepo.findAllById(soItemIds);
+			salesItemMap = salesItems.stream()
+				.collect(Collectors.toMap(SalesItem::getId, Function.identity()));
+			List<DesignItems> designItemsList = designItemRepo.findBySalesItemIdIn(soItemIds);
+			designItemsBySoItemId = designItemsList.stream()
+				.collect(Collectors.groupingBy(di -> di.getSalesOrderDesign().getSalesItemId()));
+			List<String> itemMasterIds = designItemsList.stream()
+				.map(DesignItems::getItemId)
+				.filter(Objects::nonNull)
+				.distinct()
+				.collect(Collectors.toList());
+			if (!itemMasterIds.isEmpty()) {
+				List<ItemMaster> itemMasters = itemMasterRepo.findByIdIn(itemMasterIds);
+				itemMasterMap = itemMasters.stream()
+					.collect(Collectors.toMap(ItemMaster::getId, Function.identity()));
+			}
+		}
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
 		for (DeliveryChallanItems dcItem : dcItemList) {
 			String soItemId = dcItem.getDescription();
-			boolean value = false;
-			Optional<SalesItem> salesItem = salesService.getSalesItemById(soItemId, value);
-			if (salesItem.isPresent()) {
-				SalesItem si = salesItem.get();
+			SalesItem si = salesItemMap.get(soItemId);
+			if (si != null) {
 				DeliveryChallan dc = dcItem.getDeliveryChallan();
 				dcItem.set("itemDescription", si.getDescription());
-				dcItem.set("modelNo", si.getModelNo());
+				List<DesignItems> designItems = designItemsBySoItemId.get(soItemId);
+				if (designItems != null && !designItems.isEmpty()) {
+					List<String> modelList = new ArrayList<>();
+					for (DesignItems di : designItems) {
+						ItemMaster im = itemMasterMap.get(di.getItemId());
+						if (im != null && im.getModel() != null) {
+							modelList.add(im.getModel());
+						}
+					}
+					dcItem.set("modelNo", String.join(", ", modelList));
+				} else {
+					dcItem.set("modelNo", "");
+				}
 				dcItem.set("salesPrice", si.getUnitPrice());
 				dcItem.set("dcNum", dc != null ? dc.getDcId() : 0);
 				dcItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
+				dcItem.set("dcDate", dcItem.getCreated());
 				enrichedList.add(dcItem);
 			}
 		}

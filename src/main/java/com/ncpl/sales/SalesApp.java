@@ -22,6 +22,7 @@ public class SalesApp extends SpringBootServletInitializer{
 	/**
 	 * For running as a web application
 	 */
+
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
 		 return builder.sources(SalesApp.class);

@@ -36,13 +36,13 @@ $(document).ready(function () {
 	$("#dcFromDate").change(function(){ $("#dcFromDate").removeClass("border-color"); });
 	$("#dcToDate").change(function(){ $("#dcToDate").removeClass("border-color"); });
 	$("#modelNoSelect").change(function(){ $("#modelNoSelect").removeClass("border-color"); });
-	$("#monthlyStockReportDate").change(function(){ $("#monthlyStockReportDate").removeClass("border-color"); });
+
 
 	//getPartyList();
 	getPoItemList();
 	getDesignItemList();
 	getPoNumberList();
-	getMonthlyStockReportDates();
+
 	getModelNumberList();
 	$.each(clientList, function (index, value) {
 		var clientPartyList = value.partyName;
@@ -517,39 +517,6 @@ $(document).on('submit', '#activeSalesOrderForm',function(e){
 		$.error("Please select the Client Name");
 		e.preventDefault();
 		$("#clientName").addClass("border-color");
-	}
-});
-
-// Function to populate monthly stock report date dropdown
-function getMonthlyStockReportDates(){
-	$.ajax({
-	    Type:'GET',
-	    url : api.MONTHLY_STOCK_REPORT_DATES,
-	    dataType:'json',
-	    async: 'false',
-	    success  : function(response){
-	    	$("#monthlyStockReportDate option:not(:first)").remove();
-	    	$.each(response, function( key, value ) {
-	    		$('#monthlyStockReportDate').append('<option value=' + value + '>' + value + '</option>');
-	    	});
-	    },
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-		error : function(e) {
-			console.log(e);
-		}
-	  });
-}
-
-$(document).on('submit', '#monthlyStockReportForm',function(e){
-	var reportDate=$("#monthlyStockReportDate").val();
-	if(reportDate=="" || reportDate==undefined){
-		$.error("Please select the Report Date");
-		e.preventDefault();
-		$("#monthlyStockReportDate").addClass("border-color");
 	}
 });
 

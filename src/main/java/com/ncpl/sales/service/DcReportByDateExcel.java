@@ -1,5 +1,7 @@
 package com.ncpl.sales.service;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +48,7 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 		style.setFont(font);
 
 		Row secondRow = itemsReportSheet.createRow(1);
-		itemsReportSheet.addMergedRegion(new CellRangeAddress(1, 2, 0, 6));
+		itemsReportSheet.addMergedRegion(new CellRangeAddress(1, 2, 0, 7));
 
 		Cell headingCell = secondRow.createCell(0);
 		headingCell.setCellValue("DC Report By Date");
@@ -64,17 +66,19 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 
 		header.createCell(0).setCellValue("DC No");
 		header.createCell(1).setCellValue("SO Number");
-		header.createCell(2).setCellValue("Model No");
-		header.createCell(3).setCellValue("Description");
-		header.createCell(4).setCellValue("Quantity");
-		header.createCell(5).setCellValue("Sales Price");
-		header.createCell(6).setCellValue("Value");
+		header.createCell(2).setCellValue("DC Date");
+		header.createCell(3).setCellValue("Model No");
+		header.createCell(4).setCellValue("Description");
+		header.createCell(5).setCellValue("Quantity");
+		header.createCell(6).setCellValue("Sales Price");
+		header.createCell(7).setCellValue("Value");
 
 		populateRecords(dcItemList, itemsReportSheet, workbook);
 	}
 
 	private void populateRecords(List<DeliveryChallanItems> dcItemList, Sheet itemsReportSheet, Workbook workbook) {
 		int rowCount = 4;
+		SimpleDateFormat dateFmt = new SimpleDateFormat("dd-MM-yyyy");
 		CellStyle decimalStyle = workbook.createCellStyle();
 		XSSFDataFormat format = (XSSFDataFormat) workbook.createDataFormat();
 		decimalStyle.setDataFormat(format.getFormat("#,###.00"));
@@ -85,6 +89,7 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 			Object salesPriceObj = dcItem.get("salesPrice");
 			Object dcNumObj = dcItem.get("dcNum");
 			String soNumber = (String) dcItem.get("soNumber");
+			Date dcDate = (Date) dcItem.get("dcDate");
 
 			if (modelNo == null) continue;
 
@@ -96,18 +101,19 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 
 			row.createCell(0).setCellValue(dcNumObj != null ? String.valueOf(dcNumObj) : "");
 			row.createCell(1).setCellValue(soNumber != null ? soNumber : "");
-			row.createCell(2).setCellValue(modelNo);
-			row.createCell(3).setCellValue(itemDescription != null ? itemDescription : "");
+			row.createCell(2).setCellValue(dcDate != null ? dateFmt.format(dcDate) : "");
+			row.createCell(3).setCellValue(modelNo);
+			row.createCell(4).setCellValue(itemDescription != null ? itemDescription : "");
 
-			Cell qtyCell = row.createCell(4);
+			Cell qtyCell = row.createCell(5);
 			qtyCell.setCellStyle(decimalStyle);
 			qtyCell.setCellValue(qty);
 
-			Cell priceCell = row.createCell(5);
+			Cell priceCell = row.createCell(6);
 			priceCell.setCellStyle(decimalStyle);
 			priceCell.setCellValue(salesPrice);
 
-			Cell amountCell = row.createCell(6);
+			Cell amountCell = row.createCell(7);
 			amountCell.setCellStyle(decimalStyle);
 			amountCell.setCellValue(amount);
 		}

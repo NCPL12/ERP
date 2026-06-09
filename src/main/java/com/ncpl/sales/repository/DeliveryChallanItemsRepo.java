@@ -24,8 +24,8 @@ public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanI
 	@Query(" from DeliveryChallanItems where updated>= :d1  and updated<= :d2 and description=:grnSoItemId")
 	List<DeliveryChallanItems> findDcListBetweenDate(Timestamp d1, Timestamp d2,String grnSoItemId);
 
-	@Query("FROM DeliveryChallanItems WHERE updated >= :d1 AND updated <= :d2")
-	List<DeliveryChallanItems> findByUpdatedBetween(@Param("d1") Timestamp d1, @Param("d2") Timestamp d2);
+	@Query("SELECT dci FROM DeliveryChallanItems dci LEFT JOIN FETCH dci.deliveryChallan WHERE dci.created >= :d1 AND dci.created <= :d2")
+	List<DeliveryChallanItems> findByCreatedBetween(@Param("d1") Timestamp d1, @Param("d2") Timestamp d2);
 	@Query(" from DeliveryChallanItems where  updated<= :d1")
 	List<DeliveryChallanItems> findDcListLessThanDate(Timestamp d1);
 	@Query("FROM DeliveryChallanItems WHERE updated >= :d1 AND updated <= :d2 AND description IN :descriptions")
