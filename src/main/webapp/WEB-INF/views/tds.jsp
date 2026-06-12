@@ -43,6 +43,7 @@ obj = obj.replace(/\&/g, "\"");
  }
  var userName=${userName};
 
+
 </script>
 <style type="text/css">
 .lbl-biiling-popup{
@@ -107,21 +108,22 @@ obj = obj.replace(/\&/g, "\"");
 						<table id="salesTable" class="table table-head-fixed table-hover">
 							<thead id="table-header font">
 								<tr>
-									<th width="5%" rowspan="2" class="thStyle">Sl.No</th>
-									<!-- 	<th width="10%">Items</th> -->
-									<th width="25%" rowspan="2" class="thStyle">Description</th>
-									<th width="15%" rowspan="2" class="thStyle">Model No</th>
-									<th width="8%" rowspan="2" class="thStyle">PO Qty</th>
-									<th width="5%" rowspan="2" class="thStyle">Unit</th>
-									<th width="15%" colspan="2" style="text-align: center;">Design</th>
-									<th width="8%" rowspan="2" class="thStyle">TDS</th>
-									<th width="8%" rowspan="2" class="thStyle">Site Qty</th>
+									<th width="4%" rowspan="2" class="thStyle">Sl.No</th>
+									<th width="20%" rowspan="2" class="thStyle">Description</th>
+									<th width="12%" rowspan="2" class="thStyle">Model No</th>
+									<th width="6%" rowspan="2" class="thStyle">PO Qty</th>
+									<th width="4%" rowspan="2" class="thStyle">Unit</th>
+									<th width="12%" colspan="2" style="text-align: center;">Design</th>
+									<th width="6%" rowspan="2" class="thStyle">TDS</th>
+									<th width="15%" colspan="2" style="text-align: center;">Site Quantity</th>
+									<th width="5%" rowspan="2" class="thStyle"></th>
 								</tr>
 
-								<!--dividing a cloumn into two rows-->
 								<tr>
-									<th width="9%">Model No</th>
-									<th width="6%">Qty</th>
+									<th width="7%">Model No</th>
+									<th width="5%">Qty</th>
+									<th width="8%">Lot No</th>
+									<th width="7%">Value</th>
 								</tr>
 							</thead>
 							<tbody id="table-body">

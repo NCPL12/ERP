@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ncpl.common.Constants;
 import com.ncpl.sales.generator.FileNameGenerator;
@@ -28,6 +29,7 @@ import com.ncpl.sales.model.Party;
 import com.ncpl.sales.model.PurchaseItem;
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
+import com.ncpl.sales.model.Lot;
 import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.PartyRepo;
@@ -61,7 +63,23 @@ public class TdsService {
 	@Autowired
 	ItemMasterService itemService;
 
-	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {	
+	@Transactional(rollbackFor = Exception.class)
+	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
+		List<Tds> existingList = tdsRepo.getTdsListBySoNumber(tds.getSoNumber());
+		if (!existingList.isEmpty()) {
+			tdsRepo.delete(existingList.get(0));
+			tdsRepo.flush();
+		}
+		if (tds.getItems() != null) {
+			for (TdsItems tdsItem : tds.getItems()) {
+				tdsItem.setTds(tds);
+				if (tdsItem.getLots() != null) {
+					for (Lot lot : tdsItem.getLots()) {
+						lot.setTdsItems(tdsItem);
+					}
+				}
+			}
+		}
 		Tds tdsObj=tdsRepo.save(tds);
 		List<TdsItems> tdsItems = tdsObj.getItems();
 		ArrayList<TdsItems> tdsItemsList = new ArrayList<TdsItems>();
@@ -74,12 +92,19 @@ public class TdsService {
 			
 			String soNum = tdsObj.getSoNumber();
 			Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(soNum);
-			String shippingPartyId=salesOrder.get().getShippingAddress();
-			 Party party=partyRepo.findById(shippingPartyId);
+			SalesOrder so = salesOrder.get();
+			Party party = null;
+			if (so.getShippingAddress() != null) {
+				party = partyRepo.findById(so.getShippingAddress());
+			}
+			if (party == null && so.getParty() != null) {
+				party = so.getParty();
+			}
 			new TdsApproved().buildExcelDocument(tdsObj, filePath,salesService,salesOrder,req,party,itemService);
 			Map<String, Object> emailContents = null;
+			String partyName = salesOrder.get().getParty() != null ? salesOrder.get().getParty().getPartyName() : "";
 			emailContents = tdsDetails(salesOrder.get().getClientPoNumber(), salesOrder.get().getClientPoDate(),
-					salesOrder.get().getParty().getPartyName());
+					partyName);
 			emailService.sendEmailToServer(emailContents);
 		}
 

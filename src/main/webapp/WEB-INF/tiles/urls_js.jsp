@@ -368,6 +368,7 @@
 		GET_SALES_ITEM_WITH_DESIGN_PARTIAL:parentApi+"/salesItems_with_design_list_partial",
 		GET_SALES_ITEM_WITH_DESIGN_AND_PO_NOT_DONE_LIST_BY_SOID:parentApi+"/get_salesItem_list_by_id",
 		DESIGN_UPLOAD:parentApi+"/design/upload",
+		TDS_LOTS:parentApi+"/tds/lots",
 		STOCK_QTY_DETAILS:parentApi+"/stock/qty_details",
 		SO_DESIGNITEM_LIST_BY_SOITEMID:parentApi+"/designItem_list/sales_item_id",
 		EMPLOYEE_LIST:parentApi+"/employee_list",

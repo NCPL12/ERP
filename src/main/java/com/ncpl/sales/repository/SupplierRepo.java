@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ncpl.sales.model.Supplier;
@@ -25,4 +26,6 @@ public interface SupplierRepo extends JpaRepository<Supplier, String>{
 	@Query(" from Supplier where item_master_id=?1 and party_id=?2")
 	Supplier findSupplierByItemIdAndClientId(String itemId, String supplierName);
 
+	@Query("SELECT s FROM Supplier s WHERE s.itemMaster.id IN :itemMasterIds AND s.preferred = 'Yes'")
+	List<Supplier> findPreferredByItemMasterIds(@Param("itemMasterIds") List<String> itemMasterIds);
 }

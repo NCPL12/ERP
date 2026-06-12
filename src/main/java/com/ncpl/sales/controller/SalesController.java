@@ -89,6 +89,7 @@ import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.State;
+import com.ncpl.sales.model.Lot;
 import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.model.Type;
@@ -104,6 +105,8 @@ import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.PurchaseRepo;
 import com.ncpl.sales.repository.InvoiceRepo;
 import com.ncpl.sales.repository.TdsItemRepo;
+import com.ncpl.sales.repository.LotRepo;
+import com.ncpl.sales.repository.TdsRepo;
 import com.ncpl.sales.repository.WorkOrderRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignRepo;
@@ -338,6 +341,11 @@ public class SalesController {
 	
 	@Autowired
 	TdsService tdsService;
+	@Autowired
+	TdsRepo tdsRepo;
+
+	@Autowired
+	LotRepo lotRepo;
 	
 	@Autowired
 	NonBillableService nonBilableService;
@@ -1970,9 +1978,7 @@ public class SalesController {
 			model.addAttribute("pageHeader", "Sales Order");
 			if (flashMap != null) {
 				SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
-
 				model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
-
 			}
 			return "tds";
 		}
@@ -2026,6 +2032,17 @@ public class SalesController {
 		public ResponseEntity<?> tdsApprovedList(Model model) {
 			List<SalesOrder> soList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard();
 			return new ResponseEntity<>(soList, HttpStatus.OK);
+		}
+
+	 @GetMapping("/api/tds/lots")
+		public ResponseEntity<?> getTdsLots(@RequestParam("soNumber") String soNumber,
+				@RequestParam("salesItemId") String salesItemId,
+				@RequestParam(value = "itemMasterId", required = false) String itemMasterId) {
+			log.info("getTdsLots: soNumber={}, salesItemId={}, itemMasterId={}", soNumber, salesItemId, itemMasterId);
+			List<Lot> lots = lotRepo.findLotsBySoNumberAndDescription(soNumber, salesItemId,
+					itemMasterId != null ? itemMasterId : "");
+			log.info("getTdsLots: found {} lots", lots != null ? lots.size() : 0);
+			return new ResponseEntity<>(lots != null ? lots : new ArrayList<>(), HttpStatus.OK);
 		}
 	 
 	 @GetMapping("/api/salesItems_without_design_list")

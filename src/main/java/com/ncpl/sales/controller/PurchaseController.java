@@ -261,9 +261,7 @@ public class PurchaseController {
 	 
 		public ModelAndView purchaseOrder(HttpServletRequest request,Model model,
 			@PathVariable("json") String json) throws ParseException {
-		
-		
-		Gson g = new Gson();
+		 Gson g = new Gson();
 		Map<String, String> map =  g.fromJson(json, Map.class);
 		
 		//Field required for storing into purchase copy
@@ -272,10 +270,7 @@ public class PurchaseController {
 		String billingAddress = null;
 		String shippingAddress = null;
 		String vendorAddress =null;
-		
-		
-	
-		//For Getting Billing Address and Shipping address
+	//For Getting Billing Address and Shipping address
 		String billingAddressesWithDelimiter = customProperty.getBillingAddress();
 		String [] billingAddressesArray = billingAddressesWithDelimiter.split("\\^\\^");
 		
@@ -302,8 +297,6 @@ public class PurchaseController {
 			billingAddress = billingAddress.replace("Bengaluru", "Bangalore 560046");
 		}
 		billingAddress =billingAddress.replace(",", "\n");
-		
-		
 		if(shippingAddressKey.contains("key")) {
 			String shippingAddressesWithDelimiter = customProperty.getShippingAddress();
 			String [] shippingAddressesArray = shippingAddressesWithDelimiter.split("\\^\\^");
@@ -333,7 +326,6 @@ public class PurchaseController {
 			shippingAddress =shippingAddress.replace(",", "\n");
 		}else {
 			String shippingAddressId = map.get("shippingAddressId");
-
 			if(shippingAddressId.contains("$")) {
 				shippingAddressId  = shippingAddressId.replace("$", "/");
 			}
