@@ -1978,7 +1978,13 @@ public class SalesController {
 			model.addAttribute("pageHeader", "Sales Order");
 			if (flashMap != null) {
 				SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
-				model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
+				if (salesOrder != null) {
+					model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
+				}
+				String errorMessage = (String) flashMap.get("errorMessage");
+				if (errorMessage != null) {
+					model.addAttribute("errorMessage", errorMessage);
+				}
 			}
 			return "tds";
 		}
@@ -2019,13 +2025,16 @@ public class SalesController {
 		}
 	 
 	 @PostMapping("/add/tds")
-		public String saveTdsSalesOrder(@ModelAttribute("tds") Tds tds, HttpServletRequest req)
-				throws IOException {
-		 	String tdsApproved = req.getParameter("tdsApproved");
-			tdsService.saveTds(tds,req);
-
-			return "redirect:/salesList";
-
+		public String saveTdsSalesOrder(@ModelAttribute("tds") Tds tds, HttpServletRequest req,
+				RedirectAttributes redirectAttr) {
+		 	try {
+			 	String tdsApproved = req.getParameter("tdsApproved");
+				tdsService.saveTds(tds,req);
+				return "redirect:/salesList";
+		 	} catch (Exception e) {
+		 		redirectAttr.addFlashAttribute("errorMessage", e.getMessage());
+		 		return "redirect:/tds";
+		 	}
 		}
 	 
 	 @GetMapping("/api/tds_approved_list")

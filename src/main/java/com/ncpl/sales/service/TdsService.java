@@ -65,17 +65,32 @@ public class TdsService {
 
 	@Transactional(rollbackFor = Exception.class)
 	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
-		List<Tds> existingList = tdsRepo.getTdsListBySoNumber(tds.getSoNumber());
-		if (!existingList.isEmpty()) {
-			tdsRepo.delete(existingList.get(0));
+		if (tds.getSoNumber() != null) {
+			tdsRepo.deleteLotsBySoNumber(tds.getSoNumber());
+			tdsRepo.deleteItemsBySoNumber(tds.getSoNumber());
+			tdsRepo.deleteTdsBySoNumber(tds.getSoNumber());
 			tdsRepo.flush();
 		}
 		if (tds.getItems() != null) {
 			for (TdsItems tdsItem : tds.getItems()) {
 				tdsItem.setTds(tds);
+				tdsItem.setTdsItemId(0);
 				if (tdsItem.getLots() != null) {
+					float totalQty = 0;
 					for (Lot lot : tdsItem.getLots()) {
+						totalQty += lot.getQuantity();
 						lot.setTdsItems(tdsItem);
+						lot.setLotId(0);
+					}
+					String salesItemId = tdsItem.getDescription();
+					if (salesItemId != null && tdsItem.isTdsApproved()) {
+						Optional<SalesItem> salesItemOpt = salesService.getSalesItemObjById(salesItemId);
+						if (salesItemOpt.isPresent()) {
+							float poQty = salesItemOpt.get().getQuantity();
+							if (totalQty > poQty) {
+								throw new RuntimeException("Lot quantity (" + (int) totalQty + ") exceeds PO quantity (" + (int) poQty + ") for item: " + salesItemOpt.get().getDescription());
+							}
+						}
 					}
 				}
 			}

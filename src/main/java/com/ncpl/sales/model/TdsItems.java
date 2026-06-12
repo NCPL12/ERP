@@ -97,7 +97,7 @@ public class TdsItems extends TimeStampEntity{
 		this.tds = tds;
 	}
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "tdsItems")
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER, mappedBy = "tdsItems")
 	@JsonManagedReference
 	private List<Lot> lots;
 

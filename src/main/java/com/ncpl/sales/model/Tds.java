@@ -24,7 +24,7 @@ public class Tds extends TimeStampEntity{
 	private String soNumber;
 	
 	
-	@OneToMany(mappedBy = "tds", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "tds", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	@JsonManagedReference
 	private List<TdsItems> items;
 	

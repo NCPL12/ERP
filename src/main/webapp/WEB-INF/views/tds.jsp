@@ -41,7 +41,12 @@ obj = obj.replace(/\&/g, "\"");
  if ('${salesOrderObj}' != null && '${salesOrderObj}' != "") {
 	 salesOrderObj= $.parseJSON(obj);
  }
- var userName=${userName};
+  var userName=${userName};
+ var errorMessage = '${errorMessage}';
+ if (errorMessage && errorMessage != '') {
+	 alert("Error: " + errorMessage);
+ }
+
 
 
 </script>
@@ -123,7 +128,7 @@ obj = obj.replace(/\&/g, "\"");
 									<th width="7%">Model No</th>
 									<th width="5%">Qty</th>
 									<th width="8%">Lot No</th>
-									<th width="7%">Value</th>
+									<th width="7%">Qty</th>
 								</tr>
 							</thead>
 							<tbody id="table-body">
