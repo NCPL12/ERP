@@ -95,9 +95,9 @@ public class StockReportByDateExcel extends AbstractXlsxView{
 				columnDetails.createCell(0).setCellValue(itemMaster.getModel());
 				columnDetails.createCell(1).setCellValue(itemMaster.getItemName());
 				//columnDetails.createCell(2).setCellValue(stock.getQuantity());
-				columnDetails.createCell(3).setCellValue(itemMaster.getPrefferedCost());
+				columnDetails.createCell(3).setCellValue(itemMaster.getSellPrice());
 				
-				columnDetails.createCell(4).setCellValue(Math.round(stock.getQuantity() * itemMaster.getPrefferedCost()));
+				columnDetails.createCell(4).setCellValue(Math.round(stock.getQuantity() * itemMaster.getSellPrice()));
 				
 				rowCount++;
 			}

@@ -69,7 +69,7 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 		header.createCell(2).setCellValue("Model No");
 		header.createCell(3).setCellValue("Description");
 		header.createCell(4).setCellValue("Quantity");
-		header.createCell(5).setCellValue("Sales Price");
+        header.createCell(5).setCellValue("Supply Price");
 		header.createCell(6).setCellValue("Value");
 
 		populateRecords(dcItemList, itemsReportSheet, workbook);
@@ -85,7 +85,7 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 		for (DeliveryChallanItems dcItem : dcItemList) {
 			String modelNo = (String) dcItem.get("modelNo");
 			String itemDescription = (String) dcItem.get("itemDescription");
-			Object salesPriceObj = dcItem.get("salesPrice");
+			Object salesPriceObj = dcItem.get("supplyPrice");
 			Object dcNumObj = dcItem.get("dcNum");
 			Date dcDate = (Date) dcItem.get("dcDate");
 

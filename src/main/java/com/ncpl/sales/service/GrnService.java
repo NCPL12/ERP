@@ -953,13 +953,9 @@ public class GrnService {
 		Map<String, Float> supplyPriceCache = (Map<String, Float>) caches.get("supplyPriceCache");
 		return supplyPriceCache.computeIfAbsent(itemId, id -> {
 			try {
-				String sql = "SELECT cost_price FROM tbl_supplier WHERE item_master_id = ? ORDER BY CASE WHEN preferred = 'yes' THEN 0 ELSE 1 END LIMIT 1";
-				Query query = entityManager.createNativeQuery(sql);
-				query.setParameter(1, id);
-				@SuppressWarnings("rawtypes")
-				List result = query.getResultList();
-				if (result != null && !result.isEmpty() && result.get(0) != null) {
-					return ((Number) result.get(0)).floatValue();
+				ItemMaster item = itemMasterService.getItemById(itemId).orElse(null);
+				if (item != null) {
+					return (float) item.getSellPrice();
 				}
 			} catch (Exception e) {
 				log.warn("Failed to get supply price for item {}: {}", id, e.getMessage());

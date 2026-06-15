@@ -40,7 +40,6 @@ import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Stock;
-import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.DeliveryChallanRepo;
 import com.ncpl.sales.repository.ItemMasterRepo;
@@ -50,7 +49,6 @@ import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.StockRepo;
-import com.ncpl.sales.repository.SupplierRepo;
 import com.ncpl.sales.security.UserService;
 
 @Service
@@ -89,8 +87,6 @@ public class DeliveryChallanService {
 	SalesItemRepo salesItemRepo;
 	@Autowired
 	ItemMasterRepo itemMasterRepo;
-	@Autowired
-	SupplierRepo supplierRepo;
 	
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
@@ -791,7 +787,6 @@ public class DeliveryChallanService {
 		Map<String, SalesItem> salesItemMap = Collections.emptyMap();
 		Map<String, List<DesignItems>> designItemsBySoItemId = Collections.emptyMap();
 		Map<String, ItemMaster> itemMasterMap = Collections.emptyMap();
-		Map<String, Double> supplierCostPriceMap = Collections.emptyMap();
 		if (!soItemIds.isEmpty()) {
 			List<SalesItem> salesItems = salesItemRepo.findAllById(soItemIds);
 			salesItemMap = salesItems.stream()
@@ -808,13 +803,6 @@ public class DeliveryChallanService {
 				List<ItemMaster> itemMasters = itemMasterRepo.findByIdIn(itemMasterIds);
 				itemMasterMap = itemMasters.stream()
 					.collect(Collectors.toMap(ItemMaster::getId, Function.identity()));
-				List<Supplier> preferredSuppliers = supplierRepo.findPreferredByItemMasterIds(itemMasterIds);
-				supplierCostPriceMap = preferredSuppliers.stream()
-					.filter(s -> s.getItemMaster() != null)
-					.collect(Collectors.toMap(
-						s -> s.getItemMaster().getId(),
-						Supplier::getCostPrice,
-						(existing, replacement) -> existing));
 			}
 		}
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
@@ -832,8 +820,7 @@ public class DeliveryChallanService {
 							enrichedItem.setTodaysQty(dcItem.getTodaysQty());
 							enrichedItem.set("modelNo", im.getModel());
 							enrichedItem.set("itemDescription", im.getItemName() != null ? im.getItemName() : si.getDescription());
-							Double costPrice = supplierCostPriceMap.get(im.getId());
-							enrichedItem.set("salesPrice", costPrice != null ? costPrice : 0);
+							enrichedItem.set("supplyPrice", im.getSellPrice());
 							enrichedItem.set("dcNum", dc != null ? dc.getDcId() : 0);
 							enrichedItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
 							enrichedItem.set("dcDate", dcItem.getCreated());
@@ -843,7 +830,7 @@ public class DeliveryChallanService {
 				} else {
 					dcItem.set("modelNo", "");
 					dcItem.set("itemDescription", si.getDescription());
-					dcItem.set("salesPrice", 0);
+					dcItem.set("supplyPrice", 0);
 					dcItem.set("dcNum", dc != null ? dc.getDcId() : 0);
 					dcItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
 					dcItem.set("dcDate", dcItem.getCreated());

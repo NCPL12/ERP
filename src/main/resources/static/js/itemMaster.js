@@ -8,6 +8,7 @@ var stockSummaryByItem = {};
 var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
+
 function precomputeItemMasterAggregations() {
 	if(window.itemMasterLazyConfig && window.itemMasterLazyConfig.enabled){
 		stockSummaryByItem = window.itemMasterLazyConfig.stockSummaryMap || {};
@@ -76,8 +77,6 @@ function precomputeItemMasterAggregations() {
 }
 //var userName;
 $(document).ready(function () {
-  
-
 	$("#SalesVal").hide();
 	$(".amount").attr("readonly", "readonly");
 	$(".total").attr("readonly", "readonly");
@@ -798,8 +797,6 @@ $(document).on("click", ".mapInfo", function () {
 	$("#supplierModal").modal("show");
 	getSupplierList(itemId);
 })
-
-
 //code to delete the item row.
 $(document).on("click", ".deleteInfo", function () {
 	var row = datatable.row($(this).closest("tr").get(0));
