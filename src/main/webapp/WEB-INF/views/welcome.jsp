@@ -327,6 +327,10 @@ obj = obj.replace(/\&/g, "\"");
                <div class="col-lg-6">
                 <div class="card" style="padding: 10px; height: 180px;">
                   <span style="padding-bottom: 5px;" class="lbl-biiling-popup"> Billing Address : </span>
+                  <select style="width: 100%; padding: 0px;" id="billingClientsDropdown" class="form-control form-control-sm select2">
+                  	<option value="" selected>Select Clients</option>
+                  	</select>
+                 <span style="height: 10px;" class="lbl-biiling-popup"> </span>
                   <select style="width: 100%; padding: 0px;" id="billingAddressDropdown" class="form-control form-control-sm select2">
                   <!-- <option value="" selected>Select Billing Address</option> -->
                   	</select>

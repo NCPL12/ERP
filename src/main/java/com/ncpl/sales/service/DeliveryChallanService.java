@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 								  
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import com.ncpl.sales.model.PartyAddress;
 										  
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
+import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Stock;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
@@ -49,6 +51,7 @@ import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.StockRepo;
+import com.ncpl.sales.repository.SupplierRepo;
 import com.ncpl.sales.security.UserService;
 
 @Service
@@ -87,6 +90,8 @@ public class DeliveryChallanService {
 	SalesItemRepo salesItemRepo;
 	@Autowired
 	ItemMasterRepo itemMasterRepo;
+	@Autowired
+	SupplierRepo supplierRepo;
 	
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
@@ -805,6 +810,21 @@ public class DeliveryChallanService {
 					.collect(Collectors.toMap(ItemMaster::getId, Function.identity()));
 			}
 		}
+		Map<String, Double> latestCostPriceMap = new HashMap<>();
+		List<String> itemMasterIds = new ArrayList<>(itemMasterMap.keySet());
+		if (!itemMasterIds.isEmpty()) {
+			List<Supplier> suppliers = supplierRepo.findByItemMasterIds(itemMasterIds);
+			Map<String, List<Supplier>> suppliersByItem = suppliers.stream()
+				.filter(s -> s.getItemMaster() != null)
+				.collect(Collectors.groupingBy(s -> s.getItemMaster().getId()));
+			for (Map.Entry<String, List<Supplier>> entry : suppliersByItem.entrySet()) {
+				double latestCost = entry.getValue().stream()
+					.max(Comparator.comparing(Supplier::getUpdated, Comparator.nullsLast(Comparator.naturalOrder())))
+					.map(Supplier::getCostPrice)
+					.orElse(0.0);
+				latestCostPriceMap.put(entry.getKey(), latestCost);
+			}
+		}
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
 		for (DeliveryChallanItems dcItem : dcItemList) {
 			String soItemId = dcItem.getDescription();
@@ -820,7 +840,8 @@ public class DeliveryChallanService {
 							enrichedItem.setTodaysQty(dcItem.getTodaysQty());
 							enrichedItem.set("modelNo", im.getModel());
 							enrichedItem.set("itemDescription", im.getItemName() != null ? im.getItemName() : si.getDescription());
-							enrichedItem.set("supplyPrice", im.getSellPrice());
+							Double costPrice = latestCostPriceMap.get(im.getId());
+							enrichedItem.set("supplyPrice", costPrice != null ? costPrice : 0);
 							enrichedItem.set("dcNum", dc != null ? dc.getDcId() : 0);
 							enrichedItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
 							enrichedItem.set("dcDate", dcItem.getCreated());
@@ -838,7 +859,9 @@ public class DeliveryChallanService {
 				}
 			}
 		}
-		return enrichedList;
+		return enrichedList.stream()
+			.filter(item -> item.getTodaysQty() != 0)
+			.collect(Collectors.toList());
 	}
 
 	private void enrichDeliveryChallanData(DeliveryChallan dc) {

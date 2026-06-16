@@ -1070,7 +1070,9 @@ public class GrnService {
 
 	public List<GrnItems> findgrnListByDateandRegion(Timestamp sqlFromDate, Timestamp sqlToDate) {
 		List<GrnItems> grnItemsList= grnItemRepo.findByDate(sqlFromDate,sqlToDate);
-		return grnItemsList;
+		return grnItemsList.stream()
+			.filter(item -> item.getReceivedQuantity() != 0)
+			.collect(Collectors.toList());
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
