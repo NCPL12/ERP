@@ -36,6 +36,7 @@ import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.TdsItemRepo;
 import com.ncpl.sales.repository.TdsRepo;
+import com.ncpl.sales.service.TdsLotUpdateReportService;
 
 @Service
 public class TdsService {
@@ -62,6 +63,9 @@ public class TdsService {
 	
 	@Autowired
 	ItemMasterService itemService;
+
+	@Autowired
+	TdsLotUpdateReportService tdsLotUpdateReportService;
 
 	@Transactional(rollbackFor = Exception.class)
 	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
@@ -121,6 +125,38 @@ public class TdsService {
 			emailContents = tdsDetails(salesOrder.get().getClientPoNumber(), salesOrder.get().getClientPoDate(),
 					partyName);
 			emailService.sendEmailToServer(emailContents);
+		}
+
+		// Generate Site Quantity Report for all TDS items and send email
+		String soNum = tdsObj.getSoNumber();
+		if (soNum != null) {
+			Optional<SalesOrder> so = salesService.getSalesOrderById(soNum);
+			if (so.isPresent()) {
+				SalesOrder salesOrderObj = so.get();
+				String siteFileName = new FileNameGenerator().generateFileNameAsDate() + "site_qty_report.xlsx";
+				String siteFilePath = Constants.FILE_LOCATION + File.separator + siteFileName;
+				tdsLotUpdateReportService.generateReport(salesOrderObj, tdsObj, siteFilePath);
+
+				Map<String, Object> siteEmailContents = new HashMap<>();
+				String partyName = salesOrderObj.getParty() != null ? salesOrderObj.getParty().getPartyName() : "";
+				String dateFormatting = new SimpleDateFormat("dd-MM-yyyy").format(new Date());
+				if (salesOrderObj.getClientPoDate() != null) {
+					dateFormatting = new SimpleDateFormat("dd-MM-yyyy").format(salesOrderObj.getClientPoDate());
+				}
+				siteEmailContents.put("subject", "Site Quantity Report for " + salesOrderObj.getClientPoNumber());
+				siteEmailContents.put("template", "site_qty_report.html");
+				siteEmailContents.put("clientPo", salesOrderObj.getClientPoNumber());
+				siteEmailContents.put("clientPoDate", dateFormatting);
+				siteEmailContents.put("partyName", partyName);
+				siteEmailContents.put("to1", "hariharan@ncpl.co");
+				siteEmailContents.put("to2", "aniksha@ncpl.co");
+				siteEmailContents.put("cc1", "hariharan@ncpl.co");
+				siteEmailContents.put("cc2", "aniksha@ncpl.co");
+				siteEmailContents.put("cc3", "hariharan@ncpl.co");
+				siteEmailContents.put("month", Constants.currentDate());
+				siteEmailContents.put("attachment", siteFilePath);
+				emailService.sendEmailToServer(siteEmailContents);
+			}
 		}
 
 	}

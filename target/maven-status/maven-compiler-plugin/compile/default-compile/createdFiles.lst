@@ -172,6 +172,7 @@ com\ncpl\sales\model\Country.class
 com\ncpl\sales\repository\SalesOrderAuditRepo.class
 com\ncpl\sales\service\SalesOrderWithoutDesignByCustomerExcel.class
 com\ncpl\sales\repository\StockRepo.class
+com\ncpl\sales\service\SiteQuantityReportExcel.class
 com\ncpl\sales\model\TimeStampEntity.class
 com\ncpl\sales\repository\WorkOrderRepo.class
 com\ncpl\sales\model\City.class

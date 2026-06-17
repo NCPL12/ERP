@@ -58,7 +58,7 @@ public class SalesOrderWithoutDesignByCustomerExcel {
 	static List<Party> partyListBan = null;
 	static List<Party> partyListMan = null;
 	
-	@Scheduled(cron = "0 45 09 * * ?", zone="IST")
+	//@Scheduled(cron = "0 45 09 * * ?", zone="IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());
