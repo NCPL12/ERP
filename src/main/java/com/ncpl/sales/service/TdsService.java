@@ -86,14 +86,10 @@ public class TdsService {
 						lot.setTdsItems(tdsItem);
 						lot.setLotId(0);
 					}
-					String salesItemId = tdsItem.getDescription();
-					if (salesItemId != null && tdsItem.isTdsApproved()) {
-						Optional<SalesItem> salesItemOpt = salesService.getSalesItemObjById(salesItemId);
-						if (salesItemOpt.isPresent()) {
-							float poQty = salesItemOpt.get().getQuantity();
-							if (totalQty > poQty) {
-								throw new RuntimeException("Lot quantity (" + (int) totalQty + ") exceeds PO quantity (" + (int) poQty + ") for item: " + salesItemOpt.get().getDescription());
-							}
+					if (tdsItem.isTdsApproved()) {
+						float designQty = tdsItem.getDesignQty();
+						if (totalQty > designQty) {
+							throw new RuntimeException("Lot quantity (" + (int) totalQty + ") exceeds Design quantity (" + (int) designQty + ") for item: " + tdsItem.getDescription());
 						}
 					}
 				}
