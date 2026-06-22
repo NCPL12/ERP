@@ -48,6 +48,7 @@ public class TdsLotUpdateReportService {
     private DeliveryChallanItemsRepo dcItemRepo;
 
     private static final short BORDER_THIN = 1;
+    private static final int   FIXED_COLS  = 7;
 
     public void generateReport(SalesOrder salesOrder, Tds tdsObj, String filePath) throws IOException {
         List<SalesItem> soItems = salesOrder.getItems();
@@ -61,13 +62,25 @@ public class TdsLotUpdateReportService {
             }
         }
 
-        Map<String, List<DeliveryChallanItems>> dcByItem = getDcItemsBySalesItem(soItems);
+        // Determine max lots dynamically
+        int maxLots = 1;
+        if (tdsItems != null) {
+            for (TdsItems ti : tdsItems) {
+                if (ti.getLots() != null && ti.getLots().size() > maxLots) {
+                    maxLots = ti.getLots().size();
+                }
+            }
+        }
 
-        int maxLots = 2;
-        int fixedCols = 7;
-        int lotCols = 3 * maxLots;
-        int deliveryCols = 2;
-        int totalCols = fixedCols + lotCols + deliveryCols;
+        // Total delivered qty per sales item — same as Material Tracker
+        Map<String, Float> deliveredQtyMap = getDeliveredQtyBySalesItem(soItems);
+
+        // Column layout:
+        // [0-6] fixed | [7..7+maxLots-1] SITE QTY lots | [7+maxLots] DELIVERED QTY | [7+maxLots+1] PENDING QTY
+        int colSiteQtyStart = FIXED_COLS;
+        int colDeliveredQty = FIXED_COLS + maxLots;
+        int colPendingQty   = FIXED_COLS + maxLots + 1;
+        int totalCols       = FIXED_COLS + maxLots + 2;
 
         Workbook wb = new XSSFWorkbook();
         Sheet sheet = wb.createSheet("Site Quantity Report");
@@ -109,67 +122,57 @@ public class TdsLotUpdateReportService {
         subHeaderStyle.setBorderLeft(BORDER_THIN);
         subHeaderStyle.setBorderRight(BORDER_THIN);
 
-        // Row 1 - Title
+        // Row 0 — Title
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, totalCols - 1));
         Row titleRow = sheet.createRow(0);
         Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue("SITE QUANTITY REPORT");
         titleCell.setCellStyle(titleStyle);
 
-        // Row 2 - Main Headers
+        // Row 1 — Main headers
         Row headerRow = sheet.createRow(1);
-        String[] mainHeaders = {"SI NO", "DESCRIPTION", "PO QTY", "UNIT", "DESIGN STATUS", "", "TDS STATUS"};
-        for (int i = 0; i < fixedCols; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(mainHeaders[i]);
-            cell.setCellStyle(headerStyle);
+        String[] fixedHeaders = {"SI NO", "DESCRIPTION", "PO QTY", "UNIT", "DESIGN STATUS", "", "TDS STATUS"};
+        for (int i = 0; i < FIXED_COLS; i++) {
+            Cell c = headerRow.createCell(i);
+            c.setCellValue(fixedHeaders[i]);
+            c.setCellStyle(headerStyle);
         }
         sheet.addMergedRegion(new CellRangeAddress(1, 1, 4, 5));
 
-        String[] qtyHeaders = {"SITE QUANTITY", "DELIVERED QTY", "PENDING QTY"};
-        for (int q = 0; q < 3; q++) {
-            int startCol = fixedCols + (q * maxLots);
-            int endCol = startCol + maxLots - 1;
-            sheet.addMergedRegion(new CellRangeAddress(1, 1, startCol, endCol));
-            Cell cell = headerRow.createCell(startCol);
-            cell.setCellValue(qtyHeaders[q]);
-            cell.setCellStyle(headerStyle);
-            for (int c = startCol + 1; c <= endCol; c++) {
-                headerRow.createCell(c).setCellStyle(headerStyle);
-            }
+        // SITE QUANTITY — spans all lot columns
+        if (maxLots > 1) {
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, colSiteQtyStart, colSiteQtyStart + maxLots - 1));
+        }
+        Cell siteQtyHeader = headerRow.createCell(colSiteQtyStart);
+        siteQtyHeader.setCellValue("SITE QUANTITY");
+        siteQtyHeader.setCellStyle(headerStyle);
+        for (int c = colSiteQtyStart + 1; c < colSiteQtyStart + maxLots; c++) {
+            headerRow.createCell(c).setCellStyle(headerStyle);
         }
 
-        int dcDateCol = fixedCols + lotCols;
-        int dcQtyCol = dcDateCol + 1;
-        Cell dcDateHeader = headerRow.createCell(dcDateCol);
-        dcDateHeader.setCellValue("DC DATE");
-        dcDateHeader.setCellStyle(headerStyle);
-        Cell dcQtyHeader = headerRow.createCell(dcQtyCol);
-        dcQtyHeader.setCellValue("DC QTY");
-        dcQtyHeader.setCellStyle(headerStyle);
+        Cell delHeader = headerRow.createCell(colDeliveredQty);
+        delHeader.setCellValue("DELIVERED QTY");
+        delHeader.setCellStyle(headerStyle);
 
-        // Row 3 - Sub Headers
+        Cell pendHeader = headerRow.createCell(colPendingQty);
+        pendHeader.setCellValue("PENDING QTY");
+        pendHeader.setCellStyle(headerStyle);
+
+        // Row 2 — Sub-headers
         Row subRow = sheet.createRow(2);
-        String[] subHeaders = {"", "", "", "", "MODEL NUMBER", "QTY", ""};
-        for (int i = 0; i < fixedCols; i++) {
-            Cell cell = subRow.createCell(i);
-            if (!subHeaders[i].isEmpty()) {
-                cell.setCellValue(subHeaders[i]);
-            }
-            cell.setCellStyle(subHeaderStyle);
+        String[] fixedSub = {"", "", "", "", "MODEL NUMBER", "QTY", ""};
+        for (int i = 0; i < FIXED_COLS; i++) {
+            Cell c = subRow.createCell(i);
+            if (!fixedSub[i].isEmpty()) c.setCellValue(fixedSub[i]);
+            c.setCellStyle(subHeaderStyle);
         }
-        for (int q = 0; q < 3; q++) {
-            for (int l = 0; l < maxLots; l++) {
-                int col = fixedCols + (q * maxLots) + l;
-                Cell cell = subRow.createCell(col);
-                cell.setCellValue("LOT " + (l + 1));
-                cell.setCellStyle(subHeaderStyle);
-            }
+        for (int l = 0; l < maxLots; l++) {
+            Cell c = subRow.createCell(colSiteQtyStart + l);
+            c.setCellValue("LOT " + (l + 1));
+            c.setCellStyle(subHeaderStyle);
         }
-        Cell dcDateSub = subRow.createCell(dcDateCol);
-        dcDateSub.setCellStyle(subHeaderStyle);
-        Cell dcQtySub = subRow.createCell(dcQtyCol);
-        dcQtySub.setCellStyle(subHeaderStyle);
+        subRow.createCell(colDeliveredQty).setCellStyle(subHeaderStyle);
+        subRow.createCell(colPendingQty).setCellStyle(subHeaderStyle);
 
         // Data styles
         Font dataFont = wb.createFont();
@@ -193,12 +196,12 @@ public class TdsLotUpdateReportService {
         dataCenter.setAlignment(HSSFCellStyle.ALIGN_CENTER);
 
         int rowNum = 3;
-        int slNo = 1;
+        int slNo   = 1;
 
         for (SalesItem salesItem : soItems) {
             String salesItemId = salesItem.getId();
             String unit = salesItem.getItem_units() != null && salesItem.getItem_units().getName() != null
-                ? salesItem.getItem_units().getName() : "";
+                    ? salesItem.getItem_units().getName() : "";
 
             TdsItems tdsItem = tdsItemMap.get(salesItemId);
 
@@ -213,54 +216,29 @@ public class TdsLotUpdateReportService {
                 } catch (Exception e) { }
             }
 
-            // DC items for this sales item
-            List<DeliveryChallanItems> itemDcList = dcByItem.getOrDefault(salesItemId, new ArrayList<>());
-
-            // Lot data
+            // Per-lot site quantities
             List<Lot> lots = (tdsItem != null) ? tdsItem.getLots() : null;
-            float[] lotSiteQtys = new float[maxLots];
+            float[] lotQtys = new float[maxLots];
             float totalSiteQty = 0;
             if (lots != null) {
-                for (int l = 0; l < maxLots && l < lots.size(); l++) {
-                    lotSiteQtys[l] = lots.get(l).getQuantity();
-                    totalSiteQty += lotSiteQtys[l];
+                for (int l = 0; l < lots.size() && l < maxLots; l++) {
+                    lotQtys[l] = lots.get(l).getQuantity();
+                    totalSiteQty += lotQtys[l];
                 }
             }
 
-            if (itemDcList.isEmpty()) {
-                Row row = sheet.createRow(rowNum++);
-                fillItemRow(row, salesItem, slNo++, unit, tdsItem, modelDisplay, dataCenter, dataStyle, dataRight);
-                fillLotData(row, fixedCols, maxLots, lotSiteQtys, totalSiteQty, 0, dataRight);
-                row.createCell(dcDateCol).setCellStyle(dataCenter);
-                row.createCell(dcQtyCol).setCellStyle(dataRight);
-            } else {
-                int itemSlNo = slNo++;
-                float cumulativeDelivered = 0;
-                for (int d = 0; d < itemDcList.size(); d++) {
-                    Row row = sheet.createRow(rowNum++);
-                    DeliveryChallanItems dcItem = itemDcList.get(d);
-                    if (d == 0) {
-                        fillItemRow(row, salesItem, itemSlNo, unit, tdsItem, modelDisplay, dataCenter, dataStyle, dataRight);
-                    } else {
-                        fillItemRow(row, salesItem, null, unit, tdsItem, modelDisplay, dataCenter, dataStyle, dataRight);
-                    }
+            // Delivered qty = total sum of all DC todaysQty (same as Material Tracker)
+            float deliveredQty = deliveredQtyMap.getOrDefault(salesItemId, 0f);
+            float pendingQty   = Math.max(0, totalSiteQty - deliveredQty);
 
-                    float todaysQty = dcItem.getTodaysQty();
-                    cumulativeDelivered += todaysQty;
-                    fillLotData(row, fixedCols, maxLots, lotSiteQtys, totalSiteQty, cumulativeDelivered, dataRight);
+            Row row = sheet.createRow(rowNum++);
+            fillItemRow(row, salesItem, slNo++, unit, tdsItem, modelDisplay, dataCenter, dataStyle, dataRight);
 
-                    Date dcCreated = dcItem.getCreated();
-                    Cell dateCell = row.createCell(dcDateCol);
-                    if (dcCreated != null) {
-                        dateCell.setCellValue(new SimpleDateFormat("dd-MM-yyyy").format(dcCreated));
-                    }
-                    dateCell.setCellStyle(dataCenter);
-
-                    Cell qtyCell = row.createCell(dcQtyCol);
-                    qtyCell.setCellValue(todaysQty);
-                    qtyCell.setCellStyle(dataRight);
-                }
+            for (int l = 0; l < maxLots; l++) {
+                createNumCell(row, colSiteQtyStart + l, lotQtys[l], dataRight);
             }
+            createNumCell(row, colDeliveredQty, deliveredQty, dataRight);
+            createNumCell(row, colPendingQty, pendingQty, dataRight);
         }
 
         int lastRow = sheet.getLastRowNum();
@@ -272,20 +250,33 @@ public class TdsLotUpdateReportService {
         wb.close();
     }
 
+    // Total delivered qty per sales item — mirrors Material Tracker's calculateDeliveredQty
+    private Map<String, Float> getDeliveredQtyBySalesItem(List<SalesItem> soItems) {
+        Map<String, Float> result = new HashMap<>();
+        List<String> salesItemIds = soItems.stream().map(SalesItem::getId).collect(Collectors.toList());
+        if (salesItemIds.isEmpty()) return result;
+        List<DeliveryChallanItems> dcItems = dcItemRepo.findBySalesItemIdIn(salesItemIds);
+        for (DeliveryChallanItems dci : dcItems) {
+            result.merge(dci.getDescription(), dci.getTodaysQty(), Float::sum);
+        }
+        return result;
+    }
+
+    private void createNumCell(Row row, int col, float value, CellStyle style) {
+        Cell cell = row.createCell(col);
+        cell.setCellValue(value);
+        cell.setCellStyle(style);
+    }
+
     private void fillItemRow(Row row, SalesItem salesItem, Integer slNo, String unit,
             TdsItems tdsItem, String modelDisplay, CellStyle dataCenter,
             CellStyle dataStyle, CellStyle dataRight) {
-        if (slNo != null) {
-            Cell cell = row.createCell(0);
-            cell.setCellValue(String.valueOf(slNo));
-            cell.setCellStyle(dataCenter);
-        } else {
-            row.createCell(0).setCellStyle(dataCenter);
-        }
+        Cell slNoCell = row.createCell(0);
+        if (slNo != null) slNoCell.setCellValue(String.valueOf(slNo));
+        slNoCell.setCellStyle(dataCenter);
 
-        String desc = salesItem.getDescription() != null ? salesItem.getDescription() : "";
         Cell descCell = row.createCell(1);
-        descCell.setCellValue(desc);
+        descCell.setCellValue(salesItem.getDescription() != null ? salesItem.getDescription() : "");
         descCell.setCellStyle(dataStyle);
 
         Cell poQtyCell = row.createCell(2);
@@ -300,54 +291,13 @@ public class TdsLotUpdateReportService {
         modelCell.setCellValue(modelDisplay);
         modelCell.setCellStyle(dataStyle);
 
-        float designQty = (tdsItem != null) ? tdsItem.getDesignQty() : 0;
         Cell designCell = row.createCell(5);
-        designCell.setCellValue(designQty);
+        designCell.setCellValue(tdsItem != null ? tdsItem.getDesignQty() : 0);
         designCell.setCellStyle(dataRight);
 
         Cell tdsCell = row.createCell(6);
         tdsCell.setCellValue(tdsItem != null && tdsItem.isTdsApproved() ? "Yes" : "No");
         tdsCell.setCellStyle(dataCenter);
-    }
-
-    private void fillLotData(Row row, int fixedCols, int maxLots, float[] lotSiteQtys,
-            float totalSiteQty, float cumulativeDelivered, CellStyle dataRight) {
-        for (int l = 0; l < maxLots; l++) {
-            float lotSiteQty = lotSiteQtys[l];
-            float lotDelivered = 0;
-            if (totalSiteQty > 0) {
-                lotDelivered = cumulativeDelivered * (lotSiteQty / totalSiteQty);
-                if (lotDelivered > lotSiteQty) lotDelivered = lotSiteQty;
-            }
-            float lotPending = lotSiteQty - lotDelivered;
-            if (lotPending < 0) lotPending = 0;
-
-            int siteCol = fixedCols + l;
-            Cell siteCell = row.createCell(siteCol);
-            siteCell.setCellValue(lotSiteQty);
-            siteCell.setCellStyle(dataRight);
-
-            int delCol = fixedCols + maxLots + l;
-            Cell delCell = row.createCell(delCol);
-            delCell.setCellValue(lotDelivered);
-            delCell.setCellStyle(dataRight);
-
-            int pendCol = fixedCols + (2 * maxLots) + l;
-            Cell pendCell = row.createCell(pendCol);
-            pendCell.setCellValue(lotPending);
-            pendCell.setCellStyle(dataRight);
-        }
-    }
-
-    private Map<String, List<DeliveryChallanItems>> getDcItemsBySalesItem(List<SalesItem> soItems) {
-        Map<String, List<DeliveryChallanItems>> result = new HashMap<>();
-        List<String> salesItemIds = soItems.stream().map(SalesItem::getId).collect(Collectors.toList());
-        if (salesItemIds.isEmpty()) return result;
-        List<DeliveryChallanItems> dcItems = dcItemRepo.findBySalesItemIdIn(salesItemIds);
-        for (DeliveryChallanItems dci : dcItems) {
-            result.computeIfAbsent(dci.getDescription(), k -> new ArrayList<>()).add(dci);
-        }
-        return result;
     }
 
     private void setBordersToMergedCells(Workbook wb, Sheet sheet, int lastRow) {

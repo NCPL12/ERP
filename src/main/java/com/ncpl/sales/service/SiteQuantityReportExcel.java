@@ -65,7 +65,7 @@ public class SiteQuantityReportExcel {
         Map<String, Float> deliveredQtyMap = getDeliveredQtyBySalesItem(salesOrder, dcItemRepo);
 
         int fixedCols = 7;
-        int totalCols = fixedCols + (3 * maxLots);
+        int totalCols = fixedCols + maxLots + 1; // site qty lots + 1 pending qty column
 
         createHeader(workbook, sheet, maxLots, totalCols, fixedCols, salesOrder);
 
@@ -148,31 +148,31 @@ public class SiteQuantityReportExcel {
 
         // Row 2 - Main Headers
         Row headerRow = sheet.createRow(1);
-        String[] mainHeaders = {"SI NO", "DESCRIPTION", "PO QTY", "UNIT", "DESIGN STATUS", "", "TDS STATUS",
-                "SITE QUANTITY", "", "", "DELIVERED QTY", "", "", "PENDING QTY", "", ""};
-
-        int h = 0;
+        String[] fixedHeaders = {"SI NO", "DESCRIPTION", "PO QTY", "UNIT", "DESIGN STATUS", "", "TDS STATUS"};
         for (int i = 0; i < fixedCols; i++) {
             Cell cell = headerRow.createCell(i);
-            cell.setCellValue(mainHeaders[i]);
+            cell.setCellValue(fixedHeaders[i]);
             cell.setCellStyle(headerCellStyle);
-            h++;
         }
 
-        String[] qtyHeaders = {"SITE QUANTITY", "DELIVERED QTY", "PENDING QTY"};
-        for (int q = 0; q < 3; q++) {
-            int startCol = fixedCols + (q * maxLots);
-            int endCol = startCol + maxLots - 1;
-            if (maxLots > 1) {
-                sheet.addMergedRegion(new CellRangeAddress(1, 1, startCol, endCol));
-            }
-            Cell cell = headerRow.createCell(startCol);
-            cell.setCellValue(qtyHeaders[q]);
-            cell.setCellStyle(headerCellStyle);
-            for (int c = startCol + 1; c <= endCol; c++) {
-                headerRow.createCell(c).setCellStyle(headerCellStyle);
-            }
+        // SITE QUANTITY header spanning all lot columns
+        int siteQtyStart = fixedCols;
+        int siteQtyEnd = fixedCols + maxLots - 1;
+        if (maxLots > 1) {
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, siteQtyStart, siteQtyEnd));
         }
+        Cell siteQtyHeader = headerRow.createCell(siteQtyStart);
+        siteQtyHeader.setCellValue("SITE QUANTITY");
+        siteQtyHeader.setCellStyle(headerCellStyle);
+        for (int c = siteQtyStart + 1; c <= siteQtyEnd; c++) {
+            headerRow.createCell(c).setCellStyle(headerCellStyle);
+        }
+
+        // Single PENDING QTY column
+        int pendingCol = fixedCols + maxLots;
+        Cell pendingHeader = headerRow.createCell(pendingCol);
+        pendingHeader.setCellValue("PENDING QTY");
+        pendingHeader.setCellStyle(headerCellStyle);
 
         // Merge DESIGN STATUS (E-F)
         sheet.addMergedRegion(new CellRangeAddress(1, 1, 4, 5));
@@ -189,14 +189,16 @@ public class SiteQuantityReportExcel {
             cell.setCellStyle(subHeaderStyle);
         }
 
-        for (int q = 0; q < 3; q++) {
-            for (int l = 0; l < maxLots; l++) {
-                int col = fixedCols + (q * maxLots) + l;
-                Cell cell = subRow.createCell(col);
-                cell.setCellValue("LOT " + (l + 1));
-                cell.setCellStyle(subHeaderStyle);
-            }
+        // LOT sub-headers under SITE QUANTITY only
+        for (int l = 0; l < maxLots; l++) {
+            int col = fixedCols + l;
+            Cell cell = subRow.createCell(col);
+            cell.setCellValue("LOT " + (l + 1));
+            cell.setCellStyle(subHeaderStyle);
         }
+
+        // Empty sub-header under PENDING QTY
+        subRow.createCell(pendingCol).setCellStyle(subHeaderStyle);
     }
 
     private void populateData(Workbook workbook, Sheet sheet, List<TdsItems> tdsItemsList,
@@ -293,33 +295,22 @@ public class SiteQuantityReportExcel {
 
             float totalDeliveredQty = deliveredQtyMap.getOrDefault(salesItemId, 0f);
 
+            // Write SITE QUANTITY per lot
             for (int l = 0; l < maxLots; l++) {
                 float lotSiteQty = 0;
                 if (lots != null && l < lots.size()) {
                     lotSiteQty = lots.get(l).getQuantity();
                 }
-
-                float lotDeliveredQty = 0;
-                if (totalSiteQty > 0) {
-                    lotDeliveredQty = totalDeliveredQty * (lotSiteQty / totalSiteQty);
-                }
-                float lotPendingQty = lotSiteQty - lotDeliveredQty;
-
-                int siteCol = fixedCols + l;
-                Cell siteCell = row.createCell(siteCol);
+                Cell siteCell = row.createCell(fixedCols + l);
                 siteCell.setCellValue(lotSiteQty);
                 siteCell.setCellStyle(dataStyleRight);
-
-                int delCol = fixedCols + maxLots + l;
-                Cell delCell = row.createCell(delCol);
-                delCell.setCellValue(lotDeliveredQty);
-                delCell.setCellStyle(dataStyleRight);
-
-                int pendCol = fixedCols + (2 * maxLots) + l;
-                Cell pendCell = row.createCell(pendCol);
-                pendCell.setCellValue(lotPendingQty);
-                pendCell.setCellStyle(dataStyleRight);
             }
+
+            // Write single PENDING QTY column (total site qty - total delivered qty)
+            float totalPendingQty = Math.round(totalSiteQty - totalDeliveredQty);
+            Cell pendCell = row.createCell(fixedCols + maxLots);
+            pendCell.setCellValue(totalPendingQty);
+            pendCell.setCellStyle(dataStyleRight);
         }
     }
 

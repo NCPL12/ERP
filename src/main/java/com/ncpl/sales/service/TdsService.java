@@ -144,10 +144,10 @@ public class TdsService {
 				siteEmailContents.put("clientPo", salesOrderObj.getClientPoNumber());
 				siteEmailContents.put("clientPoDate", dateFormatting);
 				siteEmailContents.put("partyName", partyName);
-				siteEmailContents.put("to1", "hariharan@ncpl.co");
-				siteEmailContents.put("to2", "aniksha@ncpl.co");
-				siteEmailContents.put("cc1", "hariharan@ncpl.co");
-				siteEmailContents.put("cc2", "aniksha@ncpl.co");
+				siteEmailContents.put("to1", "purchase@ncpl.co");
+				siteEmailContents.put("to2", "vighneshwar@ncpl.co");
+				siteEmailContents.put("cc1", "design@ncpl.co");
+				siteEmailContents.put("cc2", "sagar.chandrashekar@ncpl.co");
 				siteEmailContents.put("cc3", "hariharan@ncpl.co");
 				siteEmailContents.put("month", Constants.currentDate());
 				siteEmailContents.put("attachment", siteFilePath);

@@ -1343,8 +1343,12 @@ public class SalesController {
 
 	@PostMapping("/api/salesItem/delete")
 	public ResponseEntity<?> deleteSalesItem(@RequestParam("salesItemId") String salesItemId) {
-		salesService.deleteSalesItemById(salesItemId);
-		return new ResponseEntity<>(HttpStatus.OK);
+		try {
+			salesService.deleteSalesItemById(salesItemId);
+			return new ResponseEntity<>(HttpStatus.OK);
+		} catch (RuntimeException e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
+		}
 	}
 
 	@GetMapping("/api/design_list/by_sales_item_id")

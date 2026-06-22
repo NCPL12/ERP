@@ -89,6 +89,7 @@ import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.util.DateConverterUtil;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({ "rawtypes", "unchecked", "unused" })
 @Service
@@ -259,6 +260,27 @@ public class SalesService {
 			
 			Date createdDate = oldOrder.getCreated();
 			salesorder.setCreated(createdDate);
+			// Preserve the original creator — frontend payload does not send createdBy,
+			// so without this @PreUpdate sees null and overwrites it with the current user.
+			if (oldOrder.getCreatedBy() != null) {
+				salesorder.setCreatedBy(oldOrder.getCreatedBy());
+			}
+
+			// Preserve createdBy for existing sales items (same reason as above)
+			if (oldOrder.getItems() != null && salesorder.getItems() != null) {
+				java.util.Map<String, String> existingItemCreatedBy = new java.util.HashMap<>();
+				for (SalesItem oldItem : oldOrder.getItems()) {
+					if (oldItem.getId() != null && oldItem.getCreatedBy() != null) {
+						existingItemCreatedBy.put(oldItem.getId(), oldItem.getCreatedBy());
+					}
+				}
+				for (SalesItem item : salesorder.getItems()) {
+					if (item.getId() != null && existingItemCreatedBy.containsKey(item.getId())) {
+						item.setCreatedBy(existingItemCreatedBy.get(item.getId()));
+					}
+				}
+			}
+
 			if (salesorder.getClientPoDate() == null && oldOrder.getClientPoDate() != null) {
 				salesorder.setClientPoDate(oldOrder.getClientPoDate());
 				log.info("[CLIENT_PO_DATE] savesales update | request had null clientPoDate; kept DB value {}",
@@ -686,6 +708,19 @@ public class SalesService {
 	}
 
 	public void deleteSalesItemById(String salesItemId) {
+		// Block deletion if any DC items still reference this sales item
+		List<DeliveryChallanItems> referencingDcItems = dcItemRepo.getDcItemListBySalesItemId(salesItemId);
+		if (!referencingDcItems.isEmpty()) {
+			String dcIds = referencingDcItems.stream()
+					.filter(d -> d.getDeliveryChallan() != null)
+					.map(d -> String.valueOf(d.getDeliveryChallan().getDcId()))
+					.distinct()
+					.collect(Collectors.joining(", "));
+			throw new RuntimeException(
+					"Cannot delete Sales Item " + salesItemId +
+					" — it is referenced by " + referencingDcItems.size() + " DC item(s). DC IDs: " + dcIds);
+		}
+
 		Optional<SalesItem> salesItem = salesItemrepo.findById(salesItemId);
 		String salesOrderId = "UNKNOWN_SO";
 		java.util.Map<String, Object> oldSnapshot = null;
@@ -2014,6 +2049,8 @@ public class SalesService {
 		copy.setGrandTotal(original.getGrandTotal());
 		copy.setShippingAddress(original.getShippingAddress());
 		copy.setBillingAddress(original.getBillingAddress());
+		copy.setClientPoNumber(original.getClientPoNumber());
+		copy.setClientPoDate(original.getClientPoDate());
 		copy.setOtherTermsAndConditions(original.getOtherTermsAndConditions());
 		copy.setModeOfPayment(original.getModeOfPayment());
 		copy.setJurisdiction(original.getJurisdiction());

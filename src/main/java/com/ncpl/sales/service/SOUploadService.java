@@ -160,6 +160,7 @@ public class SOUploadService {
 		    	                    rowErrors.add("Unit is invalid or does not exist.");
 		    	                } else {
 		    	                	salesItem.setItem_units(unitObj);
+		    	                	salesItem.setUnit(String.valueOf(unitObj.getId()));
 		    	                }
 	
 		    	                
