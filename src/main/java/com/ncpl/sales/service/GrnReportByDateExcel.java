@@ -108,47 +108,58 @@ public class GrnReportByDateExcel extends AbstractXlsxView{
 	}
 	@SuppressWarnings({ "unused", "rawtypes" })
 	private void populateStocksRecords(List<GrnItems> grnlist, Sheet itemsReportSheet, Workbook workbook, PurchaseItemService poItemService, ItemMasterService itemService, SalesService soService, GrnService grnService) {
-		// TODO Auto-generated method stub
 		int rowCount =4;
+
+		CellStyle declimalStyle = workbook.createCellStyle();
+		XSSFDataFormat lastTaxstyleformat = (XSSFDataFormat) workbook.createDataFormat();
+		declimalStyle.setDataFormat(lastTaxstyleformat.getFormat("#,###.00"));
+
+		// Rate: avg of all PO unit prices per item — same methodology as the
+		// monthly stock movement report, so this report tallies with its inward column.
+		Map<String, Float> avgPriceByItemId = new java.util.HashMap<>();
+
 		for (GrnItems grnItem : grnlist) {
 			String description=grnItem.getDescription();
-			System.out.println(description);
+			if (description == null || !description.matches("\\d+")) {
+				continue;
+			}
 			Optional<PurchaseItem> poItem=poItemService.getPurchaseItemByPoItemId(Integer.parseInt(description));
 			if (poItem.isPresent()) {
 				Optional<ItemMaster> itemObj=itemService.getItemById(poItem.get().getModelNo());
-		
-			
-			CellStyle declimalStyle = workbook.createCellStyle();
-			XSSFDataFormat lastTaxstyleformat = (XSSFDataFormat) workbook.createDataFormat();
-			declimalStyle.setDataFormat(lastTaxstyleformat.getFormat("#,###.00"));
-			
-			
-			
-				// for(int i=0;i<glcList.size()-2;i++){
+				if (!itemObj.isPresent()) {
+					continue;
+				}
+				String itemId = itemObj.get().getId();
+				Float avgPrice = avgPriceByItemId.get(itemId);
+				if (avgPrice == null) {
+					List<PurchaseItem> poHistory = poItemService.findByModelNumberWithRecentPoItem(itemId);
+					float priceSum = 0;
+					for (PurchaseItem pi : poHistory) {
+						priceSum += pi.getUnitPrice();
+					}
+					avgPrice = poHistory.isEmpty() ? 0f : priceSum / poHistory.size();
+					avgPriceByItemId.put(itemId, avgPrice);
+				}
+
 				Row row = itemsReportSheet.createRow(rowCount++);
-				
+
 				Cell oldQtyCell = row.createCell(2);
 				oldQtyCell.setCellStyle(declimalStyle);
 				oldQtyCell.setCellValue(grnItem.getReceivedQuantity());
-				
+
 				Cell newQtyCell = row.createCell(4);
 				newQtyCell.setCellStyle(declimalStyle);
-				newQtyCell.setCellValue(grnItem.getUnitPrice());
-				
+				newQtyCell.setCellValue(avgPrice);
+
 				Cell amountCell = row.createCell(5);
 				amountCell.setCellStyle(declimalStyle);
-				amountCell.setCellValue(grnItem.getAmount());
-				
+				amountCell.setCellValue(grnItem.getReceivedQuantity() * avgPrice);
+
 				row.createCell(0).setCellValue(itemObj.get().getModel());
 				row.createCell(1).setCellValue(poItem.get().getPoDescription());
-				//row.createCell(2).setCellValue(grnItem.getReceivedQuantity());
 				row.createCell(3).setCellValue(itemObj.get().getItem_units().getName());
-				//row.createCell(5).setCellValue(grnItem.getUnitPrice());
-				//row.createCell(5).setCellValue(grnItem.getAmount());
 				row.createCell(6).setCellValue(grnItem.getGrn().getGrnId());
 			}
-				
-				
 	}
 }
 }

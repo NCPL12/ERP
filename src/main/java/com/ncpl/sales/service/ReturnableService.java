@@ -1,8 +1,11 @@
 package com.ncpl.sales.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,24 +61,44 @@ public class ReturnableService {
 	}
 
 	public List<ReturnableItems> getReturnableItemsList() {
-		List<ReturnableItems> returnableItemsList = returnableItemsRepo.findAll();
-		ArrayList<ReturnableItems> returnableList = new ArrayList<ReturnableItems>();
+		List<ReturnableItems> returnableItemsList = returnableItemsRepo.findAllNonZeroReturned();
+		if (returnableItemsList.isEmpty()) {
+			return returnableItemsList;
+		}
+
+		List<Integer> dcItemIds = returnableItemsList.stream()
+				.map(ReturnableItems::getDcItemId)
+				.collect(Collectors.toList());
+
+		List<DeliveryChallanItems> dcItems = deliveryChallanItemsRepo.findAllById(dcItemIds);
+		Map<Integer, DeliveryChallanItems> dcItemMap = new HashMap<>();
+		for (DeliveryChallanItems dcItem : dcItems) {
+			dcItemMap.put(dcItem.getDcItemId(), dcItem);
+		}
+
+		List<String> salesItemIds = dcItems.stream()
+				.map(DeliveryChallanItems::getDescription)
+				.collect(Collectors.toList());
+
+		List<SalesItem> salesItems = salesItemRepo.findByIdsWithJoins(salesItemIds);
+		Map<String, SalesItem> salesItemMap = new HashMap<>();
+		for (SalesItem si : salesItems) {
+			salesItemMap.put(si.getId(), si);
+		}
+
+		ArrayList<ReturnableItems> returnableList = new ArrayList<>();
 		for (ReturnableItems returnableItems : returnableItemsList) {
-			if(returnableItems.getReturnedQty()!=0) {
-			Optional<DeliveryChallanItems> dcItem = deliveryChallanItemsRepo.findById(returnableItems.getDcItemId());
-			if(dcItem.isPresent()) {
-			Optional<SalesItem> salesItem=salesItemRepo.findById(dcItem.get().getDescription());
-			if (salesItem.isPresent()) {
-			returnableItems.set("description",salesItem.get().getDescription());
-			returnableItems.set("unit",salesItem.get().getItem_units().getName());
-			returnableItems.set("clientId",salesItem.get().getSalesOrder().getParty().getId());
-			returnableItems.set("totalQty",salesItem.get().getQuantity());
-			returnableItems.set("deliveredQty",dcItem.get().getTodaysQty());
-			returnableItems.set("dcNo",returnableItems.getReturnable().getDcId());
+			DeliveryChallanItems dcItem = dcItemMap.get(returnableItems.getDcItemId());
+			if (dcItem == null) continue;
+			SalesItem salesItem = salesItemMap.get(dcItem.getDescription());
+			if (salesItem == null) continue;
+			returnableItems.set("description", salesItem.getDescription());
+			returnableItems.set("unit", salesItem.getItem_units().getName());
+			returnableItems.set("clientId", salesItem.getSalesOrder().getParty().getId());
+			returnableItems.set("totalQty", salesItem.getQuantity());
+			returnableItems.set("deliveredQty", dcItem.getTodaysQty());
+			returnableItems.set("dcNo", returnableItems.getReturnable().getDcId());
 			returnableList.add(returnableItems);
-			}
-			}
-			}
 		}
 		return returnableList;
 	}

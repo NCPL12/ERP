@@ -378,6 +378,11 @@ public class DeliveryChallanService {
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItemId);
 		return dcItemList;
 	}
+
+	//bulk variant: which of the given sales item ids have a DC with non-zero qty
+	public List<String> getSoItemIdsWithDcQtyNotZero(List<String> soItemIds){
+		return dcItemRepo.findSoItemIdsWithNonZeroDcQty(soItemIds);
+	}
 	
 	//get dc object by dc id
 	public Optional<DeliveryChallan> getDcById(int dcId) {
@@ -810,20 +815,20 @@ public class DeliveryChallanService {
 					.collect(Collectors.toMap(ItemMaster::getId, Function.identity()));
 			}
 		}
-		Map<String, Double> latestCostPriceMap = new HashMap<>();
-		List<String> itemMasterIds = new ArrayList<>(itemMasterMap.keySet());
-		if (!itemMasterIds.isEmpty()) {
-			List<Supplier> suppliers = supplierRepo.findByItemMasterIds(itemMasterIds);
-			Map<String, List<Supplier>> suppliersByItem = suppliers.stream()
-				.filter(s -> s.getItemMaster() != null)
-				.collect(Collectors.groupingBy(s -> s.getItemMaster().getId()));
-			for (Map.Entry<String, List<Supplier>> entry : suppliersByItem.entrySet()) {
-				double latestCost = entry.getValue().stream()
-					.max(Comparator.comparing(Supplier::getUpdated, Comparator.nullsLast(Comparator.naturalOrder())))
-					.map(Supplier::getCostPrice)
-					.orElse(0.0);
-				latestCostPriceMap.put(entry.getKey(), latestCost);
+		// Price: avg of all PO unit prices per item — same methodology as the
+		// monthly stock movement report, so DC-by-date values tally with its
+		// outward column. Items with no PO history are excluded there too.
+		Map<String, Double> avgPoPriceMap = new HashMap<>();
+		for (String itemMasterId : itemMasterMap.keySet()) {
+			List<com.ncpl.sales.model.PurchaseItem> poItems = purchaseItemService.findByModelNumberWithRecentPoItem(itemMasterId);
+			if (poItems.isEmpty()) {
+				continue;
 			}
+			double priceSum = 0;
+			for (com.ncpl.sales.model.PurchaseItem pi : poItems) {
+				priceSum += pi.getUnitPrice();
+			}
+			avgPoPriceMap.put(itemMasterId, priceSum / poItems.size());
 		}
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
 		for (DeliveryChallanItems dcItem : dcItemList) {
@@ -835,27 +840,21 @@ public class DeliveryChallanService {
 				if (designItems != null && !designItems.isEmpty()) {
 					for (DesignItems di : designItems) {
 						ItemMaster im = itemMasterMap.get(di.getItemId());
-						if (im != null && im.getModel() != null) {
+						// Only rows with a resolvable model and PO history are counted
+						// by the monthly stock movement report — keep this list identical.
+						if (im != null && im.getModel() != null && !im.getModel().isEmpty()
+								&& avgPoPriceMap.containsKey(im.getId())) {
 							DeliveryChallanItems enrichedItem = new DeliveryChallanItems();
 							enrichedItem.setTodaysQty(dcItem.getTodaysQty());
 							enrichedItem.set("modelNo", im.getModel());
 							enrichedItem.set("itemDescription", im.getItemName() != null ? im.getItemName() : si.getDescription());
-							Double costPrice = latestCostPriceMap.get(im.getId());
-							enrichedItem.set("supplyPrice", costPrice != null ? costPrice : 0);
+							enrichedItem.set("supplyPrice", avgPoPriceMap.get(im.getId()));
 							enrichedItem.set("dcNum", dc != null ? dc.getDcId() : 0);
 							enrichedItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
 							enrichedItem.set("dcDate", dcItem.getCreated());
 							enrichedList.add(enrichedItem);
 						}
 					}
-				} else {
-					dcItem.set("modelNo", "");
-					dcItem.set("itemDescription", si.getDescription());
-					dcItem.set("supplyPrice", 0);
-					dcItem.set("dcNum", dc != null ? dc.getDcId() : 0);
-					dcItem.set("soNumber", dc != null ? dc.getSoNumber() : "");
-					dcItem.set("dcDate", dcItem.getCreated());
-					enrichedList.add(dcItem);
 				}
 			}
 		}

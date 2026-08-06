@@ -90,8 +90,8 @@ public class LoggingAspect {
 			try {
 				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 				String currentUser = getCurrentUsername();
-				String clientIp = request.getRemoteAddr();
-				
+				String clientIp = auditService.getClientIp(request);
+
 				// Create audit log for design save (aspect name is CREATE_DESIGN; runs on every save with items)
 				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
 				audit.setSalesOrderId(salesItemId);  // legacy: column holds sales item id for design rows
@@ -194,8 +194,8 @@ public class LoggingAspect {
 			try {
 				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 				String currentUser = getCurrentUsername();
-				String clientIp = request.getRemoteAddr();
-				
+				String clientIp = auditService.getClientIp(request);
+
 				com.ncpl.sales.model.SalesOrderAudit audit = new com.ncpl.sales.model.SalesOrderAudit();
 				audit.setSalesOrderId(addressId);
 				audit.setAction("UPDATE_ADDRESS");
@@ -256,8 +256,8 @@ public class LoggingAspect {
 			try {
 				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 				String currentUser = getCurrentUsername();
-				String clientIp = request.getRemoteAddr();
-				
+				String clientIp = auditService.getClientIp(request);
+
 				com.ncpl.sales.model.PartyAddress savedAddress = (com.ncpl.sales.model.PartyAddress) result;
 				String savedAddressId = savedAddress != null ? savedAddress.getId() : "UNKNOWN";
 				

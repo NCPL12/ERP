@@ -22,7 +22,7 @@ public class Lot extends TimeStampEntity {
 
 	private String lotNumber;
 
-	private float quantity;
+	private Float quantity;
 
 	private String remarks;
 
@@ -47,11 +47,11 @@ public class Lot extends TimeStampEntity {
 		this.lotNumber = lotNumber;
 	}
 
-	public float getQuantity() {
+	public Float getQuantity() {
 		return quantity;
 	}
 
-	public void setQuantity(float quantity) {
+	public void setQuantity(Float quantity) {
 		this.quantity = quantity;
 	}
 

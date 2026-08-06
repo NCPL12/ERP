@@ -166,9 +166,9 @@ public class PurchaseController {
 	public String purchaseDashBoard(Model model) throws JsonProcessingException {
 		User userObj  = userService.getCurrentUser();
 		String role = userObj.getRole();
-		List<PurchaseOrder> poList = purchaseService.findAllPO();
+		List<Map<String, Object>> poList = purchaseService.getDashboardPoList();
 		List<Party> partyList = partyService.getPartyListbyTypeSupplier(); 
-		List<ItemMaster> itemList = itemMasterService.getItemList();
+		List<Map<String, Object>> itemList = itemMasterService.getModelAndUnitList();
 		ObjectMapper mapper = utilService.getObjectMapper();
 		model.addAttribute("poList", mapper.writeValueAsString(poList));
 		model.addAttribute("role", mapper.writeValueAsString(role));
@@ -644,7 +644,7 @@ public class PurchaseController {
 		model.addAttribute("allSupplierslist", mapper.writeValueAsString(allSupplierslist));
 		model.addAttribute("allStocksList", mapper.writeValueAsString(allStocksList));
 		model.addAttribute("makeList", mapper.writeValueAsString(makeList));
-		return "itemMaster";
+			return "itemMaster";
 	}
 	/*@GetMapping("/itemMaster")
 	public String getItemMaster(Model model) throws JsonProcessingException {
@@ -781,13 +781,11 @@ public class PurchaseController {
 	// GRN dashboard – lists GRNs using server-side DataTables
 	@GetMapping("/grnLists")
 	public String purchaseOrderList(Model model) throws JsonProcessingException {
-		List<PurchaseOrder> poList = purchaseService.findAll();
 		User userObj  = userService.getCurrentUser();
-		List<ItemMaster> itemList = itemMasterService.getItemList();
-		List<PurchaseItem> purchaseItemList = purchaseItemService.getAllPurchaseItems();
+		List<Map<String, Object>> itemList = itemMasterService.getGrnItemList();
+		List<Map<String, Object>> purchaseItemList = purchaseItemService.getGrnLookupList();
 		String role = userObj.getRole();
 		ObjectMapper mapper = utilService.getObjectMapper();
-		model.addAttribute("poList", mapper.writeValueAsString(poList));
 		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
 		model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
 		model.addAttribute("role", mapper.writeValueAsString(role));

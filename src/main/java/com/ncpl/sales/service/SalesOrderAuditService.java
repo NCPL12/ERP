@@ -20,6 +20,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ncpl.sales.model.DesignItems;
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderAudit;
@@ -45,6 +46,11 @@ public class SalesOrderAuditService {
 	public static final String ACTION_CREATE_SALES_ITEM = "CREATE_SALES_ITEM";
 	public static final String ACTION_UPDATE_SALES_ITEM = "UPDATE_SALES_ITEM";
 	public static final String ACTION_DELETE_SALES_ITEM = "DELETE_SALES_ITEM";
+
+	/** Per–design-item audit */
+	public static final String ACTION_CREATE_DESIGN_ITEM = "CREATE_DESIGN_ITEM";
+	public static final String ACTION_UPDATE_DESIGN_ITEM = "UPDATE_DESIGN_ITEM";
+	public static final String ACTION_DELETE_DESIGN_ITEM = "DELETE_DESIGN_ITEM";
 
 	/**
 	 * Excluded from line-item diff equality: JPA refreshes these on every cascade save even when the user did
@@ -176,6 +182,10 @@ public class SalesOrderAuditService {
 		return auditRepo.findAll();
 	}
 
+	public String getClientIp(HttpServletRequest request) {
+		return getClientIpAddress(request);
+	}
+
 	private String getClientIpAddress(HttpServletRequest request) {
 		String xForwardedFor = request.getHeader("X-Forwarded-For");
 		if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
@@ -185,7 +195,8 @@ public class SalesOrderAuditService {
 		if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
 			return xRealIp;
 		}
-		return request.getRemoteAddr();
+		String ip = request.getRemoteAddr();
+		return "0:0:0:0:0:0:0:1".equals(ip) ? "127.0.0.1" : ip;
 	}
 
 	public void logSalesOrderCreation(SalesOrder salesOrder, String performedBy, HttpServletRequest request) {
@@ -392,6 +403,32 @@ public class SalesOrderAuditService {
 				"Sales Item deleted: " + salesItemId, request, salesItemId);
 	}
 	
+	public Map<String, Object> toAuditMap(DesignItems item, String salesItemId, long designId) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		if (item == null) {
+			return m;
+		}
+		m.put("id", item.getId());
+		m.put("itemId", item.getItemId());
+		m.put("quantity", item.getQuantity());
+		m.put("deliveredQty", item.getDeliveredQty());
+		m.put("designId", designId);
+		m.put("salesItemId", salesItemId);
+		return m;
+	}
+
+	public void logDesignItemCreated(String salesOrderId, String salesItemId, DesignItems item, long designId) {
+		Map<String, Object> payload = toAuditMap(item, salesItemId, designId);
+		logAudit(salesOrderId, ACTION_CREATE_DESIGN_ITEM, null, null, payload,
+				"Design item added: itemId=" + item.getItemId() + ", qty=" + item.getQuantity(), null, salesItemId);
+	}
+
+	public void logDesignItemDeleted(String salesOrderId, String salesItemId, DesignItems item, long designId) {
+		Map<String, Object> payload = toAuditMap(item, salesItemId, designId);
+		logAudit(salesOrderId, ACTION_DELETE_DESIGN_ITEM, null, payload, null,
+				"Design item deleted: itemId=" + item.getItemId(), null, salesItemId);
+	}
+
 	public void saveAuditLog(SalesOrderAudit audit) {
 		if (audit == null) {
 			return;

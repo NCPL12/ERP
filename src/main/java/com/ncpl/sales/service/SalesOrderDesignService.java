@@ -47,28 +47,37 @@ public class SalesOrderDesignService {
 	SalesService salesService;
 	@Autowired
 	StockService stockService;
+	@Autowired
+	SalesOrderAuditService auditService;
 	
 	public SalesOrderDesign save(SalesOrderDesign design) {
 		String soItemId = design.getSalesItemId();
 		List<DesignItems> items = design.getItems();
 		SalesOrderDesign soDesignObj = designSo.getDesginObjBySoItemId(soItemId);
-		
-		if(soDesignObj!=null) {
+		SalesOrderDesign saved;
+
+		if (soDesignObj != null) {
 			List<DesignItems> existingItems = soDesignObj.getItems();
 			for (DesignItems designItems : items) {
 				existingItems.add(designItems);
 				designItems.setSalesOrderDesign(soDesignObj);
 			}
-			return designSo.save(soDesignObj);
-		}else {
+			saved = designSo.save(soDesignObj);
+		} else {
 			for (DesignItems designItems : items) {
 				designItems.setSalesOrderDesign(design);
 			}
-			
-			return designSo.save(design);
+			saved = designSo.save(design);
 		}
-		
 
+		String salesOrderId = resolveSalesOrderId(soItemId);
+		if (salesOrderId != null) {
+			for (DesignItems newItem : items) {
+				auditService.logDesignItemCreated(salesOrderId, soItemId, newItem, saved.getId());
+			}
+		}
+
+		return saved;
 	}
 
 	public List<DesignItems> getSalesOrderDesignItemListBySalesItemId(String salesItemId) {
@@ -139,7 +148,7 @@ public class SalesOrderDesignService {
    * Here checking whether dc or grn created for if created not allowing to delete desing item..
    */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public boolean deleteDesignByDesignItemId(long id,long designId) {
+	public boolean deleteDesignByDesignItemId(long id, long designId) {
         boolean isDeleted = false;
         Optional<SalesOrderDesign> soDesignObj = designSo.findById(designId);
         if (!soDesignObj.isPresent()) {
@@ -150,24 +159,29 @@ public class SalesOrderDesignService {
         if (!designItemObj.isPresent()) {
             return false;
         }
-        String designItemId = designItemObj.get().getItemId();
-        PurchaseItem poItem =poItemService.getPurchaseItemBySalesItemIdAndItemId(soItemId, designItemId);
+        DesignItems itemToDelete = designItemObj.get();
+        String designItemId = itemToDelete.getItemId();
+        PurchaseItem poItem = poItemService.getPurchaseItemBySalesItemIdAndItemId(soItemId, designItemId);
         List<GrnItems> grnItemsList = new ArrayList();
-        if(poItem!=null) {
-         grnItemsList = grnService.getGrnItemByPoItemId(Integer.toString(poItem.getPurchase_item_id()));
-        
+        if (poItem != null) {
+            grnItemsList = grnService.getGrnItemByPoItemId(Integer.toString(poItem.getPurchase_item_id()));
         }
         List<DeliveryChallanItems> dcItemsList = dcService.getDcItemListBySoItemIdWhereDcQtyNotZero(soItemId);
-        if(grnItemsList.size()>0 || dcItemsList.size()>0 || poItem!=null) {
+        if (grnItemsList.size() > 0 || dcItemsList.size() > 0 || poItem != null) {
             isDeleted = false;
-        }
-        else {
-        designItemRepo.deleteById(id);
-        isDeleted = true;
-        List<DesignItems> itemlist =  designItemRepo.findDesignItemListByDesignId(designId);
-        if(itemlist.isEmpty()) {
-            designSo.deleteById(designId);
-        }
+        } else {
+            designItemRepo.deleteById(id);
+            isDeleted = true;
+
+            String salesOrderId = resolveSalesOrderId(soItemId);
+            if (salesOrderId != null) {
+                auditService.logDesignItemDeleted(salesOrderId, soItemId, itemToDelete, designId);
+            }
+
+            List<DesignItems> itemlist = designItemRepo.findDesignItemListByDesignId(designId);
+            if (itemlist.isEmpty()) {
+                designSo.deleteById(designId);
+            }
         }
         return isDeleted;
     }
@@ -233,6 +247,18 @@ public class SalesOrderDesignService {
 	public List<DesignItems> getDesignItemListByDesignId(long designId){
 		List<DesignItems> designItemList = designItemRepo.findDesignItemListByDesignId(designId);
 		return designItemList;
+	}
+
+	private String resolveSalesOrderId(String soItemId) {
+		try {
+			Optional<SalesItem> salesItemOpt = salesService.getSalesItemObjById(soItemId);
+			if (salesItemOpt.isPresent() && salesItemOpt.get().getSalesOrder() != null) {
+				return salesItemOpt.get().getSalesOrder().getId();
+			}
+		} catch (Exception e) {
+			// Non-critical; don't interrupt main flow
+		}
+		return null;
 	}
 	
 	public List<DesignItems> getAllDesignItemListBySOItemId(String salesItemId) {

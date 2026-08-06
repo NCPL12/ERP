@@ -57,7 +57,8 @@ public class DcPartialItemsEmailSchedular {
 	
 	static List<DeliveryChallanItems> dcItemList = null;
 	
-	@Scheduled(cron = "0 15 10 * * ?", zone="IST")
+	// @Scheduled(cron = "0 15 10 * * ?", zone="IST")
+	@Scheduled(cron = "0 47 12 * * ?", zone = "IST")
 	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());
@@ -81,7 +82,7 @@ public class DcPartialItemsEmailSchedular {
 		Map<String, Object> emailContents = new HashMap<String, Object>();
 		emailContents.put("subject","Sales Items with Design and PO not done"); 
 		emailContents.put("template","sales_items_with_design_and_po_notdone.html"); 
-		emailContents.put("to1", "anitha@tek-nika.com");
+		emailContents.put("to1", "hariharan@ncpl.co");
 		emailContents.put("to2", "anitha@tek-nika.com");
 		emailContents.put("to3", "anitha@tek-nika.com");
 		emailContents.put("cc1", "anitha@tek-nika.com");

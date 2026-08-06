@@ -111,7 +111,8 @@ var user = ${user};
    						 		
    						 		<label for="itemHSNCode" class="col-form-label form-control-sm col-sm-1">HSN</label>
    								 <div class="col-sm-2">
-     								 <input type="text" name="hsnCode" id="itemHSNCode"class="form-control form-control-sm">
+     								 <input type="text" name="hsnCode" id="itemHSNCode"class="form-control form-control-sm" maxlength="8">
+     								 <div id="itemHSNCodeDiv"></div>
    						 		</div>
    						 		
    						 	<label for="itemDescription" class="col-form-label form-control-sm col-sm-1.5">Description</label>
@@ -131,7 +132,7 @@ var user = ${user};
    						 		
    						 		<label for="gst" class="col-form-label form-control-sm col-sm-1">Tax Rate</label>
    						 		<div class="col-sm-2">
-     								 <input type="text" name="gst"  id="gst" class="form-control form-control-sm">
+     								 <input type="number" name="gst"  id="gst" class="form-control form-control-sm" min="0" max="99">
      								 <div id="taxRateDiv"></div>
    						 		</div>
    						 		 <label for="location" class="col-form-label form-control-sm col-sm-1">Location</label>

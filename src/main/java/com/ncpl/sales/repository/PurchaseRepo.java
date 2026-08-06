@@ -42,4 +42,20 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	@Query("SELECT DISTINCT po FROM PurchaseOrder po LEFT JOIN FETCH po.party WHERE po.poNumber IN :poNumbers")
 	List<PurchaseOrder> findByPoNumberIn(@Param("poNumbers") List<String> poNumbers);
 
+	@Query(value =
+		"SELECT po.po_number, p.party_name, c.name AS city_name, " +
+		"COALESCE(SUM(pi.amount), 0) AS total, " +
+		"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gst_total, " +
+		"po.created, po.version, po.archive " +
+		"FROM tbl_purchase_order po " +
+		"JOIN tbl_party p ON p.id = po.party_id " +
+		"LEFT JOIN city c ON c.id = p.city_id " +
+		"LEFT JOIN tbl_purchase_items pi ON pi.po_number = po.po_number " +
+		"LEFT JOIN tbl_item_master im ON im.id = pi.model_no " +
+		"WHERE po.archive = 0 " +
+		"GROUP BY po.po_number, p.party_name, c.name, po.created, po.version, po.archive " +
+		"ORDER BY po.created DESC",
+		nativeQuery = true)
+	List<Object[]> findDashboardData();
+
 }

@@ -1,0 +1,516 @@
+﻿Monthly sub-header row: 5 -> ['Qty', 'Rate', 'Value', 'Qty', 'Rate', 'Value', 'Qty', 'Rate', 'Value', 'Qty', 'Rate', 'Value']
+Monthly group row: ['S/No', 'Model No', 'Description', 'Opening Balance']
+Monthly layout: NEW (Model No / Description)
+Monthly TOTAL row: inQty=71363.69999980927 inVal=9931409.467572829 outQty=119624.69999980927 outVal=18909750.56647782
+Monthly items: 886 | models appearing in multiple rows (duplicate item masters): 4
+Monthly file inward total: 71363.7 outward total: 119624.7
+
+DC header row: 4 cols: ['DC No', 'DC Date', 'Model No', 'Description', 'Quantity', 'Supply Price', 'Value']
+DC models: 436 total qty: 120557.69999980927 total val: 18434050.81
+
+GRN header row: 4 cols: ['Model No', 'Description', 'Recieved Qty', 'Units', 'Unit Price', 'Amount', 'GRN No']
+GRN models: 256 total qty: 72157.69999980927 total val: 10268552.65
+
+==== GRN vs Monthly INWARD ====
+18mm-Cutting Knife: GRN qty=10.0 val=200.0 rates=[20.0] | Monthly inQty=10.0 inVal=568.33 rate=56.83333206176758
+19M38: GRN qty=1.0 val=4550.0 rates=[4550.0] | Monthly inQty=1.0 inVal=6425.0 rate=6425.0
+2cx1.5sqmm ARMD cable_red colour: GRN qty=250.0 val=15000.0 rates=[60.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+32MR50C: GRN qty=1.0 val=15568.0 rates=[15568.0] | Monthly inQty=1.0 inVal=12997.6 rate=12997.599609375
+4 Core x 1.0 SQ. MM, unarmoured ATC conductor multistranded, PVC FRLS, screened , cable - Blue colour: GRN qty=500.0 val=50000.0 rates=[100.0] | Monthly inQty=500.0 inVal=49333.33 rate=98.66666412353516
+452013: GRN qty=379.0 val=511650.0 rates=[1350.0] | Monthly inQty=379.0 inVal=574816.62 rate=1516.6666259765625
+464070: GRN qty=1.0 val=9478.0 rates=[9478.0] | Monthly inQty=1.0 inVal=8139.0 rate=8139.0
+464252: GRN qty=1.0 val=0.1 rates=[0.1] | Monthly inQty=1.0 inVal=0.03 rate=0.02500000037252903
+465481: GRN qty=1.0 val=0.1 rates=[0.1] | Monthly inQty=1.0 inVal=0.02 rate=0.020000003278255463
+465489: GRN qty=1.0 val=0.1 rates=[0.1] | Monthly inQty=1.0 inVal=12.01 rate=12.01260757446289
+884024508/10: GRN qty=305.0 val=14499.7 rates=[47.54] | Monthly inQty=305.0 inVal=12618.17 rate=41.37104415893555
+8MM NUT: GRN qty=1500.0 val=1500.0 rates=[1.0] | Monthly inQty=1500.0 inVal=1173.08 rate=0.7820512652397156
+A9N2P16B: GRN qty=30.0 val=16050.0 rates=[535.0] | Monthly inQty=30.0 inVal=12506.67 rate=416.8888854980469
+AA: GRN qty=16.0 val=720.0 rates=[45.0] | Monthly inQty=16.0 inVal=578.91 rate=36.181819915771484
+ARC-200-N-B: GRN qty=2.0 val=13600.0 rates=[6800.0] | Monthly inQty=2.0 inVal=14787.75 rate=7393.875
+Asset-Shoe-10: GRN qty=10.0 val=9000.0 rates=[900.0] | Monthly inQty=10.0 inVal=8548.15 rate=854.8148193359375
+Asset-Shoe-11: GRN qty=2.0 val=1800.0 rates=[900.0] | Monthly inQty=2.0 inVal=1703.64 rate=851.8181762695312
+Asset-Shoe-7: GRN qty=8.0 val=7200.0 rates=[900.0] | Monthly inQty=8.0 inVal=6723.2 rate=840.4000244140625
+Asset-Shoe-8: GRN qty=8.0 val=7150.0 rates=[850.0, 900.0] | Monthly inQty=8.0 inVal=6915.56 rate=864.4444580078125
+Asset-Shoe-9: GRN qty=8.0 val=7200.0 rates=[900.0] | Monthly inQty=8.0 inVal=6527.44 rate=815.9296264648438
+BF812: GRN qty=4.0 val=3400.0 rates=[850.0] | Monthly inQty=4.0 inVal=3389.47 rate=847.368408203125
+BIT-25-THB: GRN qty=2.0 val=900.0 rates=[450.0] | Monthly inQty=2.0 inVal=1056.0 rate=528.0
+BW424BLK: GRN qty=189.0 val=37800.0 rates=[200.0] | Monthly inQty=189.0 inVal=33723.27 rate=178.42999267578125
+Black Paint: GRN qty=4.0 val=940.0 rates=[235.0] | Monthly inQty=4.0 inVal=903.36 rate=225.84091186523438
+Bosch-GWS 750-100: GRN qty=2.0 val=6500.0 rates=[3250.0] | Monthly inQty=2.0 inVal=6171.82 rate=3085.9091796875
+CBL-1.5Sqmm-BLK: GRN qty=200.0 val=5180.0 rates=[25.9] | Monthly inQty=200.0 inVal=3948.87 rate=19.744333267211914
+CBL-1.5Sqmm-YLW: GRN qty=100.0 val=2590.0 rates=[25.9] | Monthly inQty=100.0 inVal=2063.33 rate=20.633333206176758
+CBL-1.5sqmm-FC: GRN qty=100.0 val=2590.0 rates=[25.9] | Monthly inQty=100.0 inVal=47301.2 rate=473.0119934082031
+CBL-2 C X 1 SQ. MM -ABC  unarmoured , multistrand, Unshielded FRLS  PVC cable - Blue Colour: GRN qty=3140.0 val=131880.0 rates=[42.0] | Monthly inQty=3140.0 inVal=123245.0 rate=39.25
+CBL-2 C X 1.5 SQ. MM -ABC Twisted Shielded  unarmoured FRLS Cable- Blue colour: GRN qty=2284.0 val=137040.0 rates=[60.0] | Monthly inQty=2284.0 inVal=130759.0 rate=57.25
+CBL-2 Core x 0.75 sq.mm multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: GRN qty=2460.0 val=91020.0 rates=[37.0] | Monthly inQty=2460.0 inVal=83640.0 rate=34.0
+CBL-4 C X 1.0 SQ. MM - ABC Unshielded unarmoured FRLS Cable -Blue Colour: GRN qty=1500.0 val=115500.0 rates=[77.0] | Monthly inQty=1500.0 inVal=108000.0 rate=72.0
+CBL-4 C X 1.0 SQ. MM ABC Twisted Shielded Unarmoured FRLS Cable - Blue Colour: GRN qty=500.0 val=40500.0 rates=[81.0] | Monthly inQty=500.0 inVal=38250.0 rate=76.5
+CBL-4 Core x 0.75 sq.mm shielded multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: GRN qty=831.0 val=56508.0 rates=[68.0] | Monthly inQty=831.0 inVal=53599.5 rate=64.5
+CBL-8 Core x 0.75 sq.mm shielded multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: GRN qty=650.0 val=83850.0 rates=[129.0] | Monthly inQty=650.0 inVal=79625.0 rate=122.5
+CBL-MIC-Cable: GRN qty=1.0 val=20400.0 rates=[20400.0] | Monthly inQty=1.0 inVal=10230.0 rate=10230.0
+CEDTB00 - Greystone: GRN qty=11.0 val=100832.0 rates=[9166.5] | Monthly inQty=11.0 inVal=104987.66 rate=9544.3330078125
+CS-RW: GRN qty=500.0 val=9000.0 rates=[18.0] | Monthly inQty=500.0 inVal=8600.0 rate=17.200000762939453
+CW490WHI: GRN qty=30.0 val=60.0 rates=[2.0] | Monthly inQty=30.0 inVal=975.0 rate=32.5
+Collar-15mm-Th: GRN qty=50.0 val=1250.0 rates=[25.0] | Monthly inQty=50.0 inVal=1190.62 rate=23.8125
+DEB-33SS: GRN qty=19.0 val=8740.0 rates=[460.0] | Monthly inQty=19.0 inVal=8013.78 rate=421.77777099609375
+DEM-310GT: GRN qty=2.0 val=3700.0 rates=[1850.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+DGS-1210-28P: GRN qty=5.0 val=107500.0 rates=[21500.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+DGS-F1010P-E: GRN qty=1.0 val=4300.0 rates=[4300.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+DPSN200A: GRN qty=5.0 val=5250.0 rates=[1050.0] | Monthly inQty=5.0 inVal=5395.14 rate=1079.0289306640625
+DS-2CE1ADOT-ITP/ECO: GRN qty=1.0 val=800.0 rates=[800.0] | Monthly inQty=1.0 inVal=911.0 rate=911.0
+Dell MS116 -wired Keyboard: GRN qty=1.0 val=216.0 rates=[216.0] | Monthly inQty=1.0 inVal=582.67 rate=582.6666870117188
+Dell Pro Tower QCT 1250: GRN qty=2.0 val=303000.0 rates=[151500.0] | Monthly inQty=2.0 inVal=306811.34 rate=153405.671875
+EM600-LED: GRN qty=4.0 val=8084.0 rates=[2021.0] | Monthly inQty=4.0 inVal=7842.0 rate=1960.5
+EMC-1008C: GRN qty=19.0 val=5700.0 rates=[300.0] | Monthly inQty=19.0 inVal=3980.5 rate=209.5
+Eternity-Penx-6SAC: GRN qty=1.0 val=34300.0 rates=[34300.0] | Monthly inQty=1.0 inVal=26817.75 rate=26817.75
+GI Dummy  flange  GI -250 mm 12 Hole: GRN qty=4.0 val=7560.0 rates=[1890.0] | Monthly inQty=4.0 inVal=6680.0 rate=1670.0
+GI-3wayJB-25mm: GRN qty=3100.0 val=130200.0 rates=[42.0] | Monthly inQty=3100.0 inVal=131233.33 rate=42.33333206176758
+GI-Collar-25mm: GRN qty=3000.0 val=54000.0 rates=[18.0] | Monthly inQty=3000.0 inVal=75000.0 rate=25.0
+GSR-120: GRN qty=1.0 val=6850.0 rates=[6850.0] | Monthly inQty=1.0 inVal=6770.0 rate=6770.0
+HC35W42R2: GRN qty=69.0 val=869400.0 rates=[12600.0] | Monthly inQty=69.0 inVal=735771.0 rate=10663.34765625
+HDWT740UZSVA: GRN qty=17.0 val=234600.0 rates=[13800.0] | Monthly inQty=17.0 inVal=112713.95 rate=6630.232421875
+HDWT760UZSVA: GRN qty=2.0 val=36400.0 rates=[18200.0] | Monthly inQty=2.0 inVal=22030.61 rate=11015.3056640625
+HSH-EM2M-E: GRN qty=1.0 val=4100.0 rates=[4100.0] | Monthly inQty=1.0 inVal=3900.0 rate=3900.0
+KR503ERS: GRN qty=2.0 val=4100.0 rates=[2050.0] | Monthly inQty=2.0 inVal=3950.0 rate=1975.0
+KSJ-00096-02: GRN qty=5.0 val=1500.0 rates=[300.0] | Monthly inQty=5.0 inVal=1456.52 rate=291.3043518066406
+LM75-20B24: GRN qty=30.0 val=29400.0 rates=[980.0] | Monthly inQty=30.0 inVal=33433.33 rate=1114.4444580078125
+Lehry-Brass-BV-15mm: GRN qty=3.0 val=855.0 rates=[285.0] | Monthly inQty=3.0 inVal=761.95 rate=253.98184204101562
+Lehry-Brass-BV-25mm: GRN qty=3.0 val=1770.0 rates=[590.0] | Monthly inQty=3.0 inVal=1573.27 rate=524.424072265625
+Logitech-Wireless Mouse: GRN qty=1.0 val=230.0 rates=[230.0] | Monthly inQty=1.0 inVal=512.59 rate=512.586181640625
+MS ANGLE: GRN qty=2079.0 val=115329.0 rates=[55.0, 59.0] | Monthly inQty=2079.0 inVal=139145.88 rate=66.92922973632812
+NC6-FSU9D-LCLC-3: GRN qty=2.0 val=1500.0 rates=[750.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NCB-C6UGRYR-305: GRN qty=305.0 val=9150.0 rates=[30.0] | Monthly inQty=0.0 inVal=0.0 rate=22.920257568359375
+NCB-C6UGRYR1-2: GRN qty=110.0 val=15950.0 rates=[145.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NCB-FS09D-LCLC-3: GRN qty=6.0 val=4500.0 rates=[750.0] | Monthly inQty=6.0 inVal=3050.02 rate=508.336669921875
+NCPL - 4 X 4 PVC box: GRN qty=40.0 val=1200.0 rates=[30.0] | Monthly inQty=40.0 inVal=1680.0 rate=42.0
+NCPL - TB: GRN qty=40.0 val=240.0 rates=[6.0] | Monthly inQty=40.0 inVal=2094.87 rate=52.37166213989258
+NCPL- 25mm PVC Bend-WHITE: GRN qty=600.0 val=5130.0 rates=[8.28, 9.9] | Monthly inQty=600.0 inVal=3877.23 rate=6.462050914764404
+NCPL- 25mm PVC Collar-WHITE: GRN qty=230.0 val=1094.8 rates=[4.67, 5.36] | Monthly inQty=230.0 inVal=821.52 rate=3.5718183517456055
+NCPL- 5A-CB: GRN qty=30.0 val=3150.0 rates=[105.0] | Monthly inQty=30.0 inVal=3248.18 rate=108.2727279663086
+NCPL-12V-3Amps-Adp: GRN qty=1.0 val=475.0 rates=[475.0] | Monthly inQty=1.0 inVal=293.77 rate=293.7749938964844
+NCPL-14''-MCW: GRN qty=20.0 val=2500.0 rates=[125.0] | Monthly inQty=20.0 inVal=2596.0 rate=129.8000030517578
+NCPL-20MM WHITE-FLEXIBLEE: GRN qty=300.0 val=1350.0 rates=[4.5] | Monthly inQty=300.0 inVal=13050.0 rate=43.5
+NCPL-20mm-Bend-Grey: GRN qty=300.0 val=1800.0 rates=[6.0] | Monthly inQty=300.0 inVal=2640.0 rate=8.800000190734863
+NCPL-20mm-CG: GRN qty=150.0 val=3300.0 rates=[22.0] | Monthly inQty=150.0 inVal=2887.5 rate=19.25
+NCPL-24V-4.5A: GRN qty=5.0 val=6500.0 rates=[1300.0] | Monthly inQty=5.0 inVal=6583.33 rate=1316.6666259765625
+NCPL-25M SPRING: GRN qty=2.0 val=760.0 rates=[380.0] | Monthly inQty=2.0 inVal=1342.63 rate=671.3157958984375
+NCPL-25mm CW: GRN qty=1452.0 val=37543.2 rates=[25.28, 28.6] | Monthly inQty=1452.0 inVal=35759.54 rate=24.627784729003906
+NCPL-25mm-JB-white: GRN qty=400.0 val=8724.0 rates=[21.81] | Monthly inQty=400.0 inVal=6638.95 rate=16.597366333007812
+NCPL-3M-GRN SAFETY JACKET: GRN qty=5.0 val=750.0 rates=[150.0] | Monthly inQty=5.0 inVal=1063.64 rate=212.72727966308594
+NCPL-3M-ORG SAFETY JACKET: GRN qty=20.0 val=3000.0 rates=[150.0] | Monthly inQty=20.0 inVal=4463.64 rate=223.18182373046875
+NCPL-4''-MCW: GRN qty=200.0 val=3400.0 rates=[17.0] | Monthly inQty=200.0 inVal=6864.52 rate=34.32258224487305
+NCPL-6A-PPT: GRN qty=20.0 val=760.0 rates=[38.0] | Monthly inQty=20.0 inVal=800.0 rate=40.0
+NCPL-8mm Anchor Fastner: GRN qty=700.0 val=5600.0 rates=[8.0] | Monthly inQty=700.0 inVal=4995.45 rate=7.136363506317139
+NCPL-ACCESS CARDS: GRN qty=50.0 val=500.0 rates=[10.0] | Monthly inQty=50.0 inVal=2457.95 rate=49.15909194946289
+NCPL-AF- M10 *40mm: GRN qty=2000.0 val=22000.0 rates=[11.0] | Monthly inQty=2000.0 inVal=22286.96 rate=11.143477439880371
+NCPL-BNCPin: GRN qty=10.0 val=250.0 rates=[25.0] | Monthly inQty=10.0 inVal=203.7 rate=20.370370864868164
+NCPL-Bubble Sheet: GRN qty=2.0 val=2300.0 rates=[1150.0] | Monthly inQty=2.0 inVal=2220.0 rate=1110.0
+NCPL-CE-1: GRN qty=25.0 val=8750.0 rates=[350.0] | Monthly inQty=25.0 inVal=5593.75 rate=223.75
+NCPL-DCPin: GRN qty=10.0 val=100.0 rates=[10.0] | Monthly inQty=10.0 inVal=105.79 rate=10.578947067260742
+NCPL-DDC-1000-1000-300: GRN qty=3.0 val=49365.8 rates=[14953.0, 19459.8] | Monthly inQty=3.0 inVal=44732.03 rate=14910.6767578125
+NCPL-DDC-1000-1200-3...: GRN qty=1.0 val=15624.0 rates=[15624.0] | Monthly inQty=1.0 inVal=22253.2 rate=22253.201171875
+NCPL-DDC-600-600-210: GRN qty=30.0 val=199448.7 rates=[6648.3] | Monthly inQty=30.0 inVal=195650.45 rate=6521.681640625
+NCPL-DDC-760-760-210: GRN qty=6.0 val=62480.4 rates=[10106.0, 10720.8] | Monthly inQty=6.0 inVal=51430.09 rate=8571.6826171875
+NCPL-DDC-800-1000-30...: GRN qty=1.0 val=13609.0 rates=[13609.0] | Monthly inQty=1.0 inVal=12114.12 rate=12114.1162109375
+NCPL-DUMMY-FLANG-200: GRN qty=4.0 val=5380.0 rates=[1345.0] | Monthly inQty=4.0 inVal=4670.4 rate=1167.5999755859375
+NCPL-Dummy plate - 50mm: GRN qty=1.0 val=38.0 rates=[38.0] | Monthly inQty=1.0 inVal=32.87 rate=32.87036895751953
+NCPL-Dummy plate - 80mm: GRN qty=1.0 val=48.0 rates=[48.0] | Monthly inQty=1.0 inVal=56.84 rate=56.84090805053711
+NCPL-Enclosure-2M-weath...: GRN qty=20.0 val=1700.0 rates=[85.0] | Monthly inQty=20.0 inVal=1657.23 rate=82.86154174804688
+NCPL-Flexible Gland-25mm PVC: GRN qty=200.0 val=2400.0 rates=[12.0] | Monthly inQty=200.0 inVal=2200.0 rate=11.0
+NCPL-Gland-25mm: GRN qty=100.0 val=1500.0 rates=[15.0] | Monthly inQty=100.0 inVal=3771.43 rate=37.71428680419922
+NCPL-Hand Gloves: GRN qty=500.0 val=5000.0 rates=[10.0] | Monthly inQty=500.0 inVal=7766.67 rate=15.533333778381348
+NCPL-Hitech-UC-80mm: GRN qty=20.0 val=400.0 rates=[20.0] | Monthly inQty=20.0 inVal=389.15 rate=19.45766830444336
+NCPL-ISMC MS Channel: GRN qty=1054.5 val=57997.5 rates=[55.0] | Monthly inQty=1054.5 inVal=56453.41 rate=53.53571701049805
+NCPL-Ins-Tape-Blue: GRN qty=300.0 val=3600.0 rates=[12.0] | Monthly inQty=300.0 inVal=4114.29 rate=13.714285850524902
+NCPL-Jindal-Star-GI PIPE-100mm: GRN qty=54.0 val=59346.0 rates=[1099.0] | Monthly inQty=54.0 inVal=54340.88 rate=1006.3125
+NCPL-Junc-25: GRN qty=200.0 val=4182.0 rates=[20.91] | Monthly inQty=200.0 inVal=3370.54 rate=16.852684020996094
+NCPL-KM: GRN qty=7.0 val=2065.0 rates=[295.0] | Monthly inQty=7.0 inVal=1890.0 rate=270.0
+NCPL-LUG-1-Blue: GRN qty=5000.0 val=2500.0 rates=[0.5] | Monthly inQty=5000.0 inVal=3937.5 rate=0.7875000238418579
+NCPL-LUG-1-RED: GRN qty=50.0 val=2500.0 rates=[50.0] | Monthly inQty=50.0 inVal=1326.83 rate=26.536664962768555
+NCPL-LUG-1.5-BL: GRN qty=5000.0 val=2500.0 rates=[0.5] | Monthly inQty=5000.0 inVal=21216.67 rate=4.243333339691162
+NCPL-Loop-Lug-1.5-BLK: GRN qty=2000.0 val=1800.0 rates=[0.9] | Monthly inQty=2000.0 inVal=1925.0 rate=0.9625000357627869
+NCPL-Loop-Lug-1.5-RD: GRN qty=2000.0 val=1800.0 rates=[0.9] | Monthly inQty=2000.0 inVal=1920.0 rate=0.9599999785423279
+NCPL-MDF-50P: GRN qty=1.0 val=450.0 rates=[450.0] | Monthly inQty=1.0 inVal=850.0 rate=850.0
+NCPL-MS-15mm: GRN qty=30.0 val=1350.0 rates=[45.0] | Monthly inQty=30.0 inVal=794.0 rate=26.46666717529297
+NCPL-MT-5mtrs: GRN qty=10.0 val=1100.0 rates=[110.0] | Monthly inQty=10.0 inVal=2609.68 rate=260.9677429199219
+NCPL-Mask: GRN qty=800.0 val=3200.0 rates=[4.0] | Monthly inQty=800.0 inVal=5874.54 rate=7.343179702758789
+NCPL-O -Connect S IP Based: GRN qty=1.0 val=96750.0 rates=[96750.0] | Monthly inQty=1.0 inVal=74927.27 rate=74927.2734375
+NCPL-PGRB: GRN qty=3.0 val=48.0 rates=[16.0] | Monthly inQty=3.0 inVal=70.29 rate=23.428571701049805
+NCPL-PN-25mm*150mm: GRN qty=3.0 val=132.0 rates=[44.0] | Monthly inQty=3.0 inVal=129.75 rate=43.25
+NCPL-RT-25*15mm: GRN qty=3.0 val=588.0 rates=[196.0] | Monthly inQty=3.0 inVal=551.0 rate=183.6666717529297
+NCPL-Roller-Brush: GRN qty=100.0 val=4000.0 rates=[40.0] | Monthly inQty=100.0 inVal=6983.87 rate=69.83870697021484
+NCPL-SADDLE-25: GRN qty=3744.0 val=9734.4 rates=[2.6] | Monthly inQty=3744.0 inVal=115908.34 rate=30.958423614501953
+NCPL-SH-Yellow: GRN qty=20.0 val=4500.0 rates=[225.0] | Monthly inQty=20.0 inVal=3712.9 rate=185.64515686035156
+NCPL-Self Thread-1 & 1/2'': GRN qty=100.0 val=170.0 rates=[1.7] | Monthly inQty=100.0 inVal=6565.0 rate=65.6500015258789
+NCPL-TT: GRN qty=1020.0 val=12360.0 rates=[12.0, 18.0] | Monthly inQty=1020.0 inVal=14646.99 rate=14.359794616699219
+NCPL-Threading OIL: GRN qty=60.0 val=27000.0 rates=[450.0] | Monthly inQty=60.0 inVal=18600.0 rate=310.0
+NCPL-white goggles: GRN qty=30.0 val=1950.0 rates=[65.0] | Monthly inQty=30.0 inVal=1715.22 rate=57.173912048339844
+NFR-17U-6060-BL-SK: GRN qty=3.0 val=44700.0 rates=[14900.0] | Monthly inQty=2.0 inVal=29800.0 rate=14900.0
+NFR-22U-6060-BL-SK: GRN qty=1.0 val=17000.0 rates=[17000.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NKJ-C6WHI1B21: GRN qty=110.0 val=12870.0 rates=[117.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NLU-FSDLLCR-24: GRN qty=2.0 val=7200.0 rates=[3600.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NPB-8000- 2X-485: GRN qty=1.0 val=24500.0 rates=[24500.0] | Monthly inQty=1.0 inVal=24572.42 rate=24572.416015625
+NPP-C61BLK241: GRN qty=5.0 val=9250.0 rates=[1850.0] | Monthly inQty=0.0 inVal=0.0 rate=0.0
+NTL-CT-001: GRN qty=6.0 val=7200.0 rates=[1200.0] | Monthly inQty=6.0 inVal=5400.0 rate=900.0
+NWR-9U-5545-GR: GRN qty=1.0 val=4400.0 rates=[4400.0] | Monthly inQty=1.0 inVal=4250.0 rate=4250.0
+Ncpl-Battery-7AH: GRN qty=4.0 val=3760.0 rates=[940.0] | Monthly inQty=4.0 inVal=3045.6 rate=761.4000244140625
+OMRON-G2R-1 (12V -DC) SPDT: GRN qty=101.0 val=36875.0 rates=[365.0, 375.0] | Monthly inQty=101.0 inVal=37201.67 rate=368.3333435058594
+Onfiniti 6 kVA 192V: GRN qty=8.0 val=418632.0 rates=[52329.0] | Monthly inQty=8.0 inVal=419876.0 rate=52484.5
+PEC8044-PB1-SO: GRN qty=3.0 val=45600.0 rates=[15200.0] | Monthly inQty=3.0 inVal=46387.5 rate=15462.5
+PPE-Gloves: GRN qty=100.0 val=5000.0 rates=[50.0] | Monthly inQty=100.0 inVal=7722.05 rate=77.22051239013672
+PRECISION -PVC-FLEXIBLE-20MM-GRAY: GRN qty=500.0 val=2000.0 rates=[4.0] | Monthly inQty=500.0 inVal=2328.75 rate=4.657500267028809
+PT-NRAS2A32-K2: GRN qty=1.0 val=10500.0 rates=[10500.0] | Monthly inQty=1.0 inVal=10100.0 rate=10100.0
+PUB6438SR/U: GRN qty=1.0 val=14500.0 rates=[14500.0] | Monthly inQty=1.0 inVal=14601.85 rate=14601.8515625
+PUC16000-EM2: GRN qty=2.0 val=18400.0 rates=[9200.0] | Monthly inQty=2.0 inVal=18000.0 rate=9000.0
+PUC5533-EM2: GRN qty=2.0 val=18000.0 rates=[9000.0] | Monthly inQty=2.0 inVal=16587.23 rate=8293.6171875
+QB43C: GRN qty=2.0 val=54000.0 rates=[27000.0] | Monthly inQty=2.0 inVal=56000.0 rate=28000.0
+RE-120GR: GRN qty=3.0 val=24150.0 rates=[8050.0] | Monthly inQty=3.0 inVal=32392.5 rate=10797.5
+RE-25SS: GRN qty=6.0 val=6480.0 rates=[1080.0] | Monthly inQty=6.0 inVal=6742.5 rate=1123.75
+RE-316SH 2L: GRN qty=9.0 val=7335.0 rates=[815.0] | Monthly inQty=9.0 inVal=7044.43 rate=782.7142944335938
+RE-716MG: GRN qty=3.0 val=1635.0 rates=[545.0] | Monthly inQty=3.0 inVal=1963.8 rate=654.5999755859375
+RE-716MY: GRN qty=3.0 val=1635.0 rates=[545.0] | Monthly inQty=3.0 inVal=1963.8 rate=654.5999755859375
+S323-501G-AL: GRN qty=2.0 val=15300.0 rates=[7650.0] | Monthly inQty=2.0 inVal=14900.0 rate=7450.0
+Sandisk-256gb: GRN qty=4.0 val=13200.0 rates=[3300.0] | Monthly inQty=4.0 inVal=8775.0 rate=2193.75
+Single headed Hydrant flange GI Size : OD 200mm  ID : 90 PCD - 160mm: GRN qty=1.0 val=310.0 rates=[310.0] | Monthly inQty=1.0 inVal=290.0 rate=290.0
+TOOL-Conv-232-485: GRN qty=11.0 val=6050.0 rates=[550.0] | Monthly inQty=11.0 inVal=6244.12 rate=567.6470336914062
+TOOL-Cutting Plier: GRN qty=4.0 val=920.0 rates=[230.0] | Monthly inQty=4.0 inVal=920.96 rate=230.24000549316406
+TP-Link UE300 USB 3.0: GRN qty=1.0 val=1000.0 rates=[1000.0] | Monthly inQty=1.0 inVal=962.5 rate=962.5
+URT800: GRN qty=39.0 val=10920.0 rates=[280.0] | Monthly inQty=39.0 inVal=11329.5 rate=290.5
+USB TO MINI USB 1mtr: GRN qty=1.0 val=100.0 rates=[100.0] | Monthly inQty=1.0 inVal=50.05 rate=50.04999923706055
+WD40PURZ: GRN qty=1.0 val=14200.0 rates=[14200.0] | Monthly inQty=1.0 inVal=8410.0 rate=8410.0
+WEB-8100-U: GRN qty=1.0 val=410000.0 rates=[410000.0] | Monthly inQty=1.0 inVal=363750.0 rate=363750.0
+WLD-CS25: GRN qty=1.0 val=7750.0 rates=[7750.0] | Monthly inQty=1.0 inVal=8250.0 rate=8250.0
+WPM-8000: GRN qty=1.0 val=5200.0 rates=[5200.0] | Monthly inQty=1.0 inVal=5471.85 rate=5471.85009765625
+Welded fitting-100x100: GRN qty=6.0 val=1770.0 rates=[295.0] | Monthly inQty=6.0 inVal=1636.5 rate=272.75
+Welding Rod -Esab: GRN qty=1.0 val=2650.0 rates=[2650.0] | Monthly inQty=1.0 inVal=2464.47 rate=2464.4736328125
+-> 171 model(s) mismatch
+
+==== DC vs Monthly OUTWARD ====
+14" Cutting wheel - Bosch: DC qty=2.0 val=250.0 rates=[125.0] | Monthly outQty=2.0 outVal=254.4 rate=127.19999694824219
+18mm-Cutting Knife: DC qty=4.0 val=80.0 rates=[20.0] | Monthly outQty=4.0 outVal=227.33 rate=56.83333206176758
+19M38: DC qty=1.0 val=8300.0 rates=[8300.0] | Monthly outQty=1.0 outVal=6425.0 rate=6425.0
+2cx1.5sqmm ARMD cable_red colour: DC qty=250.0 val=17000.0 rates=[68.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+32MR50C: DC qty=1.0 val=13000.0 rates=[13000.0] | Monthly outQty=1.0 outVal=12997.6 rate=12997.599609375
+4 Core x 1.0 SQ. MM, unarmoured ATC conductor multistranded, PVC FRLS, screened , cable - Blue colour: DC qty=500.0 val=49500.0 rates=[99.0] | Monthly outQty=500.0 outVal=49333.33 rate=98.66666412353516
+452013: DC qty=379.0 val=701150.0 rates=[1850.0] | Monthly outQty=379.0 outVal=574816.62 rate=1516.6666259765625
+464070: DC qty=1.0 val=9478.0 rates=[9478.0] | Monthly outQty=1.0 outVal=8139.0 rate=8139.0
+464252: DC qty=1.0 val=0.1 rates=[0.1] | Monthly outQty=1.0 outVal=0.03 rate=0.02500000037252903
+465481: DC qty=1.0 val=0.1 rates=[0.1] | Monthly outQty=1.0 outVal=0.02 rate=0.020000003278255463
+465489: DC qty=1.0 val=0.1 rates=[0.1] | Monthly outQty=1.0 outVal=12.01 rate=12.01260757446289
+6mm Drill Bit-Bosch: DC qty=16.0 val=1248.0 rates=[78.0] | Monthly outQty=0.0 outVal=0.0 rate=68.85185241699219
+884024508/10: DC qty=305.0 val=14499.7 rates=[47.54] | Monthly outQty=305.0 outVal=12618.17 rate=41.37104415893555
+8MM NUT: DC qty=2804.0 val=2804.0 rates=[1.0] | Monthly outQty=2804.0 outVal=2192.87 rate=0.7820512652397156
+905 IBP Tester: DC qty=9.0 val=900.0 rates=[100.0] | Monthly outQty=9.0 outVal=699.0 rate=77.66666412353516
+A9N2P16B: DC qty=34.0 val=18190.0 rates=[535.0] | Monthly outQty=34.0 outVal=14174.22 rate=416.8888854980469
+ABP-1: DC qty=3.0 val=5061.0 rates=[1687.0] | Monthly outQty=3.0 outVal=5157.0 rate=1719.0
+ABS-TD: DC qty=2.0 val=51124.0 rates=[25562.0] | Monthly outQty=2.0 outVal=53859.0 rate=26929.5
+ARC-200-N-B: DC qty=2.0 val=12500.0 rates=[6250.0] | Monthly outQty=2.0 outVal=14787.75 rate=7393.875
+AWC25-10: DC qty=2.0 val=2370.0 rates=[1185.0] | Monthly outQty=2.0 outVal=2339.23 rate=1169.6153564453125
+Asset-Shoe-10: DC qty=5.0 val=4500.0 rates=[900.0] | Monthly outQty=5.0 outVal=4274.07 rate=854.8148193359375
+Asset-Shoe-6: DC qty=1.0 val=850.0 rates=[850.0] | Monthly outQty=1.0 outVal=846.67 rate=846.6666870117188
+Asset-Shoe-8: DC qty=7.0 val=5950.0 rates=[850.0] | Monthly outQty=7.0 outVal=6051.11 rate=864.4444580078125
+Asset-Shoe-9: DC qty=2.0 val=1800.0 rates=[900.0] | Monthly outQty=2.0 outVal=1631.86 rate=815.9296264648438
+B501/WHITE: DC qty=430.0 val=90730.0 rates=[211.0] | Monthly outQty=430.0 outVal=56615.57 rate=131.6641082763672
+BF812: DC qty=3.0 val=2550.0 rates=[850.0] | Monthly outQty=3.0 outVal=2542.11 rate=847.368408203125
+BIT-25-THB: DC qty=2.0 val=900.0 rates=[450.0] | Monthly outQty=2.0 outVal=1056.0 rate=528.0
+BIT-4mm-M/S: DC qty=1.0 val=55.0 rates=[55.0] | Monthly outQty=1.0 outVal=49.83 rate=49.83333206176758
+BIT-6: DC qty=7.0 val=504.0 rates=[72.0] | Monthly outQty=7.0 outVal=494.62 rate=70.65937805175781
+BIT-STAR: DC qty=1.0 val=50.0 rates=[50.0] | Monthly outQty=1.0 outVal=51.79 rate=51.786956787109375
+BP-5: DC qty=3.0 val=13716.0 rates=[4572.0] | Monthly outQty=3.0 outVal=13975.0 rate=4658.33349609375
+BW424BLK: DC qty=189.0 val=29646.54 rates=[156.86] | Monthly outQty=189.0 outVal=33723.27 rate=178.42999267578125
+Bit- 20mm*300mm(L): DC qty=3.0 val=960.0 rates=[320.0] | Monthly outQty=3.0 outVal=1180.0 rate=393.3333435058594
+Black Paint: DC qty=4.0 val=940.0 rates=[235.0] | Monthly outQty=4.0 outVal=903.36 rate=225.84091186523438
+Bosch-GWS 750-100: DC qty=2.0 val=6500.0 rates=[3250.0] | Monthly outQty=2.0 outVal=6171.82 rate=3085.9091796875
+CBL-1.5Sqmm-BL: DC qty=800.0 val=20720.0 rates=[25.9] | Monthly outQty=800.0 outVal=15980.0 rate=19.975000381469727
+CBL-1.5Sqmm-BLK: DC qty=1000.0 val=25900.0 rates=[25.9] | Monthly outQty=1000.0 outVal=19744.33 rate=19.744333267211914
+CBL-1.5Sqmm-Green: DC qty=800.0 val=20720.0 rates=[25.9] | Monthly outQty=800.0 outVal=17560.0 rate=21.950000762939453
+CBL-1.5Sqmm-YLW: DC qty=100.0 val=2590.0 rates=[25.9] | Monthly outQty=100.0 outVal=2063.33 rate=20.633333206176758
+CBL-1.5sqmm-FC: DC qty=900.0 val=23310.0 rates=[25.9] | Monthly outQty=900.0 outVal=425710.78 rate=473.0119934082031
+CBL-1C-0.75-BK: DC qty=3453.0 val=43162.5 rates=[12.5] | Monthly outQty=3453.0 outVal=191440.33 rate=55.441741943359375
+CBL-1C-0.75-BL: DC qty=3953.0 val=49412.5 rates=[12.5] | Monthly outQty=3953.0 outVal=31260.32 rate=7.9079999923706055
+CBL-1C-0.75-Gr: DC qty=950.0 val=11875.0 rates=[12.5] | Monthly outQty=950.0 outVal=9100.43 rate=9.579401016235352
+CBL-1C-0.75-Red: DC qty=950.0 val=11875.0 rates=[12.5] | Monthly outQty=950.0 outVal=8025.6 rate=8.447999954223633
+CBL-2 C X 1 SQ. MM -ABC  unarmoured , multistrand, Unshielded FRLS  PVC cable - Blue Colour: DC qty=3140.0 val=131880.0 rates=[42.0] | Monthly outQty=3140.0 outVal=123245.0 rate=39.25
+CBL-2 C X 1.5 SQ. MM -ABC Twisted Shielded  unarmoured FRLS Cable- Blue colour: DC qty=2284.0 val=137040.0 rates=[60.0] | Monthly outQty=2284.0 outVal=130759.0 rate=57.25
+CBL-2 Core x 0.75 sq.mm multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: DC qty=2460.0 val=91020.0 rates=[37.0] | Monthly outQty=2460.0 outVal=83640.0 rate=34.0
+CBL-4 C X 1.0 SQ. MM - ABC Unshielded unarmoured FRLS Cable -Blue Colour: DC qty=1500.0 val=115500.0 rates=[77.0] | Monthly outQty=1500.0 outVal=108000.0 rate=72.0
+CBL-4 C X 1.0 SQ. MM ABC Twisted Shielded Unarmoured FRLS Cable - Blue Colour: DC qty=500.0 val=40500.0 rates=[81.0] | Monthly outQty=500.0 outVal=38250.0 rate=76.5
+CBL-4 Core x 0.75 sq.mm shielded multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: DC qty=831.0 val=56508.0 rates=[68.0] | Monthly outQty=831.0 outVal=53599.5 rate=64.5
+CBL-8 Core x 0.75 sq.mm shielded multistrand Annealed Tinned Copper (ATC) conductor cable with FRLS Black Colour: DC qty=650.0 val=83850.0 rates=[129.0] | Monthly outQty=650.0 outVal=79625.0 rate=122.5
+CBL-HDMI-5: DC qty=5.0 val=2250.0 rates=[450.0] | Monthly outQty=5.0 outVal=1835.29 rate=367.058837890625
+CBL-MIC-Cable: DC qty=1.0 val=20400.0 rates=[20400.0] | Monthly outQty=1.0 outVal=10230.0 rate=10230.0
+CE-1 Terminal: DC qty=1000.0 val=3500.0 rates=[3.5] | Monthly outQty=1000.0 outVal=3428.57 rate=3.4285714626312256
+CEDTB00 - Greystone: DC qty=11.0 val=113300.0 rates=[10300.0] | Monthly outQty=11.0 outVal=104987.66 rate=9544.3330078125
+CPU-N16LD: DC qty=3.0 val=417204.0 rates=[139068.0] | Monthly outQty=3.0 outVal=425084.0 rate=141694.671875
+CS-103: DC qty=1.0 val=650.0 rates=[650.0] | Monthly outQty=1.0 outVal=770.0 rate=770.0
+CS-24VDC-1-6A SMPS: DC qty=3.0 val=10185.0 rates=[3395.0] | Monthly outQty=3.0 outVal=10335.0 rate=3445.0
+CS-RW: DC qty=500.0 val=9000.0 rates=[18.0] | Monthly outQty=500.0 outVal=8600.0 rate=17.200000762939453
+CUTTER-25: DC qty=11.0 val=4125.0 rates=[375.0] | Monthly outQty=11.0 outVal=3716.54 rate=337.8673095703125
+CW490WHI: DC qty=30.0 val=60.0 rates=[2.0] | Monthly outQty=30.0 outVal=975.0 rate=32.5
+DDBPC MOD BIP02: DC qty=3.0 val=66900.0 rates=[22300.0] | Monthly outQty=1.0 outVal=21800.0 rate=21800.0
+DEB-33SS: DC qty=19.0 val=8740.0 rates=[460.0] | Monthly outQty=19.0 outVal=8013.78 rate=421.77777099609375
+DEM-310GT: DC qty=2.0 val=3700.0 rates=[1850.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+DGS-1210-28P: DC qty=5.0 val=107500.0 rates=[21500.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+DGS-F1010P-E: DC qty=1.0 val=4300.0 rates=[4300.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+DGS-F1018P: DC qty=1.0 val=9200.0 rates=[9200.0] | Monthly outQty=1.0 outVal=9390.0 rate=9390.0
+DP-BLN: DC qty=1.0 val=3332.0 rates=[3332.0] | Monthly outQty=1.0 outVal=3426.5 rate=3426.5
+DP-T2A: DC qty=3.0 val=19851.0 rates=[6617.0] | Monthly outQty=3.0 outVal=20225.0 rate=6741.66650390625
+DPSN200A: DC qty=10.0 val=10500.0 rates=[1050.0] | Monthly outQty=10.0 outVal=10790.29 rate=1079.0289306640625
+DPSN400A: DC qty=10.0 val=12200.0 rates=[1220.0] | Monthly outQty=10.0 outVal=10120.65 rate=1012.064697265625
+DR-B5: DC qty=1.0 val=24660.0 rates=[24660.0] | Monthly outQty=1.0 outVal=24974.5 rate=24974.5
+DS-2CE1ADOT-ITP/ECO: DC qty=1.0 val=800.0 rates=[800.0] | Monthly outQty=1.0 outVal=911.0 rate=911.0
+DS-PD1-MC-MS: DC qty=2.0 val=1102.0 rates=[551.0] | Monthly outQty=2.0 outVal=974.0 rate=487.0
+DST1.5: DC qty=14.0 val=10332.0 rates=[738.0] | Monthly outQty=14.0 outVal=7154.22 rate=511.0157165527344
+Dell MS116 -wired Keyboard: DC qty=1.0 val=450.0 rates=[450.0] | Monthly outQty=1.0 outVal=582.67 rate=582.6666870117188
+Dell Pro Tower QCT 1250: DC qty=2.0 val=314434.0 rates=[157217.0] | Monthly outQty=2.0 outVal=306811.34 rate=153405.671875
+EM600-LED: DC qty=4.0 val=8084.0 rates=[2021.0] | Monthly outQty=4.0 outVal=7842.0 rate=1960.5
+EMC-1008C: DC qty=19.0 val=5700.0 rates=[300.0] | Monthly outQty=19.0 outVal=3980.5 rate=209.5
+Eternity-Penx-6SAC: DC qty=1.0 val=34300.0 rates=[34300.0] | Monthly outQty=1.0 outVal=26817.75 rate=26817.75
+FCM/1: DC qty=87.0 val=181482.0 rates=[2086.0] | Monthly outQty=87.0 outVal=191978.81 rate=2206.653076171875
+FS-OSI-RI: DC qty=3.0 val=147345.0 rates=[49115.0] | Monthly outQty=3.0 outVal=158337.0 rate=52779.0
+FSP/951: DC qty=14.0 val=18732.0 rates=[1338.0] | Monthly outQty=14.0 outVal=20260.51 rate=1447.1795654296875
+FSP/951T: DC qty=580.0 val=842160.0 rates=[1452.0] | Monthly outQty=580.0 outVal=1017114.19 rate=1753.6451416015625
+FST/951R: DC qty=25.0 val=31525.0 rates=[1261.0] | Monthly outQty=25.0 outVal=38268.75 rate=1530.75
+GI Dummy  flange  GI -250 mm 12 Hole: DC qty=4.0 val=5800.0 rates=[1450.0] | Monthly outQty=4.0 outVal=6680.0 rate=1670.0
+GI-3wayJB-25mm: DC qty=3100.0 val=130200.0 rates=[42.0] | Monthly outQty=3100.0 outVal=131233.33 rate=42.33333206176758
+GI-Collar-25mm: DC qty=3000.0 val=61500.0 rates=[20.5] | Monthly outQty=3000.0 outVal=75000.0 rate=25.0
+GSR-120: DC qty=1.0 val=6690.0 rates=[6690.0] | Monthly outQty=1.0 outVal=6770.0 rate=6770.0
+HA60WLMZI: DC qty=1.0 val=5000.0 rates=[5000.0] | Monthly outQty=1.0 outVal=4835.0 rate=4835.0
+HAM-1: DC qty=1.0 val=280.0 rates=[280.0] | Monthly outQty=1.0 outVal=221.56 rate=221.55555725097656
+HC35W42R2: DC qty=69.0 val=869400.0 rates=[12600.0] | Monthly outQty=69.0 outVal=735771.0 rate=10663.34765625
+HC35W45R2: DC qty=9.0 val=139500.0 rates=[15500.0] | Monthly outQty=9.0 outVal=142875.0 rate=15875.0
+HC35WB2R2: DC qty=18.0 val=171000.0 rates=[9500.0] | Monthly outQty=18.0 outVal=189329.0 rate=10518.27734375
+HC35WB5R2: DC qty=9.0 val=144000.0 rates=[16000.0] | Monthly outQty=9.0 outVal=150750.0 rate=16750.0
+HC35WZ2R25: DC qty=2.0 val=104000.0 rates=[52000.0] | Monthly outQty=2.0 outVal=104900.0 rate=52450.0
+HDWT740UZSVA: DC qty=17.0 val=234600.0 rates=[13800.0] | Monthly outQty=17.0 outVal=112713.95 rate=6630.232421875
+HDWT760UZSVA: DC qty=2.0 val=22800.0 rates=[11400.0] | Monthly outQty=2.0 outVal=22030.61 rate=11015.3056640625
+HN35640800NR: DC qty=1.0 val=165655.0 rates=[165655.0] | Monthly outQty=1.0 outVal=157663.75 rate=157663.75
+HON-CGW-MBB: DC qty=2.0 val=210336.0 rates=[105168.0] | Monthly outQty=2.0 outVal=227742.41 rate=113871.203125
+HSH-EM2M-E: DC qty=1.0 val=4100.0 rates=[4100.0] | Monthly outQty=1.0 outVal=3900.0 rate=3900.0
+KR503ERS: DC qty=2.0 val=4100.0 rates=[2050.0] | Monthly outQty=2.0 outVal=3950.0 rate=1975.0
+KSJ-00096-02: DC qty=5.0 val=1500.0 rates=[300.0] | Monthly outQty=5.0 outVal=1456.52 rate=291.3043518066406
+LM200-10B24: DC qty=1.0 val=1500.0 rates=[1500.0] | Monthly outQty=1.0 outVal=1968.0 rate=1968.0
+Lehry-Brass-BV-15mm: DC qty=3.0 val=754.2 rates=[251.4] | Monthly outQty=3.0 outVal=761.95 rate=253.98184204101562
+Lehry-Brass-BV-25mm: DC qty=3.0 val=1471.8 rates=[490.6] | Monthly outQty=3.0 outVal=1573.27 rate=524.424072265625
+Logitech-Wireless Mouse: DC qty=1.0 val=420.0 rates=[420.0] | Monthly outQty=1.0 outVal=512.59 rate=512.586181640625
+MS ANGLE: DC qty=2161.0 val=118855.0 rates=[55.0] | Monthly outQty=2161.0 outVal=144634.06 rate=66.92922973632812
+Masking Tape-1inch: DC qty=21.0 val=630.0 rates=[30.0] | Monthly outQty=21.0 outVal=641.67 rate=30.55555534362793
+N16-XUPG: DC qty=3.0 val=26100.0 rates=[8700.0] | Monthly outQty=3.0 outVal=20141.0 rate=6713.66650390625
+NBG-12LX: DC qty=6.0 val=18996.0 rates=[3166.0] | Monthly outQty=6.0 outVal=22021.45 rate=3670.24169921875
+NC6-FSU9D-LCLC-3: DC qty=2.0 val=1500.0 rates=[750.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NCB-C6UGRYR-305: DC qty=305.0 val=9150.0 rates=[30.0] | Monthly outQty=0.0 outVal=0.0 rate=22.920257568359375
+NCB-C6UGRYR1-2: DC qty=110.0 val=15950.0 rates=[145.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NCB-FS09D-LCLC-3: DC qty=6.0 val=4500.0 rates=[750.0] | Monthly outQty=6.0 outVal=3050.02 rate=508.336669921875
+NCB-FS09S-LC1: DC qty=2.0 val=250.0 rates=[125.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NCD: DC qty=2.0 val=200260.0 rates=[100130.0] | Monthly outQty=2.0 outVal=213262.0 rate=106631.0
+NCPL - 4 X 4 PVC box: DC qty=24.0 val=720.0 rates=[30.0] | Monthly outQty=24.0 outVal=1008.0 rate=42.0
+NCPL - TB: DC qty=70.0 val=350.0 rates=[5.0] | Monthly outQty=70.0 outVal=3666.02 rate=52.37166213989258
+NCPL- 25mm PVC Bend-WHITE: DC qty=800.0 val=6080.0 rates=[7.6] | Monthly outQty=800.0 outVal=5169.64 rate=6.462050914764404
+NCPL- 25mm PVC Collar-WHITE: DC qty=230.0 val=1232.8 rates=[5.36] | Monthly outQty=230.0 outVal=821.52 rate=3.5718183517456055
+NCPL- 5A-CB: DC qty=30.0 val=3150.0 rates=[105.0] | Monthly outQty=30.0 outVal=3248.18 rate=108.2727279663086
+NCPL- BV- 15mm: DC qty=4.0 val=940.0 rates=[235.0] | Monthly outQty=4.0 outVal=1157.68 rate=289.4190368652344
+NCPL- PVC Ghatta: DC qty=1000.0 val=200.0 rates=[0.2] | Monthly outQty=1000.0 outVal=202.5 rate=0.20250003039836884
+NCPL-10MM NUT: DC qty=880.0 val=1936.0 rates=[2.2] | Monthly outQty=880.0 outVal=10285.49 rate=11.688055038452148
+NCPL-10mm-TR: DC qty=12.0 val=408.0 rates=[34.0] | Monthly outQty=12.0 outVal=554.0 rate=46.16666793823242
+NCPL-10mm-Washer: DC qty=1330.0 val=1662.5 rates=[1.25] | Monthly outQty=1330.0 outVal=1995.0 rate=1.5
+NCPL-12V-3Amps-Adp: DC qty=1.0 val=0.1 rates=[0.1] | Monthly outQty=1.0 outVal=293.77 rate=293.7749938964844
+NCPL-12mm Metal Bit: DC qty=1.0 val=495.0 rates=[495.0] | Monthly outQty=1.0 outVal=608.33 rate=608.3333129882812
+NCPL-12mm-Dymo-160: DC qty=2.0 val=0.2 rates=[0.1] | Monthly outQty=2.0 outVal=1135.74 rate=567.8714599609375
+NCPL-14''-MCW: DC qty=30.0 val=3750.0 rates=[125.0] | Monthly outQty=30.0 outVal=3894.0 rate=129.8000030517578
+NCPL-20mm-Bend-Grey: DC qty=1.0 val=8.0 rates=[8.0] | Monthly outQty=1.0 outVal=8.8 rate=8.800000190734863
+NCPL-20mm-CG: DC qty=1.0 val=22.0 rates=[22.0] | Monthly outQty=1.0 outVal=19.25 rate=19.25
+NCPL-24V-2.2A: DC qty=2.0 val=1900.0 rates=[950.0] | Monthly outQty=2.0 outVal=1937.5 rate=968.75
+NCPL-24V-4.5A: DC qty=10.0 val=13000.0 rates=[1300.0] | Monthly outQty=10.0 outVal=13166.67 rate=1316.6666259765625
+NCPL-25mm CW: DC qty=1452.0 val=36706.56 rates=[25.28] | Monthly outQty=1452.0 outVal=35759.54 rate=24.627784729003906
+NCPL-25mm-2 Way: DC qty=252.0 val=3024.0 rates=[12.0] | Monthly outQty=252.0 outVal=3990.58 rate=15.835624694824219
+NCPL-25mm-Bend-Gray: DC qty=77.0 val=539.0 rates=[7.0] | Monthly outQty=77.0 outVal=566.5 rate=7.357143402099609
+NCPL-25mm-Collar-Gray: DC qty=206.0 val=753.96 rates=[3.66] | Monthly outQty=206.0 outVal=785.77 rate=3.8144004344940186
+NCPL-25mm-JB-Gray: DC qty=60.0 val=1128.0 rates=[18.8] | Monthly outQty=60.0 outVal=1031.62 rate=17.193750381469727
+NCPL-25mm-JB-white: DC qty=424.0 val=8513.92 rates=[20.08] | Monthly outQty=424.0 outVal=7037.28 rate=16.597366333007812
+NCPL-3M-GRN SAFETY JACKET: DC qty=10.0 val=1500.0 rates=[150.0] | Monthly outQty=10.0 outVal=2127.27 rate=212.72727966308594
+NCPL-3M-ORG SAFETY JACKET: DC qty=33.0 val=4950.0 rates=[150.0] | Monthly outQty=33.0 outVal=7365.0 rate=223.18182373046875
+NCPL-3M-Tape: DC qty=5.0 val=750.0 rates=[150.0] | Monthly outQty=5.0 outVal=2262.5 rate=452.5
+NCPL-4''-MCW: DC qty=261.0 val=4959.0 rates=[19.0] | Monthly outQty=261.0 outVal=8958.19 rate=34.32258224487305
+NCPL-4M Red Color Back box with 25mm Knockout: DC qty=4.0 val=400.0 rates=[100.0] | Monthly outQty=4.0 outVal=420.0 rate=105.0
+NCPL-6mm metal bit: DC qty=1.0 val=135.0 rates=[135.0] | Monthly outQty=1.0 outVal=112.0 rate=112.0
+NCPL-6mm-U-Clip: DC qty=2.0 val=80.0 rates=[40.0] | Monthly outQty=2.0 outVal=76.67 rate=38.33333206176758
+NCPL-8MM THREAD ROD: DC qty=100.0 val=2200.0 rates=[22.0] | Monthly outQty=100.0 outVal=2523.73 rate=25.237287521362305
+NCPL-8MM WASHER: DC qty=1500.0 val=750.0 rates=[0.5] | Monthly outQty=1500.0 outVal=420.0 rate=0.2800000011920929
+NCPL-8mm Anchor Fastner: DC qty=506.0 val=4048.0 rates=[8.0] | Monthly outQty=506.0 outVal=3611.0 rate=7.136363506317139
+NCPL-8mm Metal Bit: DC qty=5.0 val=1575.0 rates=[315.0] | Monthly outQty=5.0 outVal=1081.28 rate=216.25625610351562
+NCPL-9V-Battery: DC qty=10.0 val=300.0 rates=[30.0] | Monthly outQty=10.0 outVal=238.89 rate=23.88888931274414
+NCPL-ACCESS CARDS: DC qty=50.0 val=6950.0 rates=[139.0] | Monthly outQty=50.0 outVal=2457.95 rate=49.15909194946289
+NCPL-AF- M10 *40mm: DC qty=2000.0 val=22000.0 rates=[11.0] | Monthly outQty=2000.0 outVal=22286.96 rate=11.143477439880371
+NCPL-AK: DC qty=1.0 val=190.0 rates=[190.0] | Monthly outQty=1.0 outVal=146.68 rate=146.6777801513672
+NCPL-AnchBolt-8: DC qty=550.0 val=18700.0 rates=[34.0] | Monthly outQty=550.0 outVal=12823.15 rate=23.314815521240234
+NCPL-BNCPin: DC qty=10.0 val=250.0 rates=[25.0] | Monthly outQty=10.0 outVal=203.7 rate=20.370370864868164
+NCPL-Barrication Tape: DC qty=1.0 val=250.0 rates=[250.0] | Monthly outQty=1.0 outVal=263.64 rate=263.6363525390625
+NCPL-CE-1: DC qty=20.0 val=5000.0 rates=[250.0] | Monthly outQty=20.0 outVal=4475.0 rate=223.75
+NCPL-CT-150-WHITE: DC qty=5.0 val=250.0 rates=[50.0] | Monthly outQty=5.0 outVal=225.0 rate=45.0
+NCPL-CT-250-Black: DC qty=6.0 val=450.0 rates=[75.0] | Monthly outQty=6.0 outVal=432.55 rate=72.09091186523438
+NCPL-CT-250-White: DC qty=36.0 val=2340.0 rates=[65.0] | Monthly outQty=36.0 outVal=2323.64 rate=64.54545593261719
+NCPL-CT-300-BLACK: DC qty=23.0 val=1725.0 rates=[75.0] | Monthly outQty=23.0 outVal=1782.5 rate=77.5
+NCPL-CT-300-WHITE: DC qty=30.0 val=3600.0 rates=[120.0] | Monthly outQty=30.0 outVal=2610.0 rate=87.0
+NCPL-CT-350: DC qty=10.0 val=1500.0 rates=[150.0] | Monthly outQty=10.0 outVal=1433.53 rate=143.35293579101562
+NCPL-CT-40*80mm: DC qty=210.0 val=38850.0 rates=[185.0] | Monthly outQty=210.0 outVal=39545.33 rate=188.3111114501953
+NCPL-CT-400: DC qty=2.0 val=320.0 rates=[160.0] | Monthly outQty=2.0 outVal=300.0 rate=150.0
+NCPL-DCPin: DC qty=10.0 val=100.0 rates=[10.0] | Monthly outQty=10.0 outVal=105.79 rate=10.578947067260742
+NCPL-DDC-1000-1000-300: DC qty=5.0 val=74765.0 rates=[14953.0] | Monthly outQty=5.0 outVal=74553.38 rate=14910.6767578125
+NCPL-DDC-1200-1200-300: DC qty=1.0 val=15611.0 rates=[15611.0] | Monthly outQty=1.0 outVal=20038.8 rate=20038.80078125
+NCPL-DDC-760-760-210: DC qty=6.0 val=60636.0 rates=[10106.0] | Monthly outQty=6.0 outVal=51430.09 rate=8571.6826171875
+NCPL-DDC-800-1000-30...: DC qty=1.0 val=13609.0 rates=[13609.0] | Monthly outQty=1.0 outVal=12114.12 rate=12114.1162109375
+NCPL-DDC-800-800-210: DC qty=4.0 val=42252.0 rates=[10563.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NCPL-DIN: DC qty=85.0 val=4590.0 rates=[54.0] | Monthly outQty=85.0 outVal=5381.56 rate=63.3125
+NCPL-DUMMY-FLANG-200: DC qty=4.0 val=5380.0 rates=[1345.0] | Monthly outQty=4.0 outVal=4670.4 rate=1167.5999755859375
+NCPL-Dummy plate - 50mm: DC qty=1.0 val=38.0 rates=[38.0] | Monthly outQty=1.0 outVal=32.87 rate=32.87036895751953
+NCPL-Dummy plate - 80mm: DC qty=1.0 val=48.0 rates=[48.0] | Monthly outQty=1.0 outVal=56.84 rate=56.84090805053711
+NCPL-GB: DC qty=5.0 val=550.0 rates=[110.0] | Monthly outQty=5.0 outVal=480.0 rate=96.0
+NCPL-Gland-25mm: DC qty=60.0 val=900.0 rates=[15.0] | Monthly outQty=60.0 outVal=2262.86 rate=37.71428680419922
+NCPL-Gland-25mm PVC: DC qty=100.0 val=1300.0 rates=[13.0] | Monthly outQty=100.0 outVal=1513.48 rate=15.134782791137695
+NCPL-HGPG-0-21kg-4" Dia: DC qty=3.0 val=1320.0 rates=[440.0] | Monthly outQty=3.0 outVal=2321.54 rate=773.8461303710938
+NCPL-Hand Gloves: DC qty=122.0 val=1220.0 rates=[10.0] | Monthly outQty=122.0 outVal=1895.07 rate=15.533333778381348
+NCPL-Hexaw Frame 5 inch blade: DC qty=5.0 val=30.0 rates=[6.0] | Monthly outQty=5.0 outVal=32.22 rate=6.44444465637207
+NCPL-Hitech-UC-80mm: DC qty=20.0 val=400.0 rates=[20.0] | Monthly outQty=20.0 outVal=389.15 rate=19.45766830444336
+NCPL-ISMC MS Channel: DC qty=1054.5 val=56299.75 rates=[53.39] | Monthly outQty=1054.5 outVal=56453.41 rate=53.53571701049805
+NCPL-IndSoc-Plug-16: DC qty=5.0 val=900.0 rates=[180.0] | Monthly outQty=5.0 outVal=701.03 rate=140.2051239013672
+NCPL-Ins-Tape-Black: DC qty=35.0 val=525.0 rates=[15.0] | Monthly outQty=35.0 outVal=481.65 rate=13.761384963989258
+NCPL-Ins-Tape-Blue: DC qty=40.0 val=400.0 rates=[10.0] | Monthly outQty=40.0 outVal=548.57 rate=13.714285850524902
+NCPL-Ins-Tape-Red: DC qty=10.0 val=120.0 rates=[12.0] | Monthly outQty=10.0 outVal=129.74 rate=12.974286079406738
+NCPL-Ins-Tape-Yellow: DC qty=22.0 val=264.0 rates=[12.0] | Monthly outQty=22.0 outVal=322.0 rate=14.636363983154297
+NCPL-Jindal-Star-GI PIPE-100mm: DC qty=54.0 val=59346.0 rates=[1099.0] | Monthly outQty=54.0 outVal=54340.88 rate=1006.3125
+NCPL-Junc-25: DC qty=600.0 val=11520.0 rates=[19.2] | Monthly outQty=600.0 outVal=10111.61 rate=16.852684020996094
+NCPL-KM: DC qty=2.0 val=590.0 rates=[295.0] | Monthly outQty=2.0 outVal=540.0 rate=270.0
+NCPL-LUG-0.75-BL: DC qty=4600.0 val=2300.0 rates=[0.5] | Monthly outQty=4600.0 outVal=2031.67 rate=0.44166669249534607
+NCPL-LUG-0.75-Green: DC qty=200.0 val=100.0 rates=[0.5] | Monthly outQty=200.0 outVal=97.5 rate=0.48749998211860657
+NCPL-LUG-0.75-Red: DC qty=1150.0 val=575.0 rates=[0.5] | Monthly outQty=1150.0 outVal=565.42 rate=0.49166664481163025
+NCPL-LUG-1-BL: DC qty=6.0 val=1.68 rates=[0.28] | Monthly outQty=6.0 outVal=94.45 rate=15.741817474365234
+NCPL-LUG-1-BLUE: DC qty=800.0 val=480.0 rates=[0.6] | Monthly outQty=800.0 outVal=440.0 rate=0.550000011920929
+NCPL-LUG-1-Blue: DC qty=1800.0 val=900.0 rates=[0.5] | Monthly outQty=1800.0 outVal=1417.5 rate=0.7875000238418579
+NCPL-LUG-1-Gr: DC qty=300.0 val=180.0 rates=[0.6] | Monthly outQty=300.0 outVal=175.0 rate=0.5833333730697632
+NCPL-LUG-1-RED: DC qty=4.0 val=5.6 rates=[1.4] | Monthly outQty=4.0 outVal=106.15 rate=26.536664962768555
+NCPL-LUG-75-BLK: DC qty=6903.0 val=3451.5 rates=[0.5] | Monthly outQty=6903.0 outVal=3486.01 rate=0.5049999952316284
+NCPL-Line dori: DC qty=1.0 val=150.0 rates=[150.0] | Monthly outQty=1.0 outVal=113.33 rate=113.33333587646484
+NCPL-Loop Connectors: DC qty=255.0 val=1861.5 rates=[7.3] | Monthly outQty=255.0 outVal=13444.88 rate=52.724998474121094
+NCPL-Loop-Lug-1-BLK: DC qty=1200.0 val=60000.0 rates=[50.0] | Monthly outQty=1200.0 outVal=13617.33 rate=11.347777366638184
+NCPL-Loop-Lug-1-RD: DC qty=10.0 val=500.0 rates=[50.0] | Monthly outQty=10.0 outVal=108.2 rate=10.819999694824219
+NCPL-Loop-Lug-1.5-BLK: DC qty=1820.0 val=2184.0 rates=[1.2] | Monthly outQty=1820.0 outVal=1751.75 rate=0.9625000357627869
+NCPL-Loop-Lug-1.5-RD: DC qty=1000.0 val=600.0 rates=[0.6] | Monthly outQty=1000.0 outVal=960.0 rate=0.9599999785423279
+NCPL-Lugs-1: DC qty=3.0 val=120.0 rates=[40.0] | Monthly outQty=3.0 outVal=39.47 rate=13.155001640319824
+NCPL-MCB-25A-4P-16A: DC qty=1.0 val=6700.0 rates=[6700.0] | Monthly outQty=1.0 outVal=5968.33 rate=5968.33349609375
+NCPL-MDF-50P: DC qty=1.0 val=450.0 rates=[450.0] | Monthly outQty=1.0 outVal=850.0 rate=850.0
+NCPL-MT-3mtrs: DC qty=4.0 val=400.0 rates=[100.0] | Monthly outQty=4.0 outVal=331.43 rate=82.85713958740234
+NCPL-MT-5mtrs: DC qty=13.0 val=1040.0 rates=[80.0] | Monthly outQty=13.0 outVal=3392.58 rate=260.9677429199219
+NCPL-Mask: DC qty=35.0 val=175.0 rates=[5.0] | Monthly outQty=35.0 outVal=257.01 rate=7.343179702758789
+NCPL-O -Connect S IP Based: DC qty=2.0 val=193500.0 rates=[96750.0] | Monthly outQty=2.0 outVal=149854.55 rate=74927.2734375
+NCPL-PGRB: DC qty=3.0 val=48.0 rates=[16.0] | Monthly outQty=3.0 outVal=70.29 rate=23.428571701049805
+NCPL-PI-Red: DC qty=12.0 val=540.0 rates=[45.0] | Monthly outQty=12.0 outVal=690.0 rate=57.5
+NCPL-PN-15mm*100mm: DC qty=6.0 val=228.0 rates=[38.0] | Monthly outQty=6.0 outVal=128.0 rate=21.33333396911621
+NCPL-PN-25mm*150mm: DC qty=3.0 val=156.0 rates=[52.0] | Monthly outQty=3.0 outVal=129.75 rate=43.25
+NCPL-PS -1": DC qty=5140.0 val=3084.0 rates=[0.6] | Monthly outQty=5140.0 outVal=622417.25 rate=121.09284973144531
+NCPL-Pen type marker: DC qty=17.0 val=255.0 rates=[15.0] | Monthly outQty=17.0 outVal=268.6 rate=15.800000190734863
+NCPL-RJ45 CAT6A Connector: DC qty=58.0 val=1160.0 rates=[20.0] | Monthly outQty=58.0 outVal=1377.5 rate=23.75
+NCPL-RP: DC qty=96.0 val=3264.0 rates=[34.0] | Monthly outQty=0.0 outVal=0.0 rate=61.599998474121094
+NCPL-RT-25*15mm: DC qty=3.0 val=465.0 rates=[155.0] | Monthly outQty=3.0 outVal=551.0 rate=183.6666717529297
+NCPL-Roller-Brush: DC qty=105.0 val=4200.0 rates=[40.0] | Monthly outQty=105.0 outVal=7333.06 rate=69.83870697021484
+NCPL-SADDLE-25: DC qty=3928.0 val=10212.8 rates=[2.6] | Monthly outQty=3928.0 outVal=121604.69 rate=30.958423614501953
+NCPL-SH-Green: DC qty=1.0 val=225.0 rates=[225.0] | Monthly outQty=1.0 outVal=188.33 rate=188.3333282470703
+NCPL-SH-White: DC qty=2.0 val=450.0 rates=[225.0] | Monthly outQty=2.0 outVal=344.23 rate=172.11538696289062
+NCPL-SH-Yellow: DC qty=9.0 val=2025.0 rates=[225.0] | Monthly outQty=9.0 outVal=1670.81 rate=185.64515686035156
+NCPL-STS -1": DC qty=200.0 val=320.0 rates=[1.6] | Monthly outQty=200.0 outVal=257.29 rate=1.286428451538086
+NCPL-Self Thread-1 & 1/2'': DC qty=800.0 val=1360.0 rates=[1.7] | Monthly outQty=800.0 outVal=52520.0 rate=65.6500015258789
+NCPL-Self Thread-1/2: DC qty=1640.0 val=1558.0 rates=[0.95] | Monthly outQty=1640.0 outVal=1301.07 rate=0.7933333516120911
+NCPL-Single Compression gland-16mm: DC qty=30.0 val=600.0 rates=[20.0] | Monthly outQty=30.0 outVal=573.33 rate=19.11111068725586
+NCPL-Slotted Channel: DC qty=9.0 val=702.0 rates=[78.0] | Monthly outQty=9.0 outVal=640.04 rate=71.11538696289062
+NCPL-Spanner-Set: DC qty=5.0 val=1525.0 rates=[305.0] | Monthly outQty=5.0 outVal=3003.12 rate=600.625
+NCPL-TR-75: DC qty=38.0 val=66880.0 rates=[1760.0] | Monthly outQty=38.0 outVal=42610.98 rate=1121.3416748046875
+NCPL-TT: DC qty=1230.0 val=15990.0 rates=[13.0] | Monthly outQty=1230.0 outVal=17662.55 rate=14.359794616699219
+NCPL-WELDING HELMET: DC qty=1.0 val=400.0 rates=[400.0] | Monthly outQty=1.0 outVal=420.36 rate=420.3571472167969
+NCPL-WH: DC qty=1.0 val=150.0 rates=[150.0] | Monthly outQty=1.0 outVal=214.44 rate=214.44444274902344
+NCPL-Wood Screw-1&1/2'': DC qty=1000.0 val=600.0 rates=[0.6] | Monthly outQty=1000.0 outVal=597.5 rate=0.5975000262260437
+NCPL-Wood Screw-1'': DC qty=300.0 val=180.0 rates=[0.6] | Monthly outQty=300.0 outVal=156.67 rate=0.5222222208976746
+NCPL-Wood ghatta big: DC qty=612.0 val=214.2 rates=[0.35] | Monthly outQty=612.0 outVal=188.7 rate=0.30833330750465393
+NCPL-white goggles: DC qty=2.0 val=130.0 rates=[65.0] | Monthly outQty=2.0 outVal=114.35 rate=57.173912048339844
+NFR-17U-6060-BL-SK: DC qty=3.0 val=44700.0 rates=[14900.0] | Monthly outQty=2.0 outVal=29800.0 rate=14900.0
+NFR-22U-6060-BL-SK: DC qty=1.0 val=17000.0 rates=[17000.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NKJ-C6WHI1B21: DC qty=110.0 val=12870.0 rates=[117.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NLU-FSDLLCR-24: DC qty=2.0 val=7200.0 rates=[3600.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NPB-8000- 2X-485: DC qty=1.0 val=24579.0 rates=[24579.0] | Monthly outQty=1.0 outVal=24572.42 rate=24572.416015625
+NPG-5E1TRA031-100: DC qty=27.0 val=74.25 rates=[2.75] | Monthly outQty=27.0 outVal=574.71 rate=21.285411834716797
+NPP-C61BLK241: DC qty=5.0 val=9250.0 rates=[1850.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+NWR-9U-5545-GR: DC qty=1.0 val=4400.0 rates=[4400.0] | Monthly outQty=1.0 outVal=4250.0 rate=4250.0
+Ncpl-Battery-7AH: DC qty=4.0 val=3760.0 rates=[940.0] | Monthly outQty=4.0 outVal=3045.6 rate=761.4000244140625
+Ncpl-Marker: DC qty=1.0 val=10.0 rates=[10.0] | Monthly outQty=1.0 outVal=20.33 rate=20.33333396911621
+Notifier-DNR: DC qty=14.0 val=73066.0 rates=[5219.0] | Monthly outQty=14.0 outVal=100300.87 rate=7164.34765625
+Notifier-FMM/1: DC qty=90.0 val=158760.0 rates=[1764.0] | Monthly outQty=90.0 outVal=181710.0 rate=2019.0
+Notifier-FRM/1: DC qty=93.0 val=193812.0 rates=[2084.0] | Monthly outQty=93.0 outVal=218209.62 rate=2346.340087890625
+OMRON-G2R-1 (12V -DC) SPDT: DC qty=101.0 val=37875.0 rates=[375.0] | Monthly outQty=101.0 outVal=37201.67 rate=368.3333435058594
+Onfiniti 6 kVA 192V: DC qty=8.0 val=421120.0 rates=[52640.0] | Monthly outQty=8.0 outVal=419876.0 rate=52484.5
+P2RLED: DC qty=50.0 val=137250.0 rates=[2745.0] | Monthly outQty=50.0 outVal=147483.34 rate=2949.666748046875
+PEC8044-PB1-SO: DC qty=1.0 val=15200.0 rates=[15200.0] | Monthly outQty=1.0 outVal=15462.5 rate=15462.5
+PMB-AUX: DC qty=1.0 val=32319.0 rates=[32319.0] | Monthly outQty=1.0 outVal=27972.0 rate=27972.0
+PRECISION -PVC-FLEXIBLE-20MM-GRAY: DC qty=151.0 val=604.0 rates=[4.0] | Monthly outQty=151.0 outVal=703.28 rate=4.657500267028809
+PT-NRAS2A32-K2: DC qty=1.0 val=9700.0 rates=[9700.0] | Monthly outQty=1.0 outVal=10100.0 rate=10100.0
+PUB6438SR/U: DC qty=5.0 val=72500.0 rates=[14500.0] | Monthly outQty=5.0 outVal=73009.26 rate=14601.8515625
+PUC16000-EM2: DC qty=1.0 val=9200.0 rates=[9200.0] | Monthly outQty=1.0 outVal=9000.0 rate=9000.0
+PUC5533-EM2: DC qty=1.0 val=9000.0 rates=[9000.0] | Monthly outQty=1.0 outVal=8293.62 rate=8293.6171875
+Pipe Vise: DC qty=1.0 val=1150.0 rates=[1150.0] | Monthly outQty=1.0 outVal=1090.0 rate=1090.0
+Pipe-wrench-18'': DC qty=1.0 val=585.0 rates=[585.0] | Monthly outQty=1.0 outVal=573.91 rate=573.9091186523438
+QB43C: DC qty=2.0 val=57000.0 rates=[28500.0] | Monthly outQty=2.0 outVal=56000.0 rate=28000.0
+RE-120GR: DC qty=3.0 val=22620.0 rates=[7540.0] | Monthly outQty=3.0 outVal=32392.5 rate=10797.5
+RE-25SS: DC qty=6.0 val=6480.0 rates=[1080.0] | Monthly outQty=6.0 outVal=6742.5 rate=1123.75
+RE-316SH 2L: DC qty=18.0 val=14670.0 rates=[815.0] | Monthly outQty=18.0 outVal=14088.86 rate=782.7142944335938
+RE-716MG: DC qty=3.0 val=1560.0 rates=[520.0] | Monthly outQty=3.0 outVal=1963.8 rate=654.5999755859375
+RE-716MY: DC qty=3.0 val=1560.0 rates=[520.0] | Monthly outQty=3.0 outVal=1963.8 rate=654.5999755859375
+RE-RI: DC qty=9.0 val=720.0 rates=[80.0] | Monthly outQty=9.0 outVal=567.76 rate=63.08461380004883
+RI/007C: DC qty=115.0 val=7705.0 rates=[67.0] | Monthly outQty=115.0 outVal=7728.0 rate=67.19999694824219
+RM4AC24: DC qty=129.0 val=81270.0 rates=[630.0] | Monthly outQty=129.0 outVal=84253.12 rate=653.125
+S323-501G-AL: DC qty=2.0 val=15300.0 rates=[7650.0] | Monthly outQty=2.0 outVal=14900.0 rate=7450.0
+SBB-B5: DC qty=1.0 val=16179.0 rates=[16179.0] | Monthly outQty=1.0 outVal=16637.0 rate=16637.0
+SIO12000: DC qty=5.0 val=46000.0 rates=[9200.0] | Monthly outQty=5.0 outVal=46203.91 rate=9240.7822265625
+SLM-318: DC qty=4.0 val=98256.0 rates=[24564.0] | Monthly outQty=4.0 outVal=99648.0 rate=24912.0
+SMA-8100-1YR-INIT: DC qty=1.0 val=43000.0 rates=[43000.0] | Monthly outQty=1.0 outVal=41548.75 rate=41548.75
+ST10000VX0004: DC qty=1.0 val=20750.0 rates=[20750.0] | Monthly outQty=1.0 outVal=20304.0 rate=20304.0
+SXWASB36PX10001: DC qty=8.0 val=314080.0 rates=[39260.0] | Monthly outQty=4.0 outVal=166012.58 rate=41503.14453125
+SXWASPSBX10002: DC qty=7.0 val=127281.0 rates=[18183.0] | Monthly outQty=7.0 outVal=113685.6 rate=16240.7998046875
+SXWDI16XX10001: DC qty=7.0 val=38871.0 rates=[5553.0] | Monthly outQty=7.0 outVal=35389.29 rate=5055.6123046875
+SXWDOA12X10001: DC qty=1.0 val=8711.0 rates=[8711.0] | Monthly outQty=1.0 outVal=7581.62 rate=7581.62353515625
+SXWMPC36A10001: DC qty=4.0 val=0.0 rates=[0.0] | Monthly outQty=4.0 outVal=217856.0 rate=54464.0
+SXWPS24VX10001: DC qty=7.0 val=45017.0 rates=[6431.0] | Monthly outQty=7.0 outVal=39538.38 rate=5648.34033203125
+SXWSCABLE10002: DC qty=6.0 val=25134.0 rates=[4189.0] | Monthly outQty=6.0 outVal=22175.24 rate=3695.873779296875
+SXWSWCLIENT0001: DC qty=1.0 val=59396.7 rates=[59396.7] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+SXWSWESSUSPKW1: DC qty=1.0 val=0.0 rates=[0.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+SXWSWESXX00050: DC qty=1.0 val=199632.0 rates=[199632.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+SXWSWX000MBRTU: DC qty=7.0 val=46536.0 rates=[6648.0] | Monthly outQty=7.0 outVal=42506.88 rate=6072.412109375
+SXWSWXBBU010SD: DC qty=8.0 val=58320.0 rates=[7290.0] | Monthly outQty=4.0 outVal=30615.24 rate=7653.810546875
+SXWSWXBU0000SD: DC qty=7.0 val=223391.0 rates=[31913.0] | Monthly outQty=7.0 outVal=216439.7 rate=30919.95703125
+SXWTBASW110002: DC qty=7.0 val=15379.0 rates=[2197.0] | Monthly outQty=7.0 outVal=13050.83 rate=1864.4046630859375
+SXWUI16XX10001: DC qty=1.0 val=11183.0 rates=[11183.0] | Monthly outQty=1.0 outVal=10294.49 rate=10294.4853515625
+Sandisk-256gb: DC qty=4.0 val=10400.0 rates=[2600.0] | Monthly outQty=4.0 outVal=8775.0 rate=2193.75
+Single headed Hydrant flange GI Size : OD 200mm  ID : 90 PCD - 160mm: DC qty=1.0 val=280.0 rates=[280.0] | Monthly outQty=1.0 outVal=290.0 rate=290.0
+Single phase welding Machine -Ammar: DC qty=1.0 val=7000.0 rates=[7000.0] | Monthly outQty=1.0 outVal=7900.0 rate=7900.0
+Spring Box: DC qty=4.0 val=1000.0 rates=[250.0] | Monthly outQty=4.0 outVal=940.0 rate=235.0
+TB-End Bracket: DC qty=900.0 val=11700.0 rates=[13.0] | Monthly outQty=900.0 outVal=11025.0 rate=12.25
+TB2.5: DC qty=6700.0 val=48240.0 rates=[7.2] | Monthly outQty=6700.0 outVal=47108.73 rate=7.031153678894043
+TOOL-Conv-232-485: DC qty=3.0 val=1650.0 rates=[550.0] | Monthly outQty=3.0 outVal=1702.94 rate=567.6470336914062
+TOOL-Cutting Plier: DC qty=1.0 val=230.0 rates=[230.0] | Monthly outQty=1.0 outVal=230.24 rate=230.24000549316406
+TOOL-HCKSW-FR: DC qty=2.0 val=80.0 rates=[40.0] | Monthly outQty=2.0 outVal=103.71 rate=51.85714340209961
+TOOL-SCREWDRIVER: DC qty=12.0 val=1.2 rates=[0.1] | Monthly outQty=12.0 outVal=925.03 rate=77.08570861816406
+TOOL-WIRESTRIPPER: DC qty=18.0 val=900.0 rates=[50.0] | Monthly outQty=18.0 outVal=1138.5 rate=63.25
+Taparia-911: DC qty=1.0 val=30.0 rates=[30.0] | Monthly outQty=1.0 outVal=31.0 rate=31.0
+Tool -HB-Big: DC qty=38.0 val=266.0 rates=[7.0] | Monthly outQty=38.0 outVal=336.15 rate=8.84615421295166
+Tool-Adjust-Spanner: DC qty=1.0 val=390.0 rates=[390.0] | Monthly outQty=1.0 outVal=641.62 rate=641.6153564453125
+Tool-IO-Punching: DC qty=2.0 val=0.2 rates=[0.1] | Monthly outQty=2.0 outVal=1725.03 rate=862.5166625976562
+Tool-Multimeter: DC qty=1.0 val=285.0 rates=[285.0] | Monthly outQty=1.0 outVal=750.0 rate=750.0
+Tyco- 93 K80 SRSC Pendent: DC qty=8.0 val=3280.0 rates=[410.0] | Monthly outQty=0.0 outVal=0.0 rate=0.0
+URT800: DC qty=39.0 val=10920.0 rates=[280.0] | Monthly outQty=39.0 outVal=11329.5 rate=290.5
+USB TO MINI USB 1mtr: DC qty=1.0 val=0.1 rates=[0.1] | Monthly outQty=1.0 outVal=50.05 rate=50.04999923706055
+WD40PURZ: DC qty=1.0 val=6390.0 rates=[6390.0] | Monthly outQty=1.0 outVal=8410.0 rate=8410.0
+WEB-8100-U: DC qty=1.0 val=410000.0 rates=[410000.0] | Monthly outQty=1.0 outVal=363750.0 rate=363750.0
+WLD-CS25: DC qty=1.0 val=7750.0 rates=[7750.0] | Monthly outQty=1.0 outVal=8250.0 rate=8250.0
+WPM-8000: DC qty=1.0 val=5200.0 rates=[5200.0] | Monthly outQty=1.0 outVal=5471.85 rate=5471.85009765625
+Welded fitting-100x100: DC qty=6.0 val=1770.0 rates=[295.0] | Monthly outQty=6.0 outVal=1636.5 rate=272.75
+Welding Apron 24-48 size - Esab: DC qty=1.0 val=590.0 rates=[590.0] | Monthly outQty=1.0 outVal=486.67 rate=486.6666564941406
+Welding Rod -Esab: DC qty=1.0 val=2650.0 rates=[2650.0] | Monthly outQty=1.0 outVal=2464.47 rate=2464.4736328125
+dlink-cat6 cable: DC qty=25.0 val=700.0 rates=[28.0] | Monthly outQty=25.0 outVal=544.72 rate=21.788951873779297
+taparia 813: DC qty=13.0 val=585.0 rates=[45.0] | Monthly outQty=13.0 outVal=622.14 rate=47.85714340209961
+-> 327 model(s) mismatch

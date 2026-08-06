@@ -9,9 +9,9 @@ $(document).ready(function () {
 		$.error(stockSummaryError);
 	}
 
-	$("#reportFromDate,#reportToDate,#reportDate,#reportByRegionFromDate,#reportByRegionToDate,#date,#poListByFromDate,#poListByToDate,#grnreportByRegionFromDate,#grnreportByRegionToDate,#dcFromDate,#dcToDate").datepicker({
+	$("#reportFromDate,#reportToDate,#reportDate,#reportByRegionFromDate,#reportByRegionToDate,#date,#poListByFromDate,#poListByToDate,#grnreportByRegionFromDate,#grnreportByRegionToDate,#dcFromDate,#dcToDate,#monthlyFromDate,#monthlyToDate").datepicker({
 		dateFormat: 'dd-mm-yy'
-		
+
 	});
 
 	$("#reportFromDate").change(function(){ $("#reportFromDate").removeClass("border-color"); });
@@ -35,6 +35,8 @@ $(document).ready(function () {
 	$("#grnreportByRegionToDate").change(function(){ $("#grnreportByRegionToDate").removeClass("border-color"); });
 	$("#dcFromDate").change(function(){ $("#dcFromDate").removeClass("border-color"); });
 	$("#dcToDate").change(function(){ $("#dcToDate").removeClass("border-color"); });
+	$("#monthlyFromDate").change(function(){ $("#monthlyFromDate").removeClass("border-color"); });
+	$("#monthlyToDate").change(function(){ $("#monthlyToDate").removeClass("border-color"); });
 	$("#modelNoSelect").change(function(){ $("#modelNoSelect").removeClass("border-color"); });
 
 
@@ -84,11 +86,11 @@ $(document).ready(function () {
 	$('#searchGrnPoBtn').on('click', function() {
 		var modelNo = $('#modelNoSelect').val();
 		if (!modelNo || modelNo.trim() === '') {
-			$.error("Please select a model number");
+			alert("Please select a model number");
 			$('#modelNoSelect').addClass("border-color");
 			return;
 		}
-		
+
 		searchGrnAndPoByModel(modelNo.trim());
 	});
 });
@@ -96,47 +98,41 @@ $(document).ready(function () {
 // Function to populate model number dropdown
 function getModelNumberList(){
 	$.ajax({
-	    Type:'GET',
+	    type:'GET',
 	    url : api.GET_ITEM_LIST,
 	    dataType:'json',
-	    async: 'false',
 	    success  : function(response){
 	    	$("#modelNoSelect option:not(:first)").remove();
 	    	$.each(response, function( key, value ) {
-	    		$('#modelNoSelect').append('<option value=' + value.model + '>' + value.model + '</option>'); 
+	    		$('<option>').val(value.model).text(value.model).appendTo('#modelNoSelect');
 	    	});
-	    },  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
+	    },
 		error : function(e) {
 			console.log(e);
-		}  
-	  }); 
+		}
+	  });
 }
 
 // Function to search GRN and PO details by model number
 function searchGrnAndPoByModel(modelNo) {
-	// Show loading spinner
-	$('#grnPoLoading').show();
+	// Destroy existing DataTable before clearing so it doesn't re-render cached rows
+	if ($.fn.DataTable.isDataTable('#grnPoResultsTable')) {
+		$('#grnPoResultsTable').DataTable().destroy();
+	}
 	$('#grnPoResultsTable tbody').empty();
+	$('#grnPoLoading').show();
 	$('#grnPoNoResults').hide();
-	
-	// Open modal
 	$('#grnPoResultsModal').modal('show');
-	
+
 	$.ajax({
 		type: 'GET',
-		url: '/ncpl-sales/api/grn_po_by_model',
+		url: contextRoot + parentApi + '/grn_po_by_model',
 		data: { modelNo: modelNo },
 		dataType: 'json',
 		success: function(response) {
 			$('#grnPoLoading').hide();
-			
+
 			if (response && response.length > 0) {
-				// Populate table with results
 				var tbody = $('#grnPoResultsTable tbody');
 				$.each(response, function(index, grn) {
 					var row = '<tr>' +
@@ -149,40 +145,28 @@ function searchGrnAndPoByModel(modelNo) {
 						'</tr>';
 					tbody.append(row);
 				});
-				
-				// Initialize DataTable for sorting functionality
-				if ($.fn.DataTable.isDataTable('#grnPoResultsTable')) {
-					$('#grnPoResultsTable').DataTable().destroy();
-				}
 				$('#grnPoResultsTable').DataTable({
 					"paging": false,
 					"searching": false,
 					"info": false,
 					"ordering": true,
-					"order": [[ 2, "desc" ]], // Sort by GRN Date descending by default
+					"order": [[ 2, "desc" ]],
 					"columnDefs": [
 						{ "targets": [0, 1, 3, 4, 5], "orderable": true },
-						{ "targets": 2, "orderable": true, "type": "date" } // GRN Date column
+						{ "targets": 2, "orderable": true }
 					]
 				});
 			} else {
-				// Show no results message
 				$('#grnPoNoResults').show();
 			}
 		},
 		error: function(xhr, status, error) {
 			$('#grnPoLoading').hide();
 			var errorMessage = 'Error occurred while fetching data';
-			
 			if (xhr.responseJSON) {
-				if (xhr.responseJSON.errorMessage) {
-					errorMessage = xhr.responseJSON.errorMessage;
-				} else if (xhr.responseJSON.message) {
-					errorMessage = xhr.responseJSON.message;
-				}
+				errorMessage = xhr.responseJSON.errorMessage || xhr.responseJSON.message || errorMessage;
 			}
-			
-			$.error(errorMessage);
+			alert(errorMessage);
 			$('#grnPoResultsModal').modal('hide');
 		}
 	});
@@ -576,6 +560,34 @@ $(document).on('submit', '#grnByDateForm',function(e){
 		var toDateInMillis  = toDate.getTime();
 
 		if(toDateInMillis < fromDateInMillis){
+			$.error("To Date cannot be lesser than From Date");
+			e.preventDefault();
+		}
+	}
+});
+
+$(document).on('submit', '#monthlyMovementForm', function(e){
+	var fromDate = $("#monthlyFromDate").val();
+	var toDate = $("#monthlyToDate").val();
+	var isValid = true;
+
+	if(fromDate == "" || fromDate == undefined){
+		$.error("Please select the From Date");
+		e.preventDefault();
+		$("#monthlyFromDate").addClass("border-color");
+		isValid = false;
+	}
+	if(toDate == "" || toDate == undefined){
+		$.error("Please select the To Date");
+		e.preventDefault();
+		$("#monthlyToDate").addClass("border-color");
+		isValid = false;
+	}
+
+	if(isValid){
+		var to = new Date(toDate.replace(/(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		var from = new Date(fromDate.replace(/(\d{2})-(\d{2})-(\d{4})/, "$2/$1/$3"));
+		if(to.getTime() < from.getTime()){
 			$.error("To Date cannot be lesser than From Date");
 			e.preventDefault();
 		}

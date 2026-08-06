@@ -59,5 +59,14 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 		
 		@Query("SELECT im FROM ItemMaster im WHERE im.id IN :itemIds")
 		List<ItemMaster> findByIdIn(@Param("itemIds") List<String> itemIds);
-		
+
+		@Query("SELECT im FROM ItemMaster im WHERE im.model IN :models")
+		List<ItemMaster> findByModelIn(@Param("models") java.util.Collection<String> models);
+
+		@Query(value = "SELECT im.model, u.name AS unit_name FROM tbl_item_master im LEFT JOIN tbl_units u ON u.id = im.units_id ORDER BY im.model", nativeQuery = true)
+		List<Object[]> findModelAndUnitList();
+
+		@Query(value = "SELECT id, model FROM tbl_item_master ORDER BY model", nativeQuery = true)
+		List<Object[]> findGrnItemList();
+
 }

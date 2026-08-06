@@ -1,5 +1,6 @@
 package com.ncpl.sales.repository;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,5 +31,8 @@ public interface SalesItemRepo  extends JpaRepository<SalesItem, String>{
 	@Query("SELECT si FROM SalesItem si WHERE si.description = :description AND si.salesOrder.clientPoNumber = :clientPoNum AND si.slNo=:slNo")
 	SalesItem findByDescAndClientPoNumberAndSlNo(@Param("description") String description,
             @Param("clientPoNum") String clientPoNum,@Param("slNo") String slNo);
+
+	@Query("SELECT si FROM SalesItem si JOIN FETCH si.item_units JOIN FETCH si.salesOrder so JOIN FETCH so.party WHERE si.id IN :ids")
+	List<SalesItem> findByIdsWithJoins(@Param("ids") Collection<String> ids);
 	
 }

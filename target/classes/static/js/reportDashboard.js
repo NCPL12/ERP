@@ -763,27 +763,31 @@ function getAllSOWithDesignAndPONotDoneList(){
 			console.log(response);
 
 			loadSalesItemsWithDesignTable(response);
-			hideLoader();
-		},  
+		},
 		complete:function(resp){
+			hideLoader();
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
 		},
 		error : function(e) {
 			console.log(e);
-		}  	
+		}
 	})
 }
 var salesItemsWithDesignTabe = null;
 function loadSalesItemsWithDesignTable(response) {
 	if (response != undefined || response != null) {
+		if ( $.fn.DataTable.isDataTable('#soWithDesignTable') ) {
+			$('#soWithDesignTable').DataTable().destroy();
+			$('#soWithDesignTable').empty();
+		}
 		salesItemsWithDesignTabe = $('#soWithDesignTable').DataTable({
 
 
 			processing : true,
 			'columnDefs': [ {
-	    	    'targets': [0,1,2,4,5,6], /* table column index */
+	    	    'targets': [0,1,2,4], /* table column index */
 	    	    'orderable': false, /* here set the true or false */
 	    	 }],
 	    	 dom: 'Bfrtip',
@@ -2235,6 +2239,10 @@ function getAllSOWithDesignAndPONotDoneListPartial(){
 
 function loadSalesItemsWithDesignTablePartial(response) {
 	if (response != undefined || response != null) {
+		if ( $.fn.DataTable.isDataTable('#soWithDesignTable') ) {
+			$('#soWithDesignTable').DataTable().destroy();
+			$('#soWithDesignTable').empty();
+		}
 		salesItemsWithDesignTabe = $('#soWithDesignTable').DataTable({
 
 

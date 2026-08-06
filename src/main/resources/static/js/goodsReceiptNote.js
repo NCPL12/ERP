@@ -280,7 +280,7 @@ $(document).on("click",".grnView",function(){
 							grnDescription = v.poDescription;
 							modelNo = v.modelNo;
 							totalQty = v.quantity;
-							poNumber=v.purchaseOrder.poNumber;
+							poNumber=v.poNumber;
 						}
 						
 

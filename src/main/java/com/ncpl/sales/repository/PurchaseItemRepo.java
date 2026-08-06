@@ -22,6 +22,11 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 	PurchaseItem findPoItemBySoItemAndItemId(String soItemId, String itemId);
 	@Query(" from PurchaseItem where model_no=?1 order by purchase_item_id desc ")
 	List<PurchaseItem> findByModelNumberWithLatestPoItem(String model);
+
+	// Price-only projection: avoids eager-loading the full PurchaseOrder (with its
+	// history JSON column) into the session just to read unitPrice.
+	@Query("select unitPrice from PurchaseItem where model_no=?1")
+	List<Float> findUnitPricesByModelNumber(String model);
 //	@Query("select sistinct model_no from PurchaseItem")
 //	List<PurchaseItem> findModelNumber();
 	@Query(" from PurchaseItem where sales_item_id=?1 and model_no=?2")
@@ -31,6 +36,15 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 
 	@Query("SELECT pi FROM PurchaseItem pi LEFT JOIN FETCH pi.purchaseOrder WHERE pi.description IN :salesItemIds")
 	List<PurchaseItem> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
+
+	@Query("SELECT DISTINCT pi.description FROM PurchaseItem pi WHERE pi.description IN :salesItemIds")
+	List<String> findSalesItemIdsWithPoItems(@Param("salesItemIds") List<String> salesItemIds);
+
+	// Lightweight lookup for the GRN dashboard preview modal (only fields the JS uses)
+	@Query("select new map(pi.purchase_item_id as purchase_item_id, pi.poDescription as poDescription, "
+			+ "pi.modelNo as modelNo, pi.quantity as quantity, pi.purchaseOrder.poNumber as poNumber) "
+			+ "from PurchaseItem pi")
+	List<java.util.Map<String, Object>> findGrnLookup();
 
 	@Query(value = "SELECT po.po_number, " +
 			"COALESCE(SUM(pi.amount), 0) AS total, " +

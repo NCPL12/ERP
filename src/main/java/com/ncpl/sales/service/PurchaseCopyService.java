@@ -70,7 +70,7 @@ public class PurchaseCopyService {
 	        words.put(70, "Seventy");
 	        words.put(80, "Eighty");
 	        words.put(90, "Ninety");
-	        String digits[] = {"", "Hundred", "Thousand", "Lakh", "Crore"};
+	        String digits[] = {"", "Hundred", "Thousand", "Lakh", "Crore", "Arab", "Kharab"};
 	        while (i < digits_length) {
 	            int divider = (i == 2) ? 10 : 100;
 	            number = no % divider;
