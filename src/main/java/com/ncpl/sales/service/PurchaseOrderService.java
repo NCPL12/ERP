@@ -87,7 +87,8 @@ public class PurchaseOrderService {
 	    EntityManagerFactory emf;
 			Session session;
 	public PurchaseOrder savePurchaseOrder(PurchaseOrder purchaseOrder,String salesOrderId,String partyId ){
-		
+
+		validateAgainstDesignQuantity(purchaseOrder.getItems(), null);
 		//Optional<SalesOrder> salesOrder=salesService.getSalesOrderById(salesOrderId);
 		//purchaseOrder.setSalesOrder(salesOrder.get());
 		Party party=partyService.getPartyById(partyId);
@@ -99,6 +100,36 @@ public class PurchaseOrderService {
 		//updateSupplierPrice(purchaseOrderObject);
 		//update(purchaseOrderObject);
 		return purchaseOrderObject;
+	}
+
+	/**
+	 * Ensures the sum of ordered quantity per design item (across all POs, excluding
+	 * currentPoNumber when updating) never exceeds that design item's required quantity.
+	 */
+	private void validateAgainstDesignQuantity(List<PurchaseItem> items, String currentPoNumber) {
+		if (items == null) {
+			return;
+		}
+		for (PurchaseItem item : items) {
+			String soItemId = item.getDescription();
+			String itemId = item.getModelNo();
+
+			float designQty = designService.getDesignItemListBySOItemId(soItemId).stream()
+					.filter(d -> d.getItemId().equals(itemId))
+					.findFirst()
+					.map(DesignItems::getQuantity)
+					.orElse(0f);
+
+			float alreadyOrdered = purchaseItemRepo.findPoItemListBySoItemAndItemId(soItemId, itemId).stream()
+					.filter(pi -> currentPoNumber == null || !pi.getPurchaseOrder().getPoNumber().equals(currentPoNumber))
+					.map(PurchaseItem::getQuantity)
+					.reduce(0f, Float::sum);
+
+			if (alreadyOrdered + item.getQuantity() > designQty) {
+				throw new IllegalStateException("Cannot order " + item.getQuantity() + " for item " + itemId
+						+ " — only " + (designQty - alreadyOrdered) + " remaining out of " + designQty);
+			}
+		}
 	}
 	
 	/* private void updateSupplierPrice(PurchaseOrder purchaseOrderObject) {
@@ -153,6 +184,31 @@ public class PurchaseOrderService {
 		}
 		return poList;
 	}
+
+	public List<Map<String, Object>> getDashboardPoList() {
+		List<Object[]> rows = purchaseRepo.findDashboardData();
+		List<Map<String, Object>> result = new ArrayList<>(rows.size());
+		for (Object[] row : rows) {
+			Map<String, Object> po = new HashMap<>();
+			po.put("poNumber", row[0]);
+			Map<String, Object> party = new HashMap<>();
+			party.put("partyName", row[1]);
+			Map<String, Object> city = new HashMap<>();
+			city.put("name", row[2]);
+			party.put("party_city", city);
+			po.put("party", party);
+			double total = row[3] instanceof Number ? ((Number) row[3]).doubleValue() : 0;
+			double gstTotal = row[4] instanceof Number ? ((Number) row[4]).doubleValue() : 0;
+			double grandTotal = Math.round((total + gstTotal) * 100.0) / 100.0;
+			po.put("grandTotal", grandTotal);
+			po.put("created", row[5]);
+			po.put("version", row[6]);
+			po.put("archive", row[7]);
+			result.add(po);
+		}
+		return result;
+	}
+
 	//Get purchase order by id
 	public Optional<PurchaseOrder> findById(String purchaseOrderId) {
 		Optional<PurchaseOrder> po = purchaseRepo.findById(purchaseOrderId);
@@ -208,6 +264,7 @@ public class PurchaseOrderService {
 	//On editing of purchase order updating items..
 	public void updatePo(PurchaseOrder purchaseOrder) {
 		String purchaseOrderNumber = purchaseOrder.getPoNumber();
+		validateAgainstDesignQuantity(purchaseOrder.getItems(), purchaseOrderNumber);
 		JSONArray history = preparePurchaseOrderHistory(purchaseOrderNumber);
 		PurchaseOrder poToUpdate = purchaseRepo.getOne(purchaseOrderNumber);
 		poToUpdate.setHistory(history);
@@ -230,6 +287,9 @@ public class PurchaseOrderService {
 	
 	public Map<Object, Object> findVendorsByPurchaseOrder(String poNumber){
 		Optional<PurchaseOrder> po = purchaseRepo.findById(poNumber);
+		if (!po.isPresent()) {
+			return new HashMap<Object, Object>();
+		}
 		Party vendorParty = po.get().getParty();
 		String partyId = vendorParty.getId();
 		Map<Object, Object> addressMap = new HashMap<Object, Object>();

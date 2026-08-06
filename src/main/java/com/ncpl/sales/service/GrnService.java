@@ -48,6 +48,7 @@ import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Stock;
+import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.GrnRepo;
@@ -57,6 +58,7 @@ import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
 import com.ncpl.sales.repository.StockRepo;
+import com.ncpl.sales.repository.SupplierRepo;
 import com.ncpl.sales.util.DateConverterUtil;
 
 @Service
@@ -100,6 +102,8 @@ public class GrnService {
 	StockRepo stockRepo;
 	@Autowired
 	MonthlyReportStockRepo monthlyReportStockRepo;
+	@Autowired
+	SupplierRepo supplierRepo;
   
     
 	public Grn saveGrn(Grn grn) {
@@ -975,8 +979,9 @@ public class GrnService {
 		} catch (Exception e) {
 			log.warn("Failed to read opening from monthly_report_stock for item {}: {}", itemId, e.getMessage());
 		}
-		// Fallback to Envers audit table
+		// Fallback to pre-built stock-totals cache (not always present depending on caller)
 		Map<String, Float> stockTotalsAsOfFromDateMap = (Map<String, Float>) caches.get("stockTotalsAsOfFromDateMap");
+		if (stockTotalsAsOfFromDateMap == null) return 0f;
 		float openingBalance = stockTotalsAsOfFromDateMap.getOrDefault(itemId, 0f);
 		if (openingBalance < 0) openingBalance = 0;
 		return openingBalance;
@@ -1074,7 +1079,167 @@ public class GrnService {
 			.filter(item -> item.getReceivedQuantity() != 0)
 			.collect(Collectors.toList());
 	}
-	
+
+	private static final int MAX_AUTO_CLOSE_DEPTH = 24;
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public List<Map<String, Object>> getMonthlyStockMovementReport(Timestamp fromDate, Timestamp toDate) {
+		return getMonthlyStockMovementReport(fromDate, toDate, 0);
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private List<Map<String, Object>> getMonthlyStockMovementReport(Timestamp fromDate, Timestamp toDate, int depth) {
+		// Opening qty must equal the immediately preceding month's closing qty.
+		// If that month was never closed (report never run/viewed for it), close it
+		// now first so the chain is unbroken, then read it back as this period's opening.
+		java.time.LocalDate periodStart = fromDate.toLocalDateTime().toLocalDate();
+		java.time.LocalDate prevMonthEnd = periodStart.minusDays(1);
+		if (depth < MAX_AUTO_CLOSE_DEPTH
+				&& monthlyReportStockRepo.findByReportDate(prevMonthEnd).isEmpty()) {
+			java.time.LocalDate prevMonthStart = prevMonthEnd.withDayOfMonth(1);
+			Timestamp prevFrom = Timestamp.valueOf(prevMonthStart.atStartOfDay());
+			Timestamp prevTo = Timestamp.valueOf(prevMonthEnd.atTime(23, 59, 59));
+			getMonthlyStockMovementReport(prevFrom, prevTo, depth + 1);
+		}
+
+		List<Object[]> liveRows = stockRepo.getStockTotalsGroupedByItemId();
+		Map<String, Float> liveByItemId = new java.util.LinkedHashMap<>();
+		for (Object[] row : liveRows) {
+			float qty = ((Number) row[1]).floatValue();
+			if (qty > 0) liveByItemId.put((String) row[0], qty);
+		}
+
+		// Inward = GRN received in the period (by item_master_id)
+		String grnSql = "SELECT im.id, COALESCE(SUM(gi.received_quantity), 0) " +
+				"FROM tbl_grn_items gi " +
+				"JOIN tbl_purchase_items pi ON gi.po_item_id = pi.purchase_item_id " +
+				"JOIN tbl_item_master im ON pi.model_no = im.id " +
+				"WHERE gi.updated >= ? AND gi.updated <= ? GROUP BY im.id";
+		javax.persistence.Query grnQ = entityManager.createNativeQuery(grnSql);
+		grnQ.setParameter(1, fromDate);
+		grnQ.setParameter(2, toDate);
+		Map<String, Float> grnByItemId = new java.util.LinkedHashMap<>();
+		for (Object[] row : (List<Object[]>) grnQ.getResultList()) {
+			grnByItemId.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+
+		// Outward = DC dispatched in the period (by model string → item_id)
+		List<com.ncpl.sales.model.DeliveryChallanItems> dcRawList = dcService.getDcItemListByDate(fromDate, toDate);
+		Map<String, Float> dcByModel = new java.util.LinkedHashMap<>();
+		for (com.ncpl.sales.model.DeliveryChallanItems dcItem : dcRawList) {
+			String model = (String) dcItem.get("modelNo");
+			if (model == null || model.isEmpty()) continue;
+			dcByModel.merge(model, dcItem.getTodaysQty(), Float::sum);
+		}
+
+		// Resolve DC model strings → item_master_id
+		Map<String, String> modelToItemId = new java.util.HashMap<>();
+		if (!dcByModel.isEmpty()) {
+			List<ItemMaster> dcMasters = itemMasterRepo.findByModelIn(new java.util.ArrayList<>(dcByModel.keySet()));
+			for (ItemMaster im : dcMasters) {
+				if (im.getModel() != null) modelToItemId.put(im.getModel(), im.getId());
+			}
+		}
+		Map<String, Float> dcByItemId = new java.util.LinkedHashMap<>();
+		for (Map.Entry<String, Float> e : dcByModel.entrySet()) {
+			String iid = modelToItemId.get(e.getKey());
+			if (iid != null) dcByItemId.put(iid, e.getValue());
+		}
+
+		// Candidate item set = live + GRN + DC
+		java.util.Set<String> allItemIds = new java.util.LinkedHashSet<>();
+		allItemIds.addAll(liveByItemId.keySet());
+		allItemIds.addAll(grnByItemId.keySet());
+		allItemIds.addAll(dcByItemId.keySet());
+
+		List<ItemMaster> items = itemMasterRepo.findAllById(allItemIds);
+
+		// Build model → itemId map for the save section
+		Map<String, String> modelToItemIdFull = new java.util.HashMap<>();
+		for (ItemMaster im : items) {
+			if (im.getModel() != null) modelToItemIdFull.put(im.getModel(), im.getId());
+		}
+
+		List<Map<String, Object>> result = new java.util.ArrayList<>();
+
+		for (ItemMaster item : items) {
+			String itemId = item.getId();
+			String modelNo = item.getModel();
+
+			float liveQty = liveByItemId.getOrDefault(itemId, 0f);
+			float grnQty  = grnByItemId.getOrDefault(itemId, 0f);
+			float dcQty   = dcByItemId.getOrDefault(itemId, 0f);
+
+			// Opening qty = last period's closing qty (tbl_monthly_report_stock)
+			float openQty;
+			List<java.math.BigDecimal> prevQty = monthlyReportStockRepo
+					.findPreviousOutstandingQtyByItemAndBeforeDate(itemId, periodStart);
+			if (prevQty != null && !prevQty.isEmpty() && prevQty.get(0) != null) {
+				openQty = prevQty.get(0).floatValue();
+			} else {
+				// No prior snapshot (e.g. first run for this item): fall back to
+				// back-calculating from current live stock, same as before.
+				openQty = Math.max(0, liveQty - grnQty + dcQty);
+			}
+			float closingQty = Math.max(0, openQty + grnQty - dcQty);
+
+			// Price: avg of all PO unit prices for this item — identical to ISR methodology
+			// (ISR uses findByModelNumberWithRecentPoItem(itemId) and averages unit prices).
+			// Uses a price-only projection (not the full entity) so the parent PurchaseOrder
+			// is never dragged into the session — see findUnitPricesByModelNumber for why.
+			List<Float> poPrices = purchaseItemRepo.findUnitPricesByModelNumber(itemId);
+			if (poPrices.isEmpty()) continue; // ISR only includes items with PO history
+
+			float priceSum = 0;
+			for (Float price : poPrices) priceSum += price;
+			float avgPrice = priceSum / poPrices.size();
+
+			if (openQty == 0 && grnQty == 0 && dcQty == 0) continue;
+
+			Map<String, Object> record = new java.util.LinkedHashMap<>();
+			record.put("modelNo", modelNo);
+			record.put("description", item.getItemName());
+			record.put("openQty", openQty);
+			record.put("openRate", avgPrice);
+			record.put("openValue", openQty * avgPrice);
+			record.put("inwardQty", grnQty);
+			record.put("inwardRate", avgPrice);
+			record.put("inwardValue", grnQty * avgPrice);
+			record.put("outwardQty", dcQty);
+			record.put("outwardRate", avgPrice);
+			record.put("outwardValue", dcQty * avgPrice);
+			record.put("closingQty", closingQty);
+			record.put("closingRate", avgPrice);
+			record.put("closingValue", closingQty * avgPrice);
+			result.add(record);
+		}
+
+		result.sort(java.util.Comparator.comparing(r -> (String) r.get("modelNo")));
+
+		// Save closing balance to tbl_monthly_report_stock for next month's opening
+		java.time.LocalDate reportDate = toDate.toLocalDateTime().toLocalDate();
+		monthlyReportStockRepo.deleteByReportDate(reportDate);
+		java.time.LocalDateTime now = java.time.LocalDateTime.now();
+		List<com.ncpl.sales.model.MonthlyReportStock> toSave = new java.util.ArrayList<>();
+		for (Map<String, Object> rec : result) {
+			String recModel = (String) rec.get("modelNo");
+			String recItemId = modelToItemIdFull.get(recModel);
+			if (recItemId == null) continue;
+			float closingQtyRec = ((Number) rec.get("closingQty")).floatValue();
+			float closingValRec = ((Number) rec.get("closingValue")).floatValue();
+			com.ncpl.sales.model.MonthlyReportStock entry = new com.ncpl.sales.model.MonthlyReportStock();
+			entry.setItemMasterId(recItemId);
+			entry.setReportDate(reportDate);
+			entry.setOutstandingQty(java.math.BigDecimal.valueOf(closingQtyRec));
+			entry.setOutstandingValue(java.math.BigDecimal.valueOf(closingValRec));
+			entry.setCreatedAt(now);
+			toSave.add(entry);
+		}
+		monthlyReportStockRepo.saveAll(toSave);
+
+		return result;
+	}
+
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Map<String, Object> getPresentStockQtyForModel(String modelNo,String poItemId) {
 		Map<String, Object> response = new HashMap<>();
@@ -1094,35 +1259,23 @@ public class GrnService {
 	public List<Grn> getGrnAndPoDetailsByModel(String modelNo) {
 		ItemMaster item = itemMasterService.getItemByModelNo(modelNo.trim());
 		Set set = new HashSet();
-		
+
 		if (item != null) {
 			List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemsByModelNumber(item.getId());
-			
-			if (poItemList != null && !poItemList.isEmpty()) {
-				List<String> poItemIds = new ArrayList<>();
-				for (PurchaseItem purchaseItem : poItemList) {
-					poItemIds.add(String.valueOf(purchaseItem.getPurchase_item_id()));
-				}
-				
-				List<GrnItems> grnItemsList = grnItemRepo.findByDescriptionIn(poItemIds);
-				
-				for (GrnItems grnItem : grnItemsList) {
-					Grn grnObject = grnItem.getGrn();
-					if (grnObject != null) {
-						String poNum = grnObject.getPoNumber();
-						Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNum);
-						if (poObj.isPresent()) {
-							String vendor = poObj.get().getParty().getPartyName();
-							Date poDate = poObj.get().getUpdated();
-							grnObject.set("vendor", vendor);
-							grnObject.set("poDate", poDate);
-						}
-						set.add(grnObject);
+			for (PurchaseItem purchaseItem : poItemList) {
+				PurchaseOrder po = purchaseItem.getPurchaseOrder();
+				if (po == null) continue;
+				List<Grn> grnList = findGrnByPoNumber(po.getPoNumber());
+				for (Grn grnObject : grnList) {
+					if (po.getParty() != null) {
+						grnObject.set("vendor", po.getParty().getPartyName());
 					}
+					grnObject.set("poDate", po.getCreated());
+					set.add(grnObject);
 				}
 			}
 		}
-		
+
 		return new ArrayList<Grn>(set);
 	}
 	

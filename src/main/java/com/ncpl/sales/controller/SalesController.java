@@ -385,7 +385,6 @@ public class SalesController {
 		//userService.save();
 		//itemMasterService.saveUnits();
 		return "welcome";
-
 	}
 
 // Below are the apis for getting report of outstanding,dc,po
@@ -401,19 +400,16 @@ public class SalesController {
 
 	@GetMapping("/stock/pendingporeport/")
 	public String pendingPoReport(HttpServletRequest request, Model model) throws JsonProcessingException {
-
 		String name = request.getParameter("clientInPendingReport");
 		Party partyObj = partyService.getPartyById(name);
 		List<Object> pendingPoList = purchaseOrderService.getPendingPoList(name);
 		model.addAttribute("pageHeader", "Pending PO Report - " + partyObj.getPartyName());
 		model.addAttribute("pendingList", pendingPoList);
 		return "pendingporeport";
-
 	}
 
 	@GetMapping("/stock/dcReport/")
 	public String pendingDcReport(HttpServletRequest request, Model model) throws JsonProcessingException {
-
 		String name = request.getParameter("clientDcPEnding");
 		Party partyObj = partyService.getPartyById(name);
 		// List<Object> pendingDcList = new ArrayList();
@@ -421,7 +417,6 @@ public class SalesController {
 		model.addAttribute("pageHeader", "Pending DC Report - " + partyObj.getPartyName());
 		model.addAttribute("pendingDcList", pendingDcList);
 		return "pendingdcreport";
-
 	}
 
 	@PostMapping("/add/salesOrder")
@@ -502,13 +497,11 @@ public class SalesController {
 		model.addAttribute("unitsList", mapper.writeValueAsString(unitsList));
 		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
 		model.addAttribute("role", mapper.writeValueAsString(userObj.getRole()));
-		model.addAttribute("pageHeader", "Sales Order");
-		
+		model.addAttribute("pageHeader", "Sales Order");		
 		if (flashMap != null) {
 			SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
 			model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
-		}
-		
+		}		
 		model.addAttribute("salesOrderList", "[]");
 		return "welcome";
 	}
@@ -584,7 +577,6 @@ public class SalesController {
 			partyService.saveParty(party);
 		}
 		System.out.println(party);
-
 		return "redirect:/partyList";
 	}
 
@@ -626,7 +618,6 @@ public class SalesController {
 	public ResponseEntity<List<SalesOrder>> purchaseOrderDropDown() {
 		List<SalesOrder> salesList = salesService.getSalesOrderList();
 		return new ResponseEntity<List<SalesOrder>>(salesList, HttpStatus.OK);
-
 	}
 
 	/**
@@ -652,7 +643,6 @@ public class SalesController {
 		Optional<City> city = cityService.findCityById(id);
 
 		return new ResponseEntity<>(city, HttpStatus.OK);
-
 	}
 
 	// category list
@@ -734,6 +724,7 @@ public class SalesController {
 		Optional<SalesItem> salesItem = salesService.getSalesItemById(salesItemId, value);
 		return new ResponseEntity<>(salesItem, HttpStatus.OK);
 	}
+	
 	/*
 	 * Satish Edit This is used to fetch the data of category from party class
 	 */
@@ -760,7 +751,6 @@ public class SalesController {
 		Optional<Category> category = categoryService.findCategoryById(id);
 
 		return new ResponseEntity<>(category, HttpStatus.OK);
-
 	}
 	/* This is used to call the service class to find the categoryList */
 
@@ -781,6 +771,7 @@ public class SalesController {
 	 * @param model
 	 * @return
 	 */
+	
 	@GetMapping("/api/party/view")
 	public String displayEditParty(@RequestParam("partyId") String partyId, RedirectAttributes redirectAttr,
 			Model model) {
@@ -813,6 +804,7 @@ public class SalesController {
 	 * @param partyId
 	 * @return contactList
 	 */
+	
 	@GetMapping("/api/party-contact")
 	public ResponseEntity<?> contactByPartyId(@RequestParam("partyId") String partyId) {
 		List<PartyContact> contactList = partyContactService.getContactById(partyId);
@@ -1469,6 +1461,12 @@ public class SalesController {
 		return new ResponseEntity<>(dcExists, HttpStatus.OK);
 	}
 
+	//bulk version of check_dc_exists: one request for all items of a sales order, returns ids having DC/PO
+	@PostMapping("/api/check_dc_exists_bulk")
+	public ResponseEntity<?> checkForDcExistsBulk(@RequestParam("salesItemIds") List<String> salesItemIds) {
+		return new ResponseEntity<>(salesService.checkForDcExistsBulk(salesItemIds), HttpStatus.OK);
+	}
+
 	@SuppressWarnings({ "rawtypes" })
 	@GetMapping("/stock_report_by_region/Download")
 	public ModelAndView stocksummarybyRegion(HttpServletRequest request, Model model) throws ParseException {
@@ -1980,6 +1978,7 @@ public class SalesController {
 			model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
 			model.addAttribute("salesOrderList", mapper.writeValueAsString(salesList));
 			model.addAttribute("pageHeader", "Sales Order");
+			model.addAttribute("tds", new com.ncpl.sales.model.Tds());
 			if (flashMap != null) {
 				SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
 				if (salesOrder != null) {
@@ -2056,6 +2055,37 @@ public class SalesController {
 					itemMasterId != null ? itemMasterId : "");
 			log.info("getTdsLots: found {} lots", lots != null ? lots.size() : 0);
 			return new ResponseEntity<>(lots != null ? lots : new ArrayList<>(), HttpStatus.OK);
+		}
+
+	 @GetMapping("/api/tds/all-lots")
+		public ResponseEntity<?> getAllTdsLotsBySoNumber(@RequestParam("soNumber") String soNumber) {
+			List<Object[]> rows = lotRepo.findAllLotsBySoNumber(soNumber);
+			List<Map<String, Object>> result = new ArrayList<>();
+			if (rows != null) {
+				for (Object[] row : rows) {
+					Map<String, Object> m = new HashMap<>();
+					m.put("lotNumber", row[0]);
+					m.put("quantity", row[1]);
+					m.put("description", row[2]);
+					m.put("modelNumber", row[3]);
+					result.add(m);
+				}
+			}
+			return new ResponseEntity<>(result, HttpStatus.OK);
+		}
+
+	 @GetMapping("/api/tds/items")
+		public ResponseEntity<?> getTdsItemsBySoNumber(@RequestParam("soNumber") String soNumber) {
+			List<Object[]> rows = tdsRepo.getTdsApprovedItemsBySoNumber(soNumber);
+			List<Map<String, Object>> result = new ArrayList<>();
+			for (Object[] row : rows) {
+				Map<String, Object> item = new HashMap<>();
+				item.put("salesItemId", row[0]);
+				item.put("modelNumber", row[2]);
+				item.put("tdsApproved", row[1]);
+				result.add(item);
+			}
+			return new ResponseEntity<>(result, HttpStatus.OK);
 		}
 	 
 	 @GetMapping("/api/salesItems_without_design_list")
@@ -2237,6 +2267,31 @@ public class SalesController {
 			request.setAttribute("itemMasterService", itemMasterService);
 			request.setAttribute("reportDate", reportDate);
 			return new ModelAndView(new MonthlyStockReportExcel(), "monthlyStockReport", stockList);
+		}
+
+		@SuppressWarnings({ "rawtypes" })
+		@GetMapping("/monthly_report/by_date")
+		public ModelAndView monthlyStockMovementReport(HttpServletRequest request) throws ParseException {
+			String fromDateString = request.getParameter("fromDate");
+			String toDateString = request.getParameter("toDate");
+			fromDateString = fromDateString.replaceAll("/", "-");
+			toDateString = toDateString.replaceAll("/", "-");
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+			Date fromDateParsed = sdf.parse(fromDateString);
+			Date toDateParsed = sdf.parse(toDateString);
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(toDateParsed);
+			cal.add(Calendar.HOUR_OF_DAY, 23);
+			cal.add(Calendar.MINUTE, 59);
+			toDateParsed = cal.getTime();
+			Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDateParsed);
+			Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(toDateParsed);
+			List<Map<String, Object>> records = grnService.getMonthlyStockMovementReport(sqlFromDate, sqlToDate);
+			Map<String, Object> model = new HashMap<>();
+			model.put("monthlyReport", records);
+			model.put("fromDate", fromDateString);
+			model.put("toDate", toDateString);
+			return new ModelAndView(new com.ncpl.sales.service.MonthlyStockMovementExcel(), model);
 		}
 
 
@@ -2457,8 +2512,7 @@ public class SalesController {
 	            log.error("Error searching audit logs", e);
 	            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	        }
-	    }
-	    
+	    }	    
 	    private List<String> getAuditActions() {
 	        List<String> actions = new ArrayList<>();
 	        actions.add("CREATE");
@@ -2470,6 +2524,5 @@ public class SalesController {
 	        actions.add("CREATE_DESIGN");
 	        actions.add("DELETE_ITEM");
 	        return actions;
-	    }
-	    
+	    }   
 }

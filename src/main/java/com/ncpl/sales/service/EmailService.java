@@ -541,13 +541,13 @@ public class EmailService {
 		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
 		        prop.put("mail.smtp.starttls.enable","true");
 		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
+		        prop.put("mail.smtp.socketFactory.class",
+	                    "javax.net.ssl.SSLSocketFactory");
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
 		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
+
 		        Session session = Session.getInstance(prop, null);
 		        Message msg = new MimeMessage(session);
 		        BodyPart body = new MimeBodyPart();

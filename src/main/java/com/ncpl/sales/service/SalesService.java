@@ -291,7 +291,31 @@ public class SalesService {
 				log.warn("[CLIENT_PO_DATE] savesales update | clientPoDate still null (request and DB both null)");
 				consoleDiag("[CLIENT_PO_DATE] savesales update | clientPoDate still null (request and DB both null)");
 			}
-			
+
+			// Prevent stale/partial submissions from silently unlinking items that exist
+			// in the DB but weren't included in this request (e.g. added by another tab
+			// after this form was loaded). Deletion goes through the dedicated, guarded
+			// /api/salesItem/delete endpoint, not through omission here.
+			if (oldOrder.getItems() != null) {
+				List<SalesItem> mergedItems = new ArrayList<SalesItem>();
+				java.util.Set<String> submittedIds = new java.util.HashSet<>();
+				if (salesorder.getItems() != null) {
+					mergedItems.addAll(salesorder.getItems());
+					for (SalesItem item : salesorder.getItems()) {
+						if (item.getId() != null) {
+							submittedIds.add(item.getId());
+						}
+					}
+				}
+				for (SalesItem oldItem : oldOrder.getItems()) {
+					if (oldItem.getId() != null && !submittedIds.contains(oldItem.getId())) {
+						oldItem.setSalesOrder(salesorder);
+						mergedItems.add(oldItem);
+					}
+				}
+				salesorder.setItems(mergedItems);
+			}
+
 			soObj = salesrepo.save(salesorder);
 			
 			// Log audit for sales order update + line-item diffs
@@ -1034,6 +1058,17 @@ public class SalesService {
 			dcExists = false;
 		}
 		return dcExists;
+	}
+
+	//bulk variant of checkForDcExists: returns the subset of ids that have a DC or PO item (2 queries total instead of 2 per item)
+	public Set<String> checkForDcExistsBulk(List<String> salesItemIds) {
+		Set<String> idsWithDcOrPo = new HashSet<String>();
+		if (salesItemIds == null || salesItemIds.isEmpty()) {
+			return idsWithDcOrPo;
+		}
+		idsWithDcOrPo.addAll(dcService.getSoItemIdsWithDcQtyNotZero(salesItemIds));
+		idsWithDcOrPo.addAll(purchaseItemService.getSalesItemIdsWithPoItems(salesItemIds));
+		return idsWithDcOrPo;
 	}
 
 	private static String formatLakh(double d) {

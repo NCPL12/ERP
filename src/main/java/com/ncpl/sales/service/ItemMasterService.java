@@ -87,7 +87,33 @@ public class ItemMasterService {
 		Collections.sort(itemList);
 		return itemList;
 	}
-	
+
+	public List<Map<String, Object>> getModelAndUnitList() {
+		List<Object[]> rows = itemMasterRepo.findModelAndUnitList();
+		List<Map<String, Object>> result = new ArrayList<>(rows.size());
+		for (Object[] row : rows) {
+			Map<String, Object> item = new HashMap<>();
+			item.put("model", row[0] != null ? row[0].toString().trim() : "");
+			Map<String, Object> units = new HashMap<>();
+			units.put("name", row[1]);
+			item.put("item_units", units);
+			result.add(item);
+		}
+		return result;
+	}
+
+	public List<Map<String, Object>> getGrnItemList() {
+		List<Object[]> rows = itemMasterRepo.findGrnItemList();
+		List<Map<String, Object>> result = new ArrayList<>(rows.size());
+		for (Object[] row : rows) {
+			Map<String, Object> item = new HashMap<>();
+			item.put("id", row[0]);
+			item.put("model", row[1] != null ? row[1].toString().trim() : "");
+			result.add(item);
+		}
+		return result;
+	}
+
 	/**
 	 * Optimized method to get paginated items with database-level pagination
 	 * @param pageNo - page number (0-based)

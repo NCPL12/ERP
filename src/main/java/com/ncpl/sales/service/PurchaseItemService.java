@@ -163,6 +163,11 @@ public class PurchaseItemService {
 		return purchaseItemList;
 	}
 
+	// Lightweight lookup for the GRN dashboard (avoids serializing full entities)
+	public List<java.util.Map<String, Object>> getGrnLookupList() {
+		return purchaseItemRepo.findGrnLookup();
+	}
+
 	public List<PurchaseItem> getPurchaseItemsBySalesItemId(String soItemId) {
 
 		List<PurchaseItem> poItemList = purchaseItemRepo.findBySalesItemId(soItemId);
@@ -175,6 +180,11 @@ public class PurchaseItemService {
 		// poRepo.getPurchaseOrderByPoId(purchaseItem.get().getPurchase_item_id());
 
 		return poItemList;
+	}
+
+	//bulk variant: which of the given sales item ids have PO items
+	public List<String> getSalesItemIdsWithPoItems(List<String> salesItemIds) {
+		return purchaseItemRepo.findSalesItemIdsWithPoItems(salesItemIds);
 	}
 
 	public PurchaseItem getPurchaseItemBySalesItemIdAndItemId(String soItemId, String itemId) {

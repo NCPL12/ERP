@@ -235,12 +235,12 @@ function getPartyList(){
          // Check if expand all header should be shown/hidden after adding new row
          toggleExpandAllHeader();
         // Ensure no suggestions/autocomplete on description for new row as well
-        $(".description").attr("autocomplete","off");
-        $(".description").attr("spellcheck","false");
-        $(".description").attr("autocapitalize","off");
-        $(".description").attr("autocorrect","off");
+        var $desc2 = newRow.find(".description");
+        $desc2.attr("autocomplete","off");
+        $desc2.attr("spellcheck","false");
+        $desc2.attr("autocapitalize","off");
+        $desc2.attr("autocorrect","off");
         if ($.fn && typeof $.fn.autocomplete === 'function') {
-            var $desc2 = $(".description");
             if ($desc2.data('ui-autocomplete') || $desc2.data('autocomplete')) {
                 $desc2.autocomplete('destroy');
             }
@@ -257,35 +257,7 @@ function getPartyList(){
     		$.each(unitsList,function(index,value){
     			$("#unit"+ arraycount).append('<option value='+value.id+'>'+value.name+'</option>');
     		});
-     		/**To display New Row **/
-    		$.each(itemList,function(index,value){
-    			$("#itemDropDown"+ arraycount).append('<option value='+value.id+'>'+value.model+'</option>');
-    		});
-    		
-    		$(document).on("change", "#itemDropDown"+ arraycount, function() {
-    			var itemId=$(this).val();
-    			          $.ajax({
-    		    				type : "GET",  
-    		    				url : api.ITEM_LIST_BYID +"?id="+itemId,
-    		    				success : function(response) {
-    		    					$("input[name='items[" +arraycount+ "].hsnCode']").val(response.hsnCode);
-    		    					$("input[name='items[" +arraycount+ "].modelNo']").val(response.model);
-    		    					$("input[name='items[" +arraycount+ "].description']").val(response.itemName);
-    		    					$("input[name='items[" +arraycount+ "].unitPrice']").val(response.sellPrice);
-    		    					
-    		    					
-    		    				},  
-    		    				complete:function(resp){
-    		    					if(resp.status==500){
-    		    						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-    		    					}
-    		    				},
-    		    				error : function(e) {
-    		    					console.log(e);
-    		    				}  
-    		    			}); 
-    		    	});
-	} 
+	}
 	
 	$(document).on("change",".unit",function(){
 		var index=$(this).closest("tr").index();
@@ -317,14 +289,7 @@ function getPartyList(){
 	/**get sales item list by sales order id and display on double click of sales list **/
 	function getSalesOrderById(soId){
 		showLoader();
-		
-		// Show table loading overlay
-		$("#salesTable").closest('.card').css('position', 'relative');
-		if($("#salesTableOverlay").length === 0) {
-			$("#salesTable").before('<div id="salesTableOverlay" style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.8);z-index:10;display:flex;align-items:center;justify-content:center;"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><span style="margin-left:10px;font-size:16px;">Loading Sales Items...</span></div>');
-		}
-		$("#salesTableOverlay").show();
-		//className String is used to differentiate. since this api is used many places 
+		//className String is used to differentiate. since this api is used many places
 		var className="so";
 		var partyId=salesOrderObj.party.id;
    	 	if(partyId=="C1143"){
@@ -376,7 +341,6 @@ function getPartyList(){
 		    	$("#resetSalesOrder").hide();
 		    	$.each(response,function( key, value ){
 				    	addSalesOrder();
-				    	 getAmount()   	
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
 				
 				var unitName=value.item_units.name;
@@ -438,10 +402,8 @@ function getPartyList(){
 					 $("#designTd"+key).show();
 				 }
 				//$(".deleteButton").hide();
-				checkForDcExists(value.id,key);
-				
-				
 		    	});
+		    	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
 		    	$('#partyDropDown').val(salesOrderObj.party.id);
 		    	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
 		    	$('#partyDropDown').attr("disabled",true);
@@ -457,20 +419,60 @@ function getPartyList(){
 		    },  
 			complete:function(resp){
 				hideLoader();
-				$("#salesTableOverlay").hide();
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 				}
 			},
 			error : function(e) {
 				hideLoader();
-				$("#salesTableOverlay").hide();
 				console.log(e);
-			}  
-		  }); 
+			}
+		  });
 	}
 	
 	
+	//bulk version of checkForDcExists: one request for all rows instead of one per row
+	function checkForDcExistsBulk(salesItemIds){
+		if(salesItemIds.length == 0){
+			return;
+		}
+		$.ajax({
+			type : "POST",
+			url : api.DC_EXIST_BULK,
+			data : { salesItemIds : salesItemIds.join(",") },
+			success : function(idsWithDc) {
+				var anyDc = false;
+				$.each(salesItemIds, function(key, id){
+					var row = $("#salesTable >tbody").find("tr:eq("+key+")");
+					if(idsWithDc.indexOf(id) !== -1){
+						anyDc = true;
+						row.find("input,select,button").attr("disabled",true);
+						disableDesignAddBtn(key);
+					}else{
+						row.find("input,select,button").attr("disabled",false);
+						enableDesignAddBtn(key);
+					}
+				});
+				if(anyDc){
+					$('.toggleBrief').attr('disabled', false);
+					if(userName=="surendra" || userName=="ashwini"){
+						$('.slNo').attr('disabled', false);
+					}else{
+						$('.slNo').attr('disabled', true);
+					}
+				}
+			},
+			complete:function(resp){
+				if(resp.status==500){
+					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+				}
+			},
+			error : function(e) {
+				console.log(e);
+			}
+		});
+	}
+
 	//function to check dc exist for the particular sales item
 	function checkForDcExists(salesItemId,key){
 		var row=key+1;
@@ -889,9 +891,7 @@ function designTable2Json(){
 		   	adjustIndex();
 		   	toggleExpandAllHeader();
 		}
-	});			
-		getAmount();
-	
+	});
 	}
 	
 	function adjustIndex(){

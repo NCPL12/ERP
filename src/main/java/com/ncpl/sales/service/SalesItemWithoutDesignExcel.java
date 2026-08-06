@@ -85,8 +85,8 @@ public class SalesItemWithoutDesignExcel {
 		emailContents.put("to1", "quotes@ncpl.co");
 		emailContents.put("to2", "ramsy@ncpl.co");
 		emailContents.put("cc1", "design@ncpl.co");
-		emailContents.put("cc2", "abhilash@ncpl.co");
-		emailContents.put("cc3", "prasadini@ncpl.co");
+		emailContents.put("cc2", "prasadini@ncpl.co");
+		emailContents.put("cc3", "design@ncpl.co");
 		emailContents.put("month", Constants.currentDate()); 
 		emailContents.put("attachment", filePath); 
 		return emailContents; 

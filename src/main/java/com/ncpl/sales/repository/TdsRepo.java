@@ -13,9 +13,15 @@ import com.ncpl.sales.model.Tds;
 
 @Repository
 public interface TdsRepo extends JpaRepository<Tds, Integer>{
-	
+
 	@Query(" from Tds where soNumber=?1 ")
 	List<Tds> getTdsListBySoNumber(String soNumber);
+
+	@Query(value = "SELECT ti.description AS sales_item_id, ti.tds_approved AS tds_approved, ti.model_number AS model_number "
+			+ "FROM tbl_tds_items ti "
+			+ "INNER JOIN tbl_tds t ON ti.tds_id = t.tds_id "
+			+ "WHERE t.so_number = ?1 AND ti.tds_approved = true", nativeQuery = true)
+	List<Object[]> getTdsApprovedItemsBySoNumber(String soNumber);
 
 	@Modifying
 	@Transactional

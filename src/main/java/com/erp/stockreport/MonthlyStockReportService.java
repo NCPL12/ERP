@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 
 public class MonthlyStockReportService {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/may26?sessionVariables=sql_mode='NO_ENGINE_SUBSTITUTION'&jdbcCompliantTruncation=false&zeroDateTimeBehavior=convertToNull";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/june29?sessionVariables=sql_mode='NO_ENGINE_SUBSTITUTION'&jdbcCompliantTruncation=false&zeroDateTimeBehavior=convertToNull";
     private static final String DB_USERNAME = "root";
     private static final String DB_PASSWORD = "Pass@123";
 
@@ -20,8 +20,9 @@ public class MonthlyStockReportService {
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         if (args.length == 0) {
             LocalDate today = LocalDate.now();
-            LocalDate from = today.withDayOfMonth(1);
-            service.generateMonthlyStockReport(from, today);
+            LocalDate firstDayOfPrevMonth = today.minusMonths(1).withDayOfMonth(1);
+            LocalDate lastDayOfPrevMonth = firstDayOfPrevMonth.withDayOfMonth(firstDayOfPrevMonth.lengthOfMonth());
+            service.generateMonthlyStockReport(firstDayOfPrevMonth, lastDayOfPrevMonth);
         } else if (args.length == 2) {
             try {
                 LocalDate from = LocalDate.parse(args[0], fmt);
@@ -75,7 +76,7 @@ public class MonthlyStockReportService {
                 double outstandingQty = currentStock + dcQty - grnQty;
                 double outstandingValue = outstandingQty * supplyPrice;
 
-                insertMonthlyReport(connection, itemId, outstandingValue, toDate);
+                insertMonthlyReport(connection, itemId, outstandingQty, outstandingValue, toDate);
 
                 System.out.println("Model No : " + modelNo +
                         " | Current Stock : " + currentStock +
@@ -105,6 +106,7 @@ public class MonthlyStockReportService {
                 "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
                 "item_master_id VARCHAR(255) NOT NULL, " +
                 "report_date DATE NOT NULL, " +
+                "outstanding_qty DECIMAL(18,2) DEFAULT 0, " +
                 "outstanding_value DECIMAL(18,2) DEFAULT 0, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                 "CONSTRAINT fk_monthly_report_item FOREIGN KEY (item_master_id) REFERENCES tbl_item_master(id)" +
@@ -209,18 +211,19 @@ public class MonthlyStockReportService {
         return supplyPrice;
     }
 
-    private void insertMonthlyReport(Connection connection, String itemId, double outstandingStock, LocalDate today) {
+    private void insertMonthlyReport(Connection connection, String itemId, double outstandingQty, double outstandingValue, LocalDate today) {
         try {
             String insertQuery = "INSERT INTO tbl_monthly_report_stock " +
-                    "(item_master_id, report_date, outstanding_value) VALUES (?, ?, ?)";
+                    "(item_master_id, report_date, outstanding_qty, outstanding_value) VALUES (?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(insertQuery);
             stmt.setString(1, itemId);
             stmt.setDate(2, Date.valueOf(today));
-            stmt.setDouble(3, outstandingStock);
+            stmt.setDouble(3, outstandingQty);
+            stmt.setDouble(4, outstandingValue);
             stmt.executeUpdate();
             stmt.close();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }	
     }
 }

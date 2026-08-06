@@ -101,9 +101,7 @@ public class DeliveryDateWeeklyEmailSchedular {
 		emailContents.put("month", Constants.currentDate()); 
 		emailContents.put("attachment", filePath); 
 		return emailContents; 
-	
-		
-	}
+ }
 }
 
 class WeeklyPurchaseExcel{

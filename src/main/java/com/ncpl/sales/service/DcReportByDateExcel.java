@@ -89,7 +89,7 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 			Object dcNumObj = dcItem.get("dcNum");
 			Date dcDate = (Date) dcItem.get("dcDate");
 
-			if (modelNo == null) continue;
+			if (modelNo == null || modelNo.isEmpty()) continue;
 
 			float salesPrice = salesPriceObj instanceof Number ? ((Number) salesPriceObj).floatValue() : 0;
 			float qty = dcItem.getTodaysQty();

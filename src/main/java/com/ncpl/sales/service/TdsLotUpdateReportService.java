@@ -126,7 +126,7 @@ public class TdsLotUpdateReportService {
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, totalCols - 1));
         Row titleRow = sheet.createRow(0);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("SITE QUANTITY REPORT");
+        titleCell.setCellValue("SITE QUANTITY REPORT - SO No: " + salesOrder.getId());
         titleCell.setCellStyle(titleStyle);
 
         // Row 1 — Main headers
@@ -195,6 +195,11 @@ public class TdsLotUpdateReportService {
         dataCenter.cloneStyleFrom(dataStyle);
         dataCenter.setAlignment(HSSFCellStyle.ALIGN_CENTER);
 
+        CellStyle highlightRight = wb.createCellStyle();
+        highlightRight.cloneStyleFrom(dataRight);
+        highlightRight.setFillForegroundColor(HSSFColor.YELLOW.index);
+        highlightRight.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
         int rowNum = 3;
         int slNo   = 1;
 
@@ -235,7 +240,11 @@ public class TdsLotUpdateReportService {
             fillItemRow(row, salesItem, slNo++, unit, tdsItem, modelDisplay, dataCenter, dataStyle, dataRight);
 
             for (int l = 0; l < maxLots; l++) {
-                createNumCell(row, colSiteQtyStart + l, lotQtys[l], dataRight);
+                if (lotQtys[l] > 0) {
+                    createNumCell(row, colSiteQtyStart + l, lotQtys[l], highlightRight);
+                } else {
+                    createNumCell(row, colSiteQtyStart + l, lotQtys[l], dataRight);
+                }
             }
             createNumCell(row, colDeliveredQty, deliveredQty, dataRight);
             createNumCell(row, colPendingQty, pendingQty, dataRight);

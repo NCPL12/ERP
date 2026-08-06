@@ -1,0 +1,21 @@
+Scheduler class,Cron (IST),Subject,To,CC,Status
+SalesOrderWithoutDesignExcel,daily 9:45am,SO without design dated {date},"quotes@ncpl.co, ramsy@ncpl.co","design@ncpl.co, prasadini@ncpl.co, design@ncpl.co (dup)",Active
+SalesItemWithoutDesignExcel,daily 9:45am,Sales Items Without Design,"quotes@ncpl.co, ramsy@ncpl.co","design@ncpl.co, prasadini@ncpl.co, design@ncpl.co (dup)",Active
+SalesOrderWithoutDesignByCustomerExcel,daily 9:45am,SO without design dated {date},"quotes@ncpl.co, ramsy@ncpl.co","design@ncpl.co, prasadini@ncpl.co, ashwini@ncpl.co",Active
+StockEmailScheduler,daily 10:00am,Daily Stock Report,"store@ncpl.co, surendra@ncpl.co (prod)","ramsy@ncpl.co, prasadini@ncpl.co, purchase@ncpl.co, vighneshwar@ncpl.co, aparna@ncpl.co",Active
+DcPartialItemsEmailSchedular,daily 10:15am,Sales Items with Design and PO not done,anitha@tek-nika.com (x3 same),anitha@tek-nika.com (x3 same),Active
+SalesItemsWherePoNotDoneExcel,daily 10:15am,Sales Items with Design and PO not done,"quotes@ncpl.co, ramsy@ncpl.co, purchase@ncpl.co","design@ncpl.co, vighneshwar@ncpl.co, prasadini@ncpl.co",Active
+ActiveSalesOrderExcel,Mon 10:45am,Active Sales Order,"prasadini@ncpl.co, ramsy@ncpl.co","design@ncpl.co, quotes@ncpl.co, design@ncpl.co (dup)",Active
+ActiveSalesOrderWithItremsExcel,Mon 10:45am,Active Sales Order,"prasadini@ncpl.co, ramsy@ncpl.co","design@ncpl.co, vighneshwar@ncpl.co, quotes@ncpl.co (cc2 dup - quotes wins)",Active
+DeliveryDateWeeklyEmailSchedular,daily 11:00am,Delivery Date Info Report For Next Week,anithapoojary846@gmail.com (x2 - hardcoded test addr),anithapoojary846@gmail.com (x3),Active
+StockByCustomerEmailSchedular,Mon 11:15am,Stock By Customer,"surendra@ncpl.co, store@ncpl.co","purchase@ncpl.co, prasadini@ncpl.co, ramsy@ncpl.co, vighneshwar@ncpl.co, aparna@ncpl.co, mani@ncpl.co",Active
+StockByCustomerForAllClients,Tue 11:15am,Stock By Customer For All Clients {date},surendra@ncpl.co,aniksha@ncpl.co,Active
+LrNumberEmailSchedular,daily 11:30am,LR number Info Report,"prasadini@ncpl.co, ramsy@ncpl.co","purchase@ncpl.co, surendra@ncpl.co, vighneshwar@ncpl.co",Active
+ItemsWithMinQtyEmailSchedular,Mon 11:45am,Items With Minimum Quantity {date},"gopi@ncpl.co, purchase@ncpl.co","design@ncpl.co, prasadini@ncpl.co, ramsy@ncpl.co",Active
+ItemMasterEmailSchedular,daily 12:00pm,Items Created,"store@ncpl.co, purchase@ncpl.co, design@ncpl.co","ramsy@ncpl.co, prasadini@ncpl.co, surendra@ncpl.co, prashanth@ncpl.co, vighneshwar@ncpl.co",Active
+StockValueByItemEmailScedular,Mon 12:15pm,Stock By Items {date},surendra@ncpl.co,aparna@ncpl.co,Active
+PedningSalesItemsExcel,daily 12:30pm,Sales Items To Be Delivered,"prashanth@ncpl.co, surendra@ncpl.co","design@ncpl.co, vighneshwar@ncpl.co, store@ncpl.co (cc2 dup - store wins)",Active
+WeeklyEmailSchedular,Sat 10:30am,Delivery Date Info Report For Next Week,"prasadini@ncpl.co, ramsy@ncpl.co","purchase@ncpl.co, surendra@ncpl.co, vighneshwar@ncpl.co",Active
+DelivaryDateEmailSchedular,-- (disabled),Delivery Date Info Report,"prasadini@ncpl.co, ramsy@ncpl.co","purchase@ncpl.co, surendra@ncpl.co, vighneshwar@ncpl.co",Disabled
+SalesOrderCreatedEmailSchedular,-- (disabled),Sales Order Created dated {date},"prasadini@ncpl.co, ramsy@ncpl.co, surendra@ncpl.co, prashanth@ncpl.co, design@ncpl.co",--,Disabled
+TdsApprovedWeeklyExcel,-- (disabled),Tds Approved Items,"prasadini@ncpl.co, ramsy@ncpl.co, design@ncpl.co","purchase@ncpl.co, surendra@ncpl.co, vighneshwar@ncpl.co",Disabled

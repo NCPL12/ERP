@@ -43,7 +43,9 @@ import com.ncpl.sales.config.LangConfig;
 import com.ncpl.sales.model.Party;
 import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.PurchaseItem;
+import com.ncpl.sales.model.AppConfig;
 import com.ncpl.sales.model.PurchaseOrder;
+import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.security.User;
 
 public class PurchasePdf  extends PdfPageEventHelper {
@@ -84,7 +86,7 @@ public class PurchasePdf  extends PdfPageEventHelper {
 	private static final DecimalFormat dfZero = new DecimalFormat("#,##0.00");
 	
 	@SuppressWarnings("unused")
-	public String purchaseFunction(PurchaseOrder purchase,HttpServletRequest request) throws DocumentException, MalformedURLException, IOException {
+	public String purchaseFunction(PurchaseOrder purchase,HttpServletRequest request, AppConfigRepo configRepo) throws DocumentException, MalformedURLException, IOException {
 		// TODO Auto-generated method stub
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		String company = "Neptune Controls Pvt Ltd."+"\n"+ "No.8/2(Old No.114),2nd Cross 7th Main Road, Nandidurga Extension"+
@@ -94,12 +96,12 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		Date date = new Date();
 		// writePdf(outputStream);
 		String fileName = "purchase" + "1" + date.getTime() + ".pdf";
-		String path = createPurchasePDF(fileName, purchase, company,request);
+		String path = createPurchasePDF(fileName, purchase, company,request, configRepo);
 		return path;
 	}
 
 	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })
-	private String createPurchasePDF(String fileName, PurchaseOrder poObject, String company,HttpServletRequest request) throws DocumentException, MalformedURLException, IOException {
+	private String createPurchasePDF(String fileName, PurchaseOrder poObject, String company,HttpServletRequest request, AppConfigRepo configRepo) throws DocumentException, MalformedURLException, IOException {
 		
 		Document doc = new Document(PageSize.A4, 50, 30, 25, 10);
 
@@ -362,11 +364,17 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		// paragraph.add(new Chunk("To :" + "NCPL \n"));
 		// paragraph.add(new Chunk(" Email Id :" + "owner@ncpl.co \n"));
 
-		
-			String imgLoc = "http://localhost:8080/ncpl-sales/resources/dist/img/ncpl_logo_pdf.png";
-			  Image img = Image.getInstance(imgLoc);
-      img.setAbsolutePosition(53f, 760f);
-      document.add(img);
+
+			String defaultLogoUrl = "http://localhost:8880/ncpl-sales/resources/dist/img/ncpl_logo_pdf.png";
+			if (configRepo != null) {
+				AppConfig logoConfig = configRepo.findByConfigKey("purchase.logo.url");
+				if (logoConfig != null) {
+					defaultLogoUrl = logoConfig.getConfigValue();
+				}
+			}
+			Image img = Image.getInstance(defaultLogoUrl);
+			img.setAbsolutePosition(53f, 760f);
+			document.add(img);
 		
 		
 		PdfPTable table = new PdfPTable(2);
@@ -1147,16 +1155,24 @@ public class PurchasePdf  extends PdfPageEventHelper {
 
 		PdfPCell signCell = new PdfPCell();
 		signCell.setBorder(0);
-		//Phrase sign = new Phrase();
 		String imgLoc1;
-		if(user.getUsername().equalsIgnoreCase("vighneshwar")) {
-			 imgLoc1 = "http://localhost:8080/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg";
-		}else {
-			 //imgLoc1 = "http://localhost:8888/ncpl-sales/resources/dist/img/abhilashSign2.jpg";
-			imgLoc1 = "http://localhost:8080/ncpl-sales/resources/dist/img/sumathySign2.jpg";
-
+		String sigKey = user.getUsername().equalsIgnoreCase("vighneshwar")
+				? "purchase.signature.vighneshwar" : "purchase.signature.default";
+		if (configRepo != null) {
+			AppConfig sigConfig = configRepo.findByConfigKey(sigKey);
+			if (sigConfig != null) {
+				imgLoc1 = sigConfig.getConfigValue();
+			} else {
+				imgLoc1 = user.getUsername().equalsIgnoreCase("vighneshwar")
+						? "http://localhost:8880/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg"
+						: "http://localhost:8880/ncpl-sales/resources/dist/img/sumathySign2.jpg";
+			}
+		} else {
+			imgLoc1 = user.getUsername().equalsIgnoreCase("vighneshwar")
+					? "http://localhost:8880/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg"
+					: "http://localhost:8880/ncpl-sales/resources/dist/img/sumathySign2.jpg";
 		}
-		  Image img2 = Image.getInstance(imgLoc1);
+		Image img2 = Image.getInstance(imgLoc1);
 		 // img2.scaleAbsoluteHeight(1f);
 		//  img2.scaleAbsoluteWidth(1f);
 		 

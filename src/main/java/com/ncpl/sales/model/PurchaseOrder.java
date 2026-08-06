@@ -18,6 +18,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.persistence.Version;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 import org.json.JSONArray;
@@ -59,6 +60,7 @@ public class PurchaseOrder extends TimeStampEntity implements Comparable<Purchas
 		@OneToMany(cascade = CascadeType.ALL)
 		@JoinColumn(name = "po_number")
 		@JsonBackReference
+		@BatchSize(size = 50)
 		private List<PurchaseItem> items;
 		
 	/*
