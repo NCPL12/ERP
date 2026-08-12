@@ -16,20 +16,25 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.ClientAnchor.AnchorType;
 import org.apache.poi.util.IOUtils;
 
+import com.ncpl.sales.model.AppConfig;
+import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.security.User;
 
 public class DcSignatureLogo {
-	public void insertLogoInTemplate(Workbook workbook, Sheet sheet, HttpServletRequest request,int rowCount, User user) throws IOException {
+	public void insertLogoInTemplate(Workbook workbook, Sheet sheet, HttpServletRequest request,int rowCount, User user, AppConfigRepo configRepo) throws IOException {
 		System.out.println("Inserting logo in the Purchase template" );
 		ServletContext servletContext = request.getSession().getServletContext();
         String imgLoc = servletContext.getRealPath("/WEB-INF/images");
-       
-        String img;
-        if(user.getUsername().equalsIgnoreCase("mani")) {
-        	img="/mani_sign.png";
-        	
-        }else {
-        	img="/mani_sign.png";
+
+        String img = "/mani_sign.png";
+        if (configRepo != null) {
+        	AppConfig sigConfig = configRepo.findByConfigKey("dc.signature." + user.getUsername().toLowerCase());
+        	if (sigConfig == null) {
+        		sigConfig = configRepo.findByConfigKey("dc.signature.default");
+        	}
+        	if (sigConfig != null) {
+        		img = sigConfig.getConfigValue();
+        	}
         }
 		 File file = new File(imgLoc+img);
 		 

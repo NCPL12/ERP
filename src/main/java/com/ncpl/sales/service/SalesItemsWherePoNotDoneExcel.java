@@ -78,12 +78,9 @@ public class SalesItemsWherePoNotDoneExcel {
 		Map<String, Object> emailContents = new HashMap<String, Object>();
 		emailContents.put("subject","Sales Items with Design and PO not done"); 
 		emailContents.put("template","sales_items_with_design_and_po_notdone.html"); 
-		emailContents.put("to1", "quotes@ncpl.co");
-		emailContents.put("to2", "ramsy@ncpl.co");
-		emailContents.put("to3", "purchase@ncpl.co");
-		emailContents.put("cc1", "design@ncpl.co");
-		emailContents.put("cc2", "vighneshwar@ncpl.co");
-		emailContents.put("cc3", "prasadini@ncpl.co");
+		emailContents.put("to1", "vighneshwar@ncpl.co");
+		emailContents.put("cc1", "purchase@ncpl.co");
+		emailContents.put("cc2", "prasadini@ncpl.co");
 		emailContents.put("month", Constants.currentDate()); 
 		emailContents.put("attachment", filePath); 
 		return emailContents; 

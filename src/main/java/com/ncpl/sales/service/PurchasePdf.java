@@ -1155,22 +1155,15 @@ public class PurchasePdf  extends PdfPageEventHelper {
 
 		PdfPCell signCell = new PdfPCell();
 		signCell.setBorder(0);
-		String imgLoc1;
-		String sigKey = user.getUsername().equalsIgnoreCase("vighneshwar")
-				? "purchase.signature.vighneshwar" : "purchase.signature.default";
+		String imgLoc1 = "http://localhost:8880/ncpl-sales/resources/dist/img/sumathySign2.jpg";
 		if (configRepo != null) {
-			AppConfig sigConfig = configRepo.findByConfigKey(sigKey);
+			AppConfig sigConfig = configRepo.findByConfigKey("purchase.signature." + user.getUsername().toLowerCase());
+			if (sigConfig == null) {
+				sigConfig = configRepo.findByConfigKey("purchase.signature.default");
+			}
 			if (sigConfig != null) {
 				imgLoc1 = sigConfig.getConfigValue();
-			} else {
-				imgLoc1 = user.getUsername().equalsIgnoreCase("vighneshwar")
-						? "http://localhost:8880/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg"
-						: "http://localhost:8880/ncpl-sales/resources/dist/img/sumathySign2.jpg";
 			}
-		} else {
-			imgLoc1 = user.getUsername().equalsIgnoreCase("vighneshwar")
-					? "http://localhost:8880/ncpl-sales/resources/dist/img/vigneshwar_sign.jpg"
-					: "http://localhost:8880/ncpl-sales/resources/dist/img/sumathySign2.jpg";
 		}
 		Image img2 = Image.getInstance(imgLoc1);
 		 // img2.scaleAbsoluteHeight(1f);

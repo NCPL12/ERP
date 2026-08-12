@@ -16,21 +16,25 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.ClientAnchor.AnchorType;
 import org.apache.poi.util.IOUtils;
 
+import com.ncpl.sales.model.AppConfig;
+import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.security.User;
 
 public class PurchaseSignatureLogo {
-	public void insertLogoInTemplate(Workbook workbook, Sheet sheet, HttpServletRequest request,int rowCount, User user) throws IOException {
+	public void insertLogoInTemplate(Workbook workbook, Sheet sheet, HttpServletRequest request,int rowCount, User user, AppConfigRepo configRepo) throws IOException {
 		System.out.println("Inserting logo in the Purchase template" );
 		ServletContext servletContext = request.getSession().getServletContext();
         String imgLoc = servletContext.getRealPath("/WEB-INF/images");
-       
-        String img;
-        if(user.getUsername().equalsIgnoreCase("vighneshwar")) {
-        	img="/vigneshwar_sign.png";
-        	
-        }else {
-        	//img="/abhilashSign2.png";
-        	img="/sumathySign2.png";
+
+        String img = "/sumathySign2.png";
+        if (configRepo != null) {
+        	AppConfig sigConfig = configRepo.findByConfigKey("purchase.excel.signature." + user.getUsername().toLowerCase());
+        	if (sigConfig == null) {
+        		sigConfig = configRepo.findByConfigKey("purchase.excel.signature.default");
+        	}
+        	if (sigConfig != null) {
+        		img = sigConfig.getConfigValue();
+        	}
         }
 		 File file = new File(imgLoc+img);
 		 

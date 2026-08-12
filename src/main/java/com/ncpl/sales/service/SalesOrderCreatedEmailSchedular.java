@@ -55,8 +55,8 @@ public class SalesOrderCreatedEmailSchedular {
 	
 	static List<SalesOrder> salesList = null;
 	
-	//@Scheduled(cron = "0 15 09 * * ?", zone="IST")
-	//@Scheduled(cron = "0 */2 * ? * *", zone="IST")
+	@Scheduled(cron = "0 15 09 * * ?", zone="IST")
+	
 	public void delivaryDateScheduler() throws IOException {
 		System.out.println("Running......" +SystemUtils.getUserHome());
 		

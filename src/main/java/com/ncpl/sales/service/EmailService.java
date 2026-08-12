@@ -76,19 +76,15 @@ public class EmailService {
 	            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
 	           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
 
-				// to 
+				// to (to2 is optional - not every scheduler has a second recipient)
 	            msg.addRecipient(Message.RecipientType.TO,
 	                    new InternetAddress((String) emailContents.get("to1"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to2"), false));
+	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to2"));
 
-				// cc
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc1"), false));
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc2"), false));
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc3"), false));
+				// cc (cc2/cc3 are optional)
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc1"));
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc2"));
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc3"));
 
 				// subject
 	            msg.setSubject((String) emailContents.get("subject"));
@@ -129,6 +125,13 @@ public class EmailService {
 
 
 	    }
+
+	    private void addRecipientIfPresent(Message msg, Message.RecipientType type, String address) throws MessagingException {
+	        if (address != null && !address.trim().isEmpty()) {
+	            msg.addRecipient(type, new InternetAddress(address, false));
+	        }
+	    }
+
 	    public Map<String, Object> sendSOWithDesignwherePONotDoneEmailToServer(Map<String, Object> emailContents) throws IOException {
 	        Properties prop = System.getProperties();
 	        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
@@ -156,35 +159,30 @@ public class EmailService {
 	            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
 	           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
 
-				// to 
+				// to (to2/to3 optional)
 	            msg.addRecipient(Message.RecipientType.TO,
 	                    new InternetAddress((String) emailContents.get("to1"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to2"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to3"), false));
+	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to2"));
+	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to3"));
 
-				// cc
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc1"), false));
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc2"), false));
-	            msg.addRecipient(Message.RecipientType.CC,
-	                    new InternetAddress((String) emailContents.get("cc3"), false));
+				// cc (all optional)
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc1"));
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc2"));
+	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc3"));
 
 				// subject
 	            msg.setSubject((String) emailContents.get("subject"));
-				
-				// content 
+
+				// content
 	            body.setContent(writer.toString(),"text/html;");
-	            
+
 	            msg.setSentDate(new Date());
-	            
+
 	            //attachment
 	            Multipart multipart = new MimeMultipart();
 	            multipart.addBodyPart(body);
 	            System.out.println((String)emailContents.get("attachment"));
-	            
+
 	            MimeBodyPart attachPart = new MimeBodyPart();
 
 	            attachPart.attachFile((String) emailContents.get("attachment"));

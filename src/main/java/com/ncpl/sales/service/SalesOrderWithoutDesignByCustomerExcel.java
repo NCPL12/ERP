@@ -97,12 +97,9 @@ public class SalesOrderWithoutDesignByCustomerExcel {
 		Map<String, Object> emailContents = new HashMap<String, Object>();
 		emailContents.put("subject","SO without design dated "+formattedDate1); 
 		emailContents.put("template","sales_items_without_design.html"); 
-		emailContents.put("to1", "quotes@ncpl.co");
-		emailContents.put("to2", "ramsy@ncpl.co");
-		emailContents.put("cc1", "design@ncpl.co");
-		//emailContents.put("cc2", "abhilash@ncpl.co");
-		emailContents.put("cc2", "prasadini@ncpl.co");
-		emailContents.put("cc3", "ashwini@ncpl.co");
+		emailContents.put("to1", "design@ncpl.co");
+		emailContents.put("cc1", "ashwini@ncpl.co");
+		emailContents.put("cc2", "ramsy@ncpl.co");
 		emailContents.put("month", Constants.currentDate()); 
 		emailContents.put("attachment", filePath); 
 		return emailContents; 

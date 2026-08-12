@@ -35,10 +35,16 @@ import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
 import com.ncpl.sales.model.Party;
 import com.ncpl.sales.model.PartyAddress;
+import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.security.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
 public class DeliveryChallanExcelForAll extends AbstractXlsxView{
+
+	@Autowired
+	AppConfigRepo appConfigRepo;
+
 	short VERTICAL_TOP = 0x0;
 	short VERTICAL_TOP1 = 0x1;
 	short VERTICAL_JUSTIFY = 0x2;
@@ -912,7 +918,7 @@ public class DeliveryChallanExcelForAll extends AbstractXlsxView{
 		 * RegionUtil.setBorderBottom(CellStyle.BORDER_THIN, cellRangeAddress1,
 		 * editAccountSheet, workbook);
 		 */
-		signService.insertLogoInTemplate(workbook, editAccountSheet, request, rowCountTerms,user);
+		signService.insertLogoInTemplate(workbook, editAccountSheet, request, rowCountTerms,user, appConfigRepo);
 		Cell authName = consignee.createCell(6);
 		CellStyle authStyle =workbook.createCellStyle();
 		authStyle.setBorderLeft(BORDER_THIN);

@@ -202,24 +202,6 @@
 								background-color: rgba(255, 255, 255, 0.1) !important;
 							}
 
-							/* Top-level section headers (Projects, Masters, Sales, Purchase, Reporting, Charts, Archived Data)
-							   always show as blue pills, regardless of active page */
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link {
-								background-color: #007bff !important;
-								color: #fff !important;
-								border-radius: .375rem;
-								margin: 3px 10px;
-								padding: .6rem 1rem;
-							}
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link .nav-icon,
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link p,
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link .right {
-								color: #fff !important;
-							}
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link:hover,
-							.main-sidebar .nav-sidebar > .nav-item > .nav-link:focus {
-								background-color: #0069d9 !important;
-							}
 
 							/* Prevent sidebar from expanding on hover - keep narrow (no "moving") */
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover,

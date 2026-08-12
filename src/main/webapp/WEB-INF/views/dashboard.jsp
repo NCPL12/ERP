@@ -62,7 +62,7 @@ var pageContext = '${pageContext.request.contextPath}';
     <section class="content">
       <div class="container-fluid">
         <!-- Small boxes (Stat box) -->
-        <div class="row">
+        <div class="row mt-3">
           <security:authorize access="!hasAuthority('PURCHASE')">
           <div class="col-lg-2 col-6">
             <!-- small box -->
