@@ -19,7 +19,11 @@ var itemList=${itemList};
 var role = ${role};
 var user=${user};
 var pageContext = '${pageContext.request.contextPath}';
-</script> 
+var errorMessage = '${errorMessage}';
+if (errorMessage && errorMessage != '') {
+	alert("Error: " + errorMessage);
+}
+</script>
 <script src="<c:url value="/resources/js/po-dashboard.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 <style type="text/css">

@@ -16,7 +16,7 @@
               <!-- Main Sidebar Container -->
               <aside class="main-sidebar sidebar-dark-primary elevation-4 sidebar-no-expand">
                 <!-- Brand Logo -->
-                <a href="http://ncpl.co" class="brand-link d-flex align-items-center" style="height: 60px;">
+                <a href="${pageContext.request.contextPath}/dashboard" class="brand-link d-flex align-items-center" style="height: 60px;">
                   <!-- for circled image use img-circle class in below img tag -->
                   <%-- <img src="${pageContext.request.contextPath}/resources/dist/img/ncpl.jpg"
                     class="brand-image  elevation-3" style="opacity: .8"> --%>

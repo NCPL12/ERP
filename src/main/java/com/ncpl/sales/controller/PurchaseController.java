@@ -66,6 +66,7 @@ import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.Stock;
 import com.ncpl.sales.model.Supplier;
 import com.ncpl.sales.model.Units;
+import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.repository.InvoiceCopyRepo;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.security.User;
@@ -117,6 +118,8 @@ public class PurchaseController {
 	PartyService partyService;
 	@Autowired
 	PartyRepo partyRepo;
+	@Autowired
+	AppConfigRepo appConfigRepo;
 	@Autowired
 	ItemMasterService itemMasterService;
 	@Autowired
@@ -199,21 +202,25 @@ public class PurchaseController {
 	 }
 
 	@PostMapping("/save/purchaseOrder")
-	public  String savePurchaseOrder(PurchaseOrder purchaseOrder,HttpServletRequest req) {
+	public  String savePurchaseOrder(PurchaseOrder purchaseOrder,HttpServletRequest req, RedirectAttributes redirectAttr) {
 		System.out.println(purchaseOrder);
 	String salesOrderId = req.getParameter("salesOrder");
 	String partyId = req.getParameter("partyByType");
 	//String poNumber = req.getParameter("poNumber");
-	if(purchaseOrder.getPoNumber()!=null){
-		purchaseService.updatePo(purchaseOrder);
-	}else{
-	purchaseService.savePurchaseOrder(purchaseOrder,salesOrderId,partyId);
+	try {
+		if(purchaseOrder.getPoNumber()!=null){
+			purchaseService.updatePo(purchaseOrder);
+		}else{
+		purchaseService.savePurchaseOrder(purchaseOrder,salesOrderId,partyId);
+		}
+	} catch (Exception e) {
+		redirectAttr.addFlashAttribute("errorMessage", e.getMessage());
 	}
 	//System.out.println(purchaseOrder.getItems().size());
 	return "redirect:/purchase";
-	
 
-  }   
+
+  }
 		
 	// Get all purchase Orders
 	public List<PurchaseOrder> findAll() {
@@ -1903,7 +1910,7 @@ public class PurchaseController {
 			request.setAttribute("user",userObj);
 
 			PurchasePdf purchasePdf = new PurchasePdf();
-			 String pdfPath=purchasePdf.purchaseFunction(purchaseOrderObj.get(),request);
+			 String pdfPath=purchasePdf.purchaseFunction(purchaseOrderObj.get(),request,appConfigRepo);
 			
 			 response.setContentType("application/pdf");
 

@@ -59,6 +59,17 @@ $(document).ready( function () {
 			"mData" : "id",
 		},{
 			"mData" : "clientPoNumber",
+			render : function(clientPoNumber, type, row) {
+				if (type !== 'display') {
+					return clientPoNumber || "";
+				}
+				var url = pageContext + "/api/sales_order/view?salesOrderId="
+						+ encodeURIComponent(row.id);
+				var safeText = $('<div>').text(clientPoNumber || "").html();zx
+				return "<a class='sales-order-link' href='" + url
+						+ "' title='Open sales order'>" + safeText + "</a>";
+			}
+		
 		},{
 			"mData" : "party",
 
