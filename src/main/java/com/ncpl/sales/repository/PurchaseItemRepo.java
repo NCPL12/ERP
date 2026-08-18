@@ -3,6 +3,7 @@ package com.ncpl.sales.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +12,17 @@ import com.ncpl.sales.model.PurchaseItem;
 
 @Repository
 public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
-	
+
+	// Direct DELETE statement, bypassing the entity's managed remove() lifecycle -
+	// deleteById() loads the entity (eagerly pulling in its @Version-checked parent
+	// PurchaseOrder too) and lets Hibernate reconcile the parent's items collection,
+	// which triggers an unrelated optimistic-lock check on the PO. This just deletes
+	// the row.
+	@Modifying
+	@Query("DELETE FROM PurchaseItem p WHERE p.purchase_item_id = :id")
+	void deletePurchaseItemById(@Param("id") int id);
+
+
 	@Query(" from PurchaseItem where po_number=?1 ")
 	List<PurchaseItem> findByPurchaseOrder_PoNumber(String poNumber);
 	@Query(" from PurchaseItem where model_no=?1 ")

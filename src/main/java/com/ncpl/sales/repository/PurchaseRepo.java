@@ -2,6 +2,7 @@ package com.ncpl.sales.repository;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,11 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	public List<PurchaseOrder> findPurchaseOrderListByDate(Timestamp d1, Timestamp d2);
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=0 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllPO();
+
+	// Lightweight projection for the "new GRN" PO dropdown - avoids loading every
+	// full PurchaseOrder (with its eager party join) just to read poNumber+updated.
+	@Query("SELECT new map(po.poNumber as poNumber, po.updated as updated) FROM PurchaseOrder po WHERE po.archive=0 ORDER BY po.created DESC")
+	public List<Map<String, Object>> findAllPoNumbersAndDates();
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=1 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllArchivedPOList();
 	@Query(value = "SELECT * FROM  tbl_purchase_order WHERE po_number NOT IN (SELECT po_number from tbl_grn) and archive=0",nativeQuery = true)

@@ -803,20 +803,24 @@ public class PurchaseController {
 	@GetMapping("/new_grn")
 	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
 		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
-		List<PurchaseOrder> poList = purchaseService.findAll();
-		List<Grn> grnList = grnService.getGrnList();
-		List<ItemMaster> itemList=itemMasterService.getItemList();
-        List<PurchaseItem> purchaseItemList =purchaseItemService.getAllPurchaseItems();
+		List<Map<String, Object>> poList = purchaseService.findAllPoNumbersAndDates();
+		List<String> grnInvoiceNumbers = grnService.getAllInvoiceNumbers();
+		List<Map<String, Object>> itemList=itemMasterService.getItemIdAndModelList();
         ObjectMapper mapper=utilService.getObjectMapper();
         model.addAttribute("grn", new Grn());
 		 model.addAttribute("poList", mapper.writeValueAsString(poList));
 		 model.addAttribute("itemList", mapper.writeValueAsString(itemList));
-		 model.addAttribute("grnList", mapper.writeValueAsString(grnList));
-		 model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
+		 model.addAttribute("grnList", mapper.writeValueAsString(grnInvoiceNumbers));
 		 model.addAttribute("pageHeader","New Grn");
 		 if(flashMap!=null) {
 				Grn grnObj =  (Grn) flashMap.get("grnObj");
 				model.addAttribute("grnObj",mapper.writeValueAsString(grnObj) );
+				// purchaseItemList is only needed to repopulate an existing GRN being
+				// edited (see newGoodsReceiptNote.js) - skip the full-table fetch otherwise
+				List<PurchaseItem> purchaseItemList = purchaseItemService.getAllPurchaseItems();
+				model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
+			} else {
+				model.addAttribute("purchaseItemList", "[]");
 			}
 			return "newGoodsReceiptNote";
 	}
@@ -954,8 +958,13 @@ public class PurchaseController {
 	
 	@PostMapping(path="/api/purchase/delete")
 	  public ResponseEntity<?> deleteItem(@RequestParam("id") int id) {
-		boolean isDeleted=purchaseItemService.deletePurchaseItem(id);
-		return new ResponseEntity<>(isDeleted,HttpStatus.OK);
+		try {
+			boolean isDeleted=purchaseItemService.deletePurchaseItem(id);
+			return new ResponseEntity<>(isDeleted,HttpStatus.OK);
+		} catch (org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+			return new ResponseEntity<>("This purchase order was just modified elsewhere - please refresh the page and try again.",
+					HttpStatus.CONFLICT);
+		}
 	 }
 	
 	@GetMapping("/api/po/address/{id}")
@@ -968,7 +977,7 @@ public class PurchaseController {
 		addressMap.put("shippingAddress", shippingAddress);
 		addressMap.put("modeOfPayment", customProperty.getModeOfPayment());
 		addressMap.put("jurisdiction", customProperty.getJursidiction());
-		addressMap.put("frieght", customProperty.getFrieght());
+		addressMap.put("frieght", customProperty.getFrieght());x	
 		addressMap.put("delivery", customProperty.getDelivery());
 		addressMap.put("warranty", customProperty.getWarranty());
 		
@@ -1128,12 +1137,18 @@ public class PurchaseController {
              @RequestParam(defaultValue = "") String keyword,
              @RequestParam(defaultValue = "dcId") String sortField,
              @RequestParam(defaultValue = "desc") String sortDir,
+             @RequestParam(defaultValue = "false") boolean archive,
              // column filters
              @RequestParam(defaultValue = "") String dcId,
              @RequestParam(defaultValue = "") String soNumber,
              @RequestParam(defaultValue = "") String clientName,
              @RequestParam(defaultValue = "") String clientPo,
              @RequestParam(defaultValue = "") String shipping) {
+
+         long t0 = System.currentTimeMillis();
+         System.out.println("[DCLIST_DATA] request started page=" + page + " size=" + size + " archive=" + archive
+                 + " keyword='" + keyword + "' dcId='" + dcId + "' soNumber='" + soNumber + "' clientName='" + clientName
+                 + "' clientPo='" + clientPo + "' shipping='" + shipping + "'");
 
          // Allow sorting only by known persistent fields
          String safeField;
@@ -1148,12 +1163,23 @@ public class PurchaseController {
          Sort.Direction dir = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
          Pageable pageable = PageRequest.of(page, size, Sort.by(dir, safeField));
 
-         // If any column filter provided, use advanced search
-         if (!dcId.isEmpty() || !soNumber.isEmpty() || !clientName.isEmpty() || !clientPo.isEmpty() || !shipping.isEmpty()) {
-             return deliveryChallanService.getDeliveryChallanPageAdvanced(pageable, dcId, soNumber, clientName, clientPo, shipping);
+         try {
+             Page<DeliveryChallan> result;
+             // If any column filter provided, use advanced search
+             if (!dcId.isEmpty() || !soNumber.isEmpty() || !clientName.isEmpty() || !clientPo.isEmpty() || !shipping.isEmpty()) {
+                 System.out.println("[DCLIST_DATA] using advanced search");
+                 result = deliveryChallanService.getDeliveryChallanPageAdvanced(pageable, archive, dcId, soNumber, clientName, clientPo, shipping);
+             } else {
+                 System.out.println("[DCLIST_DATA] using keyword search");
+                 result = deliveryChallanService.getDeliveryChallanPage(pageable, keyword, archive);
+             }
+             System.out.println("[DCLIST_DATA] finished in " + (System.currentTimeMillis()-t0) + "ms, "
+                     + result.getContent().size() + " rows of " + result.getTotalElements() + " total");
+             return result;
+         } catch (Exception e) {
+             System.out.println("[DCLIST_DATA] FAILED after " + (System.currentTimeMillis()-t0) + "ms: " + e);
+             throw e;
          }
-         // Else use global keyword
-         return deliveryChallanService.getDeliveryChallanPage(pageable, keyword);
      }
 	
 	 @GetMapping("/dcList/search")
@@ -1219,8 +1245,14 @@ public class PurchaseController {
 	  * @return
 	  */
 	 @PostMapping("/add/grn")
-		public String saveGrn(Model model, Grn grn) {
-			grnService.saveGrn(grn);
+		public String saveGrn(Model model, Grn grn, RedirectAttributes redirectAttr) {
+			try {
+				grnService.saveGrn(grn);
+			} catch (Exception e) {
+				redirectAttr.addFlashAttribute("errorMessage", e.getMessage());
+				redirectAttr.addFlashAttribute("grnObj", grn);
+				return "redirect:/new_grn";
+			}
 			return "redirect:/grnLists";
 		}
 	 
@@ -1958,15 +1990,18 @@ public class PurchaseController {
 		
 		 @GetMapping("/dc_archived")
 			public String archivedDeliveryChallanDashboard(Model model) throws JsonProcessingException {
+				long t0 = System.currentTimeMillis();
+				System.out.println("[DC_ARCHIVED] request started");
 			 	User userObj  = userService.getCurrentUser();
 				String role = userObj.getRole();
+				System.out.println("[DC_ARCHIVED] got current user in " + (System.currentTimeMillis()-t0) + "ms");
 				List<Party> partyList = partyService.getPartyList();
-			 	 List<DeliveryChallan> dcLists = deliveryChallanService.getDeliveryChallanListsArchived();
+				System.out.println("[DC_ARCHIVED] got partyList (" + partyList.size() + " rows) in " + (System.currentTimeMillis()-t0) + "ms");
 		         ObjectMapper mapper=utilService.getObjectMapper();
-		     	 model.addAttribute("dcLists", mapper.writeValueAsString(dcLists));
 		     	 model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 		     	model.addAttribute("role", mapper.writeValueAsString(role));
 				 model.addAttribute("pageHeader","Archived DC");
+				 System.out.println("[DC_ARCHIVED] request finished in " + (System.currentTimeMillis()-t0) + "ms, returning view");
 				 return "archivedDcDashboard";
 			}
 		 

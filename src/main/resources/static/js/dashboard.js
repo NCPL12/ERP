@@ -65,7 +65,7 @@ $(document).ready( function () {
 				}
 				var url = pageContext + "/api/sales_order/view?salesOrderId="
 						+ encodeURIComponent(row.id);
-				var safeText = $('<div>').text(clientPoNumber || "").html();zx
+				var safeText = $('<div>').text(clientPoNumber || "").html();
 				return "<a class='sales-order-link' href='" + url
 						+ "' title='Open sales order'>" + safeText + "</a>";
 			}
@@ -92,7 +92,9 @@ $(document).ready( function () {
 
 			 "defaultContent":"NA",
 				render : function(aaData, type, row) {
-					
+					if (row.party == null || row.party.party_city == null) {
+						return "NA";
+					}
 					return row.party.party_city.name;
 				}
 		}, {

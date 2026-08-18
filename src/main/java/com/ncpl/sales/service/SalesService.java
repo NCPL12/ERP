@@ -498,23 +498,39 @@ public class SalesService {
 				//itemList.addAll(salesItemList);
 			} else {
 				salesItemList = salesOrder.getItems();
-				
+
+				// Fetch design items for every sales item in one batched call (instead of one
+				// call per sales item, each of which used to issue its own per-item queries),
+				// and collect the set of item master ids referenced across all of them.
+				List<String> salesItemIdList = new ArrayList<>();
 				for (SalesItem salesItem : salesItemList) {
-					boolean value = false;
-					Optional<SalesItem> item=getSalesItemById(salesItem.getId(),value);
-					salesItem.set("unitName",item.get().getItem_units().getName());
-					List<DesignItems> designItemList=soDesignService.getSalesOrderDesignItemListBySalesItemId(salesItem.getId());
+					salesItemIdList.add(salesItem.getId());
+				}
+				Map<String, List<DesignItems>> designItemsBySalesItemId = soDesignService.getSalesOrderDesignItemListBySalesItemIds(salesItemIdList);
+				HashSet<String> itemMasterIds = new HashSet<>();
+				for (List<DesignItems> designItemList : designItemsBySalesItemId.values()) {
+					for (DesignItems designItems : designItemList) {
+						itemMasterIds.add((String) designItems.get("itemMasterId"));
+					}
+				}
+
+				// Batch-fetch item masters and matching suppliers once instead of per design item.
+				Map<String, ItemMaster> itemMastersById = itemService.getItemsByIds(new ArrayList<>(itemMasterIds));
+				Map<String, List<Supplier>> suppliersByItemId = itemService.findItemsForSelectedVendorByIds(new ArrayList<>(itemMasterIds), className);
+
+				for (SalesItem salesItem : salesItemList) {
+					salesItem.set("unitName",salesItem.getItem_units().getName());
+					List<DesignItems> designItemList = designItemsBySalesItemId.get(salesItem.getId());
 					ArrayList<DesignItems> vendoritemsList = new ArrayList<DesignItems>();
 					for (DesignItems designItems : designItemList) {
 						String designItemId=(String) designItems.get("itemMasterId");
-						String itemId=designItemId;
-						Optional<ItemMaster> itemObj = itemService.getItemById(itemId);
-						designItems.set("tax",itemObj.get().getGst());
-						designItems.set("itemName",itemObj.get().getItemName());
-						designItems.set("unit",itemObj.get().getItem_units().getName());
-						designItems.set("hsnCode",itemObj.get().getHsnCode());
-						designItems.set("model",itemObj.get().getModel());
-						List<Supplier> supplierList=itemService.findItemsForSelectedVendor(designItemId,className);
+						ItemMaster itemObj = itemMastersById.get(designItemId);
+						designItems.set("tax",itemObj.getGst());
+						designItems.set("itemName",itemObj.getItemName());
+						designItems.set("unit",itemObj.getItem_units().getName());
+						designItems.set("hsnCode",itemObj.getHsnCode());
+						designItems.set("model",itemObj.getModel());
+						List<Supplier> supplierList = suppliersByItemId.getOrDefault(designItemId, Collections.emptyList());
 						if(supplierList.size()>0) {
 							vendoritemsList.add(designItems);
 						}

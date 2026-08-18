@@ -108,7 +108,14 @@ public class GrnService {
     
 	public Grn saveGrn(Grn grn) {
 		List<GrnItems> grnItemList = grn.getItems();
-		
+
+		for (GrnItems grnItems : grnItemList) {
+			if (grnItems.getReceivedQuantity() <= 0) {
+				throw new IllegalStateException("Received quantity must be greater than 0 for item "
+						+ grnItems.getDescription() + " - GRN not saved.");
+			}
+		}
+
 		String poNumber = grn.getPoNumber();
 		Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNumber);
 		String vendorId=poObj.get().getParty().getId();
@@ -139,27 +146,11 @@ public class GrnService {
 		return grnObj;
 	}
 
-	public List<Grn> getGrnList() {
-		List<Grn> grnList = grnRepo.findAllGrn();
-		for (Grn grn : grnList) {
-			String poNumber = grn.getPoNumber();
-										   
-			Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNumber);
-			String vendor = poObj.get().getParty().getPartyName();
-									   
-			Date poDate = poObj.get().getUpdated();
-			grn.set("vendor", vendor);
-			grn.set("poDate", poDate);
-			float total = 0;
-			List<GrnItems> grnItems=grn.getItems();
-			for (GrnItems grnItem : grnItems) {
-				total=total+grnItem.getAmount();
-			}
-			grn.set("total",total);
-
-		}
-		return grnList;
-
+	// Lean replacement for the old getGrnList() (which loaded full Grn entities with
+	// batched vendor/total enrichment) - the only caller (new GRN form) only ever
+	// needed this for a duplicate-invoice-number check, so just return invoice numbers.
+	public List<String> getAllInvoiceNumbers() {
+		return grnRepo.findAllInvoiceNumbers();
 	}
 
 	/**

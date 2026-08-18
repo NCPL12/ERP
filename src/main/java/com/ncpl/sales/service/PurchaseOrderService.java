@@ -156,6 +156,11 @@ public class PurchaseOrderService {
 		List<PurchaseOrder> poList = purchaseRepo.findAll();
 		return poList;
 	}
+
+	// Lightweight variant for dropdowns that only need poNumber+updated (see findAllPoNumbersAndDates)
+	public List<Map<String, Object>> findAllPoNumbersAndDates(){
+		return purchaseRepo.findAllPoNumbersAndDates();
+	}
 	
 	public List<PurchaseOrder> findAllPO(){
 		List<PurchaseOrder> poList = purchaseRepo.findAllPO();

@@ -31,4 +31,7 @@ public interface SupplierRepo extends JpaRepository<Supplier, String>{
 
 	@Query("SELECT s FROM Supplier s WHERE s.itemMaster.id IN :itemMasterIds")
 	List<Supplier> findByItemMasterIds(@Param("itemMasterIds") List<String> itemMasterIds);
+
+	@Query(" from Supplier where item_master_id IN :itemMasterIds and party_id=:supplierName")
+	List<Supplier> findSupplierListBySupplierNameIn(@Param("itemMasterIds") List<String> itemMasterIds, @Param("supplierName") String supplierName);
 }

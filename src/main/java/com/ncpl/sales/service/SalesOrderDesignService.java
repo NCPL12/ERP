@@ -2,7 +2,10 @@ package com.ncpl.sales.service;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.persistence.EntityManager;
@@ -89,7 +92,7 @@ public class SalesOrderDesignService {
 				String itemId = designItems.getItemId();
 				Optional<ItemMaster> itemObj = itemService.getItemById(itemId);
 				designItems.setItemId(itemObj.get().getModel());
-				
+
 				designItems.setQuantity(designItems.getQuantity());
 				designItems.set("designId", salesOrderDesign.getId());
 				designItems.set("itemMasterId", itemId);
@@ -99,6 +102,49 @@ public class SalesOrderDesignService {
 			}
 		}
 		return list;
+	}
+
+	// Batched version of getSalesOrderDesignItemListBySalesItemId(): one query for all the
+	// SalesOrderDesign rows and one batched item-master lookup, instead of a query per sales
+	// item plus a query per design item. Callers looping over many sales items should use this.
+	public Map<String, List<DesignItems>> getSalesOrderDesignItemListBySalesItemIds(List<String> salesItemIds) {
+		Map<String, List<DesignItems>> result = new HashMap<>();
+		if (salesItemIds == null || salesItemIds.isEmpty()) {
+			return result;
+		}
+		for (String salesItemId : salesItemIds) {
+			result.put(salesItemId, new ArrayList<DesignItems>());
+		}
+
+		List<SalesOrderDesign> designList = designSo.getDesginListBySoItemIds(salesItemIds);
+
+		HashSet<String> itemIds = new HashSet<>();
+		for (SalesOrderDesign salesOrderDesign : designList) {
+			for (DesignItems designItems : salesOrderDesign.getItems()) {
+				itemIds.add(designItems.getItemId());
+			}
+		}
+		Map<String, ItemMaster> itemMastersById = itemService.getItemsByIds(new ArrayList<>(itemIds));
+
+		for (SalesOrderDesign salesOrderDesign : designList) {
+			List<DesignItems> targetList = result.get(salesOrderDesign.getSalesItemId());
+			if (targetList == null) {
+				continue;
+			}
+			for (DesignItems designItems : salesOrderDesign.getItems()) {
+				String itemId = designItems.getItemId();
+				ItemMaster itemObj = itemMastersById.get(itemId);
+				designItems.setItemId(itemObj.getModel());
+
+				designItems.setQuantity(designItems.getQuantity());
+				designItems.set("designId", salesOrderDesign.getId());
+				designItems.set("itemMasterId", itemId);
+				designItems.set("unit", itemObj.getItem_units().getName());
+				designItems.set("salesItemId", salesOrderDesign.getSalesItemId());
+				targetList.add(designItems);
+			}
+		}
+		return result;
 	}
 	
 	public List<DesignItems> getDesignItemListBySalesItemId(String salesItemId) {

@@ -59,4 +59,8 @@ public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
  	
 	@Query("SELECT gi.description, SUM(gi.receivedQuantity) FROM GrnItems gi WHERE gi.updated >= :fromDate AND gi.updated <= :toDate GROUP BY gi.description")
 	List<Object[]> getGrnSumGroupedByDescriptionBetween(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
+
+	// Batched amount totals per GRN, grouped in one query instead of looping grn.getItems() per row
+	@Query("SELECT gi.grn.grnId, SUM(gi.amount) FROM GrnItems gi GROUP BY gi.grn.grnId")
+	List<Object[]> getAmountTotalsByGrnId();
 }
