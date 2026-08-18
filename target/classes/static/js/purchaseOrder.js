@@ -830,6 +830,7 @@ function populateDescriptionDropdown(row, items){
 		return;
 	}
 	dropdown.children("option").filter(":not(:first)").remove();
+	var optionsHtml = "";
 	$.each(items, function (index, value) {
 		var description = value.description;
 		description = description.split(' ');
@@ -837,12 +838,9 @@ function populateDescriptionDropdown(row, items){
 			description.splice(100);
 		}
 		description = description.join(' ');
-		var length = $.trim(description).length;
-		if (length > 50) {
-			//description = $.trim(description).substring(0, 50) + "....";
-		}
-		dropdown.append('<option value=' + value.id + '>' + value.slNo + '.' + description + '</option>');
+		optionsHtml += '<option value=' + value.id + '>' + value.slNo + '.' + description + '</option>';
 	});
+	dropdown.append(optionsHtml);
 	$('input').removeClass("has-error");
 }
 
@@ -1703,15 +1701,17 @@ function deletePurchaseItem(id,row) {
 			}else{
 				$.error("GRN or Dc created for this item");
 			}
-		},  
+		},
 		complete:function(resp){
-			if(resp.status==500){
+			if(resp.status==409){
+				alert(resp.responseText);
+			}else if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
 		},
 		error : function(e) {
 			console.log(e);
-		}  	
+		}
 	});
 }
 function settingNameAndIdAdd(){

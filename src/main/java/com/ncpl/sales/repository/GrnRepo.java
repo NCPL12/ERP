@@ -19,6 +19,11 @@ public interface GrnRepo extends JpaRepository<Grn, String>{
 	public List<Grn> findGrnListByPoNumber(String poNumber);
 	@Query(" from Grn where archive=0 order by created desc ")
 	public List<Grn> findAllGrn();
+
+	// Just the invoice numbers - for client-side duplicate-invoice-number checks on the
+	// "new GRN" form, which never needed full Grn entities (vendor/total/etc) to begin with
+	@Query("SELECT g.invoiceNo FROM Grn g WHERE g.archive=0 AND g.invoiceNo IS NOT NULL")
+	public List<String> findAllInvoiceNumbers();
 	@Query("SELECT g FROM Grn g WHERE g.archive = 0")
 	public Page<Grn> findAllGrn(Pageable pageable);
 	@Query(" from Grn where archive=1 ")

@@ -1,5 +1,6 @@
 var dcTable;
 $(document).ready(function(){
+	var archivedPage = (typeof isArchivedPage !== "undefined" && isArchivedPage === true);
 	$('#dcList thead tr').clone(true).appendTo( '#dcList thead' );
 	    $('#dcList thead tr:eq(1) th').each( function (i) {
 	        var title = $(this).text();
@@ -48,6 +49,7 @@ $(document).ready(function(){
 	    				keyword: keyword,
 	    				sortField: sortField,
 	    				sortDir: sortDir,
+	    				archive: archivedPage,
 	    				// per-column filters expected by backend
 	    				dcId: dcIdFilter,
 	    				soNumber: soFilter,
@@ -61,6 +63,15 @@ $(document).ready(function(){
 	    					recordsTotal: resp.totalElements,
 	    					recordsFiltered: resp.totalElements,
 	    					data: resp.content
+	    				});
+	    			},
+	    			error: function(xhr){
+	    				console.error("Failed to load DC list", xhr.status, xhr.responseText);
+	    				callback({
+	    					draw: data.draw,
+	    					recordsTotal: 0,
+	    					recordsFiltered: 0,
+	    					data: []
 	    				});
 	    			}
 	    		});

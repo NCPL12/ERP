@@ -108,12 +108,15 @@ public class PurchaseItemService {
 		 Optional<PurchaseItem> purchaseItem = purchaseItemRepo.findById(id);
 		// PurchaseOrder purchaseOrder=purchaseItem.get().getPurchaseOrder();
 		List<DeliveryChallanItems> dcItemList = dcService.getDcItemListBySoItemIdWhereDcQtyNotZero(purchaseItem.get().getDescription());
-		List<GrnItems> grnItemList = grnService.getGrnItemByPoItemIdWhereRcvdQtyNonZero(Integer.toString(id));
+		// Block deletion if ANY GRN item references this PO item, not just ones with
+		// non-zero received qty - a GRN line existing at all means a delivery/inspection
+		// was already recorded against this item, so it must not be silently orphaned.
+		List<GrnItems> grnItemList = grnService.getGrnItemByPoItemId(Integer.toString(id));
 		if (grnItemList.size() > 0 || dcItemList.size()>0) {
 			isDeleted = false;
 		} else {
 			isDeleted = true;
-			purchaseItemRepo.deleteById(id);
+			purchaseItemRepo.deletePurchaseItemById(id);
 		}
 
 		return isDeleted;

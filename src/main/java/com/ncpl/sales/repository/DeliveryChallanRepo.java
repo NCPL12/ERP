@@ -47,20 +47,20 @@ public interface DeliveryChallanRepo extends
 	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc " +
 	       "LEFT JOIN SalesOrder so ON so.id = dc.soNumber " +
 	       "LEFT JOIN so.party p " +
-	       "WHERE dc.archive = false " +
+	       "WHERE dc.archive = :archive " +
 	       "AND (CAST(dc.dcId AS string) LIKE CONCAT('%', :keyword, '%') " +
 	       "OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
 	       "OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
 	       "OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:keyword), '%'))")
-	Page<DeliveryChallan> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+	Page<DeliveryChallan> searchByKeyword(@Param("keyword") String keyword, @Param("archive") boolean archive, Pageable pageable);
 
     // Fetch all active (non-archived) DCs
     @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
     List<DeliveryChallan> findAllActiveDc();
 
-    // Fetch all active (non-archived) DCs with pagination
-    @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
-    Page<DeliveryChallan> findAllActive(Pageable pageable);
+    // Fetch DCs by archive status with pagination
+    @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = :archive")
+    Page<DeliveryChallan> findByArchive(@Param("archive") boolean archive, Pageable pageable);
 
     // Fetch all non-archived DCs (alias used by services)
     @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
@@ -83,13 +83,14 @@ public interface DeliveryChallanRepo extends
 	       "LEFT JOIN SalesOrder so ON so.id = dc.soNumber " +
 	       "LEFT JOIN so.party p " +
 	       "LEFT JOIN PartyAddress pa ON pa.id = so.shippingAddress " +
-	       "WHERE dc.archive = false " +
+	       "WHERE dc.archive = :archive " +
 	       "AND (:dcId IS NULL OR dc.dcId = :dcId) " +
 	       "AND (:soNumber IS NULL OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:soNumber), '%')) " +
 	       "AND (:clientName IS NULL OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:clientName), '%')) " +
 	       "AND (:clientPo IS NULL OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:clientPo), '%')) " +
 	       "AND (:shipping IS NULL OR LOWER(pa.addr1) LIKE CONCAT('%', LOWER(:shipping), '%') OR LOWER(p.addr1) LIKE CONCAT('%', LOWER(:shipping), '%'))")
 	Page<DeliveryChallan> searchAdvanced(
+	        @Param("archive") boolean archive,
 	        @Param("dcId") Integer dcId,
 	        @Param("soNumber") String soNumber,
 	        @Param("clientName") String clientName,

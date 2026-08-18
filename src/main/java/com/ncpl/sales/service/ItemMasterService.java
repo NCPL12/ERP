@@ -88,6 +88,11 @@ public class ItemMasterService {
 		return itemList;
 	}
 
+	// Lightweight variant for lookup dropdowns that only need id+model (see findAllIdAndModel)
+	public List<java.util.Map<String, Object>> getItemIdAndModelList() {
+		return itemMasterRepo.findAllIdAndModel();
+	}
+
 	public List<Map<String, Object>> getModelAndUnitList() {
 		List<Object[]> rows = itemMasterRepo.findModelAndUnitList();
 		List<Map<String, Object>> result = new ArrayList<>(rows.size());
@@ -682,6 +687,30 @@ public class ItemMasterService {
 	public List<Supplier> findItemsForSelectedVendor(String itemId, String supplierName) {
 		List<Supplier> supplierList=supplierRepo.findSupplierListBySupplierName(itemId,supplierName);
 		return supplierList;
+	}
+
+	// Batched versions of getItemById()/findItemsForSelectedVendor() for loops that would
+	// otherwise issue one query per item (N+1). Callers should fetch once per request, not per item.
+	public Map<String, ItemMaster> getItemsByIds(List<String> ids) {
+		Map<String, ItemMaster> itemsById = new HashMap<>();
+		if (ids == null || ids.isEmpty()) {
+			return itemsById;
+		}
+		for (ItemMaster item : itemMasterRepo.findAllById(ids)) {
+			itemsById.put(item.getId(), item);
+		}
+		return itemsById;
+	}
+
+	public Map<String, List<Supplier>> findItemsForSelectedVendorByIds(List<String> itemIds, String supplierName) {
+		Map<String, List<Supplier>> suppliersByItemId = new HashMap<>();
+		if (itemIds == null || itemIds.isEmpty()) {
+			return suppliersByItemId;
+		}
+		for (Supplier supplier : supplierRepo.findSupplierListBySupplierNameIn(itemIds, supplierName)) {
+			suppliersByItemId.computeIfAbsent(supplier.getItemMaster().getId(), k -> new ArrayList<>()).add(supplier);
+		}
+		return suppliersByItemId;
 	}
 	
 	public Supplier getSupplierByItemIdAndClientId(String itemId, String supplierName) {

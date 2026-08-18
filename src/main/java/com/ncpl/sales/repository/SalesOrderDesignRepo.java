@@ -13,6 +13,8 @@ import com.ncpl.sales.model.SalesOrderDesign;
 public interface SalesOrderDesignRepo extends JpaRepository<SalesOrderDesign, Long>{
 	@Query(" from SalesOrderDesign where sales_item_id=?1 ")
 	List<SalesOrderDesign> getDesginListBySoItemId(String salesItemId);
+	@Query(" from SalesOrderDesign where sales_item_id IN :salesItemIds ")
+	List<SalesOrderDesign> getDesginListBySoItemIds(@Param("salesItemIds") List<String> salesItemIds);
 	@Query(" from SalesOrderDesign where sales_item_id=?1 ")
 	SalesOrderDesign getDesginObjBySoItemId(String salesItemId);
 	

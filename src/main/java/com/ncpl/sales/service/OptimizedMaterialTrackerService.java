@@ -247,9 +247,13 @@ public class OptimizedMaterialTrackerService {
                 .collect(Collectors.toSet());
         
         // Batch load items and designs
-        Map<String, ItemMaster> itemsMap = itemMasterRepo.findByIdIn(new ArrayList<>(itemIds))
-                .stream()
-                .collect(Collectors.toMap(ItemMaster::getId, item -> item));
+        Map<String, ItemMaster> itemsMap = new HashMap<>();
+
+        if (itemIds != null && !itemIds.isEmpty()) {
+            itemsMap = itemMasterRepo.findByIdIn(new ArrayList<>(itemIds))
+                    .stream()
+                    .collect(Collectors.toMap(ItemMaster::getId, item -> item));
+        }
         
         Iterable<SalesOrderDesign> designsIterable = designRepo.findAllById(new ArrayList<>(designIds));
         Map<Long, SalesOrderDesign> designsMap = StreamSupport.stream(designsIterable.spliterator(), false)
@@ -280,9 +284,13 @@ public class OptimizedMaterialTrackerService {
         
         // Get all GRN IDs for batch loading
         Set<String> grnIds = poIds; // Assuming GRN uses same IDs as PO
-        Map<String, List<Grn>> grnMap = grnRepo.findByPoNumberIn(new ArrayList<>(grnIds))
-                .stream()
-                .collect(Collectors.groupingBy(Grn::getPoNumber));
+        Map<String, List<Grn>> grnMap = new HashMap<>();
+
+        if (grnIds != null && !grnIds.isEmpty()) {
+            grnMap = grnRepo.findByPoNumberIn(new ArrayList<>(grnIds))
+                    .stream()
+                    .collect(Collectors.groupingBy(Grn::getPoNumber));
+        }
 
         // Get all DC IDs for batch loading
         Set<Integer> dcIds = dcItemsMap.values().stream()

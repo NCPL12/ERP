@@ -18,7 +18,11 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 
 	@Query(" from ItemMaster where model=?1 ")
 	public ItemMaster getItemByModelNo(String model);
-	
+
+	// Lightweight id+model projection for lookup dropdowns that don't need every column
+	@Query("SELECT new map(im.id as id, im.model as model) FROM ItemMaster im")
+	public List<java.util.Map<String, Object>> findAllIdAndModel();
+
 	@Query(" from ItemMaster where lower(trim(model)) = lower(trim(:model)) ")
 	public ItemMaster getItemByModelNoNormalized(@Param("model") String model);
 

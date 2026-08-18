@@ -26,6 +26,15 @@ if ('${grnObj}' != null && '${grnObj}' != "") {
 	grnObj= $.parseJSON('${grnObj}');
 }
 </script>
+<div id="grnErrorMessage" style="display:none;"><c:out value="${errorMessage}"/></div>
+<script type="text/javascript">
+$(function(){
+	var grnErrMsg = $('#grnErrorMessage').text();
+	if (grnErrMsg) {
+		alert("Error: " + grnErrMsg);
+	}
+});
+</script>
  <script src="<c:url value="/resources/js/newGoodsReceiptNote.js" />"></script> 
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>

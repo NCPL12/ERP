@@ -485,7 +485,7 @@ $(document).on('submit', '#grnForm', function (e) {
 	
 	if(invoiceNumber!=""){
 		$.each(grnList,function(index,value){
-			if(invoiceNumber.trim() == value.invoiceNo){
+			if(invoiceNumber.trim() == value){
 				$.error("Invoice Number already exist");
 				$("#invoiceNo,#invNo").addClass('border-color');
 				e.preventDefault(e);

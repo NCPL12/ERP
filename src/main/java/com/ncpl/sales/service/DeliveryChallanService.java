@@ -639,23 +639,28 @@ public class DeliveryChallanService {
 		for (DeliveryChallan dc : dcList) {
 			String soNumber=dc.getSoNumber();
 			Optional<SalesOrder> soObj=salesService.getSalesOrderById(soNumber);
-			String shippingAddrId=soObj.get().getShippingAddress();
-			if(shippingAddrId!=null) {
-				if(!shippingAddrId.isEmpty()) {
-				//if the shipping address id is party id then get the party object by id else get party address obj by id
-				Party partyObj =partyRepo.findById(shippingAddrId);
-				if(partyObj!=null) {
-				dc.set("shippingAddress",partyObj.getAddr1());
-				}else {
-					Optional<PartyAddress> partyAddressobj =partyAddressService.getAddressByAddressId(shippingAddrId);
-					dc.set("shippingAddress",partyAddressobj.get().getAddr1());
+			if(soObj.isPresent()) {
+				String shippingAddrId=soObj.get().getShippingAddress();
+				if(shippingAddrId!=null) {
+					if(!shippingAddrId.isEmpty()) {
+					//if the shipping address id is party id then get the party object by id else get party address obj by id
+					Party partyObj =partyRepo.findById(shippingAddrId);
+					if(partyObj!=null) {
+					dc.set("shippingAddress",partyObj.getAddr1());
+					}else {
+						Optional<PartyAddress> partyAddressobj =partyAddressService.getAddressByAddressId(shippingAddrId);
+						if(partyAddressobj.isPresent()) {
+							dc.set("shippingAddress",partyAddressobj.get().getAddr1());
+						}
+					}
+					}
 				}
-				}
+				dc.set("clientPoNumber",soObj.get().getClientPoNumber());
+				dc.set("clientName",soObj.get().getParty().getPartyName());
 			}
-			dc.set("clientPoNumber",soObj.get().getClientPoNumber());
-			dc.set("clientName",soObj.get().getParty().getPartyName());
-			dc.set("createdDate",dc.getItems().get(0).getCreated());
-			
+			if(dc.getItems()!=null && !dc.getItems().isEmpty()) {
+				dc.set("createdDate",dc.getItems().get(0).getCreated());
+			}
 		}
 		return dcList;
 	}
@@ -738,13 +743,13 @@ public class DeliveryChallanService {
 	}
 	
 	// Pagination methods for lazy loading
-	public Page<DeliveryChallan> getDeliveryChallanPage(Pageable pageable, String keyword) {
+	public Page<DeliveryChallan> getDeliveryChallanPage(Pageable pageable, String keyword, boolean archived) {
 		Page<DeliveryChallan> dcPage;
 		
 		if (keyword != null && !keyword.trim().isEmpty()) {
-			dcPage = dcRepo.searchByKeyword(keyword, pageable);
+			dcPage = dcRepo.searchByKeyword(keyword, archived, pageable);
 		} else {
-			dcPage = dcRepo.findAllActive(pageable);
+			dcPage = dcRepo.findByArchive(archived, pageable);
 		}
 		
 		// Enrich the data with additional fields
@@ -755,7 +760,7 @@ public class DeliveryChallanService {
 		return dcPage;
 	}
 	
-	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, String dcId, String soNumber, 
+	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber, 
 			String clientName, String clientPo, String shipping) {
 		
 		Integer dcIdInt = null;
@@ -768,6 +773,7 @@ public class DeliveryChallanService {
 		}
 		
 		Page<DeliveryChallan> dcPage = dcRepo.searchAdvanced(
+			archived, 
 			dcIdInt, 
 			soNumber, 
 			clientName, 
