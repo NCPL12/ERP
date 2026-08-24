@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ncpl.common.Constants;
 import com.ncpl.sales.generator.FileNameGenerator;
@@ -714,6 +715,7 @@ public class DeliveryChallanService {
 		
 	}
 	
+	@Transactional
 	public List<DeliveryChallanItems> getPartialDcItems(){
 		List<DeliveryChallan> dcList=getAllDcList();
 		ArrayList<DeliveryChallanItems> dcItemLists=new ArrayList<DeliveryChallanItems>();

@@ -1,6 +1,7 @@
 package com.ncpl.sales.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ncpl.sales.model.DeliveryChallanItems;
 import com.ncpl.sales.model.DesignItems;
@@ -41,7 +43,10 @@ public class PurchaseItemService {
 	SalesOrderDesignService designService;
 	@Autowired
 	DeliveryChallanItemsRepo dcItemRepo;
-	
+
+	@Autowired
+	PurchaseOrderAuditService purchaseOrderAuditService;
+
 //	@PersistenceContext
 //    private EntityManager em;
 
@@ -103,20 +108,25 @@ public class PurchaseItemService {
 		return list;
 	}
 
+	@Transactional
 	public boolean deletePurchaseItem(int id) {
 		boolean isDeleted = false;
 		 Optional<PurchaseItem> purchaseItem = purchaseItemRepo.findById(id);
 		// PurchaseOrder purchaseOrder=purchaseItem.get().getPurchaseOrder();
 		List<DeliveryChallanItems> dcItemList = dcService.getDcItemListBySoItemIdWhereDcQtyNotZero(purchaseItem.get().getDescription());
-		// Block deletion if ANY GRN item references this PO item, not just ones with
-		// non-zero received qty - a GRN line existing at all means a delivery/inspection
-		// was already recorded against this item, so it must not be silently orphaned.
 		List<GrnItems> grnItemList = grnService.getGrnItemByPoItemId(Integer.toString(id));
 		if (grnItemList.size() > 0 || dcItemList.size()>0) {
 			isDeleted = false;
 		} else {
 			isDeleted = true;
+		
+			String poNumber = purchaseItem.get().getPurchaseOrder() != null
+					? purchaseItem.get().getPurchaseOrder().getPoNumber() : null;
+			Map<String, Object> oldSnapshot = purchaseOrderAuditService.toAuditMap(purchaseItem.get());
 			purchaseItemRepo.deletePurchaseItemById(id);
+			purchaseOrderAuditService.logPurchaseItemChange(poNumber, id,
+					PurchaseOrderAuditService.ACTION_DELETE_PURCHASE_ITEM, null, oldSnapshot,
+					Collections.singletonMap("removed", true), "Purchase line deleted: " + id, null);
 		}
 
 		return isDeleted;

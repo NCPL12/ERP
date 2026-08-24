@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.City;
@@ -64,8 +67,18 @@ public class PartyService {
 	public List<Party> getPartyList() {
 		List<Party> partyList=partyRepo.findAll();
 		Collections.sort(partyList);
-		
+
 		return partyList;
+	}
+
+	// @D0015 lazy-loaded, paginated Party list (see README.md)
+	public Page<Party> getPartyListPage(int page, int size, String keyword) {
+		Page<Party> partyPage = partyRepo.searchByKeyword(keyword == null ? "" : keyword.trim(),
+				PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "partyName")));
+		for (Party party : partyPage.getContent()) {
+			party.setCategory(partyCategoryService.getPartyCategoryCountbyPartyId(party.getId()));
+		}
+		return partyPage;
 	}
 	
 	public Party getPartyById(String id) {

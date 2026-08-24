@@ -40,6 +40,8 @@ var allStocksList = ${allStocksList};
 var makeList=${makeList};
 var role = ${role};
 var user = ${user};
+// @D0014 per-user Item Master access override, toggled directly in the DB (see README.md)
+var itemMasterAccess = ${itemMasterAccess};
 </script>
 <style type="text/css">
 .custom-box-header {

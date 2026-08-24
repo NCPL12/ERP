@@ -57,6 +57,9 @@ import com.ncpl.sales.util.NcplUtil;
 public class PurchaseOrderService {
 	@Autowired
 	PurchaseRepo purchaseRepo;
+	// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
+	@Autowired
+	PurchaseOrderAuditService purchaseOrderAuditService;
 	@Autowired
 	SalesService salesService;
 	@Autowired
@@ -95,10 +98,20 @@ public class PurchaseOrderService {
 		purchaseOrder.setParty(party);
 		PurchaseOrder purchaseOrderObject=purchaseRepo.save(purchaseOrder);
 		//PurchaseExcel.buildExcelDocument(purchaseOrderObject,response,filePath, itemMasterService);
-		
-		 
+
+
 		//updateSupplierPrice(purchaseOrderObject);
 		//update(purchaseOrderObject);
+		// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
+		purchaseOrderAuditService.logPurchaseOrderCreation(purchaseOrderObject, null, null);
+		if (purchaseOrderObject.getItems() != null) {
+			for (PurchaseItem item : purchaseOrderObject.getItems()) {
+				purchaseOrderAuditService.logPurchaseItemChange(purchaseOrderObject.getPoNumber(),
+						item.getPurchase_item_id() == 0 ? null : item.getPurchase_item_id(),
+						PurchaseOrderAuditService.ACTION_CREATE_PURCHASE_ITEM, null, null,
+						purchaseOrderAuditService.toAuditMap(item), "Purchase line created", null);
+			}
+		}
 		return purchaseOrderObject;
 	}
 
@@ -272,6 +285,9 @@ public class PurchaseOrderService {
 		validateAgainstDesignQuantity(purchaseOrder.getItems(), purchaseOrderNumber);
 		JSONArray history = preparePurchaseOrderHistory(purchaseOrderNumber);
 		PurchaseOrder poToUpdate = purchaseRepo.getOne(purchaseOrderNumber);
+		// @D0017 snapshot BEFORE mutation, so the diff below has something to compare against (see README.md)
+		Map<Integer, Map<String, Object>> oldItemSnapshots = purchaseOrderAuditService
+				.buildPurchaseItemSnapshotMap(poToUpdate.getItems());
 		poToUpdate.setHistory(history);
 		poToUpdate.setItems(purchaseOrder.getItems());
 		List<PurchaseItem> purchaseItems = purchaseOrder.getItems();
@@ -288,6 +304,11 @@ public class PurchaseOrderService {
 		}
 		PurchaseOrder poToUpdateObj = purchaseRepo.save(poToUpdate);
 		//updateSupplierPrice(poToUpdateObj);
+		// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
+		Map<Integer, Map<String, Object>> newItemSnapshots = purchaseOrderAuditService
+				.buildPurchaseItemSnapshotMap(poToUpdateObj.getItems());
+		purchaseOrderAuditService.diffAndLogPurchaseItemChanges(purchaseOrderNumber, oldItemSnapshots,
+				newItemSnapshots, null, null);
 	}
 	
 	public Map<Object, Object> findVendorsByPurchaseOrder(String poNumber){
@@ -837,13 +858,16 @@ public class PurchaseOrderService {
 		Optional<PurchaseOrder> po = purchaseRepo.findById(poNum);
 		po.get().setArchive(true);
 		purchaseRepo.save(po.get());
-		
+		// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
+		purchaseOrderAuditService.logPurchaseOrderArchive(poNum, null, null);
 	}
-	
+
 	public void unArchivePO(String poNum) {
 		Optional<PurchaseOrder> po = purchaseRepo.findById(poNum);
 		po.get().setArchive(false);
 		purchaseRepo.save(po.get());
+		// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
+		purchaseOrderAuditService.logPurchaseOrderUnarchive(poNum, null, null);
 		
 	}
 	

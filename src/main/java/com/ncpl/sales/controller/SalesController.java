@@ -47,6 +47,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -413,28 +414,7 @@ public class SalesController {
 		String name = request.getParameter("clientDcPEnding");
 		Party partyObj = partyService.getPartyById(name);
 		// List<Object> pendingDcList = new ArrayList();
-		List<Object> pendingDcList = salesService.getPendingDcList(name);
-		model.addAttribute("pageHeader", "Pending DC Report - " + partyObj.getPartyName());
-		model.addAttribute("pendingDcList", pendingDcList);
-		return "pendingdcreport";
-	}
-
-	@PostMapping("/add/salesOrder")
-	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req, @RequestParam("party") String partyId)
-			throws Exception {
-		
-		System.out.println("Party ID from request: " + partyId);
-
-		SimpleDateFormat logFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-		logFmt.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
-		String rawClientPoDateParam = req.getParameter("clientPoDate");
-		String boundPoDateStr = salesOrder.getClientPoDate() == null ? "null" : logFmt.format(salesOrder.getClientPoDate());
-		log.info("[CLIENT_PO_DATE] POST /add/salesOrder | soId={} | request param clientPoDate='{}' | @ModelAttribute clientPoDate={}",
-				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr);
-		consoleDiag(String.format("[CLIENT_PO_DATE] POST /add/salesOrder | soId=%s | request param clientPoDate='%s' | @ModelAttribute clientPoDate=%s",
-				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr));
-		
-		// Manually set the Party object
+		List<Object> pendingDcList = salesService.getPendingDcList(name); the Party object
 		if (partyId != null && !partyId.isEmpty()) {
 			Party party = partyService.getPartyById(partyId);
 			System.out.println("Found Party: " + (party != null ? party.getPartyName() : "null"));
@@ -503,7 +483,7 @@ public class SalesController {
 			model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
 		}		
 		model.addAttribute("salesOrderList", "[]");
-		return "welcome";
+		return "welcome"; 
 	}
 
 	@GetMapping("/party")
@@ -589,23 +569,21 @@ public class SalesController {
 		return "redirect:/partyList";
 	}
 
+	// @D0011 lazy-loaded, paginated Party list (see README.md)
 	@GetMapping("/partyList")
-	public String partyList(Model model) throws JsonProcessingException {
-		List<Party> partyList = partyService.getPartyList();
-
-		for (Party party : partyList) {
-			int partyCategoryListCount = partyCategoryService.getPartyCategoryCountbyPartyId(party.getId());
-			party.setCategory(partyCategoryListCount);
-		}
-
-		for (Party p : partyList) {
-			System.out.println("This is party" + p);
-		}
-		ObjectMapper mapper = new ObjectMapper();
-		model.addAttribute("partyList", mapper.writeValueAsString(partyList));
+	public String partyList(Model model) {
 		model.addAttribute("pageHeader", "Party List");
 		return "partyList";
+	}
 
+	// @D0011 lazy-loaded, paginated Party list (see README.md)
+	@GetMapping("/partyList/data")
+	@ResponseBody
+	public Page<Party> getPartyListData(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "10") int size,
+			@RequestParam(defaultValue = "") String keyword) {
+		return partyService.getPartyListPage(page, size, keyword);
 	}
 
 	@GetMapping("/api/partyListDropdown")
@@ -1627,13 +1605,21 @@ public class SalesController {
 			return "redirect:/returnableList";
 		}
 	 
+	 // @D0010 lazy-loaded, paginated Returnables list (see README.md)
 	 @GetMapping("/returnableList")
-		public String retunableItemsList(Model model) throws JsonProcessingException {
-			List<ReturnableItems> retunableItemsList = returnableService.getReturnableItemsList();
-			ObjectMapper mapper = utilService.getObjectMapper();
-			model.addAttribute("retunableItemsList", mapper.writeValueAsString(retunableItemsList));
+		public String retunableItemsList(Model model) {
 			model.addAttribute("pageHeader", "Returnable Items List");
 			return "returnableList";
+		}
+
+	 // @D0010 lazy-loaded, paginated Returnables list (see README.md)
+	 @GetMapping("/returnableList/data")
+		@ResponseBody
+		public Page<ReturnableItems> getReturnableItemsListData(
+				@RequestParam(defaultValue = "0") int page,
+				@RequestParam(defaultValue = "10") int size,
+				@RequestParam(defaultValue = "") String keyword) {
+			return returnableService.getReturnableItemsListPage(page, size, keyword);
 		}
 	 
 	 @GetMapping("/work_order")

@@ -19,6 +19,10 @@ public class User {
 	private String username;
 	private String password;
 	private String role;
+	// @D0014 per-user Item Master access override, toggled directly in the DB (see README.md)
+	// Boolean (not boolean) so existing rows with a NULL column don't blow up login.
+	@Column(name = "item_master_access")
+	private Boolean itemMasterAccess;
 	private boolean enabled;
 	private String number;
 	private String emailId;
@@ -47,6 +51,12 @@ public class User {
 	}
 	public void setRole(String role) {
 		this.role = role;
+	}
+	public boolean isItemMasterAccess() {
+		return Boolean.TRUE.equals(itemMasterAccess);
+	}
+	public void setItemMasterAccess(Boolean itemMasterAccess) {
+		this.itemMasterAccess = itemMasterAccess;
 	}
 	public boolean isEnabled() {
 		return enabled;

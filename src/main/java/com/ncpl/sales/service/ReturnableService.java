@@ -8,6 +8,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.DeliveryChallanItems;
@@ -61,7 +65,19 @@ public class ReturnableService {
 	}
 
 	public List<ReturnableItems> getReturnableItemsList() {
-		List<ReturnableItems> returnableItemsList = returnableItemsRepo.findAllNonZeroReturned();
+		return enrich(returnableItemsRepo.findAllNonZeroReturned());
+	}
+
+	// @D0014 lazy-loaded, paginated Returnables list (see README.md)
+	public Page<ReturnableItems> getReturnableItemsListPage(int page, int size, String orderNo) {
+		Page<ReturnableItems> returnablePage = returnableItemsRepo.findAllNonZeroReturnedPaged(
+				orderNo == null ? "" : orderNo.trim(),
+				PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
+		return new PageImpl<>(enrich(returnablePage.getContent()), returnablePage.getPageable(),
+				returnablePage.getTotalElements());
+	}
+
+	private List<ReturnableItems> enrich(List<ReturnableItems> returnableItemsList) {
 		if (returnableItemsList.isEmpty()) {
 			return returnableItemsList;
 		}
