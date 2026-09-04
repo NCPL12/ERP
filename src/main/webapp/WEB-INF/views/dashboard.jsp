@@ -127,7 +127,7 @@ var pageContext = '${pageContext.request.contextPath}';
         <a href="#" id="saleslink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-           <div class="col-lg-2 col-6">
+            <div class="col-lg-2 col-6">
             <!-- small box -->
             <div class="small-box bg-red">
               <div class="inner">

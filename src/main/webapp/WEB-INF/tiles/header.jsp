@@ -789,7 +789,7 @@
 						<!-- /.navbar -->
 						<div class="faderv2">
 							<div class="loaderv2">
-								<img src="${RESOURCES}dist/img/loading-1.gif" class="loaderWidth">
+								<div class="spinner"></div>
 							</div>
 						</div>
 					</body>

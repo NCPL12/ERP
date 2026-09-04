@@ -93,6 +93,11 @@ public class ItemMasterService {
 		return itemMasterRepo.findAllIdAndModel();
 	}
 
+	// Lightweight id+model+itemName list for sales order page dropdowns
+	public List<java.util.Map<String, Object>> getItemIdModelNameList() {
+		return itemMasterRepo.findItemIdModelNameList();
+	}
+
 	public List<Map<String, Object>> getModelAndUnitList() {
 		List<Object[]> rows = itemMasterRepo.findModelAndUnitList();
 		List<Map<String, Object>> result = new ArrayList<>(rows.size());

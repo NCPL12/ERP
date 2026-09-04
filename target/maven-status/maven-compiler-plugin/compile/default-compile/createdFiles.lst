@@ -75,6 +75,7 @@ com\ncpl\sales\service\PendingSalesItemsExcel.class
 com\ncpl\sales\model\Invoice.class
 com\ncpl\sales\service\StockValueByItemEmailScedular.class
 com\ncpl\sales\model\NonBillable.class
+com\ncpl\sales\repository\projection\PartyDropdownProjection.class
 com\ncpl\sales\service\StockReportByDateExcel.class
 com\ncpl\sales\util\JSONObjectConverter.class
 com\ncpl\sales\service\PurchasePdf.class

@@ -575,25 +575,58 @@ public class SalesService {
 		// get list of sales order for all sales id
 		List<SalesOrder> salesOrderListbyId = salesrepo.findSalesOrderById(id);
 		ArrayList<SalesItem> itemList = new ArrayList<SalesItem>();
-		// get list of items for each sales order
-		List<SalesItem> salesItemList = null;
+
+		// fetch the sales items of every sales order in one batched query (with
+		// salesOrder/party join-fetched so the rows below issue no extra queries)
+		// instead of one query per sales order plus one extra query per item.
+		Map<String, List<SalesItem>> salesItemsBySoId = new HashMap<String, List<SalesItem>>();
+		HashSet<String> salesItemIds = new HashSet<String>();
 		for (SalesOrder salesOrder : salesOrderListbyId) {
+			salesItemsBySoId.put(salesOrder.getId(), new ArrayList<SalesItem>());
+		}
+		if (!salesItemsBySoId.isEmpty()) {
+			for (SalesItem salesItem : salesItemrepo.findSalesItemsBySalesOrderIds(new ArrayList<String>(salesItemsBySoId.keySet()))) {
+				List<SalesItem> soItems = salesItemsBySoId.get(salesItem.getSalesOrder().getId());
+				if (soItems != null) {
+					soItems.add(salesItem);
+					salesItemIds.add(salesItem.getId());
+				}
+			}
+		}
+
+		// batch-fetch dc items, design items, item masters and matching suppliers
+		// for all the sales items in a handful of queries instead of one query per
+		// item (N+1).
+		Map<String, List<DeliveryChallanItems>> dcItemsBySalesItemId = dcService.getDcItemListBySalesItemIds(new ArrayList<String>(salesItemIds));
+		Map<String, List<DesignItems>> designItemsBySalesItemId = soDesignService.getSalesOrderDesignItemListBySalesItemIds(new ArrayList<String>(salesItemIds));
+		HashSet<String> itemMasterIds = new HashSet<String>();
+		for (List<DesignItems> designItemList : designItemsBySalesItemId.values()) {
+			for (DesignItems designItems : designItemList) {
+				itemMasterIds.add((String) designItems.get("itemMasterId"));
+			}
+		}
+		Map<String, ItemMaster> itemMastersById = itemService.getItemsByIds(new ArrayList<String>(itemMasterIds));
+		Map<String, List<Supplier>> suppliersByItemId = itemService.findItemsForSelectedVendorByIds(new ArrayList<String>(itemMasterIds), className);
+
+		for (SalesOrder salesOrder : salesOrderListbyId) {
+			List<SalesItem> salesItemList = salesItemsBySoId.get(salesOrder.getId());
 
 			if (className.equalsIgnoreCase("dc")) {
-				salesItemList = getItemsWhereSupplyPriceIsGreaterThanZero(salesOrder.getId());
+				// dc branch only considers supply-price>0, non-archived items.
 				for (SalesItem salesItem : salesItemList) {
-					boolean value = false;
-					Optional<SalesItem> item=getSalesItemById(salesItem.getId(),value);
-					salesItem.set("unitName",item.get().getItem_units().getName());
-					List<DesignItems> designItemList = soDesignService.getSalesOrderDesignItemListBySalesItemId(salesItem.getId());
+					if (!(salesItem.getUnitPrice() > 0) || salesItem.isArchive()) {
+						continue;
+					}
+					salesItem.set("unitName",salesItem.getItem_units().getName());
+					List<DesignItems> designItemList = designItemsBySalesItemId.get(salesItem.getId());
 					if(!designItemList.isEmpty()) {
 						itemList.add(salesItem);
 					}
-					List<DeliveryChallanItems> dcItemList = dcService.getDcItemListBySoItemId(salesItem.getId());
+					List<DeliveryChallanItems> dcItemList = dcItemsBySalesItemId.get(salesItem.getId());
 					float todaysQty = 0;
 					// if for dc item list is empty for the selected salesItemId then set
 					// delivered qty to 0.
-					if (dcItemList.isEmpty()) {
+					if (dcItemList == null || dcItemList.isEmpty()) {
 						todaysQty = 0;
 						salesItem.set("todaysQty", todaysQty);
 						salesItem.set("deliveredQty", todaysQty);
@@ -608,29 +641,37 @@ public class SalesService {
 						salesItem.set("todaysQty", salesItem.getQuantity() - todaysQty);
 						salesItem.set("deliveredQty", todaysQty);
 					}
-					
-					
 				}
-				//itemList.addAll(salesItemList);
 			} else {
-				salesItemList = salesItemrepo.getSalesItemListBySalesOrderId(salesOrder.getId());
-				
 				for (SalesItem salesItem : salesItemList) {
-					boolean value = false;
-					Optional<SalesItem> item=getSalesItemById(salesItem.getId(),value);
-					salesItem.set("unitName",item.get().getItem_units().getName());
-					List<DesignItems> designItemList=soDesignService.getSalesOrderDesignItemListBySalesItemId(salesItem.getId());
+					salesItem.set("unitName",salesItem.getItem_units().getName());
+
+					// keep the same todaysQty/deliveredQty values that the single-item
+					// lookup used to compute for every item.
+					List<DeliveryChallanItems> dcItemList = dcItemsBySalesItemId.get(salesItem.getId());
+					float todaysQty = 0;
+					if (dcItemList == null || dcItemList.isEmpty()) {
+						salesItem.set("todaysQty", 0);
+						salesItem.set("deliveredQty", 0);
+					} else {
+						for (DeliveryChallanItems dcItem : dcItemList) {
+							todaysQty = todaysQty + dcItem.getTodaysQty();
+						}
+						salesItem.set("todaysQty", salesItem.getQuantity() - todaysQty);
+						salesItem.set("deliveredQty", todaysQty);
+					}
+
+					List<DesignItems> designItemList = designItemsBySalesItemId.get(salesItem.getId());
 					ArrayList<DesignItems> vendoritemsList = new ArrayList<DesignItems>();
 					for (DesignItems designItems : designItemList) {
 						String designItemId=(String) designItems.get("itemMasterId");
-						String itemId=designItemId;
-						Optional<ItemMaster> itemObj = itemService.getItemById(itemId);
-						designItems.set("tax",itemObj.get().getGst());
-						designItems.set("itemName",itemObj.get().getItemName());
-						designItems.set("unit",itemObj.get().getItem_units().getName());
-						designItems.set("hsnCode",itemObj.get().getHsnCode());
-						designItems.set("model",itemObj.get().getModel());
-						List<Supplier> supplierList=itemService.findItemsForSelectedVendor(designItemId,className);
+						ItemMaster itemObj = itemMastersById.get(designItemId);
+						designItems.set("tax",itemObj.getGst());
+						designItems.set("itemName",itemObj.getItemName());
+						designItems.set("unit",itemObj.getItem_units().getName());
+						designItems.set("hsnCode",itemObj.getHsnCode());
+						designItems.set("model",itemObj.getModel());
+						List<Supplier> supplierList = suppliersByItemId.getOrDefault(designItemId, Collections.emptyList());
 						if(supplierList.size()>0) {
 							vendoritemsList.add(designItems);
 						}
@@ -1284,6 +1325,21 @@ public class SalesService {
 			summary.put("itemsWithDesign", row[5] == null ? 0L : ((Number) row[5]).longValue());
 			summary.put("pendingDesigns", row[6] == null ? 0L : ((Number) row[6]).longValue());
 			result.add(summary);
+		}
+		return result;
+	}
+
+	public List<Map<String, Object>> getTdsApprovedPendingListForDashboard(){
+		List<Object[]> rows = salesrepo.getTdsApprovedPendingListForDashboard();
+		ArrayList<Map<String, Object>> result = new ArrayList<>();
+		for (Object[] row : rows) {
+			Map<String, Object> m = new HashMap<>();
+			m.put("soId", row[0] == null ? null : row[0].toString());
+			m.put("clientPoNumber", row[1] == null ? null : row[1].toString());
+			m.put("partyName", row[2] == null ? null : row[2].toString());
+			m.put("modelNo", row[3] == null ? null : row[3].toString());
+			m.put("siteQuantity", row[4]);
+			result.add(m);
 		}
 		return result;
 	}

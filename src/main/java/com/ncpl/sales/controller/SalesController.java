@@ -78,6 +78,7 @@ import com.ncpl.sales.model.ItemMaster;
 import com.ncpl.sales.model.NonBillable;
 import com.ncpl.sales.model.NonBillableItems;
 import com.ncpl.sales.model.Party;
+import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.PartyBank;
 import com.ncpl.sales.model.PartyCategory;
@@ -414,7 +415,27 @@ public class SalesController {
 		String name = request.getParameter("clientDcPEnding");
 		Party partyObj = partyService.getPartyById(name);
 		// List<Object> pendingDcList = new ArrayList();
-		List<Object> pendingDcList = salesService.getPendingDcList(name); the Party object
+		List<Object> pendingDcList = salesService.getPendingDcList(name);
+		model.addAttribute("pageHeader", "Pending DC Report - " + partyObj.getPartyName());
+		model.addAttribute("pendingDcList", pendingDcList);
+		return "pendingdcreport";
+	}
+
+	@PostMapping("/add/salesOrder")
+	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req, @RequestParam("party") String partyId)
+			throws Exception {
+
+		System.out.println("Party ID from request: " + partyId);
+
+		SimpleDateFormat logFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+		logFmt.setTimeZone(TimeZone.getTimeZone("Asia/Kolkata"));
+		String rawClientPoDateParam = req.getParameter("clientPoDate");
+		String boundPoDateStr = salesOrder.getClientPoDate() == null ? "null" : logFmt.format(salesOrder.getClientPoDate());
+		log.info("[CLIENT_PO_DATE] POST /add/salesOrder | soId={} | request param clientPoDate='{}' | @ModelAttribute clientPoDate={}",
+				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr);
+		consoleDiag(String.format("[CLIENT_PO_DATE] POST /add/salesOrder | soId=%s | request param clientPoDate='%s' | @ModelAttribute clientPoDate=%s",
+				salesOrder.getId(), rawClientPoDateParam, boundPoDateStr));
+
 		if (partyId != null && !partyId.isEmpty()) {
 			Party party = partyService.getPartyById(partyId);
 			System.out.println("Found Party: " + (party != null ? party.getPartyName() : "null"));
@@ -463,12 +484,11 @@ public class SalesController {
 	}
 
 	@GetMapping("/new_salesOrder")
-	public String newSalesOrder(Model model, HttpServletRequest req) throws JsonProcessingException {
-		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
+	public String newSalesOrder(Model model) throws JsonProcessingException {
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
-		List<Party> customerpartyList = partyService.getPartyListByTypeCustomer();
-		List<ItemMaster> itemList = itemMasterService.getItemList();
+		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
 		User userObj  = userService.getCurrentUser();
 		String userName = userObj.getUsername();
 		ObjectMapper mapper = new ObjectMapper();
@@ -477,13 +497,61 @@ public class SalesController {
 		model.addAttribute("unitsList", mapper.writeValueAsString(unitsList));
 		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
 		model.addAttribute("role", mapper.writeValueAsString(userObj.getRole()));
-		model.addAttribute("pageHeader", "Sales Order");		
-		if (flashMap != null) {
-			SalesOrder salesOrder = (SalesOrder) flashMap.get("salesOrderObj");
-			model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
-		}		
+		model.addAttribute("pageHeader", "Sales Order");
 		model.addAttribute("salesOrderList", "[]");
-		return "welcome"; 
+		return "welcome";
+	}
+
+	@GetMapping("/edit_salesOrder/{id}")
+	public String editSalesOrder(@PathVariable("id") String salesOrderId, Model model) throws JsonProcessingException {
+		Optional<SalesOrder> salesOrderOpt = salesService.getSalesOrderById(salesOrderId);
+		SalesOrder salesOrder = salesOrderOpt.get();
+
+		Party party = salesOrder.getParty();
+
+		String addr1 = party.getAddr1();
+		addr1 = addr1.replace("'", "&");
+		addr1 = addr1.replace("\"", "&");
+		party.setAddr1(addr1);
+
+		if (party.getAddr2() != null) {
+			String addr2 = party.getAddr2();
+			addr2 = addr2.replace("'", "&");
+			addr2 = addr2.replace("\"", "&");
+			party.setAddr2(addr2);
+		}
+
+		String clientPo = salesOrder.getClientPoNumber();
+		String partyName = party.getPartyName();
+		clientPo = clientPo.replace("'", "&");
+		partyName = partyName.replace("\"", "&");
+		partyName = partyName.replace("'", "&");
+		clientPo = clientPo.replace("\"", "&");
+
+		String otherTC = salesOrder.getOtherTermsAndConditions();
+		otherTC = otherTC.replaceAll("'", "&");
+		otherTC = otherTC.replaceAll("\"", "&");
+		otherTC = otherTC.replaceAll("(\r\n|\n)", "");
+		salesOrder.setClientPoNumber(clientPo);
+		salesOrder.setOtherTermsAndConditions(otherTC);
+		party.setPartyName(partyName);
+
+		model.addAttribute("salesOrder", new SalesOrder());
+		List<Units> unitsList = itemMasterService.getUnitList();
+		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
+		User userObj = userService.getCurrentUser();
+		String userName = userObj.getUsername();
+		ObjectMapper mapper = new ObjectMapper();
+		model.addAttribute("userName", mapper.writeValueAsString(userName));
+		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		model.addAttribute("unitsList", mapper.writeValueAsString(unitsList));
+		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
+		model.addAttribute("role", mapper.writeValueAsString(userObj.getRole()));
+		model.addAttribute("pageHeader", "Sales Order");
+		model.addAttribute("salesOrderObj", mapper.writeValueAsString(salesOrder));
+		model.addAttribute("salesOrderList", "[]");
+		return "welcome";
 	}
 
 	@GetMapping("/party")
@@ -587,9 +655,9 @@ public class SalesController {
 	}
 
 	@GetMapping("/api/partyListDropdown")
-	public ResponseEntity<List<Party>> partyListDropdown() {
-		List<Party> partyList = partyService.getPartyList();
-		return new ResponseEntity<List<Party>>(partyList, HttpStatus.OK);
+	public ResponseEntity<?> partyListDropdown() {
+		List<PartyDropdownProjection> partyList = partyService.getPartyDropdownList();
+		return new ResponseEntity<>(partyList, HttpStatus.OK);
 	}
 
 	@GetMapping("/api/purchaseOrderDropDown")
@@ -1114,45 +1182,7 @@ public class SalesController {
 	public String displaySalesOrderView(@RequestParam("salesOrderId") String salesOrderId,
 			RedirectAttributes redirectAttr, Model model) {
 
-		Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(salesOrderId);
-		// This code is to overcome the pblm of single quote issue with client po and
-		// addresses
-		Party party = salesOrder.get().getParty();
-
-		String addr1 = party.getAddr1();
-		addr1 = addr1.replace("'", "&");
-		addr1 = addr1.replace("\"", "&");
-		party.setAddr1(addr1);
-
-		if (party.getAddr2() != null) {
-			String addr2 = party.getAddr2();
-			addr2 = addr2.replace("'", "&");
-			addr2 = addr2.replace("\"", "&");
-			party.setAddr2(addr2);
-		}
-
-		String clientPo = salesOrder.get().getClientPoNumber();
-		String partyName = party.getPartyName();
-		clientPo = clientPo.replace("'", "&");
-		partyName = partyName.replace("\"", "&");
-		partyName = partyName.replace("'", "&");
-		clientPo = clientPo.replace("\"", "&");
-		
-		String otherTC=salesOrder.get().getOtherTermsAndConditions();
-		otherTC=otherTC.replaceAll("'", "&");
-		otherTC=otherTC.replaceAll("\"", "&");
-		/*
-		 * otherTC=otherTC.replaceAll("\\(", "&"); otherTC=otherTC.replaceAll("\\)",
-		 * "&"); otherTC=otherTC.replaceAll("\\\\", "&");
-		 */
-		otherTC = otherTC.replaceAll("(\r\n|\n)", "");
-		salesOrder.get().setClientPoNumber(clientPo);
-		salesOrder.get().setOtherTermsAndConditions(otherTC);
-		party.setPartyName(partyName);
-
-		redirectAttr.addFlashAttribute("salesOrderObj", salesOrder.get());
-		// salesService.updateSoStatusToWorkInProgress(salesOrder.get().getId());
-		return "redirect:/new_salesOrder";
+		return "redirect:/edit_salesOrder/" + salesOrderId;
 	}
 
 	/**
@@ -1337,6 +1367,7 @@ public class SalesController {
 		model.addAttribute("sowithDesignCount", counts.getSowithDesignCount());
 		model.addAttribute("sowithoutDesignCount", counts.getSowithoutDesignCount());
 		model.addAttribute("projectPreviewCount", counts.getProjectPreviewCount());
+		model.addAttribute("tdsApprovedPendingCount", counts.getTdsApprovedPendingCount());
 		model.addAttribute("pageHeader", "Dashboard");
 		return "dashboard";
 	}
@@ -2030,6 +2061,12 @@ public class SalesController {
 		public ResponseEntity<?> tdsApprovedList(Model model) {
 			List<SalesOrder> soList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard();
 			return new ResponseEntity<>(soList, HttpStatus.OK);
+		}
+
+	 @GetMapping("/api/tds_approved_pending_list")
+		public ResponseEntity<?> tdsApprovedPendingList() {
+			List<Map<String, Object>> items = salesService.getTdsApprovedPendingListForDashboard();
+			return new ResponseEntity<>(items, HttpStatus.OK);
 		}
 
 	 @GetMapping("/api/tds/lots")

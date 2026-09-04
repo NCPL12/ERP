@@ -227,6 +227,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ActiveSal
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderCreatedEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\OptimizedMaterialTrackerExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\generator\PartyIdGenerator.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\projection\PartyDropdownProjection.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PartyBank.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\CityRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\InvoicePdf.java

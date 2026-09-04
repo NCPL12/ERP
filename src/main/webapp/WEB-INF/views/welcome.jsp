@@ -10,7 +10,6 @@
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
 <%
-request.getSession().invalidate();
 response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
 response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 %>
@@ -26,9 +25,8 @@ response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 
 
 
-	<link rel="stylesheet" href="resources/css/salesOrder.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/salesOrder.css">
 	<script src="<c:url value="/resources/js/salesOrder.js" />"></script>
-		<script src="<c:url value="/resources/js/jquery.tabletojson.js" />"></script>
 	<script src="${RESOURCES}js/common.js" ></script>
 
 	<!--  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -103,8 +101,10 @@ obj = obj.replace(/\&/g, "\"");
 .modal-body {
   padding: 10px;
 }
-</style>
-</head>
+.wrapper {
+  zoom: 80%;
+}
+</style></head>
 
 <body>
 	<body class="hold-transition sidebar-mini">
@@ -244,34 +244,35 @@ obj = obj.replace(/\&/g, "\"");
 								</tbody>
 								<tfoot id="table-footer">
 									<tr>
-										<td colspan="6" width="81%" style="text-align: right;">Total</td>
-										<td colspan="2">
+										<td colspan="8" aria-hidden="true"></td>
+										<td class="task-label" style="text-align: right; white-space: nowrap;">Total</td>
+										<td>
 											<form:input type="text" id="total" name="total" path="total"
 												class="form-control PositionofTextbox total alignright" value="" />
 										</td>
-										
 									</tr>
 									<tr id="taxDropDownRow">
-									<td colspan="6" width="81%" style="text-align: right;">Tax
-										Rate</td>
-									<td colspan="2"><select id="taxDropDown" name="gstRate">
-											<option value="18">GST@18%</option>
-											<option value="12">GST@12%</option>
-											<option value="0">GST@0%</option>
-
-									</select></td>
-
-								</tr>
+										<td colspan="8" aria-hidden="true"></td>
+										<td class="task-label" style="text-align: right; white-space: nowrap;">Tax Rate</td>
+										<td><select id="taxDropDown" name="gstRate"
+												class="form-control" style="width: 100%; height: 32px; font-size: 14px; border-radius: 0;">
+												<option value="18">GST@18%</option>
+												<option value="12">GST@12%</option>
+												<option value="0">GST@0%</option>
+											</select></td>
+									</tr>
 									<tr id="gstRow">
-										<td colspan="6" id="gstrate" style="text-align: right;">GST@</td>
-										<td colspan="2">
+										<td colspan="8" aria-hidden="true"></td>
+										<td class="task-label" id="gstrate" style="text-align: right; white-space: nowrap;">GST@</td>
+										<td>
 											<form:input type="text" id="gst" name="gst" path="gst"
 												class="form-control PositionofTextbox gst alignright" value="" />
 										</td>
 									</tr>
 									<tr>
-										<td colspan="6" style="text-align: right;">Grand Total</td>
-										<td colspan="2">
+										<td colspan="8" aria-hidden="true"></td>
+										<td class="task-label" style="text-align: right; white-space: nowrap;">Grand Total</td>
+										<td>
 											<form:input type="text" id="grandTotal" name="grandTotal" path="grandTotal"
 												class="form-control PositionofTextbox grandTotal alignright" value="" />
 										</td>
@@ -456,10 +457,10 @@ obj = obj.replace(/\&/g, "\"");
 									id="designTable">
 									<thead>
 										<tr>
-											<th class="col" style="width: 50%">Model No</th>
-											<th class="col" style="width: 30%">Unit</th>
-											<th class="col" style="width: 20%">Quantity</th>
-											<th align="center"><i class="fa fa-plus-square addrow"
+											<th style="width: 50%">Model No</th>
+											<th style="width: 27%">Unit</th>
+											<th style="width: 17%">Quantity</th>
+											<th style="width: 6%" class="addDesignCol"><i class="fa fa-plus-square addrow"
 												aria-hidden="true"></i></th>
 										</tr>
 									</thead>
@@ -469,6 +470,7 @@ obj = obj.replace(/\&/g, "\"");
 										<option value="" selected>Select Model No:</option></select></td>
 										<td><input type="text" id="unitMod0" class="form-control PositionofTextbox unit" /></td>
 										<td><input type="text" id="quantity0" name="items[0].quantity" class="form-control PositionofTextbox" /></td>
+										<td class="addDesignCol"></td>
 										</tr>
 									</tbody>
 								</table>

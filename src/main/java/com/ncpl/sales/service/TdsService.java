@@ -34,6 +34,7 @@ import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.SalesRepo;
+import com.ncpl.sales.repository.SalesOrderDesignRepo;
 import com.ncpl.sales.repository.TdsItemRepo;
 import com.ncpl.sales.repository.TdsRepo;
 import com.ncpl.sales.service.TdsLotUpdateReportService;
@@ -66,6 +67,9 @@ public class TdsService {
 
 	@Autowired
 	TdsLotUpdateReportService tdsLotUpdateReportService;
+
+	@Autowired
+	SalesOrderDesignRepo salesOrderDesignRepo;
 
 	@Transactional(rollbackFor = Exception.class)
 	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
@@ -139,6 +143,10 @@ public class TdsService {
 					}
 				}
 				if (tdsItem.isTdsApproved()) {
+					if (salesOrderDesignRepo.getDesginListBySoItemId(tdsItem.getDescription()).isEmpty()) {
+						throw new RuntimeException("TDS cannot be approved for item \"" + tdsItem.getDescription()
+								+ "\" because no design is added for it.");
+					}
 					// The form posts designQty only for rows built from design items;
 					// rows without design items post 0, so fall back to the SO item qty.
 					float maxQty = tdsItem.getDesignQty();
@@ -286,27 +294,6 @@ public class TdsService {
 		
 	}
 	
-	/*@SuppressWarnings({ "unchecked", "rawtypes" })
-	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
-		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
-		Set set = new HashSet();
-		for (TdsItems tdsItem : tdsItemsList) {
-			if(tdsItem.isTdsApproved()==true && tdsItem.getSiteQuantity()>0) {
-				String salesItemId=tdsItem.getDescription();
-				Optional<SalesItem> salesItemObj=salesService.getSalesItemObjById(salesItemId);
-				String itemId = tdsItem.getModelNumber();
-				List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemListBySalesItemIdAndItemId(salesItemId, itemId);
-				if(poItemList.size()==0) {
-					set.add(salesItemObj.get().getSalesOrder());
-				}
-				
-			}
-		}
-		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
-		return soList;
-		
-	}*/
-	
 	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
 		
 		ArrayList<SalesOrder> soList = salesrepo.getTdsApprovedAndPoNotDoneListDashboard();
@@ -319,24 +306,11 @@ public class TdsService {
 	}
 
 	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboardPartial() {
-		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
-		Set set = new HashSet();
-		for (TdsItems tdsItem : tdsItemsList) {
-			if(set.size()<10) {
-			if(tdsItem.isTdsApproved()==true && tdsItem.getSiteQuantity()>0) {
-				String salesItemId=tdsItem.getDescription();
-				Optional<SalesItem> salesItemObj=salesService.getSalesItemObjById(salesItemId);
-				String itemId = tdsItem.getModelNumber();
-				List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemListBySalesItemIdAndItemId(salesItemId, itemId);
-				if(poItemList.size()==0) {
-					set.add(salesItemObj.get().getSalesOrder());
-				}
-			}
-				
-			}
-		}
-		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
-		return soList;
+		// Same canonical query as the full list and the dashboard tile count
+		// (SalesRepo#getTdsApprovedAndPoNotDoneListDashboard / DashboardAggregateJdbcRepository),
+		// just capped for the dashboard preview so all three can never disagree.
+		List<SalesOrder> soList = getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard();
+		return soList.size() > 10 ? soList.subList(0, 10) : soList;
 	}
 
 }

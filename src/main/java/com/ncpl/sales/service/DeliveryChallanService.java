@@ -375,6 +375,22 @@ public class DeliveryChallanService {
 		return dcItemList;
 	}
 	
+	// Bulk variant of getDcItemListBySoItemId(): one query for all the given sales
+	// item ids and grouped by sales item id, instead of one query per item (N+1).
+	public Map<String, List<DeliveryChallanItems>> getDcItemListBySalesItemIds(List<String> soItemIds) {
+		Map<String, List<DeliveryChallanItems>> dcItemsBySalesItemId = new HashMap<String, List<DeliveryChallanItems>>();
+		if (soItemIds == null || soItemIds.isEmpty()) {
+			return dcItemsBySalesItemId;
+		}
+		for (String soItemId : soItemIds) {
+			dcItemsBySalesItemId.put(soItemId, new ArrayList<DeliveryChallanItems>());
+		}
+		for (DeliveryChallanItems dcItem : dcItemRepo.findBySalesItemIdIn(soItemIds)) {
+			dcItemsBySalesItemId.computeIfAbsent(dcItem.getDescription(), k -> new ArrayList<DeliveryChallanItems>()).add(dcItem);
+		}
+		return dcItemsBySalesItemId;
+	}
+	
 	public List<DeliveryChallanItems> getDcItemListBySoItemIdWhereDcQtyNotZero(String soItemId){
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItemId);
 		return dcItemList;
@@ -724,7 +740,7 @@ public class DeliveryChallanService {
 			for (DeliveryChallanItems deliveryChallanItems : dcItemList) {
 				System.out.println("not found"+deliveryChallanItems.getDescription());
 				Optional<SalesItem> salesItem=salesService.getSalesItemObjById(deliveryChallanItems.getDescription());
-				if(salesItem!=null) {
+				if(salesItem.isPresent()) {
 				System.out.println(salesItem.get().getId());
 					List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
 					for (DesignItems designItem : designItemsList) {

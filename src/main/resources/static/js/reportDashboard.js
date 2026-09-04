@@ -14,6 +14,7 @@ function loadDashboardCountsFromApi() {
 			$("#tdsItemsCount").text(data.tdsItemsCount != null ? data.tdsItemsCount : "");
 			$("#sowithoutDesignCount").text(data.sowithoutDesignCount != null ? data.sowithoutDesignCount : "");
 			$("#sowithDesignCount").text(data.sowithDesignCount != null ? data.sowithDesignCount : "");
+			$("#tdsApprovedPendingCount").text(data.tdsApprovedPendingCount != null ? data.tdsApprovedPendingCount : "");
 		},
 		error: function (e) {
 			console.log(e);

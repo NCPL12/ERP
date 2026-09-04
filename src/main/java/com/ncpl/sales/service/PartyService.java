@@ -20,6 +20,7 @@ import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.PartyContact;
 import com.ncpl.sales.model.Type;
 import com.ncpl.sales.repository.PartyRepo;
+import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 @Service
 public class PartyService {
 	@Autowired
@@ -70,6 +71,11 @@ public class PartyService {
 
 		return partyList;
 	}
+
+	// lightweight id+name list for dropdowns
+	public List<PartyDropdownProjection> getPartyDropdownList() {
+		return partyRepo.findPartyDropdownList();
+	}	 
 
 	// @D0015 lazy-loaded, paginated Party list (see README.md)
 	public Page<Party> getPartyListPage(int page, int size, String keyword) {

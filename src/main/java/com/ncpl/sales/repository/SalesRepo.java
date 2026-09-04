@@ -91,10 +91,13 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 			"group by so.id\r\n" + 
 			"having salesQty>dc_qty;",nativeQuery = true)
 	public List<SalesOrder> getpendingSoList();
-	@Query(value = "SELECT * FROM tbl_sales_order so where so.id in \r\n" + 
-			"(select si.sales_order_id from tbl_sales_item si where si.id in\r\n" + 
-			"(select td.description from tbl_tds_items td where td.site_quantity>0 and td.tds_approved=1)and \r\n" + 
-			"si.id not in(select pi.sales_item_id from tbl_purchase_items pi))and so.archive=0;",nativeQuery = true)
+	@Query(value = "SELECT DISTINCT so.* FROM tbl_sales_order so \r\n" +
+			"JOIN tbl_sales_item si ON si.sales_order_id = so.id \r\n" +
+			"JOIN tbl_tds_items td ON td.description = si.id \r\n" +
+			"WHERE td.tds_approved = 1 \r\n" +
+			"AND NOT EXISTS (SELECT 1 FROM tbl_purchase_items pi WHERE pi.sales_item_id = si.id AND pi.model_no = td.model_number) \r\n" +
+			"AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id) \r\n" +
+			"AND so.archive = 0;",nativeQuery = true)
 	public ArrayList<SalesOrder> getTdsApprovedAndPoNotDoneListDashboard();
 
 	@Query(value = "SELECT COUNT(DISTINCT so.id) FROM tbl_sales_order so WHERE so.id IN \r\n" +
@@ -158,5 +161,18 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 			"AND (SELECT SUM(si.quantity) FROM tbl_sales_item si WHERE si.sales_order_id = so.id) > " +
 			"(SELECT COALESCE(SUM(di.todays_qty), 0) FROM tbl_dc d JOIN tbl_dc_items di ON d.dc_id = di.dc_id WHERE d.so_number = so.id)", nativeQuery = true)
 	long countPendingSalesOrdersPartialDC();
+
+	@Query(value = "SELECT so.id AS soId, so.client_po_number AS clientPoNumber, " +
+			"p.party_name AS partyName, si.modelNo AS modelNo, " +
+			"td.site_quantity AS siteQuantity " +
+			"FROM tbl_tds_items td " +
+			"JOIN tbl_sales_item si ON td.description = si.id " +
+			"JOIN tbl_sales_order so ON si.sales_order_id = so.id " +
+			"LEFT JOIN tbl_party p ON so.party_id = p.id " +
+			"WHERE td.tds_approved = 1 AND td.site_quantity > 0 " +
+			"AND si.id NOT IN (SELECT pi.sales_item_id FROM tbl_purchase_items pi) " +
+			"AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id) " +
+			"AND so.archive = 0", nativeQuery = true)
+	List<Object[]> getTdsApprovedPendingListForDashboard();
 }
 

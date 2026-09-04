@@ -21,7 +21,7 @@ public class UserService implements UserDetailsService{
 	private UserRepo userRepo;
 	@Autowired
 	EncryptedPasswordUtils encryptPasswd;
-	
+	 
 	//validating user using database 
 		@Override
 		public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -77,10 +77,9 @@ public class UserService implements UserDetailsService{
 		return userRepo.findUserByUserName(userName);
 	}
 	
-	public List<User> getAllUsers(){
-		List<User> userList=userRepo.findAll();
-		return userList;
-	}
+public List<User> getAllUsers() {
+    return userRepo.findAll();
+}
 	
 	public User getCurrentUser() {
 		User user = null;

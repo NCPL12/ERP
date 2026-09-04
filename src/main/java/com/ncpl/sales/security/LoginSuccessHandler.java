@@ -27,5 +27,5 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler i
 			response.sendRedirect(request.getContextPath()+"/dashboard");
 		}
 	}
-
+	
 }

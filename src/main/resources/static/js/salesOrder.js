@@ -144,12 +144,11 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 //validation to enter only number or float value for qty. 
 
-function getPartyList(){
+	function getPartyList(){
 	$.ajax({
 	    Type:'GET',
 	    url : api.PARTY_LIST,
 	    dataType:'json',
-	    async: 'false',
 	    success  : function(response){
 			
 			$("#partyDropDown option:not(:first)").remove();
@@ -231,7 +230,7 @@ function getPartyList(){
 	    columns += '<td class="hideTd"><input type="hidden" id="salesItemId'+arraycount+'" name="items['+arraycount+'].id"/></td>';
 	    columns +='<td style="display:none" id="toggleBriefTd'+arraycount+'" class="toggleBriefTd hideTd"><input type="checkbox" id="toggleBrief'+arraycount+'" class="toggleBrief"></td>';
         newRow.append(columns);
-         $("#salesTable").append(newRow);
+         $("#table-body").append(newRow);
          // Check if expand all header should be shown/hidden after adding new row
          toggleExpandAllHeader();
         // Ensure no suggestions/autocomplete on description for new row as well
@@ -335,7 +334,6 @@ function getPartyList(){
 		    Type:'GET',
 		    url : api.GET_SALES_ITEMS_LIST_BY_SALES_ORDER_ID+"?id="+soId+"&&className="+className,
 		    dataType:'json',
-		    async: 'false',
 		    success  : function(response){
 		    	//$(".add").hide();
 		    	$("#resetSalesOrder").hide();
@@ -506,7 +504,7 @@ function getPartyList(){
 	}
 	
 	function disableDesignAddBtn(key){
-		$(document).on("click","#design"+key,function(){
+		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",true);
 			$("#designTable >tbody").find("tr").find("input,select,button").attr("disabled",true);
 			$(".addrow").hide();
@@ -514,7 +512,7 @@ function getPartyList(){
 	}
 	
 	function enableDesignAddBtn(key){
-		$(document).on("click","#design"+key,function(){
+		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",false);
 			$("#designTable >tbody").find("tr").find("input,select,button").attr("disabled",false);
 			$(".addrow").show();
@@ -558,24 +556,25 @@ function getPartyList(){
 		isDirty = false;
 		getDesignItemList(salesItemId);
 	})
-	$(document).on("change","#itemModel0",function(){
+	$(document).on("change","[id^='itemModel']",function(){
+        	let arraycount = this.id.replace("itemModel","");
         	var itemId=$(this).val();
 	          $.ajax({
-  				type : "GET",  
-  				url : api.ITEM_LIST_BYID +"?id="+itemId,
-  				success : function(response) {
-  					$("#unitMod0").val(response.item_units.name)
-  					
-  				},  
-  				complete:function(resp){
-  					if(resp.status==500){
-  						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-  					}
-  				},
-  				error : function(e) {
-  					console.log(e);
-  				}  
-  			}); 
+				type : "GET",  
+				url : api.ITEM_LIST_BYID +"?id="+itemId,
+				success : function(response) {
+					$("#unitMod"+arraycount).val(response.item_units.name)
+					
+				},  
+				complete:function(resp){
+					if(resp.status==500){
+						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+					}
+				},
+				error : function(e) {
+					console.log(e);
+				}  
+			}); 
   	});
 	//on click of addrow button in design modal
 	$(document).on("click",".addrow",function(){
@@ -593,6 +592,7 @@ function getPartyList(){
         columns += '<td><select class="form-control PositionofTextbox itemModel" name="items['+arraycount+'].itemId" style="width: 100%; padding: 0px;" id="itemModel'+ arraycount +'"><option value="" selected>Select Model No:</option></td>';
         columns += '<td><input type="text" class="form-control PositionofTextbox unit" id="unitMod'+ arraycount +'" /></td>';
 	    columns += '<td><input type="text" class="form-control PositionofTextbox designQty" id="quantity'+ arraycount +'" name="items['+arraycount+'].quantity"/></td>';
+	    columns += '<td class="addDesignCol"></td>';
 	    newRow.append(columns);
         $("#designTable").append(newRow);
         $("#itemModel" + arraycount).select2({ dropdownAutoWidth: true });
@@ -601,25 +601,7 @@ function getPartyList(){
         $.each(itemList,function(index,value){
 			$("#itemModel"+ arraycount).append('<option value='+value.id+'>'+value.model+'</option>');
 		});
-        $(document).on("change","#itemModel"+ arraycount,function(){
-        	var itemId=$(this).val();
-	          $.ajax({
-  				type : "GET",  
-  				url : api.ITEM_LIST_BYID +"?id="+itemId,
-  				success : function(response) {
-  					$("#unitMod"+arraycount).val(response.item_units.name)
-  					
-  				},  
-  				complete:function(resp){
-  					if(resp.status==500){
-  						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-  					}
-  				},
-  				error : function(e) {
-  					console.log(e);
-  				}  
-  			}); 
-  	});
+        //change handler is bound once via delegated "[id^='itemModel']" selector above
         	
 	
 	}
@@ -728,9 +710,7 @@ function designTable2Json(){
             	row["itemId"] = $(this).find("select").val();
             }else if(rowName=='Unit'){
             	 row["unit"] = $(this).find("input").val();
-            }
-            
-            else {
+            } else if(rowName=='Quantity'){
             	 row["quantity"] = $(this).find("input").val();
             	}
         	});
@@ -889,7 +869,7 @@ function designTable2Json(){
 		}else{
 		   	 $(this).closest("tr").remove();
 		   	adjustIndex();
-		   	toggleExpandAllHeader();
+		   	recalculateTotals();
 		}
 	});
 	}
@@ -974,8 +954,7 @@ function designTable2Json(){
 								deleteSalesItemById(salesItemId);
 								$(salesItemIdTd).closest("tr").remove();
 								adjustIndex();
-								// Check if expand all header should be shown/hidden after row deletion
-								toggleExpandAllHeader();
+								recalculateTotals();
 							}
 						}
 					});		
@@ -1074,36 +1053,34 @@ function designTable2Json(){
 	});
 	
 	function getFirstRowsalesOrder(){
-	$(document).on("click",'#salesTable>tbody>tr>td',function(){
-		let index=$(this).closest('tr').index();
-    		$(document).on("change", "#itemDropDown"+index , function() {
-    			
-    			var itemId = $(this).val();
-    			var item =null;
+	$(document).on("change", "[id^='itemDropDown']" , function() {
 
-    			$.ajax({
-    				type : "GET",  
-    				url : api.ITEM_LIST_BYID +"?id="+itemId,
-    				success : function(response) {
-    					$("input[name='items[" +index+ "].hsnCode']").val(response.hsnCode);
-    					$("input[name='items[" +index+ "].modelNo']").val(response.model);
-    					$("input[name='items[" +index+ "].description']").val(response.itemName);
-    					$("input[name='items[" +index+ "].unitPrice']").val(response.sellPrice);
-    					
-    				},  
-    				complete:function(resp){
-    					if(resp.status==500){
-    						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-    					}
-    				},
-    				error : function(e) {
-    					console.log(e);
-    				}  
-    			}); 
-    			
-    		});
-    		});	
-		
+		let index = this.id.replace("itemDropDown","");
+		var itemId = $(this).val();
+		var item =null;
+
+		$.ajax({
+			type : "GET",
+			url : api.ITEM_LIST_BYID +"?id="+itemId,
+			success : function(response) {
+				$("input[name='items[" +index+ "].hsnCode']").val(response.hsnCode);
+				$("input[name='items[" +index+ "].modelNo']").val(response.model);
+				$("input[name='items[" +index+ "].description']").val(response.itemName);
+				$("input[name='items[" +index+ "].unitPrice']").val(response.sellPrice);
+
+			},
+			complete:function(resp){
+				if(resp.status==500){
+					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+				}
+			},
+			error : function(e) {
+				console.log(e);
+			}
+		});
+
+    	});
+
 	}
 	
 	var checkDuplicate=false;
@@ -1164,15 +1141,11 @@ function designTable2Json(){
 		}
 	})
 	
-	//ajax call to get all the party list and populate clients dropdown
+	//use already-loaded customerPartyList to populate clients dropdown (no AJAX needed)
 	function getAllPartyList(){
-	$.ajax({
-	    Type:'GET',
-	    url : api.PARTY_LIST,
-	    dataType:'json',
-	    async: 'false',
-	    success  : function(response){
-	    	$.each(response, function( key, value ) {
+	    	$('#clientsDropdown').empty();
+	    	$('#billingClientsDropdown').empty();
+	    	$.each(customerPartyList, function( key, value ) {
 	    		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
 	    		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
 	    		});
@@ -1214,17 +1187,6 @@ function designTable2Json(){
 			}else{ 
 				$("#clientsDropdown").val('').trigger('change');
 			}
-	    	
-	    },  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-			error : function(e) {
-				console.log(e);
-			}
-	  });
 	}
 	
 	var billingAddressObj;
@@ -1435,7 +1397,6 @@ function designTable2Json(){
 		    Type:'GET',
 		    url : api.USER_LIST,
 		    dataType:'json',
-		    async: 'false',
 		    success  : function(response){
 				
 				$("#respPersonDropdown option:not(:first)").remove();
@@ -1608,7 +1569,7 @@ function designTable2Json(){
 		isDirty = false;
 		$('#salesOrderForm1').submit();
 		$(this).attr('disabled', 'disabled');
-		$('input:not(:button,:submit),textarea,select').change(function () {
+		$('input:not(:button,:submit),textarea,select').off('change.reEnableSaveSo').on('change.reEnableSaveSo', function () {
 			$("#saveSoBtn").attr('disabled', false);
 		});
 	})
@@ -1638,7 +1599,7 @@ function designTable2Json(){
 			$.error("Plaese enter client PO Number ");
 			$("#clientPoNumber").addClass('border-color');
 		}
-		$('input').change(function(){
+		$('input').off('change.clrPoNum').on('change.clrPoNum', function(){
 				$("#clientPoNumber").removeClass('border-color');
 		})   
 		
@@ -1649,7 +1610,7 @@ function designTable2Json(){
 			$("#clientPoDate").addClass('border-color');
 			checkDuplicate=true;
 		}
-		$('input').change(function(){
+		$('input').off('change.clrPoDate').on('change.clrPoDate', function(){
 				$("#clientPoDate").removeClass('border-color');
 				checkDuplicate=false;
 		})   
@@ -1850,83 +1811,46 @@ function designTable2Json(){
 
 		 }
 	 
-	 $(document).on('keyup mouseup click input change','.qty,.unitPrice,.servicePrice,.deleteButton,#salesTable,#partyDropDown',function () {
-			 
-			var sum=0;
-	    var amountArr=[];
+	 function recalculateTotals(){
+		 var sum=0;
 	    $('.amount').each(function(index,value) {
-	    	/*amountArr.push(amountPrice);
-	    	var amount=amountPrice;*/
 	    	var c = $("#amount"+index).val();
 	    	c = c.replace(/,/g,"");
-	    	//amountArr.push(parseFloat($(this).val()));
-	    	
 	    	var amount=parseFloat(c);
 		    sum+=amount;
-		    var sumWithComma = commaSeparateNumber(sum);
-		    $(".total").attr("value", sumWithComma);
-		    $("#total").val(sumWithComma);
-		    var gst=0;
-		    var partyId=$("#partyDropDown option:selected").val();
-		    var gstValue = $("#taxDropDown").val();
-		    var gstRateValue = gstValue/100;
-		    if(partyId!="C1143"){
-		      gst=gstRateValue*sum;
-		    gst = Math.round(gst * 100) / 100
-		    var gstWithComma = commaSeparateNumber(gst);
-		    $(".gst").attr("value", gstWithComma);
-		    $("#gst").val(gstWithComma);
-		    }else{
-		    	gst=0;
-		    }
-		    var grandTotal=sum+gst;
-		    grandTotal = Math.round(grandTotal * 100) / 100
-		    grandTotal=commaSeparateNumber(grandTotal);
-		    $(".grandTotal").attr("value", grandTotal);
-		    $("#grandTotal").val(grandTotal);
-		    
 		    });
-	    // Check if expand all header should be shown/hidden based on data
+	    var sumWithComma = commaSeparateNumber(sum);
+	    $(".total").attr("value", sumWithComma);
+	    $("#total").val(sumWithComma);
+	    var gst=0;
+	    var partyId=$("#partyDropDown option:selected").val();
+	    var gstValue = $("#taxDropDown").val();
+	    var gstRateValue = gstValue/100;
+	    if(partyId!="C1143"){
+	      gst=gstRateValue*sum;
+	      gst = Math.round(gst * 100) / 100;
+	      var gstWithComma = commaSeparateNumber(gst);
+	      $(".gst").attr("value", gstWithComma);
+	      $("#gst").val(gstWithComma);
+	    }else{
+	    	gst=0;
+	    }
+	    var grandTotal=sum+gst;
+	    grandTotal = Math.round(grandTotal * 100) / 100;
+	    grandTotal=commaSeparateNumber(grandTotal);
+	    $(".grandTotal").attr("value", grandTotal);
+	    $("#grandTotal").val(grandTotal);
 	    toggleExpandAllHeader();
+	 }
+
+	 $(document).on('change blur','.qty,.unitPrice,.servicePrice,#partyDropDown',function () {
+		 recalculateTotals();
 	  });
 	 
 	 $(document).on('change', '#taxDropDown',function () {
 		 var gstValue = $("#taxDropDown").val();
 		 $("#gstrate").html("GST @ "+gstValue+"%");
-		// $(".unitPrice").val("").trigger('change');
-		 var sum=0;
-		  $('.amount').each(function(index,value) {
-		    	/*amountArr.push(amountPrice);
-		    	var amount=amountPrice;*/
-		    	var c = $("#amount"+index).val();
-		    	c = c.replace(/,/g,"");
-		    	//amountArr.push(parseFloat($(this).val()));
-		    	
-		    	var amount=parseFloat(c);
-			    sum+=amount;
-			    var sumWithComma = commaSeparateNumber(sum);
-			    $(".total").attr("value", sumWithComma);
-			    $("#total").val(sumWithComma);
-			    var gst=0;
-			    var partyId=$("#partyDropDown option:selected").val();
-			    var gstValue = $("#taxDropDown").val();
-			    var gstRateValue = gstValue/100;
-			    if(partyId!="C1143"){
-			      gst=gstRateValue*sum;
-			    gst = Math.round(gst * 100) / 100
-			    var gstWithComma = commaSeparateNumber(gst);
-			    $(".gst").attr("value", gstWithComma);
-			    $("#gst").val(gstWithComma);
-			    }else{
-			    	gst=0;
-			    }
-			    var grandTotal=sum+gst;
-			    grandTotal = Math.round(grandTotal * 100) / 100
-			    grandTotal=commaSeparateNumber(grandTotal);
-			    $(".grandTotal").attr("value", grandTotal);
-			    $("#grandTotal").val(grandTotal);
-			    
-			    });
+		 recalculateTotals();
 		 });
 		 // ==================== MASTER CHECKBOX FUNCTIONALITY ====================
 		 // Master checkbox to toggle all description expansions
@@ -2004,3 +1928,213 @@ function showExpandAllHeader() {
 function hideExpandAllHeader() {
 	$('#expandAllHeader').hide();
 }
+
+// ==================== MULTI-CELL SELECT & BULK PASTE ====================
+// Select a block of cells (drag or Shift+click), copy one value, Ctrl+V to
+// fill all selected cells. Paste a tab/newline grid (from Excel) to fill row/col-wise.
+var salesTableSelection = {
+	active: false,
+	anchor: null,
+	focus: null,
+	drag: false
+};
+
+// Is this td a fillable target? Editable text input, not disabled/readonly/hidden.
+function salesCellIsEditable(td){
+	var $input = $(td).find('input[type="text"]').filter(':not(:disabled):not([readonly])').first();
+	return $input.length > 0;
+}
+
+// Row/col position of a td (relative to #salesTable tbody)
+function salesGetCellPos(td){
+	return { row: $(td).closest('tr').index(), col: $(td).index() };
+}
+
+function salesCellInRange(row, col){
+	if(!salesTableSelection.anchor || !salesTableSelection.focus) return false;
+	var r1 = Math.min(salesTableSelection.anchor.row, salesTableSelection.focus.row);
+	var r2 = Math.max(salesTableSelection.anchor.row, salesTableSelection.focus.row);
+	var c1 = Math.min(salesTableSelection.anchor.col, salesTableSelection.focus.col);
+	var c2 = Math.max(salesTableSelection.anchor.col, salesTableSelection.focus.col);
+	return row >= r1 && row <= r2 && col >= c1 && col <= c2;
+}
+
+function salesUpdateSelectionHighlight(){
+	$('#salesTable tbody td.sales-cell-selected').removeClass('sales-cell-selected');
+	if(!salesTableSelection.active || !salesTableSelection.anchor || !salesTableSelection.focus) return;
+	$('#salesTable tbody tr').each(function(row){
+		$(this).children('td').each(function(col){
+			if(salesCellInRange(row, col) && salesCellIsEditable(this)){
+				$(this).addClass('sales-cell-selected');
+			}
+		});
+	});
+}
+
+function salesClearSelection(){
+	salesTableSelection.active = false;
+	salesTableSelection.anchor = null;
+	salesTableSelection.focus = null;
+	salesTableSelection.drag = false;
+	$('#salesTable tbody td.sales-cell-selected').removeClass('sales-cell-selected');
+}
+
+// Ordered list of fillable cells within the active selection
+function salesGetFillableCells(){
+	var cells = [];
+	if(!salesTableSelection.anchor || !salesTableSelection.focus) return cells;
+	var r1 = Math.min(salesTableSelection.anchor.row, salesTableSelection.focus.row);
+	var r2 = Math.max(salesTableSelection.anchor.row, salesTableSelection.focus.row);
+	var c1 = Math.min(salesTableSelection.anchor.col, salesTableSelection.focus.col);
+	var c2 = Math.max(salesTableSelection.anchor.col, salesTableSelection.focus.col);
+	$('#salesTable tbody tr').each(function(row){
+		if(row < r1 || row > r2) return;
+		var $tr = $(this);
+		$tr.children('td').each(function(col){
+			if(col < c1 || col > c2) return;
+			var $input = $(this).find('input[type="text"]').filter(':not(:disabled):not([readonly])').first();
+			if($input.length > 0){
+				cells.push({ td: this, row: row, col: col, input: $input });
+			}
+		});
+	});
+	return cells;
+}
+
+// Numeric columns return true
+function salesIsNumericCell($input){
+	return $input.hasClass('qty') || $input.hasClass('unitPrice') || $input.hasClass('servicePrice')
+		|| $input.hasClass('slNo') || $input.hasClass('num');
+}
+
+function salesIsNumericValue(value){
+	if(value == null || value == '') return false;
+	return /^-?\d*\.?\d+$/.test(value.replace(/,/g, ''));
+}
+
+function salesTriggerRecalc(){
+	$('#salesTable tbody input.qty:not(:disabled):not([readonly]), #salesTable tbody input.unitPrice:not(:disabled):not([readonly]), #salesTable tbody input.servicePrice:not(:disabled):not([readonly])').trigger('change');
+}
+
+$(document).on('mousedown', '#salesTable tbody input[type="text"]:not(:disabled):not([readonly])', function(e){
+	if(e.button !== 0) return;
+	var t = salesGetCellPos(this.parentElement);
+	if(!e.shiftKey){
+		salesTableSelection.anchor = t;
+	}
+	salesTableSelection.focus = t;
+	salesTableSelection.active = true;
+	salesTableSelection.drag = true;
+	salesUpdateSelectionHighlight();
+});
+
+$(document).on('mousemove', function(e){
+	if(!salesTableSelection.drag) return;
+	var el = document.elementFromPoint(e.clientX, e.clientY);
+	var $td = $(el).closest('td');
+	if($td.length && $td.closest('#salesTable tbody').length){
+		var t = salesGetCellPos($td[0]);
+		if(!salesTableSelection.focus || t.row !== salesTableSelection.focus.row || t.col !== salesTableSelection.focus.col){
+			salesTableSelection.focus = t;
+			salesUpdateSelectionHighlight();
+		}
+	}
+});
+
+$(document).on('mouseup', function(e){
+	salesTableSelection.drag = false;
+	if(salesTableSelection.active){
+		var $td = $(e.target).closest('td');
+		var t = $td.length ? salesGetCellPos($td[0]) : null;
+		var inRange = t && salesCellInRange(t.row, t.col);
+		if(!inRange){
+			var anchor = salesTableSelection.anchor;
+			var $anchorInput = $('#salesTable tbody tr').eq(anchor.row).children('td').eq(anchor.col).find('input[type="text"]:not(:disabled):not([readonly])').first();
+			if($anchorInput.length){
+				setTimeout(function(){ $anchorInput.focus(); }, 0);
+			}
+		}
+	}
+});
+
+$(document).on('mousedown', function(e){
+	if(!$(e.target).closest('#salesTable').length){
+		salesClearSelection();
+	}
+});
+
+$(document).on('keydown', function(e){
+	if(e.key === 'Escape'){
+		salesClearSelection();
+	}
+});
+
+// Single text value (no tabs/newlines) -> true
+function salesIsSingleValue(text){
+	return !/[\r\n\t]/.test(text);
+}
+
+$(document).on('paste', '#salesTable', function(e){
+	if(!salesTableSelection.active || !salesTableSelection.anchor || !salesTableSelection.focus) return;
+
+	var $target = $(e.target).closest('td');
+	if(!$target.length) return;
+	var t = salesGetCellPos($target[0]);
+	if(!salesCellInRange(t.row, t.col)) return;
+
+	var clipboardText = (e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData('text')) || '';
+	if(clipboardText === '') return;
+
+	var cells = salesGetFillableCells();
+	var singleValue = salesIsSingleValue(clipboardText);
+	if(cells.length <= 1 && singleValue) return; // normal single-cell paste
+
+	e.preventDefault();
+
+	var values;
+	if(singleValue){
+		values = [clipboardText];
+	}else{
+		// split into grid rows/cols
+		values = clipboardText.split(/\r?\n/).map(function(row){
+			return row.split('\t');
+		});
+	}
+
+	// Validate all assignments before applying (all-or-nothing)
+	var assignments = [];
+	for(var i = 0; i < cells.length; i++){
+		var cell = cells[i];
+		var value;
+		if(singleValue){
+			value = values[0];
+		}else{
+			var rOff = cell.row - Math.min(salesTableSelection.anchor.row, salesTableSelection.focus.row);
+			var cOff = cell.col - Math.min(salesTableSelection.anchor.col, salesTableSelection.focus.col);
+			value = values[rOff] ? values[rOff][cOff] : null;
+			if(value == null || value === '') continue; // leave blank cells untouched
+		}
+		if(value != null){
+			if(salesIsNumericCell(cell.input) && !salesIsNumericValue(value)){
+				$.error('Pasted value "' + value.trim() + '" is not a valid number.');
+				salesClearSelection();
+				return;
+			}
+			assignments.push({ input: cell.input, value: value });
+		}
+	}
+
+	for(var j = 0; j < assignments.length; j++){
+		var asg = assignments[j];
+		var val = asg.value;
+		if(salesIsNumericCell(asg.input)){
+			val = val.replace(/,/g, '');
+		}
+		asg.input.val(val);
+	}
+
+	if(assignments.length > 0){
+		salesTriggerRecalc();
+	}
+	salesClearSelection();
+});
