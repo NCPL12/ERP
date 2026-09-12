@@ -32,6 +32,7 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -129,6 +130,8 @@ import com.ncpl.sales.service.InvoiceService;
 import com.ncpl.sales.service.ItemMasterService;
 import com.ncpl.sales.service.MaterialTrackerExcel;
 import com.ncpl.sales.service.MonthlyStockReportExcel;
+import com.ncpl.sales.service.MonthlyStockMovementService;
+import com.ncpl.sales.service.MonthlyStockBaselineImportService;
 import com.ncpl.sales.service.NonBillableService;
 import com.ncpl.sales.service.OptimizedMaterialTrackerService;
 import com.ncpl.sales.service.OptimizedMaterialTrackerExcel;
@@ -327,6 +330,10 @@ public class SalesController {
 	DeliveryChallanService dcService;
 	@Autowired
 	MonthlyReportStockRepo monthlyReportStockRepo;
+	@Autowired
+	MonthlyStockMovementService monthlyStockMovementService;
+	@Autowired
+	MonthlyStockBaselineImportService monthlyStockBaselineImportService;
 	@Autowired
 	StockService stockService;
 	
@@ -1291,7 +1298,7 @@ public class SalesController {
 		Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDate);
 
 		try {
-			Map<String, Map> pMap = grnService.findgrnListByDate(sqlFromDate, sqlToDate);
+			Map<String, Map> pMap = monthlyStockMovementService.generate(sqlFromDate, sqlToDate);
 
 			int month = c.get(Calendar.MONTH);
 			Month monthName = Month.of(month + 1);
@@ -1299,11 +1306,62 @@ public class SalesController {
 
 			stockSummary.put("stockMap", pMap);
 			stockSummary.put("monthName", monthName);
+			stockSummary.put("fromDate", fromDateString);
+			stockSummary.put("toDate", todateString);
 			return new ModelAndView(new stocksummaryExcel(), "stockSummary", stockSummary);
 		} catch (Exception e) {
 			log.error("Error generating stock summary report: {}", e.getMessage(), e);
 			redirectAttr.addFlashAttribute("stockSummaryError", "Stock summary report failed. Please try again or contact support.");
 			return new ModelAndView("redirect:/sales_report");
+		}
+	}
+
+	@PostMapping("/api/monthly_stock_report/baseline/import")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN')")
+	public ResponseEntity<String> importMonthlyStockBaseline(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam("closingDate") String closingDate) {
+		try {
+			java.time.LocalDate date = java.time.LocalDate.parse(closingDate,
+					java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+			int imported = monthlyStockBaselineImportService.importCurrentItemStock(
+					file.getInputStream(), date, file.getOriginalFilename());
+			return ResponseEntity.ok("Imported and froze " + imported + " opening-balance items for " + closingDate);
+		} catch (IllegalStateException | IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+		} catch (Exception e) {
+			log.error("Monthly stock baseline import failed", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Monthly stock baseline import failed: " + e.getMessage());
+		}
+	}
+
+	@PostMapping("/api/monthly_stock_report/freeze")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN')")
+	public ResponseEntity<String> freezeMonthlyStockReport(
+			@RequestParam("reportFromDate") String fromDate,
+			@RequestParam("reportToDate") String toDate) {
+		try {
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+			sdf.setLenient(false);
+			Calendar end = Calendar.getInstance();
+			end.setTime(sdf.parse(toDate));
+			end.set(Calendar.HOUR_OF_DAY, 23);
+			end.set(Calendar.MINUTE, 59);
+			end.set(Calendar.SECOND, 59);
+			end.set(Calendar.MILLISECOND, 999);
+			Timestamp from = new Timestamp(sdf.parse(fromDate).getTime());
+			Timestamp to = new Timestamp(end.getTimeInMillis());
+			int frozen = monthlyStockMovementService.freeze(from, to);
+			return ResponseEntity.ok("Frozen " + frozen + " monthly stock items for " + toDate);
+		} catch (IllegalStateException | IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+		} catch (Exception e) {
+			log.error("Monthly stock freeze failed", e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Monthly stock freeze failed: " + e.getMessage());
 		}
 	}
 
@@ -2059,8 +2117,8 @@ public class SalesController {
 	 
 	 @GetMapping("/api/tds_approved_list")
 		public ResponseEntity<?> tdsApprovedList(Model model) {
-			List<SalesOrder> soList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard();
-			return new ResponseEntity<>(soList, HttpStatus.OK);
+			List<TdsItems> tdsItemList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDone();
+			return new ResponseEntity<>(tdsItemList, HttpStatus.OK);
 		}
 
 	 @GetMapping("/api/tds_approved_pending_list")
@@ -2159,8 +2217,8 @@ public class SalesController {
 		}
 	 @GetMapping("/api/tds_approved_list_partial")
 		public ResponseEntity<?> tdsApprovedListPartial(Model model) {
-			List<SalesOrder> soList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboardPartial();
-			return new ResponseEntity<>(soList, HttpStatus.OK);
+			List<TdsItems> tdsItemList = tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDonePartial();
+			return new ResponseEntity<>(tdsItemList, HttpStatus.OK);
 		}
 	 @GetMapping("/api/salesItems_without_design_list_partial")
 		public ResponseEntity<?> salesItemsWithoutDesignPartial(Model model) {

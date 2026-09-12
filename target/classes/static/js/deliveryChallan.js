@@ -372,6 +372,7 @@ function getAllDescription(soId){
 					"<td width='7%' id='totalQty"+index+"'>" + value.quantity + "</td>" +
 					"<td width='7%' id='deliveredQty"+index+"'>" + value.deliveredQty + "</td>" +
 					"<td width='7%'><input type='text' id='todaysQty"+index+"' name='items["+index+"].todaysQty' class='form-control PositionofTextbox todaysQty'/></td>" +
+					"<td width='7%' align='center'><input type='checkbox' class='companyAssetCheckBox' id='companyAsset"+index+"' name='items["+index+"].companyAsset' value='true'/></td>" +
 					"<td style='display:none' id='designTd"+index+"' align='center'><a href='#' aria-hidden='true' class='design' id='design"+index+"'>Design</a></td>" +
 					"<td style='display:none'><input class='descriptionDropdown' id='descriptionDropdown"+index+"' name='items["+index+"].description' value='" + value.id + "' /></td>" +
 					"<td style='display:none'><input type='hidden' class='designArrData' id='designArrData"+index+"' name='designArrData'/></td>" +
@@ -443,6 +444,7 @@ function addDcRow(){
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox totalQty" readonly="readonly" name="items['+arraycount+'].totalQuantity" id="totalQty'+ arraycount +'"/> </td>';
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox deliveredQty" readonly="readonly" name="items['+arraycount+'].deliveredQuantity" id="deliveredQty'+ arraycount +'" /></td>';
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox todaysQty" readonly="readonly"  name="items['+arraycount+'].todaysQty" id="todaysQty'+ arraycount +'" /></td>';
+	columns += '<td width="7%" align="center"><input type="checkbox" class="companyAssetCheckBox" id="companyAsset'+arraycount+'" name="items['+arraycount+'].companyAsset" value="true"/></td>';
 	columns += '<td style="display:none" id="designTd'+arraycount+'" align="center"><a href="#" aria-hidden="true" class="design" id="design'+arraycount+'">Design</a></td>';
 	columns += '<td style="display:none"><input type="hidden" id="remainingQty'+ arraycount +'" /></td>';
 	columns += '<td style="display:none"><input type="hidden" class="designArrData" id="designArrData'+ arraycount +'" name="designArrData"/></td>';

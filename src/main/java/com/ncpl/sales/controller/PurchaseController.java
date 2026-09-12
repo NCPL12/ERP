@@ -2185,11 +2185,16 @@ public class PurchaseController {
 		 @GetMapping("/api/employee_list")
 		 public  ResponseEntity<?> getEmployeeMasterList() {
 			List<EmployeeMaster> employeeList= employeeService.getEmployeeList();
-			
+
 				return new ResponseEntity<>(employeeList,HttpStatus.OK) ;
 		 }
-		 
-		 
+
+		 @GetMapping("/api/company_asset_candidates")
+		 public ResponseEntity<?> getCompanyAssetCandidates() {
+			 return new ResponseEntity<>(deliveryChallanService.getCompanyAssetCandidates(), HttpStatus.OK);
+		 }
+
+
 		 @GetMapping("/companyAssets")
 			public String getCompanyAssets(Model model) throws JsonProcessingException {
 				List<CompanyAssets> companyAssetList=companyAssetService.getAllCompanyAssetList();

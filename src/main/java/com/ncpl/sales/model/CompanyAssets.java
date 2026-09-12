@@ -36,7 +36,8 @@ public class CompanyAssets extends TimeStampEntity {
 	private String warranty;
 	private String value;
 	private String model;
-	
+	private String dcNumber;
+
 	public int getId() {
 		return id;
 	}
@@ -102,6 +103,12 @@ public class CompanyAssets extends TimeStampEntity {
 	}
 	public void setModel(String model) {
 		this.model = model;
+	}
+	public String getDcNumber() {
+		return dcNumber;
+	}
+	public void setDcNumber(String dcNumber) {
+		this.dcNumber = dcNumber;
 	}
 	@Transient
 	private Map<String, Object> others = new HashMap<String, Object>();

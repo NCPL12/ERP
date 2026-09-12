@@ -35,7 +35,7 @@ var pageContext = '${pageContext.request.contextPath}';
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -111,7 +111,7 @@ var pageContext = '${pageContext.request.contextPath}';
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="width: 950px;">
             <div class="modal-header custom-box-header-modal">
-                <h5 style="height: 18px;"><span>Terms &amp; Conditions : </span><span id="poNumberOnBillingPopup"></span> </h5><span style="padding-left: 30%;font-weight: bold;font-size: 17px;" id="gstRegion"></span><button type="button" class="close buttonDismiss" data-dismiss="modal">×</button>
+                <h5 style="height: 18px;"><span>Terms &amp; Conditions : </span><span id="poNumberOnBillingPopup"></span> </h5><span style="padding-left: 30%;font-weight: bold;font-size: 17px;" id="gstRegion"></span><button type="button" class="close buttonDismiss" data-dismiss="modal">ï¿½</button>
             </div>
             <div class="modal-body">
               <div class="row">

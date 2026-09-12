@@ -218,3 +218,49 @@ text-align: center;
 	margin-right: 0 !important;
 	width: auto !important;
 }
+
+/* Professional sidebar column, 240px expanded (AdminLTE default is 250px /
+   4.6rem collapsed). Each state's content offset (content-wrapper/header/footer
+   margin-left) must stay in sync with that state's actual sidebar width, or the
+   sidebar and main content gap/overlap - hence the paired rules below instead
+   of one blanket ".main-sidebar { width }" override. */
+@media (min-width: 768px) {
+	/* Expanded (default) state: 240px */
+	body:not(.sidebar-collapse) .main-sidebar,
+	body:not(.sidebar-collapse) .main-sidebar::before,
+	body.layout-fixed:not(.sidebar-collapse) .brand-link {
+		width: 240px !important;
+	}
+	body.sidebar-mini-md:not(.sidebar-collapse) .content-wrapper,
+	body.sidebar-mini-md:not(.sidebar-collapse) .main-footer,
+	body.sidebar-mini-md:not(.sidebar-collapse) .main-header {
+		margin-left: 240px !important;
+	}
+
+	/* Collapsed (icon-only) state: 70px. ":hover"/".sidebar-focused" are
+	   included so the icon rail doesn't briefly widen before header.jsp's
+	   hover-lock rule (kept in sync at 70px) takes over. */
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar::before,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar:hover,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused {
+		width: 70px !important;
+	}
+	body.sidebar-mini-md.sidebar-collapse.layout-fixed .brand-link,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-link,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused .brand-link {
+		width: 70px !important;
+	}
+	body.sidebar-mini-md.sidebar-collapse .content-wrapper,
+	body.sidebar-mini-md.sidebar-collapse .main-footer,
+	body.sidebar-mini-md.sidebar-collapse .main-header {
+		margin-left: 70px !important;
+	}
+}
+
+/* Prevent horizontal overflow from the sidebar during the expand/collapse
+   transition (matches AdminLTE's own overflow-x:hidden on the collapsed
+   sidebar itself). */
+.wrapper {
+	overflow-x: hidden;
+}

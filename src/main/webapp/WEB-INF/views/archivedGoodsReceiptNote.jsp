@@ -34,7 +34,7 @@ var pageContext = '${pageContext.request.contextPath}';
 <script src="https://cdn.datatables.net/select/1.3.1/js/dataTables.select.min.js"></script> -->
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />

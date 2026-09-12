@@ -52,7 +52,7 @@ var pageContext = '${pageContext.request.contextPath}';
 }
 </style>
 </head>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -437,57 +437,6 @@ var pageContext = '${pageContext.request.contextPath}';
 		</div>
 	</div>
 <!-- sales item without design modal ends -->	
-<!-- Tds modal starts -->
-<div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="tdsApprovedModal">
-		<div class="modal-dialog modal-lg"
-			style="margin-left: 33%; margin-top: 0%;">
-			<div class="modal-content" style="width: 100%">
-				<div class="modal-header custom-box-header-modal">
-					<h6 class="modal-title" id="tdsApprovedHeader">
-						<b>TDS Approved</b>
-					</h6>
-					<button type="button" class="close buttonDismiss" style="float:right" data-dismiss="modal">&times;</button>
-				</div>
-				<div class="modal-body" style="overflow:scroll">
-
-					<table id="tdsApprovedModalTable" class="tdsApprovedModalTable table table-bordered table-striped" style="width:100%">
-					<thead id="table-header font">
-								<tr>
-										<th width="5%" rowspan="2" class="thStyle">Sl.No</th>
-										<!-- 	<th width="10%">Items</th> -->
-										<th width="20%" rowspan="2" class="thStyle" >Description</th>
-										<th width="10%" rowspan="2" class="thStyle">Model No</th>
-										<th width="8%" rowspan="2" class="thStyle">HSN</th>
-										<th width="8%" rowspan="2" class="thStyle">SAC</th>
-										<th width="7%" rowspan="2" class="thStyle">Qty</th>
-										<th width="7%" rowspan="2" class="thStyle">Unit</th>
-										<th width="14%" colspan="2" style="text-align: center;">Price</th>
-										<th width="10%" rowspan="2" class="thStyle">Amount</th>
-										<th width="5%" rowspan="2" class="thStyle">Design</th>
-										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
-									</tr>
-
-									<!--dividing a cloumn into two rows-->
-									<tr>
-										<th width="7%">Supply </th>
-										<th width="7%">Service</th>
-									</tr>
-							</thead>
-							<tbody id="table-body">
-							</tbody>
-					</table>
-				</div>
-				 <div class="modal-footer">
-					<div class="button-div-style" align="center">
-						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
-					</div>
-				</div>
-			
-			</div>
-		</div>
-	</div>
-<!-- tds modal ends -->
 <!-- purchase modal starts -->
 <div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="pendingPurchaseModal">
 		<div class="modal-dialog modal-lg"

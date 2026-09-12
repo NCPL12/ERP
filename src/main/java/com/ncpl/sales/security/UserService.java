@@ -61,13 +61,13 @@ public class UserService implements UserDetailsService{
 		user2.setEnabled(true);
 		userRepo.save(user2);*/
 		
-		/*User user = new User();
-		user.setUsername("ItemMaster");
-		user.setPassword(encryptPasswd.encrytePassword("Master@123"));
-		user.setRole("ITEMMASTER");
-		user.setEnabled(true);
-		userRepo.save(user);
-		*/
+		// User user = new User();
+		// user.setUsername("HI");
+		// user.setPassword(encryptPasswd.encrytePassword("hi@123"));
+		// user.setRole("ITEMMASTER");
+		// user.setEnabled(true);
+		// userRepo.save(user);
+	
 		
 		
 		return null;

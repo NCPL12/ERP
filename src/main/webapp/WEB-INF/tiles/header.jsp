@@ -209,19 +209,20 @@
 							}
 
 
-							/* Prevent sidebar from expanding on hover - keep narrow (no "moving") */
+							/* Prevent sidebar from expanding on hover - keep narrow (no "moving").
+							   Width kept in sync with the collapsed-state width in common.css (70px). */
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover,
 							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused {
-								width: 4.6rem !important;
-								min-width: 4.6rem !important;
+								width: 70px !important;
+								min-width: 70px !important;
 							}
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link,
 							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused .brand-link,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-link,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused .brand-link {
-								width: 4.6rem !important;
+								width: 70px !important;
 							}
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .user-panel > .info,
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .nav-sidebar .nav-link p,

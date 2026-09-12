@@ -49,6 +49,7 @@ public class CompanyAssetService {
 		ca.get().setSlNo(companyAsset.getSlNo());
 		ca.get().setValue(companyAsset.getValue());
 		ca.get().setWarranty(companyAsset.getWarranty());
+		ca.get().setDcNumber(companyAsset.getDcNumber());
 		companyassetsRepo.save(ca.get());
 	}
 

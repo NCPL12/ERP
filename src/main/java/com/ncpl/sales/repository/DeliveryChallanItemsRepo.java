@@ -43,5 +43,9 @@ public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanI
 	
     @Query("SELECT dci FROM DeliveryChallanItems dci LEFT JOIN FETCH dci.deliveryChallan WHERE dci.description IN :salesItemIds")
 	List<DeliveryChallanItems> findBySalesItemIdIn(@Param("salesItemIds") List<String> salesItemIds);
-    
+
+	@Query("SELECT dci FROM DeliveryChallanItems dci LEFT JOIN FETCH dci.deliveryChallan "
+			+ "WHERE dci.companyAsset = true OR dci.todaysQty <> 0 OR dci.deliveredQuantity <> 0")
+	List<DeliveryChallanItems> findCompanyAssetCandidates();
+
 }

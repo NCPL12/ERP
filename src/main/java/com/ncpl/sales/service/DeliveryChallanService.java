@@ -98,6 +98,18 @@ public class DeliveryChallanService {
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
 	String filePath = Constants.FILE_LOCATION + File.separator + fileName;
 	
+	// DC items checked as "Company Asset" while creating the DC, not yet
+	// turned into a CompanyAssets record from the Company Assets page.
+	public List<DeliveryChallanItems> getCompanyAssetCandidates() {
+		List<DeliveryChallanItems> candidates = dcItemRepo.findCompanyAssetCandidates();
+		for (DeliveryChallanItems item : candidates) {
+			Optional<ItemMaster> itemObj = itemService.getItemById(item.getSoModelNo());
+			item.set("modelName", itemObj.isPresent() ? itemObj.get().getModel() : item.getSoModelNo());
+			item.set("dcId", item.getDeliveryChallan() != null ? item.getDeliveryChallan().getDcId() : null);
+		}
+		return candidates;
+	}
+
 	//code to dave delivery challan
 	@SuppressWarnings("unchecked")
 	public DeliveryChallan saveDc(DeliveryChallan deliveryChallan, String[] designArray, String soNumber) throws Exception {

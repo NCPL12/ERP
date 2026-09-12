@@ -82,7 +82,7 @@ $(document).ready(function () {
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 
     <!--toast message for validating quantity in purchase order-->

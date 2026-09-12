@@ -70,7 +70,7 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 
@@ -104,7 +104,8 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 									<th width="7%">Total Qty</th>
 									<th width="7%">Delivered Qty</th>
 									<th width="7%">Today's Qty</th>
-									
+									<th width="7%">Company Asset</th>
+
 									<!-- <th><i
 										class="add fa fa-plus-square fa-2x text-center mx-auto"
 										aria-hidden="true"></i></th> -->

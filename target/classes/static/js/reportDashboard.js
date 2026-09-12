@@ -553,7 +553,7 @@ function loadTdsApprovedTable(response) {
 
 			processing : true,
 			'columnDefs': [ {
-	    	    'targets': [0,1,2,3], /* table column index */
+	    	    'targets': [0,1,2], /* table column index */
 	    	    'orderable': false, /* here set the true or false */
 	    	 }],
 			 "ajax": {
@@ -561,70 +561,60 @@ function loadTdsApprovedTable(response) {
 				   'dataSrc': ''
 				},
 			"destroy": true,
-			"columns": [
-
-				{
-					"title": "Client PO No.",
-					"data": "clientPoNumber",
-					"defaultContent": ""
-				},
-				{
-					"title": "Client Name",
-					"data": "salesOrderObj",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						var clientName = row.party ? row.party.partyName : '';
-return clientName;
-
-					}
-				},
-				
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					"class":"hideTd",
-					render: function (aaData, type, row) {
-						//var date= new Date(row.created).toLocaleDateString();
-						var newdate = moment(row.created).format("YYYY-MM-DD HH:mm:ss") ;
-						return newdate;
-
-					}
-				},
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						var newdate = moment(new Date(row.created)).format("YYYY-MM-DD HH:mm:ss") ;
-						var format= newdate.split(" ");
-						var dateFormat = format[0].split("-");
-						dateFormat = dateFormat[2]+"-"+dateFormat[1]+"-"+dateFormat[0]+" "+format[1];
-						return dateFormat;
-
-					}
-				}
-				,
-				{
-					"title": "View",
-					"data": "soNumber",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						url="";
-						//url = pageContext+"/api/salesOrder/view?salesOrderId="+row.id;
-						return "<button type='button' id='"+row.id+"' class='btn btn-default btn-flat btn-xs tdsApprovedView'><i class='fa fa-eye'></i></button>";;
-					}
-
-				},
-			]
+			"columns": tdsApprovedItemColumns()
 		});
 		   $('#tdsApprovedItemsTable tbody').on('dblclick', 'tr', function () {
 			   var data = tdsTabe.row(this).data();
-			   var salesOrderId = data.id;
-			   window.location = pageContext+"/api/sales_order/view?salesOrderId="+salesOrderId;
+			   var salesOrderId = data.salesOrderObj ? data.salesOrderObj.id : null;
+			   if (salesOrderId) {
+				   window.location = pageContext+"/api/sales_order/view?salesOrderId="+salesOrderId;
+			   }
 			});
 	}
 
+}
+
+function tdsApprovedItemColumns() {
+	return [
+		{
+			"title": "Client PO No.",
+			"data": "clientpoNum",
+			"defaultContent": ""
+		},
+		{
+			"title": "Client Name",
+			"data": "client",
+			"defaultContent": ""
+		},
+		{
+			"title": "Created",
+			"data": "createdDt",
+			"defaultContent": "",
+			render: function (aaData, type, row) {
+				if (!aaData) return "";
+				var newdate = moment(new Date(aaData)).format("YYYY-MM-DD HH:mm:ss");
+				var format = newdate.split(" ");
+				var dateFormat = format[0].split("-");
+				dateFormat = dateFormat[2]+"-"+dateFormat[1]+"-"+dateFormat[0]+" "+format[1];
+				return dateFormat;
+			}
+		},
+		{
+			"title": "Item",
+			"data": "desc",
+			"defaultContent": ""
+		},
+		{
+			"title": "Model",
+			"data": "modelNum",
+			"defaultContent": ""
+		},
+		{
+			"title": "Qty",
+			"data": "siteQuantity",
+			"defaultContent": ""
+		}
+	];
 }
 function getSalesItemsWithoutDesignList(){
 	showLoader();
@@ -1338,124 +1328,6 @@ $(document).on("click",".salesItemWithDesignView",function(){
 	
 })
 
-$(document).on("click",".tdsApprovedView",function(){
-	
-	
-	var soId = this.id;
-	var className = "so";
-	$.ajax({
-	    Type:'GET',
-	    url : api.SALES_LIST_BY_SOID+"?id="+soId+"&&className="+className,
-	    dataType:'json',
-	    async: 'false',
-	    success  : function(response){
-	    	 $("#tdsApprovedModalTable tbody").empty();
-	    	 $("#tdsApprovedModal").modal("show");
-	    	var arrayCount=0;
-	    	$.each(response,function(index,value){
-	    		
-	    		if(value.designItems.length==0){
-	    			if(value.item_units.name=="Heading"){
-	    				slNo=value.slNo;
-	    	    		 description=value.description;
-	    	    		 salesItemId =  value.id;
-	    	    		 modelNumber ="";
-	    	    		 poQty="";
-	    	    		 unitName="";
-	    	    		 model="";
-	    	    		 tds="";
-	    	    		 siteQty="";
-	    	    		 qty="";
-	    	    		 hsn=value.hsnCode;
-	    	    		 sac=value.servicehsnCode;
-	    	    		 supplyprice=value.unitPrice;
-	    	    		 servicePrice=value.servicePrice;
-	    	    		 amount=value.amount;
-	    			}else{
-	    				 slNo=value.slNo;
-	    	    		 description=value.description;
-	    	    		 salesItemId =  value.id;
-	    	    		 modelNumber = value.modelNo;
-	    	    		 poQty=value.quantity;
-	    	    		 unitName=value.item_units.name;
-	    	    		 model="";
-	    	    		 tds="";
-	    	    		 siteQty="";
-	    	    		 qty="";
-	    	    		 hsn=value.hsnCode;
-	    	    		 sac=value.servicehsnCode;
-	    	    		 supplyprice=value.unitPrice;
-	    	    		 servicePrice=value.servicePrice;
-	    	    		 amount=value.amount;
-	    			}
-	    			 
-	    			var soItems = "<tr><td width='5%'>"+ slNo+"</td><td width='20%' style='word-break: break-word; '>" + description + "</td>" +
-					"<td width='10%'>" + modelNumber + "</td><td width='8%'>"+hsn +"</td><td width='8%'>" +sac+ "</td>" +
-					"<td width='7%'>" +poQty  + "</td><td width='7%'>" + unitName + "</td>"+
-					"<td width='7%'>" + supplyprice + "</td><td width='7%'>" + servicePrice + "</td><td width='10%'>" + amount+ "</td>"+
-					"<td width='5%'>" + model + "</td><td width='5%'>" + qty+ "</td>"+
-					"</tr>";
-		    		$("#tdsApprovedModalTable tbody").append(soItems);
-		    		arrayCount++;
-	    		}else{
-	    			$.each(value.designItems,function(i,v){
-		    			
-		    			if(i!=0){
-		    				var	slNo="";
-		    				var description="";
-		    				var modelNumber="";
-		    				var poQty="";
-		    				var unitName="";
-		    				var hsn="";
-		    	    		var sac="";
-		    	    		var supplyprice="";
-		    	    		var servicePrice="";
-		    	    		var amount="";
-		    			}else{
-		    				 slNo=value.slNo;
-		    	    		 description=value.description;
-		    	    		 salesItemId =  value.id;
-		    	    		 modelNumber = value.modelNo;
-		    	    		 poQty=value.quantity;
-		    	    		 unitName=value.item_units.name;
-		    	    		 hsn=value.hsnCode;
-		    	    		 sac=value.servicehsnCode;
-		    	    		 supplyprice=value.unitPrice;
-		    	    		 servicePrice=value.servicePrice;
-		    	    		 amount=value.amount;
-		    			}
-			    			var model=v.itemId;
-			    			var qty=v.quantity;
-			    			var itemId = v.itemMasterId;
-			    		
-			    			var soItems = "<tr><td width='5%'>"+ slNo+"</td><td width='20%' style='word-break: break-word; '>" + description + "</td>" +
-							"<td width='10%'>" + modelNumber + "</td><td width='8%'>"+hsn +"</td><td width='8%'>" +sac+ "</td>" +
-							"<td width='7%'>" +poQty  + "</td><td width='7%'>" + unitName + "</td>"+
-							"<td width='7%'>" + supplyprice + "</td><td width='7%'>" + servicePrice + "</td><td width='10%'>" + amount+ "</td>"+
-							"<td width='5%'>" + model + "</td><td width='5%'>" + qty+ "</td>"+
-							"</tr>";
-				    		$("#tdsApprovedModalTable tbody").append(soItems);
-				    		arrayCount++;
-		    			
-		    		})	
-	    		}
-	    		
-	    	})
-	    	
-	    },  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-		error : function(e) {
-			console.log(e);
-		}  
-	  }); 	
-	
-	
-})
-
 $(document).on("click",".pendingPurchaseView",function(){
 	var className="po";
 	var poNumber = this.id;
@@ -2026,72 +1898,19 @@ function loadTdsApprovedTablePartial(response) {
 
 
 			'columnDefs': [ {
-	    	    'targets': [0,1,2,3], /* table column index */
+	    	    'targets': [0,1,2], /* table column index */
 	    	    'orderable': false, /* here set the true or false */
 	    	 }],
 			 "data":response,
 			"destroy": true,
-			"columns": [
-
-				{
-					"title": "Client PO No.",
-					"data": "clientPoNumber",
-					"defaultContent": ""
-				},
-				{
-					"title": "Client Name",
-					"data": "salesOrderObj",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						var clientName = row.party ? row.party.partyName : '';
-return clientName;
-
-					}
-				},
-				
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					"class":"hideTd",
-					render: function (aaData, type, row) {
-						//var date= new Date(row.created).toLocaleDateString();
-						var newdate = moment(row.created).format("YYYY-MM-DD HH:mm:ss") ;
-						return newdate;
-
-					}
-				},
-				{
-					"title": "Created",
-					"data": "createdDate",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						var newdate = moment(new Date(row.created)).format("YYYY-MM-DD HH:mm:ss") ;
-						var format= newdate.split(" ");
-						var dateFormat = format[0].split("-");
-						dateFormat = dateFormat[2]+"-"+dateFormat[1]+"-"+dateFormat[0]+" "+format[1];
-						return dateFormat;
-
-					}
-				}
-				,
-				{
-					"title": "View",
-					"data": "soNumber",
-					"defaultContent": "",
-					render: function (aaData, type, row) {
-						url="";
-						//url = pageContext+"/api/salesOrder/view?salesOrderId="+row.id;
-						return "<button type='button' id='"+row.id+"' class='btn btn-default btn-flat btn-xs tdsApprovedView'><i class='fa fa-eye'></i></button>";;
-					}
-
-				},
-			]
+			"columns": tdsApprovedItemColumns()
 		});
 		   $('#tdsApprovedItemsTable tbody').on('dblclick', 'tr', function () {
 			   var data = tdsTabe.row(this).data();
-			   var salesOrderId = data.id;
-			   window.location = pageContext+"/api/sales_order/view?salesOrderId="+salesOrderId;
+			   var salesOrderId = data.salesOrderObj ? data.salesOrderObj.id : null;
+			   if (salesOrderId) {
+				   window.location = pageContext+"/api/sales_order/view?salesOrderId="+salesOrderId;
+			   }
 			});
 	}
 

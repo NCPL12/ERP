@@ -27,7 +27,7 @@ var vendorList=${vendorList};
 var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>';
 </script>
 </head>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 		<tiles:insertAttribute name="header" />
 
@@ -88,6 +88,45 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						  </form>
 						</div>
 
+				</div>
+			</div>
+			</security:authorize>
+			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+			<%-- Emergency Finance correction tool. Keep hidden during normal operation;
+				 remove display:none when an approved snapshot must be imported. --%>
+			<div id="approvedStockSnapshotCorrection" class="row" style="padding-top:10px; display:none;">
+				<div class="col-md-12">
+					<div class="card w-100">
+						<h5 class="card-header bg-light" style="font-size: inherit;">
+							Approved Month-End Stock Snapshot
+						</h5>
+						<form action="${pageContext.request.contextPath}/api/monthly_stock_report/baseline/import"
+								method="post" enctype="multipart/form-data" target="_blank">
+							<div class="card-body">
+								<div class="form-group row mb-1">
+									<label for="monthlyStockBaselineFile" class="col-sm-2 col-form-label">Approved Excel</label>
+									<div class="col-sm-10">
+										<input type="file" id="monthlyStockBaselineFile" name="file"
+												class="form-control" accept=".xlsx" required>
+									</div>
+								</div>
+								<div class="form-group row mb-1">
+									<label for="monthlyStockClosingDate" class="col-sm-2 col-form-label">Closing Date</label>
+									<div class="col-sm-10">
+										<input type="text" id="monthlyStockClosingDate" name="closingDate"
+												class="form-control PositionofTextbox" placeholder="dd-MM-yyyy"
+												autocomplete="off" required>
+									</div>
+								</div>
+								<small class="text-muted">Import only a Finance-approved month-end Current Item Stock file. This records the closing boundary; it does not alter live stock.</small>
+							</div>
+							<div class="card-footer">
+								<button type="submit" class="btn btn-primary btn-sm btn-inline pull-right">
+									<i class="fa fa-fw fa-upload"></i> Import Approved Closing
+								</button>
+							</div>
+						</form>
+					</div>
 				</div>
 			</div>
 			</security:authorize>

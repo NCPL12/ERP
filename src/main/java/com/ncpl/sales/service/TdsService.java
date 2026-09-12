@@ -33,7 +33,6 @@ import com.ncpl.sales.model.Lot;
 import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.PartyRepo;
-import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.SalesOrderDesignRepo;
 import com.ncpl.sales.repository.TdsItemRepo;
 import com.ncpl.sales.repository.TdsRepo;
@@ -59,9 +58,7 @@ public class TdsService {
 	TdsItemRepo tdsItemRepo;
 	@Autowired
 	PurchaseItemService purchaseItemService;
-	@Autowired
-	SalesRepo salesrepo;
-	
+
 	@Autowired
 	ItemMasterService itemService;
 
@@ -294,23 +291,13 @@ public class TdsService {
 		
 	}
 	
-	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
-		
-		ArrayList<SalesOrder> soList = salesrepo.getTdsApprovedAndPoNotDoneListDashboard();
-		return soList;
-		
-	}
-
 	private String tdsItemKey(TdsItems item) {
 		return item.getDescription() + "|" + (item.getModelNumber() != null ? item.getModelNumber() : "");
 	}
 
-	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboardPartial() {
-		// Same canonical query as the full list and the dashboard tile count
-		// (SalesRepo#getTdsApprovedAndPoNotDoneListDashboard / DashboardAggregateJdbcRepository),
-		// just capped for the dashboard preview so all three can never disagree.
-		List<SalesOrder> soList = getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard();
-		return soList.size() > 10 ? soList.subList(0, 10) : soList;
+	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDonePartial() {
+		List<TdsItems> tdsItemList = getTdsItemsListWhereTdsApprovedAndPoNotDone();
+		return tdsItemList.size() > 10 ? tdsItemList.subList(0, 10) : tdsItemList;
 	}
 
 }

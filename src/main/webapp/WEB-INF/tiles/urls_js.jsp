@@ -376,6 +376,7 @@
 		STOCK_QTY_DETAILS:parentApi+"/stock/qty_details",
 		SO_DESIGNITEM_LIST_BY_SOITEMID:parentApi+"/designItem_list/sales_item_id",
 		EMPLOYEE_LIST:parentApi+"/employee_list",
+		COMPANY_ASSET_CANDIDATES:parentApi+"/company_asset_candidates",
 
 		
 

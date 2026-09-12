@@ -40,7 +40,7 @@ if (errorMessage && errorMessage != '') {
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -95,7 +95,6 @@ if (errorMessage && errorMessage != '') {
 							<th width="10%"><spring:message code="date"/></th>  
 							<th width="2%" style ="visibility: hidden"><spring:message code="po.version"/></th>
 							<th width="12%"><spring:message code="po"/></th>
-							<th width="5%"><spring:message code="archive"/></th>
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">
