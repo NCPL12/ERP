@@ -977,7 +977,7 @@ public class PurchaseController {
 		addressMap.put("shippingAddress", shippingAddress);
 		addressMap.put("modeOfPayment", customProperty.getModeOfPayment());
 		addressMap.put("jurisdiction", customProperty.getJursidiction());
-		addressMap.put("frieght", customProperty.getFrieght());x	
+		addressMap.put("frieght", customProperty.getFrieght());
 		addressMap.put("delivery", customProperty.getDelivery());
 		addressMap.put("warranty", customProperty.getWarranty());
 		

@@ -446,6 +446,46 @@
 
 
                     <!--Items section starts  -->
+                    <!-- User Management section -->
+<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+
+    <c:set var="userMgmtOpen" value="${uri == '/user-management'}" />
+
+    <li class="nav-item has-treeview ${userMgmtOpen ? 'menu-open' : ''}">
+
+        <a href="#" class="nav-link ${userMgmtOpen ? 'active' : ''}">
+
+            <i class="nav-icon fas fa-users-cog"></i>
+
+            <p>
+                <spring:message code="user.management" />
+                <i class="right fas fa-angle-left"></i>
+            </p>
+
+        </a>
+
+        <ul class="nav nav-treeview">
+
+            <li class="nav-item">
+
+                <a href="${pageContext.request.contextPath}/user-management"
+                   class="nav-link ${uri == '/user-management' ? 'active' : ''}">
+
+                    <i class="nav-icon fas fa-list"></i>
+
+                    <p>
+                        <spring:message code="user.list" />
+                    </p>
+
+                </a>
+
+            </li>
+
+        </ul>
+
+    </li>
+
+</security:authorize>
 
 
                   </ul>
