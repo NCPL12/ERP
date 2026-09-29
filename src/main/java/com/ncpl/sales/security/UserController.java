@@ -3,9 +3,15 @@ package com.ncpl.sales.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 import com.ncpl.sales.security.User;
 import com.ncpl.sales.security.UserService;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @RestController
@@ -147,7 +153,9 @@ public ResponseEntity<?> updateUser(
         @RequestParam("number") String number,
         @RequestParam("emailId") String emailId,
         @RequestParam("enabled") Boolean enabled,
-        @RequestParam("name") String name) {
+        @RequestParam("name") String name,
+        HttpServletRequest request,
+        HttpServletResponse response) {
 
     User existingUser = userService.getUserByUserId(id);
 
@@ -194,6 +202,21 @@ public ResponseEntity<?> updateUser(
 
     // ID, password and enabled stay unchanged
     User updatedUser = userService.updateUser(existingUser);
+
+    // If the same user is being deactivated, force logout the current session
+    if (Boolean.FALSE.equals(enabled)) {
+        User currentUser = userService.getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null && currentUser.getId().equals(id)) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                new SecurityContextLogoutHandler().logout(request, response, auth);
+            }
+            SecurityContextHolder.clearContext();
+            if (request.getSession(false) != null) {
+                request.getSession(false).invalidate();
+            }
+        }
+    }
 
     return ResponseEntity.ok(updatedUser);
 }

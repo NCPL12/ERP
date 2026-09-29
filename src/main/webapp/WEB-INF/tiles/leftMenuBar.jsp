@@ -10,6 +10,16 @@
             <html>
 
             <head>
+              <style>
+                /* Fix: align top header height with sidebar brand-link (60px) so the two bars meet cleanly */
+                .main-header {
+                    min-height: 60px;
+                }
+                .main-header .nav-link,
+                .main-header .nav-item {
+                    line-height: 1;
+                }
+              </style>
             </head>
 
             <body>

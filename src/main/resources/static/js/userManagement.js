@@ -10,6 +10,138 @@ $(document).ready(function () {
 });
 
 
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var cookies = document.cookie.split(';');
+
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.indexOf(nameEQ) === 0) {
+            return decodeURIComponent(cookie.substring(nameEQ.length));
+        }
+    }
+    return null;
+}
+
+
+function deleteCookie(name) {
+    console.log("🔴 Deleting cookie: " + name);
+
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
+
+    console.log("✅ Cookie deleted: " + name);
+}
+
+
+function updateUserStatusInDatabase(userId, username, newStatus, enabled) {
+
+    console.log("🔄 Updating user status in database...");
+
+    $.ajax({
+
+        url: api.USER_MANAGEMENT_UPDATE + "/" + encodeURIComponent(userId) +
+             "?username=" + encodeURIComponent(username) +
+             "&enabled=" + enabled,
+
+        type: 'PUT',
+
+        success: function (response) {
+
+            console.log("✅ Status updated in database");
+            checkAndLogoutIfSameUser(userId, username);
+
+        },
+
+        error: function (xhr) {
+
+            console.log("❌ Error updating status");
+            alert("Unable to update user status.");
+            loadUsers();
+
+        }
+
+    });
+
+}
+
+
+function checkAndLogoutIfSameUser(userId, username) {
+
+    console.log("🔍 Comparing user IDs...");
+
+    var currentUserUrl = (api && api.USER_CURRENT) || (typeof contextRoot !== 'undefined' ? contextRoot + "/api/users/current" : "/api/users/current");
+
+    $.ajax({
+
+        url: currentUserUrl,
+
+        type: 'GET',
+
+        success: function (currentUser) {
+
+            if (!currentUser) {
+                loadUsers();
+                return;
+            }
+
+            var currentUserId = currentUser.id != null ? currentUser.id : currentUser.userId;
+            var targetUserId = userId != null ? userId : null;
+
+            console.log("📌 Current logged-in user: " + (currentUser.username || "unknown") + " (ID: " + currentUserId + ")");
+            console.log("📌 Just marked user: " + username + " (ID: " + targetUserId + ")");
+
+            var currentUserIdValue = currentUser.id != null ? currentUser.id : (currentUser.userId != null ? currentUser.userId : currentUser.user_id);
+            var targetUserIdValue = userId != null ? userId : null;
+
+            console.log("📌 Current logged-in user: " + (currentUser.username || "unknown") + " (ID: " + currentUserIdValue + ")");
+            console.log("📌 Just marked user: " + username + " (ID: " + targetUserIdValue + ")");
+
+            if (String(currentUserIdValue) === String(targetUserIdValue)) {
+
+                console.log("🔴 MATCH! Logging out user...");
+
+                deleteCookie('jsessionid');
+                deleteCookie('JSESSIONID');
+
+                var loginUrl = (typeof contextRoot !== 'undefined' && contextRoot) ? (contextRoot + 'login') : '/login';
+                console.log("🔄 Redirecting to login page..." + loginUrl);
+                window.location.replace(loginUrl);
+
+            } else {
+
+                console.log("✅ Different user. No action needed.");
+                alert(username + " status changed successfully.");
+                loadUsers();
+
+            }
+
+        },
+
+        error: function (xhr) {
+
+            console.log("❌ Error getting current user");
+            console.log("   Status:", xhr && xhr.status);
+
+            if (xhr && xhr.status === 401) {
+                deleteCookie('jsessionid');
+                deleteCookie('JSESSIONID');
+
+                var loginUrl = (typeof contextRoot !== 'undefined' && contextRoot) ? (contextRoot + 'login') : '/login';
+                console.log("🔄 Session already invalid. Redirecting to login..." + loginUrl);
+                window.location.replace(loginUrl);
+                return;
+            }
+
+            loadUsers();
+
+        }
+
+    });
+
+}
+
+
 function loadUsers() {
 
     $.ajax({
@@ -91,23 +223,20 @@ function loadUsers() {
                     // =========================
                     // STATUS
                     // =========================
-                  {
+             // =========================
+// STATUS
+// =========================
+{
     data: 'enabled',
     orderable: false,
     defaultContent: true,
     render: function (data, type, row, meta) {
-        
-        if (data === false) {
-            return "INACTIVE";
-        } else if (data === true) {
+        if (data === true || data === 1 || data === 'true') {
             return "ACTIVE";
-        } else {
-            return "UNKNOWN";
         }
-
+        return "INACTIVE";
     }
 },
-
 
                     // =========================
                     // ACTION
@@ -461,12 +590,17 @@ function updateUser() {
 
                 console.log("UPDATE RESPONSE:", response);
 
-                alert("User updated successfully.");
-
                 $("#editUserModal").modal("hide");
 
+                var currentTargetUserId = selectedUserId;
                 selectedUserId = null;
 
+                if (enabled === 0) {
+                    checkAndLogoutIfSameUser(currentTargetUserId, username);
+                    return;
+                }
+
+                alert("User updated successfully.");
                 loadUsers();
 
             },

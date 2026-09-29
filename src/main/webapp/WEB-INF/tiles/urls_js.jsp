@@ -238,6 +238,9 @@ USER_MANAGEMENT_DELETE:
 USER_MANAGEMENT_CHANGE_PASSWORD:
     contextRoot + parentApi + "/users",
 
+USER_CURRENT:
+    contextRoot + parentApi + "/users/current",
+
 				//inventory location
 				INV_LOCATION_SAVE: parentApi + "/invlocation/save/",
 				INV_LOCATION_LIST: parentApi + "/invlocation/list/",

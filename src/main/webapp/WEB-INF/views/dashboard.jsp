@@ -85,7 +85,6 @@ pageEncoding="ISO-8859-1"%>
     }
 
 </style>
-```
 
 </head>
 
@@ -93,7 +92,6 @@ pageEncoding="ISO-8859-1"%>
 
 <div class="wrapper">
 
-```
 <tiles:insertAttribute name="header" />
 
 <tiles:insertAttribute name="sideMenu" />
@@ -352,51 +350,8 @@ pageEncoding="ISO-8859-1"%>
                 </div>
 
 
-                <!-- ================================= -->
-                <!-- MY EDUCATION BOX -->
-                <!-- ================================= -->
+               
 
-                <div class="col-lg-2 col-6">
-
-                    <div class="small-box bg-secondary education-box">
-
-                        <div class="inner">
-
-                            <h3>Subha</h3>
-
-                            <p>My Education</p>
-
-                        </div>
-
-                        <div class="icon">
-
-                            <i class="fas fa-graduation-cap"></i>
-
-                        </div>
-
-
-                        <!-- IMPORTANT:
-                             ID is educationLink.
-                             Modal ID is educationModal.
-                        -->
-
-                        <a href="#"
-                           id="educationLink"
-                           class="small-box-footer"
-                           data-toggle="modal"
-                           data-target="#educationModal">
-
-                            More info
-
-                            <i class="fas fa-arrow-circle-right"></i>
-
-                        </a>
-
-                    </div>
-
-                </div>
-
-                <!-- MY EDUCATION BOX END -->
 
 
             </div>
@@ -1413,170 +1368,6 @@ pageEncoding="ISO-8859-1"%>
     </div>
 
 </div>
-```
-
-</div>
-
-<!-- ====================================================== -->
-
-<!-- MY EDUCATION MODAL -->
-
-<!-- ====================================================== -->
-
-<div class="modal fade"
-     id="educationModal"
-     tabindex="-1"
-     role="dialog"
-     aria-hidden="true">
-
-```
-<div class="modal-dialog modal-lg"
-     style="margin-top:5%;">
-
-
-    <div class="modal-content">
-
-
-        <!-- Modal Header -->
-        <div class="modal-header custom-box-header-modal">
-
-            <h5 class="modal-title">
-
-                <i class="fas fa-graduation-cap"></i>
-
-                <b>My Education</b>
-
-            </h5>
-
-
-            <button type="button"
-                    class="close"
-                    data-dismiss="modal"
-                    aria-label="Close">
-
-                <span aria-hidden="true">
-                    &times;
-                </span>
-
-            </button>
-
-        </div>
-
-
-        <!-- Modal Body -->
-        <div class="modal-body">
-
-            <div class="education-details">
-
-
-                <!-- NAME -->
-                <h4>
-
-                    <i class="fas fa-user"></i>
-
-                    <b>Subhashree Nayak</b>
-
-                </h4>
-
-
-                <hr>
-
-
-                <!-- B.TECH -->
-                <h5>
-
-                    <i class="fas fa-graduation-cap"></i>
-
-                    B.Tech  Computer Science Engineering
-
-                </h5>
-
-
-                <p>
-
-                    <b>College:</b>
-
-                    Konark Institute of Science and Technology (KIST)
-
-                </p>
-
-
-                <p>
-
-                    <b>Duration:</b>
-
-                    2021 to 2025
-
-                </p>
-
-
-                <hr>
-
-
-                <!-- PGDCA -->
-                <h5>
-
-                    <i class="fas fa-laptop-code"></i>
-
-                    PGDCA
-
-                </h5>
-
-
-                <p>
-
-                    <b>Institute:</b>
-
-                    Kensoft Institute
-
-                </p>
-
-
-                <hr>
-
-
-                <!-- DATA SCIENCE -->
-                <h5>
-
-                    <i class="fas fa-database"></i>
-
-                    Data Science
-
-                </h5>
-
-
-                <p>
-
-                    <b>Institute:</b>
-
-                    Naresh IT
-
-                </p>
-
-
-            </div>
-
-        </div>
-
-
-        <!-- Modal Footer -->
-        <div class="modal-footer">
-
-            <button type="button"
-                    class="btn btn-default btn-sm"
-                    data-dismiss="modal">
-
-                Close
-
-            </button>
-
-        </div>
-
-
-    </div>
-
-</div>
-
 
 </div>
 

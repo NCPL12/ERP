@@ -936,16 +936,18 @@ table.cityInputTable > tbody > tr > td {
                            <div class="row padding">
     <label for="GST" class="col-form-label form-control-sm col-sm-4">GST</label>
     <div class="col-sm-6">
-        <form:input
-            path="gst"
-            name="gst"
-            style="width: 100%;"
-            type="text"
-            value=""
-            class="form-control form-control-sm"
-            pattern="^(5|12|18|28)$"
-            title="GST must be 5, 12, 18, or 28"
-        />
+       <form:input
+    path="gst"
+    name="gst"
+    id="gst"
+    style="width: 100%;"
+    type="text"
+    value=""
+    maxlength="15"
+    class="form-control form-control-sm"
+    pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+    title="Enter a valid 15-character GSTIN (e.g. 22AAAAA0000A1Z5)"
+/>
         <span id="spnGst"></span>
     </div>
 </div>

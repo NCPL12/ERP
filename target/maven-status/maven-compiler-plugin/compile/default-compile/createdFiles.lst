@@ -216,6 +216,7 @@ com\ncpl\sales\model\Lot.class
 com\ncpl\sales\repository\PurchaseCopyRepo.class
 com\ncpl\sales\security\User.class
 com\ncpl\sales\api\SalesRestController.class
+com\ncpl\sales\security\UserStatusFilter.class
 com\ncpl\sales\model\Stock.class
 com\ncpl\sales\config\TilesConfig.class
 com\ncpl\sales\model\EmployeeMaster.class

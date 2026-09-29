@@ -112,15 +112,15 @@
 
         <div class="modal-content">
 
-            <div class="modal-header bg-warning">
+            <div class="modal-header bg-primary">
 
-                <h5 class="modal-title"
+                <h5 class="modal-title text-white"
                     id="changePasswordModalLabel">
                     Change Password
                 </h5>
 
                 <button type="button"
-                        class="close"
+                        class="close text-white"
                         data-dismiss="modal"
                         aria-label="Close">
 
@@ -228,7 +228,7 @@
 
 
                 <button type="button"
-                        class="btn btn-warning"
+                        class="btn btn-primary"
                         onclick="updatePassword()">
 
                     <i class="fas fa-lock"></i>

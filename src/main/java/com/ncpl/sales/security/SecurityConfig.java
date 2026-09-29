@@ -9,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.context.SecurityContextPersistenceFilter;
 
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Configuration
@@ -21,6 +22,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		//Custom login handler
 		@Autowired
 		LoginSuccessHandler customLoginSuccessHandler;
+
+		@Autowired
+		UserStatusFilter userStatusFilter;
 		
 		//Encrypt password
 		@Bean
@@ -38,6 +42,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		//URL security
 		@Override
 		 protected void configure(HttpSecurity http) throws Exception {
+		 http.addFilterAfter(userStatusFilter, SecurityContextPersistenceFilter.class);
 		 http.csrf().disable();	
 		 http
 		 .authorizeRequests()
