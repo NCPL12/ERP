@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.City;
@@ -17,6 +20,7 @@ import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.PartyContact;
 import com.ncpl.sales.model.Type;
 import com.ncpl.sales.repository.PartyRepo;
+import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 @Service
 public class PartyService {
 	@Autowired
@@ -64,8 +68,23 @@ public class PartyService {
 	public List<Party> getPartyList() {
 		List<Party> partyList=partyRepo.findAll();
 		Collections.sort(partyList);
-		
+
 		return partyList;
+	}
+
+	// lightweight id+name list for dropdowns
+	public List<PartyDropdownProjection> getPartyDropdownList() {
+		return partyRepo.findPartyDropdownList();
+	}	 
+
+	// @D0015 lazy-loaded, paginated Party list (see README.md)
+	public Page<Party> getPartyListPage(int page, int size, String keyword) {
+		Page<Party> partyPage = partyRepo.searchByKeyword(keyword == null ? "" : keyword.trim(),
+				PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "partyName")));
+		for (Party party : partyPage.getContent()) {
+			party.setCategory(partyCategoryService.getPartyCategoryCountbyPartyId(party.getId()));
+		}
+		return partyPage;
 	}
 	
 	public Party getPartyById(String id) {

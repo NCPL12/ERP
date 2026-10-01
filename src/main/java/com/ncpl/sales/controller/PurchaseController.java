@@ -628,13 +628,10 @@ public class PurchaseController {
 		// 	model.addAttribute("makeList", mapper.writeValueAsString(new ArrayList<>()));
 		// 	return "itemMaster";
 		// }
-
-	@GetMapping("/itemMaster")
+//	 @D0050
+		@GetMapping("/itemMaster")
 	public String getItemMaster(Model model) throws JsonProcessingException {
 		itemMasterService.trimSpacesFromModelNo();
-		List<ItemMaster> itemList=itemMasterService.getItemListWithoutTools();
-		List<Stock> allStocksList = stockService.getAllStockList();
-		List<Supplier> allSupplierslist = itemMasterService.getAllSupplierList();
 		List<Party> customerpartyList = partyService.getPartyListByTypeCustomer();
 		List<Party> supplierPartyList = partyService.getPartyListbyTypeSupplier();
 		List<Make> makeList=makeService.getMakeList();
@@ -644,14 +641,15 @@ public class PurchaseController {
 		ObjectMapper mapper = utilService.getObjectMapper();
 		model.addAttribute("role", mapper.writeValueAsString(role));
 		model.addAttribute("user", mapper.writeValueAsString(user));
-		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		// the table now loads page by page from /api/itemMaster/page, so these stay empty
+		model.addAttribute("itemList", "[]");
+		model.addAttribute("allSupplierslist", "[]");
+		model.addAttribute("allStocksList", "[]");
 		model.addAttribute("supplierPartyList", mapper.writeValueAsString(supplierPartyList));
-		 model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
+		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
 		model.addAttribute("pageHeader", "Item Master");
-		model.addAttribute("allSupplierslist", mapper.writeValueAsString(allSupplierslist));
-		model.addAttribute("allStocksList", mapper.writeValueAsString(allStocksList));
 		model.addAttribute("makeList", mapper.writeValueAsString(makeList));
-			return "itemMaster";
+		return "itemMaster";
 	}
 	/*@GetMapping("/itemMaster")
 	public String getItemMaster(Model model) throws JsonProcessingException {
@@ -977,7 +975,7 @@ public class PurchaseController {
 		addressMap.put("shippingAddress", shippingAddress);
 		addressMap.put("modeOfPayment", customProperty.getModeOfPayment());
 		addressMap.put("jurisdiction", customProperty.getJursidiction());
-		addressMap.put("frieght", customProperty.getFrieght());x	
+		addressMap.put("frieght", customProperty.getFrieght());
 		addressMap.put("delivery", customProperty.getDelivery());
 		addressMap.put("warranty", customProperty.getWarranty());
 		

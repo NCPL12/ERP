@@ -13,8 +13,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <script type="text/javascript" src="resources/js/partyList.js"></script>
 <script>
-
-var data=${partyList};
+// @D0015 lazy-loaded, paginated Party list (see README.md)
 var pageContext = '${pageContext.request.contextPath}';
 </script>
 <style>

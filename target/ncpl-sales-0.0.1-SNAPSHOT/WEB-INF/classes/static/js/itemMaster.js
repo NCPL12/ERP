@@ -9,6 +9,12 @@ var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
 
+// @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
+function hasItemMasterAccess() {
+	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
+		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
+}
+
 function precomputeItemMasterAggregations() {
 	if(window.itemMasterLazyConfig && window.itemMasterLazyConfig.enabled){
 		stockSummaryByItem = window.itemMasterLazyConfig.stockSummaryMap || {};
@@ -93,7 +99,7 @@ $(document).ready(function () {
     
 	precomputeItemMasterAggregations();
 	loadItemTable();
-	if(role == "ITEMMASTER" || user=="praveen" || role=="STORE"||user=="admin" || user=="nalini"|| user=="rakesh"|| user=="sushma"||user=="savitha"||user=="santosh"){
+	if(hasItemMasterAccess()){
 		$("#saveItemMaster").attr("disabled",false);
 		$("#saveMake").attr("disabled",false);
 		$("#addMake").show();
@@ -193,11 +199,28 @@ $(document).ready(function () {
 			e.preventDefault(e);
 			$("#taxRateDiv").html("Tax Rate is required.")
 			$("#taxRateDiv").css("color", "red")
-		}/*else 
+		}else if (taxRate < 0 || taxRate > 99) {
+			e.preventDefault(e);
+			$("#taxRateDiv").html("Tax Rate must be between 0 and 99.")
+			$("#taxRateDiv").css("color", "red")
+		}/*else
 		if (!taxRate.match(digits)) {
 			e.preventDefault(e);
 			$.error("Only digits are allowed");
 		}*/
+
+		//HSN code validation - must be numeric with a valid GST HSN length (4, 6 or 8 digits)
+		if (itemHSNCode !== '') {
+			if (!itemHSNCode.match(digits)) {
+				e.preventDefault(e);
+				$("#itemHSNCodeDiv").html("HSN code must contain digits only.")
+				$("#itemHSNCodeDiv").css("color", "red")
+			} else if ([4, 6, 8].indexOf(itemHSNCode.length) === -1) {
+				e.preventDefault(e);
+				$("#itemHSNCodeDiv").html("HSN code must be 4, 6 or 8 digits.")
+				$("#itemHSNCodeDiv").css("color", "red")
+			}
+		}
 
 
 		/**Reset error messages**/
@@ -213,17 +236,20 @@ $(document).ready(function () {
 		$("#gst").change(function () {
 			$("#taxRateDiv").html("");
 		});
+		$("#itemHSNCode").change(function () {
+			$("#itemHSNCodeDiv").html("");
+		});
 		
 			$('input:not(:button,:submit),textarea,select').on("focusout input",function () {
-					if(role == "ITEMMASTER" || user=="praveen" ||role=="STORE"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
+					if(hasItemMasterAccess()){
 						$("#saveItemMaster").attr('disabled', false);
 						$("#saveMake").attr("disabled",false);
 						$("#addMake").show();
-						
+
 					}else{
 						$("#saveItemMaster").attr('disabled', true);
 						$("#saveMake").attr("disabled",true);
-						$("#addMake").hdie();
+						$("#addMake").hide();
 					}
 				});
 		
@@ -379,6 +405,8 @@ function addItemMaster() {
 		var rowCount = $('#itemTable > tbody  > tr').length;
 		var arraycount = rowCount - 1;
 		var columns = "";
+
+
 		/*    columns += '<td style="width:5%;text-align:center;">' + rowCount + '</td>';
 			columns += '<td style="width:15%; padding: .75rem;"><input type="text" class="form-control PositionofTextbox" id="modelNo" name="items['+arraycount+'].modelNo" path="items['+arraycount+'].modelNo" style="width:100%;"/></td>';
 			columns += '<td style="width:30%; padding: .75rem;"><input type="text" class="form-control PositionofTextbox description" id="description" name="items['+arraycount+'].description" path="items['+arraycount+'].description" style="width:100%;"/></td>';
@@ -679,7 +707,7 @@ function loadItemTable() {
 			$("#saveItemMaster").html("Update");
 			$("#boxHeader").html("Update Item");
 		}
-		if(role=="STORE" || user=="praveen"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
+		if(hasItemMasterAccess()){
 			$("#saveItemMaster").attr("disabled",false);
 		}
 	});
@@ -965,6 +993,7 @@ function getStockList(itemId) {
 			var quantity = null;
 			var model = null;
 			var desc = null;
+			var units = "";
 			if (response.length == 0) {
 				$.each(itemList, function (index, value) {
 					if (itemId == value.id) {
@@ -992,7 +1021,7 @@ function getStockList(itemId) {
 			}
 			quantity=Math.round(quantity * 100) / 100
 			//set total quantity in item master page
-			setQuantity(quantity);
+			setQuantity(quantity, units);
 			if (response.length == 0) {
 				$("#stockHeader").html('Stock' + '(' + 0 + ')' + '/' + model + '/' + desc);
 
@@ -1018,11 +1047,11 @@ function getStockList(itemId) {
 }
 
 //set total quantity in item master page
-function setQuantity(quantity) {
+function setQuantity(quantity, units) {
 	if (quantity == null) {
 		$("#stockQuantity").val(0);
 	} else {
-		var quanUnits = quantity + " " + units;
+		var quanUnits = quantity + " " + (units || "");
 		$("#stockQuantity").val(quanUnits);
 	}
 }

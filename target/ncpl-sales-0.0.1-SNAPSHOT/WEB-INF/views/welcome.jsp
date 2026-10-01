@@ -10,7 +10,6 @@
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
 <%
-request.getSession().invalidate();
 response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
 response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 %>
@@ -26,9 +25,8 @@ response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 
 
 
-	<link rel="stylesheet" href="resources/css/salesOrder.css">
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/salesOrder.css">
 	<script src="<c:url value="/resources/js/salesOrder.js" />"></script>
-		<script src="<c:url value="/resources/js/jquery.tabletojson.js" />"></script>
 	<script src="${RESOURCES}js/common.js" ></script>
 
 	<!--  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">

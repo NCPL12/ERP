@@ -4,6 +4,7 @@
 	$(document).ready( function () {
 		
 		var id ="sunil";
+		var hasArchiveColumn = $('#purchaseList thead tr:eq(0) th').length > 8;
 			// Setup - add a text input to each footer cell
 			$('#purchaseList thead tr').clone(true).appendTo( '#purchaseList thead' );
 			$('#purchaseList thead tr:eq(1) th').each( function (i) {
@@ -18,19 +19,7 @@
 					}
 				} );
 			} );
-		table= $('#purchaseList').DataTable({
-			//"iDisplayLength": -1,
-			'columnDefs': [ {
-				'targets': [0,1,2,3,4,5,6,7], /* table column index */
-				'orderable': false, /* here set the true or false */
-			}],
-				"aaSorting": [[ 4, "desc" ]],
-			orderCellsTop: true,
-			fixedHeader: true,
-			
-			"aaData": dataObj,
-			
-			"aoColumns": [ {
+		var purchaseListColumns = [ {
 				"mData" : "poNumber",
 			}, {
 				"mData" : "party",
@@ -94,35 +83,54 @@
 				render : function(datam, type, row) {
 					var url = null;
 						url ="/ncpl-sales/purchaseOrder/details/"+row.poNumber;
-					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";				
+					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";
 				}
-			},
-			{
+			}
+			];
+		if (hasArchiveColumn) {
+			purchaseListColumns.push({
 				"mData" : "archive"	,
 				render : function(datam, type, row) {
 					var archive;
 					if(role=="SUPER ADMIN"){
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
 						}
 					}else{
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";
 						}
 					}
-									
+
 				}
-			}
-			]
-		});
+			});
+		}
+		var orderableTargets = hasArchiveColumn ? [0,1,2,3,4,5,6,7] : [0,1,2,3,4,5,6];
+		table= $('#purchaseList').DataTable({
+			//"iDisplayLength": -1,
+			'columnDefs': [ {
+				'targets': orderableTargets, /* table column index */
+				'orderable': false, /* here set the true or false */
+			}],
+				"aaSorting": [[ 4, "desc" ]],
+			orderCellsTop: true,
+			fixedHeader: true,
+
+			"aaData": dataObj,
+
+			"aoColumns": purchaseListColumns
+			});
 		var purchaseOrderId;
 		var  version;
 		//On double click of row navigate to edit page
 	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+		if (!canEditPurchase) {
+			return;
+		}
 		var data1 = table.row(this).data();
 		var poNumber = data1.poNumber;
 			purchaseOrderId = data1.poNumber;

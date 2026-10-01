@@ -14,10 +14,10 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 <script src="<c:url value="/resources/js/dcDashboard.js" />"></script> 
 <script type="text/javascript">
-var dcLists =${dcLists};
-var role = ${role};
 var partyList = ${partyList};
+var role = ${role};
 var pageContext = '${pageContext.request.contextPath}';
+var isArchivedPage = true;
 </script>
 </head>
 <body>
@@ -32,16 +32,17 @@ var pageContext = '${pageContext.request.contextPath}';
 				<table id="dcList" class="table table-bordered table-striped dataTable" style="width: 100%; font-size:13px">
 					 <thead>
 						<tr>
-						 <th width="8%">Dc No.</th>
-							<th width="14%">SO Number</th>
-							<th width="15%">Client Name</th>
-							<th width="12%">Client PO</th>
-							<th width="21%">Shipping Address</th>
-							<th width="10%">Date</th>
-							<th width="10%">DC</th>
+						 <th width="7%">Dc No.</th>
+							<th width="12%">SO Number</th>
+							<th width="13%">Client Name</th>
+							<th width="10%">Client PO</th>
+							<th width="18%">Shipping Address</th>
+							<th width="15%">Comment</th>
+							<th width="8%">Date</th>
+							<th width="8%">DC</th>
 							<th width="3%">View</th>
 							<th width="2%">Returnable</th>
-							<th width="5%">Archive</th>
+							<th width="4%">Archive</th>
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">

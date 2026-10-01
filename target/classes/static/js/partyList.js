@@ -1,14 +1,39 @@
 /**
- * 
+ *
  */
+// @D0015 lazy-loaded, paginated Party list (see README.md)
 var partyTable;
 
 $(document).ready( function () {
-	console.log(data[173]);
 	partyTable=$('#partyList').DataTable({
-    	"aaData": data,
-    	//"autoWidth": true,
-    	//"pageLength": 15,
+		processing: true,
+		serverSide: true,
+		pageLength: 50,
+		lengthMenu: [[50, 100, 250, 500], [50, 100, 250, 500]],
+		"order": [],
+		ajax: function (data, callback, settings) {
+			var page = Math.floor(data.start / data.length);
+			$.ajax({
+				url: pageContext + "/partyList/data",
+				data: {
+					page: page,
+					size: data.length,
+					keyword: data.search && data.search.value ? data.search.value : ""
+				},
+				success: function (resp) {
+					callback({
+						draw: data.draw,
+						recordsTotal: resp.totalElements,
+						recordsFiltered: resp.totalElements,
+						data: resp.content
+					});
+				},
+				error: function (xhr) {
+					console.error("Failed to load party list", xhr.status, xhr.responseText);
+					callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] });
+				}
+			});
+		},
     	"aoColumns": [
     	{ "title":"Type",
 			"data": "type",
@@ -53,7 +78,7 @@ $(document).ready( function () {
 		{   "title":"Country",
 		    "width":"10%",
 			"data": "country",
-    	
+
     		 "defaultContent":"NA",
   			render : function(aaData, type, row) {
   				var country=row.party_city.state.country.name;
@@ -61,13 +86,13 @@ $(document).ready( function () {
 				country.substr( 0, 10 ) +'...' :
 				country;
   			}
-    	
+
     	},
-    	
+
 		{ "title":"Phone",
 		   "width":"10%",
 			"data": "phone1"},
-    	{ 
+    	{
 			"title":"Website",
 			"width":"18%",
 			"data": "website",
@@ -78,7 +103,7 @@ $(document).ready( function () {
   					{aaData="";}
 				  return aaData.length > 15 ? '<a href='+aaData+' target="_blank">'+ aaData.substr( 0, 15 )+'...' +'</a>' :'<a href='+aaData+' target="_blank">'+aaData+'</a>';
   			}
-    			
+
     	},
 		{   "title":"Category",
 		    "width":"10%",
@@ -86,7 +111,7 @@ $(document).ready( function () {
         	  "defaultContent":"NA",
     			render : function(aaData, type, row) {
     				var categoryName = row.category;
-    				  
+
                     return categoryName;
     			}
         	},{
@@ -95,20 +120,22 @@ $(document).ready( function () {
             	  "class":"hideTd",
         			render : function(aaData, type, row) {
         				var remarks = row.remarks;
-        				  
+
                         return remarks;
         			}
             	},
-    	
+
     	]
     });
-	
-	//redirect to the party page on double click of row.
+
+	//redirect to the party edit page on double click of row — only when the role can edit.
     $('#partyList tbody').on('dblclick', 'tr', function () {
+    	if (!canEditParty) {
+    		return;
+    	}
     	var data1 = partyTable.row(this).data();
     	var partyId = data1.id;
     	window.location = pageContext+"/api/party/view?partyId="+partyId;
  	});
-    
-} );
 
+} );

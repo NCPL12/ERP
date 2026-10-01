@@ -9,6 +9,12 @@ var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
 
+// @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
+function hasItemMasterAccess() {
+	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
+		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
+}
+
 function precomputeItemMasterAggregations() {
 	if(window.itemMasterLazyConfig && window.itemMasterLazyConfig.enabled){
 		stockSummaryByItem = window.itemMasterLazyConfig.stockSummaryMap || {};
@@ -93,7 +99,7 @@ $(document).ready(function () {
     
 	precomputeItemMasterAggregations();
 	loadItemTable();
-	if(role == "ITEMMASTER" || user=="praveen" || role=="STORE"||user=="admin" || user=="nalini"|| user=="rakesh"|| user=="sushma"||user=="savitha"||user=="santosh"){
+	if(hasItemMasterAccess()){
 		$("#saveItemMaster").attr("disabled",false);
 		$("#saveMake").attr("disabled",false);
 		$("#addMake").show();
@@ -235,15 +241,15 @@ $(document).ready(function () {
 		});
 		
 			$('input:not(:button,:submit),textarea,select').on("focusout input",function () {
-					if(role == "ITEMMASTER" || user=="praveen" ||role=="STORE"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
+					if(hasItemMasterAccess()){
 						$("#saveItemMaster").attr('disabled', false);
 						$("#saveMake").attr("disabled",false);
 						$("#addMake").show();
-						
+
 					}else{
 						$("#saveItemMaster").attr('disabled', true);
 						$("#saveMake").attr("disabled",true);
-						$("#addMake").hdie();
+						$("#addMake").hide();
 					}
 				});
 		
@@ -660,7 +666,6 @@ function loadItemTable() {
 			}
 		});
 		datatable = $('#itemMasterList').DataTable(serverConfig);
-		datatable = $('#itemMasterList').DataTable(serverConfig);
 	}else{
 		var clientConfig = $.extend(true, {}, baseConfig, {
 			"data": itemList
@@ -670,6 +675,9 @@ function loadItemTable() {
 	datatable.buttons().container().appendTo($('#itemMasterList_length'));
 
 	$('#itemMasterList tbody').on('dblclick', 'tr', function () {
+		if (!canEditItemMaster) {
+			return;
+		}
 		var row = datatable.row($(this).closest("tr").get(0));
 		var rowData = row.data();
 
@@ -701,7 +709,7 @@ function loadItemTable() {
 			$("#saveItemMaster").html("Update");
 			$("#boxHeader").html("Update Item");
 		}
-		if(role=="STORE" || user=="praveen"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
+		if(hasItemMasterAccess()){
 			$("#saveItemMaster").attr("disabled",false);
 		}
 	});
@@ -1411,6 +1419,9 @@ function loadSupplierTable(response) {
 
 		//On dbclick goto edit mode
 		$('#supplierList tbody').on('dblclick', 'tr', function () {
+			if (!canEditItemMaster) {
+				return;
+			}
 			var row = supplierTable.row($(this).closest("tr").get(0));
 			var rowData = row.data();
 			$.each(rowData, function (key, value) {
@@ -1580,7 +1591,7 @@ function makeListTable(makeList){
 		    	"title":'Delete',
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
-		                    return '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>';
+		                    return canDeleteItemMaster ? '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>' : '';
 		                }
 		    }
 		    ]

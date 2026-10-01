@@ -10,7 +10,6 @@
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
 <%
-request.getSession().invalidate();
 response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
 response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 %>
@@ -26,7 +25,6 @@ response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 
 <link rel="stylesheet" href="resources/css/salesOrder.css">
 <script src="<c:url value="/resources/js/tds.js" />"></script>
-<script src="<c:url value="/resources/js/jquery.tabletojson.js" />"></script>
 <script src="${RESOURCES}js/common.js"></script>
 
 <script type="text/javascript">
@@ -95,7 +93,7 @@ obj = obj.replace(/\&/g, "\"");
 
 <body>
 
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />

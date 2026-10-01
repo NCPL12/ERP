@@ -35,12 +35,13 @@ public class DashboardAggregateJdbcRepository {
             + "          JOIN tbl_grn_items gi ON g.grn_id = gi.grn_id WHERE g.po_number = po.po_number)) "
             + "  AS purchase_order_count, "
             + "  (SELECT COUNT(*) FROM tbl_invoice) AS invoice_count, "
-            + "  (SELECT COUNT(DISTINCT so.id) FROM tbl_sales_order so WHERE so.id IN ( "
-            + "       SELECT si.sales_order_id FROM tbl_sales_item si WHERE si.id IN ( "
-            + "         SELECT td.description FROM tbl_tds_items td "
-            + "         WHERE td.site_quantity > 0 AND td.tds_approved = 1) "
-            + "       AND si.id NOT IN (SELECT pi.sales_item_id FROM tbl_purchase_items pi)) "
-            + "     AND so.archive = 0) AS tds_items_count, "
+            + "  (SELECT COUNT(*) FROM tbl_tds_items td "
+            + "     JOIN tbl_sales_item si ON td.description = si.id "
+            + "     JOIN tbl_sales_order so ON si.sales_order_id = so.id "
+            + "     WHERE td.tds_approved = 1 AND td.site_quantity > 0 "
+            + "       AND NOT EXISTS (SELECT 1 FROM tbl_purchase_items pi WHERE pi.sales_item_id = si.id AND pi.model_no = td.model_number) "
+            + "       AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id) "
+            + "       AND so.archive = 0) AS tds_items_count, "
             + "  (SELECT COUNT(*) FROM tbl_sales_order WHERE archive = 0) AS active_sales_count, "
             + "  (SELECT COUNT(*) FROM tbl_work_order) AS work_order_count, "
             + "  (SELECT COUNT(DISTINCT so.id) FROM tbl_sales_order so WHERE so.id IN ( "
@@ -54,7 +55,14 @@ public class DashboardAggregateJdbcRepository {
             + "     JOIN sales_order_design_items dit ON dit.design_id = d.design_id "
             + "     LEFT JOIN tbl_purchase_items pi ON pi.sales_item_id = d.sales_item_id AND pi.model_no = dit.item_id "
             + "     WHERE pi.purchase_item_id IS NULL AND si.units_id <> 20 AND si.quantity <> 0 "
-            + "       AND si.unit_price > 0 AND so.archive = 0) AS sowith_design_count";
+            + "       AND si.unit_price > 0 AND so.archive = 0) AS sowith_design_count,"
+            + "  (SELECT COUNT(*) FROM tbl_tds_items td "
+            + "     JOIN tbl_sales_item si ON td.description = si.id "
+            + "     JOIN tbl_sales_order so ON si.sales_order_id = so.id "
+            + "     WHERE td.tds_approved = 1 "
+            + "       AND NOT EXISTS (SELECT 1 FROM tbl_purchase_items pi WHERE pi.sales_item_id = si.id AND pi.model_no = td.model_number) "
+            + "       AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id) "
+            + "       AND so.archive = 0) AS tds_approved_pending_count";
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -71,6 +79,7 @@ public class DashboardAggregateJdbcRepository {
             long activeSales = rs.getLong("active_sales_count");
             long workOrders = rs.getLong("work_order_count");
             dto.setProjectPreviewCount(workOrders + activeSales);
+            dto.setTdsApprovedPendingCount(rs.getLong("tds_approved_pending_count"));
             return dto;
         });
     }

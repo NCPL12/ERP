@@ -16,7 +16,7 @@
               <!-- Main Sidebar Container -->
               <aside class="main-sidebar sidebar-dark-primary elevation-4 sidebar-no-expand">
                 <!-- Brand Logo -->
-                <a href="http://ncpl.co" class="brand-link d-flex align-items-center" style="height: 60px;">
+                <a href="${pageContext.request.contextPath}/dashboard" class="brand-link d-flex align-items-center" style="height: 60px;">
                   <!-- for circled image use img-circle class in below img tag -->
                   <%-- <img src="${pageContext.request.contextPath}/resources/dist/img/ncpl.jpg"
                     class="brand-image  elevation-3" style="opacity: .8"> --%>
@@ -74,7 +74,7 @@
                         <security:authentication property="principal.username" />
                       </security:authorize>
                     </a>
-                    <a href="<c:url value=" /ncpl-sales/login" />" class="d-block mt-1 text-muted hover-light"
+                    <a href="${pageContext.request.contextPath}/logout" class="d-block mt-1 text-muted hover-light"
                     style="font-size:
                     0.9rem;">
                     <i class="fas fa-sign-out-alt mr-1"></i> Logout
@@ -83,15 +83,17 @@
                 </div>
 
                 <!-- Sidebar Menu -->
+                <c:set var="uri" value="${pageContext.request.servletPath}" />
                 <nav class="mt-2">
-                  <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+                  <ul class="nav nav-pills nav-sidebar flex-column nav-collapse-hide-child" data-widget="treeview" role="menu"
                     data-accordion="false">
                     <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
 
                     <security:authorize access="hasAnyAuthority('ITEMMASTER','STORE','STORE USER')">
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                      <c:set var="itemsOpen" value="${uri == '/itemMaster' or uri == '/companyAssets'}" />
+                      <li class="nav-item has-treeview ${itemsOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${itemsOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-boxes"></i>
                           <p>
                             <spring:message code="items" />
@@ -101,7 +103,8 @@
 
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/itemMaster" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/itemMaster"
+                              class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
                               <i class="nav-icon fas fa-box"></i>
                               <p>
                                 <spring:message code="master.Item.dashboard" />
@@ -113,7 +116,8 @@
                         </ul>
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/companyAssets" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/companyAssets"
+                              class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
                               <i class="nav-icon fas fa-building"></i>
                               <p>
                                 <spring:message code="master.company.assets" />
@@ -124,54 +128,11 @@
                       </li>
                     </security:authorize>
 
-                    <security:authorize access="hasAnyAuthority('PURCHASE STORE')">
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
-                          <i class="nav-icon fas fa-database"></i>
-                          <p>
-                            <spring:message code="master.name" />
-                            <i class="right fas fa-angle-left"></i>
-                          </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-
-                          <!-- Party Dash board -->
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/partyList" class="nav-link">
-                              <i class="nav-icon fas fa-users"></i>
-                              <p>
-                                <spring:message code="master.party.dashboard" />
-                              </p>
-                            </a>
-                          </li>
-
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/itemMaster" class="nav-link">
-                              <i class="nav-icon fas fa-box"></i>
-                              <p>
-                                <spring:message code="master.Item.dashboard" />
-                              </p>
-                            </a>
-                          </li>
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/companyAssets" class="nav-link">
-                              <i class="nav-icon fas fa-building"></i>
-                              <p>
-                                <spring:message code="master.company.assets" />
-                              </p>
-                            </a>
-                          </li>
-
-
-                        </ul>
-
-                      </li>
-                    </security:authorize>
                     <!-- Creating Masters -->
                     <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
-
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                      <c:set var="projectsOpen" value="${uri == '/dashboard'}" />
+                      <li class="nav-item has-treeview ${projectsOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${projectsOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-project-diagram"></i>
                           <p>
                             <spring:message code="projects" />
@@ -180,7 +141,8 @@
                         </a>
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/dashboard" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/dashboard"
+                              class="nav-link ${uri == '/dashboard' ? 'active' : ''}">
                               <i class="nav-icon fas fa-tachometer-alt"></i>
                               <p>
                                 <spring:message code="dashboard" />
@@ -191,8 +153,15 @@
 
                         </ul>
                       </li>
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                    </security:authorize>
+
+                    <!-- Master menu: shared by Purchase Store and Admin/Normal User/Purchase/Super Admin roles -->
+                    <security:authorize
+                      access="hasAnyAuthority('PURCHASE STORE','ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
+                      <c:set var="masterOpen"
+                        value="${uri == '/partyList' or uri == '/itemMaster' or uri == '/companyAssets'}" />
+                      <li class="nav-item has-treeview ${masterOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${masterOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-database"></i>
                           <p>
                             <spring:message code="master.name" />
@@ -203,7 +172,8 @@
 
                           <!-- Party Dash board -->
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/partyList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/partyList"
+                              class="nav-link ${uri == '/partyList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-users"></i>
                               <p>
                                 <spring:message code="master.party.dashboard" />
@@ -212,7 +182,8 @@
                           </li>
 
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/itemMaster" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/itemMaster"
+                              class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
                               <i class="nav-icon fas fa-box"></i>
                               <p>
                                 <spring:message code="master.Item.dashboard" />
@@ -220,22 +191,27 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/companyAssets" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/companyAssets"
+                              class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
                               <i class="nav-icon fas fa-building"></i>
                               <p>
                                 <spring:message code="master.company.assets" />
                               </p>
                             </a>
                           </li>
+
+
                         </ul>
 
                       </li>
                     </security:authorize>
 
-                    <li class="nav-item has-treeview menu-open">
+                    <c:set var="salesOpen"
+                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
+                    <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
                       <security:authorize
                         access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER','SALES')">
-                        <a href="#" class="nav-link active">
+                        <a href="#" class="nav-link ${salesOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-shopping-cart"></i>
                           <p>
                             <spring:message code="sales.name" />
@@ -248,7 +224,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE','STORE')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/salesList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/salesList"
+                              class="nav-link ${uri == '/salesList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-list"></i>
                               <p>
                                 <spring:message code="sales.dashboard" />
@@ -259,7 +236,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','SALES','PURCHASE STORE')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/dcList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/dcList"
+                              class="nav-link ${uri == '/dcList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-truck"></i>
                               <p>
                                 <spring:message code="delivery.challan" />
@@ -270,7 +248,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/returnableList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/returnableList"
+                              class="nav-link ${uri == '/returnableList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-undo"></i>
                               <p>
                                 <spring:message code="dc.returnable" />
@@ -280,7 +259,8 @@
                         </security:authorize>
                         <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/invoiceList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/invoiceList"
+                              class="nav-link ${uri == '/invoiceList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-file-invoice"></i>
                               <p>
                                 <spring:message code="invoice" />
@@ -288,7 +268,8 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/workOrderList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/workOrderList"
+                              class="nav-link ${uri == '/workOrderList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-clipboard-list"></i>
                               <p>
                                 <spring:message code="work.order" />
@@ -301,10 +282,12 @@
                     </li>
 
                     <!-- Purchase section started here -->
-                    <li class="nav-item has-treeview menu-open">
+                    <c:set var="purchaseOpen"
+                      value="${uri == '/purchase' or uri == '/grnLists' or uri == '/nonBillableList'}" />
+                    <li class="nav-item has-treeview ${purchaseOpen ? 'menu-open' : ''}">
                       <security:authorize
                         access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER')">
-                        <a href="#" class="nav-link active">
+                        <a href="#" class="nav-link ${purchaseOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-shopping-basket"></i>
                           <p>
                             <spring:message code="purchase.name" />
@@ -316,7 +299,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/purchase" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/purchase"
+                              class="nav-link ${uri == '/purchase' ? 'active' : ''}">
                               <i class="nav-icon fas fa-shopping-bag"></i>
                               <p>
                                 <spring:message code="sales.purchase" />
@@ -327,7 +311,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','PURCHASE STORE')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/grnLists" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/grnLists"
+                              class="nav-link ${uri == '/grnLists' ? 'active' : ''}">
                               <i class="nav-icon fas fa-clipboard-check"></i>
                               <p>
                                 <spring:message code="sales.grn" />
@@ -338,7 +323,8 @@
                         <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN')">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/nonBillableList" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/nonBillableList"
+                              class="nav-link ${uri == '/nonBillableList' ? 'active' : ''}">
                               <i class="nav-icon fas fa-ban"></i>
                               <p>
                                 <spring:message code="non.billable" />
@@ -352,8 +338,9 @@
                     <!--Report section starts  -->
                     <security:authorize
                       access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                      <c:set var="reportOpen" value="${uri == '/sales_report'}" />
+                      <li class="nav-item has-treeview ${reportOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${reportOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-chart-line"></i>
                           <p>
                             <spring:message code="reporting" />
@@ -363,7 +350,8 @@
 
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/sales_report" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/sales_report"
+                              class="nav-link ${uri == '/sales_report' ? 'active' : ''}">
                               <i class="nav-icon fas fa-file-alt"></i>
                               <p>
                                 <spring:message code="sales.report" />
@@ -377,8 +365,9 @@
                     </security:authorize>
                     <security:authorize
                       access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN')">
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                      <c:set var="chartsOpen" value="${uri == '/soChart'}" />
+                      <li class="nav-item has-treeview ${chartsOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${chartsOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-chart-pie"></i>
                           <p>
                             <spring:message code="charts" />
@@ -387,7 +376,8 @@
                         </a>
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/soChart" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/soChart"
+                              class="nav-link ${uri == '/soChart' ? 'active' : ''}">
                               <i class="nav-icon fas fa-chart-area"></i>
                               <p>
                                 <spring:message code="sales.chart" />
@@ -401,8 +391,10 @@
                     <security:authorize
                       access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE')">
                       <!-- Archived section started here -->
-                      <li class="nav-item has-treeview menu-open">
-                        <a href="#" class="nav-link active">
+                      <c:set var="archivedOpen"
+                        value="${uri == '/salesList_archived' or uri == '/purchase_archived' or uri == '/dc_archived' or uri == '/grn_archived'}" />
+                      <li class="nav-item has-treeview ${archivedOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${archivedOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-archive"></i>
                           <p>
                             <spring:message code="archived.data" />
@@ -412,7 +404,8 @@
 
                         <ul class="nav nav-treeview">
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/salesList_archived" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/salesList_archived"
+                              class="nav-link ${uri == '/salesList_archived' ? 'active' : ''}">
                               <i class="nav-icon fas fa-archive"></i>
                               <p>
                                 <spring:message code="archive.sales.dashboard" />
@@ -420,7 +413,8 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/purchase_archived" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/purchase_archived"
+                              class="nav-link ${uri == '/purchase_archived' ? 'active' : ''}">
                               <i class="nav-icon fas fa-archive"></i>
                               <p>
                                 <spring:message code="archive.sales.purchase" />
@@ -428,7 +422,8 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/dc_archived" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/dc_archived"
+                              class="nav-link ${uri == '/dc_archived' ? 'active' : ''}">
                               <i class="nav-icon fas fa-archive"></i>
                               <p>
                                 <spring:message code="archive.delivery.challan" />
@@ -436,7 +431,8 @@
                             </a>
                           </li>
                           <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/grn_archived" class="nav-link">
+                            <a href="${pageContext.request.contextPath}/grn_archived"
+                              class="nav-link ${uri == '/grn_archived' ? 'active' : ''}">
                               <i class="nav-icon fas fa-archive"></i>
                               <p>
                                 <spring:message code="archive.grn" />

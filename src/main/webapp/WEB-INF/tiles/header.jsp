@@ -3,6 +3,7 @@
 		<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 			<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 				<%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles" %>
+					<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 
 					<c:url var="ROOT" value="/"></c:url>
 					<c:url var="RESOURCES" value="/resources/"></c:url>
@@ -54,17 +55,30 @@
 							.pushmenuLink {
 								padding: 0.5rem 1rem;
 								color: #495057;
-								display: inline-block;
+								display: inline-flex;
+								align-items: center;
+								justify-content: center;
+							}
+
+							.sidebarToggleIcon {
+								display: block;
 								transition: transform 0.3s ease;
 							}
 
-							body.sidebar-collapse .pushmenuLink {
-								transform: rotate(90deg);
+							body.sidebar-collapse .sidebarToggleIcon {
+								transform: scaleX(-1);
 							}
 
 							.pushmenuLink:hover,
 							.pushmenuLink:focus {
 								text-decoration: none;
+								color: #212529;
+							}
+
+							.pushmenuLink:focus-visible {
+								outline: 2px solid #2f74e0;
+								outline-offset: 2px;
+								border-radius: 4px;
 							}
 
 							.main-sidebar .brand-link {
@@ -209,19 +223,20 @@
 							}
 
 
-							/* Prevent sidebar from expanding on hover - keep narrow (no "moving") */
+							/* Prevent sidebar from expanding on hover - keep narrow (no "moving").
+							   Width kept in sync with the collapsed-state width in common.css (70px). */
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover,
 							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused {
-								width: 4.6rem !important;
-								min-width: 4.6rem !important;
+								width: 70px !important;
+								min-width: 70px !important;
 							}
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .brand-link,
 							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused .brand-link,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-link,
 							.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused .brand-link {
-								width: 4.6rem !important;
+								width: 70px !important;
 							}
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .user-panel > .info,
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover .nav-sidebar .nav-link p,
@@ -361,15 +376,24 @@
 							<!-- Left navbar links -->
 							<ul class="navbar-nav">
 								<li class="nav-item">
-									<a data-widget="pushmenu" href="#"><i class="fas fa-bars pushmenuLink"></i></a>
+									<a data-widget="pushmenu" href="#" class="pushmenuLink" id="sidebarToggleBtn"
+										role="button" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
+										<svg class="sidebarToggleIcon" width="20" height="20" viewBox="0 0 24 24"
+											fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+											<rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="2"/>
+											<line x1="9" y1="4" x2="9" y2="20" stroke="currentColor" stroke-width="2"/>
+										</svg>
+									</a>
 								</li>
 								<li class="nav-item d-none d-sm-inline-block pageHeader">${pageHeader}
 
 								</li>
 								<c:if test="${pageHeader == 'Party List'}">
+									<security:authorize access="hasAuthority('PARTY_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/party" class="nav-link addParty"><i
 												class="fa fa-plus-square headerIconFont"></i></a>
+									</security:authorize>
 									</li>
 								</c:if>
 								<c:if test="${pageHeader == 'Item Master'}">
@@ -399,14 +423,17 @@
 											class="nav-link addTools"><button class="btn btn-primary btn-sm btn-inline"
 												type="submit">Company Assets
 												<span class="caret"></span></button></a></li> --%>
+										<security:authorize access="hasAuthority('ITEM_MASTER_EDIT')">
 										<li class="nav-item d-none d-sm-inline-block">
 											<button type='button'
 												class='btn btn-default btn-flat btn-xs itemUploadButton'
 												style='height: -webkit-fill-available'><i
 													class='fa fa-fw fa-upload'></i> Items Upload</button>
 										</li>
+										</security:authorize>
 								</c:if>
 								<c:if test="${pageHeader == 'Sales List'}">
+									<security:authorize access="hasAuthority('SALES_ORDER_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/new_salesOrder"
 											class="nav-link addSO"><i class="fa fa-plus-square headerIconFont"></i></a>
@@ -416,12 +443,15 @@
 											style='height: -webkit-fill-available'><i class='fa fa-fw fa-upload'></i> SO
 											Upload</button>
 									</li>
+									</security:authorize>
 								</c:if>
 								<c:if test="${pageHeader == 'Purchase Orders'}">
+									<security:authorize access="hasAuthority('PURCHASE_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/purchaseOrder"
 											class="nav-link addPO"><i class="fa fa-plus-square headerIconFont"></i></a>
 									</li>
+									</security:authorize>
 									<li class="nav-item d-none d-sm-inline-block">
 										<form id="globalSearchPoForm"
 											action="${pageContext.request.contextPath}/purchase_list/by_item_id"
@@ -437,32 +467,21 @@
 											</div>
 										</form>
 									</li>
+									<security:authorize access="hasAuthority('PURCHASE_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<button type='button' class='btn btn-default btn-flat btn-xs poUploadButton'
 											style='height: -webkit-fill-available'><i class='fa fa-fw fa-upload'></i> PO
 											Upload</button>
 									</li>
+									</security:authorize>
 								</c:if>
 								<c:if test="${pageHeader == 'GRN'}">
+									<security:authorize access="hasAuthority('GRN_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/new_grn" class="nav-link"><i
 												class="fa fa-plus-square addGrn headerIconFont"></i></a>
 									</li>
-									<li class="nav-item d-none d-sm-inline-block">
-										<form id="globalSearchGrnForm"
-											action="${pageContext.request.contextPath}/grn_list/by_item_id" method="get"
-											class="sidebar-form">
-											<div class="input-group">
-												<input type="text" name="itemId" id="itemId" class="form-control"
-													placeholder="Search..." required="required">
-												<span class="input-group-btn">
-													<button type="submit" name="search" id="search-btn"
-														class="btn btn-flat"><i class="fa fa-search"></i>
-													</button>
-												</span>
-											</div>
-										</form>
-									</li>
+									</security:authorize>
 									<!-- <li class="form-inline float-sm-right dropdownAllign"><h1 class=" nav-item d-none d-sm-inline-block" style="font-size: x-large;">Purchase Order : &nbsp;</h1>
 	        <select class="form-control select2 select2-hidden-accessible" name="poNumber" id="purchaseOrderDropDown" style="width:230px;height: 30px; padding: 1.5px; border-radius: 0;">
                  <option>Select Purchase Order</option>
@@ -628,35 +647,14 @@
 										<a href="${pageContext.request.contextPath}/dcList" class="nav-link dcList"><i
 												class="fa fa-list-alt headerIconFont"></i></a>
 									</li>
-									<li class="form-inline float-sm-right "><span
-											class=" m-0 text-dark marginLeft7">Client : &nbsp;</span>
-										<select class="form-control select2 select2-hidden-accessible dropdownWidth230"
-											name="partyName" id="partyName">
-											<option value="">Select Client Name</option>
-
-										</select>
-									</li>
-									<li class="form-inline float-sm-right "><span
-											class=" m-0 text-dark marginLeft7">Client PO Number : &nbsp;</span>
-
-										<select class="form-control select2 select2-hidden-accessible dropdownwidth150"
-											name="soNumber" id="clientPoDropdown">
-											<option value="">Select Client PO No.</option>
-
-										</select>
-									</li>
-									<li class="form-inline float-sm-right clientNamePos dropdownAllignTop15"><span
-											class=" m-0 text-dark marginLeft30">Client Name : &nbsp;</span>
-
-										<span id="clientName" class="m-0 text-dark"></span>
-									</li>
-
 								</c:if>
 								<c:if test="${pageHeader == 'DC Dashboard'}">
+									<security:authorize access="hasAuthority('DELIVERY_CHALLAN_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/deliveryChallan" class="nav-link"><i
 												class="fa fa-plus-square addDc headerIconFont"></i></a>
 									</li>
+									</security:authorize>
 
 								</c:if>
 								<c:if test="${pageHeader == 'Invoice'}">
@@ -787,9 +785,18 @@
 
 						</nav>
 						<!-- /.navbar -->
+						<script>
+						$(function () {
+							$("#sidebarToggleBtn").on("collapsed.lte.pushmenu", function () {
+								$(this).attr({ "aria-expanded": "false", "title": "Expand sidebar", "aria-label": "Expand sidebar" });
+							}).on("shown.lte.pushmenu", function () {
+								$(this).attr({ "aria-expanded": "true", "title": "Collapse sidebar", "aria-label": "Collapse sidebar" });
+							});
+						});
+						</script>
 						<div class="faderv2">
 							<div class="loaderv2">
-								<img src="${RESOURCES}dist/img/loading-1.gif" class="loaderWidth">
+								<div class="spinner"></div>
 							</div>
 						</div>
 					</body>

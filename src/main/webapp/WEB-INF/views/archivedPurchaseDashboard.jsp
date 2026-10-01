@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PURCHASE_EDIT')" var="canEditPurchase" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -18,6 +20,7 @@ var dataObj=${poList};
 var role = ${role};
 var itemList=${itemList};
 var pageContext = '${pageContext.request.contextPath}';
+var canEditPurchase = ${canEditPurchase};
 </script> 
 <script src="<c:url value="/resources/js/po-dashboard.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
@@ -35,7 +38,7 @@ var pageContext = '${pageContext.request.contextPath}';
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -111,7 +114,7 @@ var pageContext = '${pageContext.request.contextPath}';
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="width: 950px;">
             <div class="modal-header custom-box-header-modal">
-                <h5 style="height: 18px;"><span>Terms &amp; Conditions : </span><span id="poNumberOnBillingPopup"></span> </h5><span style="padding-left: 30%;font-weight: bold;font-size: 17px;" id="gstRegion"></span><button type="button" class="close buttonDismiss" data-dismiss="modal">×</button>
+                <h5 style="height: 18px;"><span>Terms &amp; Conditions : </span><span id="poNumberOnBillingPopup"></span> </h5><span style="padding-left: 30%;font-weight: bold;font-size: 17px;" id="gstRegion"></span><button type="button" class="close buttonDismiss" data-dismiss="modal">ï¿½</button>
             </div>
             <div class="modal-body">
               <div class="row">

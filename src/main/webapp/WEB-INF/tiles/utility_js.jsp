@@ -14,8 +14,6 @@
  */
 	/************** Show loader **********/
 	function showLoader() {
-		var height = $("body").height();
-		$(".faderv2").height(height);
 		$(".faderv2").fadeIn("slow");
 		$(".loaderv2").fadeIn("slow");
 		/*$(".loaderv2-message").html("Processing...");*/

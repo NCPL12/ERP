@@ -18,6 +18,7 @@ var dcLists = [];
 var partyList = ${partyList};
 var role = ${role};
 var pageContext = '${pageContext.request.contextPath}';
+var isArchivedPage = false;
 </script>
 </head>
 <body>

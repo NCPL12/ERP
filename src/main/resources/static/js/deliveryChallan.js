@@ -325,7 +325,7 @@ function getClientNameBySoId(soId){
 		url : api.GET_SALESORDER_BYID  +"?salesOrderId="+soId,
 		success : function(response) {
 		$("#clientId").val(response.party.id);
-		$("#clientName").text(response.party.partyName);
+		$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
 		},
 		complete:function(resp){
 			if(resp.status==500){
@@ -961,7 +961,7 @@ function getDcObjectByDcId(dcId){
 			$('#clientPoDropdown').val(dcObj.soNumber);
 			$('#clientPoDropdown').attr("disabled",true);
 			$('#clientPoDropdown').select2(dcObj, {id: dcObj.soNumber, a_key:dcObj.soNumber});
-			$("#clientName").text(dcObj.clientName);
+			$("#clientName").text(dcObj.clientName).attr("title", dcObj.clientName);
 			$('#clientPoDropdown,#clientName').attr("disabled",true);
             $("#descriptionDropdown" + key).replaceWith('<input type="text" class="form-control PositionofTextbox description" id="description' + key + '" name="items['+key+'].description">');
             $("#description" + key).val(value.description);

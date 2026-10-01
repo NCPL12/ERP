@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script type="text/javascript" src="resources/js/pageHeader.js"></script>
+<script type="text/javascript" src="${pageContext.request.contextPath}/resources/js/pageHeader.js"></script>
 </head>
 <body>
 <!-- Content Header (Page header) -->

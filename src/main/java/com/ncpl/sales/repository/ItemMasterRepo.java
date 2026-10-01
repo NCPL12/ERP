@@ -73,4 +73,8 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 		@Query(value = "SELECT id, model FROM tbl_item_master ORDER BY model", nativeQuery = true)
 		List<Object[]> findGrnItemList();
 
+		//  @D0050: id + name only, used by findItemDetails() (one query instead of loading all items)
+		@Query(value = "SELECT id, item_name FROM tbl_item_master ORDER BY model", nativeQuery = true)
+		List<Object[]> findItemIdAndName();
+
 }

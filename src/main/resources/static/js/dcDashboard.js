@@ -76,7 +76,8 @@ $(document).ready(function(){
 	    			}
 	    		});
 	    	},
-	    	"columns": [ {
+	    	"columns": (function(){
+	    	var cols = [ {
 				"data" : "dcId",
 				"defaultContent":"",
 			}, {
@@ -161,35 +162,41 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					url ="/ncpl-sales/returnable/"+row.dcId;
-					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";				
+					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";
 				}
 			}
-			,
-			{
-				"mData" : "archive"	,
-				render : function(datam, type, row) {
-					var archive;
-					if(role=="SUPER ADMIN"){
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
+			];
+			if (archivedPage) {
+				cols.push({
+					"mData" : "archive"	,
+					render : function(datam, type, row) {
+						var archive;
+						if(role=="SUPER ADMIN"){
+							if(row.archive==true){
+								return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
+							}else{
+								return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
+							}
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
+							if(row.archive==true){
+								return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";
+							}else{
+								return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";
+							}
 						}
-					}else{
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
-						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
-						}
+
 					}
-					
-				}
+				});
 			}
-			]
+			return cols;
+			})(),
 	    });
 	    
 	    //on double click of list navigate to view page
 	    $('#dcList tbody').on('dblclick', 'tr', function () {
+	 	   if (!canEditDeliveryChallan) {
+	 		   return;
+	 	   }
 	 	   var data = dcTable.row(this).data();
 	 	   var dcId = data.dcId;
 	 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;

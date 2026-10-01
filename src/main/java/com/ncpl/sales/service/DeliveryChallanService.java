@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ncpl.common.Constants;
 import com.ncpl.sales.generator.FileNameGenerator;
@@ -97,6 +98,21 @@ public class DeliveryChallanService {
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
 	String filePath = Constants.FILE_LOCATION + File.separator + fileName;
 	
+	// DC items checked as "Company Asset" while creating the DC, not yet
+	// turned into a CompanyAssets record from the Company Assets page.
+	public List<DeliveryChallanItems> getCompanyAssetCandidates() {
+		List<DeliveryChallanItems> candidates = dcItemRepo.findCompanyAssetCandidates();
+		for (DeliveryChallanItems item : candidates) {
+			String soModelNo = item.getSoModelNo();
+			Optional<ItemMaster> itemObj = (soModelNo == null || soModelNo.trim().isEmpty())
+					? Optional.empty() : itemService.getItemById(soModelNo);
+			item.set("modelName", itemObj.isPresent() ? itemObj.get().getModel() : soModelNo);
+			item.set("itemDescription", itemObj.isPresent() ? itemObj.get().getItemName() : null);
+			item.set("dcId", item.getDeliveryChallan() != null ? item.getDeliveryChallan().getDcId() : null);
+		}
+		return candidates;
+	}
+
 	//code to dave delivery challan
 	@SuppressWarnings("unchecked")
 	public DeliveryChallan saveDc(DeliveryChallan deliveryChallan, String[] designArray, String soNumber) throws Exception {
@@ -372,6 +388,22 @@ public class DeliveryChallanService {
 	public List<DeliveryChallanItems> getDcItemListBySoItemId(String soItemId){
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySalesItemId(soItemId);
 		return dcItemList;
+	}
+	
+	// Bulk variant of getDcItemListBySoItemId(): one query for all the given sales
+	// item ids and grouped by sales item id, instead of one query per item (N+1).
+	public Map<String, List<DeliveryChallanItems>> getDcItemListBySalesItemIds(List<String> soItemIds) {
+		Map<String, List<DeliveryChallanItems>> dcItemsBySalesItemId = new HashMap<String, List<DeliveryChallanItems>>();
+		if (soItemIds == null || soItemIds.isEmpty()) {
+			return dcItemsBySalesItemId;
+		}
+		for (String soItemId : soItemIds) {
+			dcItemsBySalesItemId.put(soItemId, new ArrayList<DeliveryChallanItems>());
+		}
+		for (DeliveryChallanItems dcItem : dcItemRepo.findBySalesItemIdIn(soItemIds)) {
+			dcItemsBySalesItemId.computeIfAbsent(dcItem.getDescription(), k -> new ArrayList<DeliveryChallanItems>()).add(dcItem);
+		}
+		return dcItemsBySalesItemId;
 	}
 	
 	public List<DeliveryChallanItems> getDcItemListBySoItemIdWhereDcQtyNotZero(String soItemId){
@@ -714,6 +746,7 @@ public class DeliveryChallanService {
 		
 	}
 	
+	@Transactional
 	public List<DeliveryChallanItems> getPartialDcItems(){
 		List<DeliveryChallan> dcList=getAllDcList();
 		ArrayList<DeliveryChallanItems> dcItemLists=new ArrayList<DeliveryChallanItems>();
@@ -722,7 +755,7 @@ public class DeliveryChallanService {
 			for (DeliveryChallanItems deliveryChallanItems : dcItemList) {
 				System.out.println("not found"+deliveryChallanItems.getDescription());
 				Optional<SalesItem> salesItem=salesService.getSalesItemObjById(deliveryChallanItems.getDescription());
-				if(salesItem!=null) {
+				if(salesItem.isPresent()) {
 				System.out.println(salesItem.get().getId());
 					List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
 					for (DesignItems designItem : designItemsList) {

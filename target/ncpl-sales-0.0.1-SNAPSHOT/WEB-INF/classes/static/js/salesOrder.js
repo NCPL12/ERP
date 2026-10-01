@@ -144,12 +144,11 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 //validation to enter only number or float value for qty. 
 
-function getPartyList(){
+	function getPartyList(){
 	$.ajax({
 	    Type:'GET',
 	    url : api.PARTY_LIST,
 	    dataType:'json',
-	    async: 'false',
 	    success  : function(response){
 			
 			$("#partyDropDown option:not(:first)").remove();
@@ -335,7 +334,6 @@ function getPartyList(){
 		    Type:'GET',
 		    url : api.GET_SALES_ITEMS_LIST_BY_SALES_ORDER_ID+"?id="+soId+"&&className="+className,
 		    dataType:'json',
-		    async: 'false',
 		    success  : function(response){
 		    	//$(".add").hide();
 		    	$("#resetSalesOrder").hide();
@@ -506,7 +504,7 @@ function getPartyList(){
 	}
 	
 	function disableDesignAddBtn(key){
-		$(document).on("click","#design"+key,function(){
+		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",true);
 			$("#designTable >tbody").find("tr").find("input,select,button").attr("disabled",true);
 			$(".addrow").hide();
@@ -514,7 +512,7 @@ function getPartyList(){
 	}
 	
 	function enableDesignAddBtn(key){
-		$(document).on("click","#design"+key,function(){
+		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",false);
 			$("#designTable >tbody").find("tr").find("input,select,button").attr("disabled",false);
 			$(".addrow").show();
@@ -558,24 +556,25 @@ function getPartyList(){
 		isDirty = false;
 		getDesignItemList(salesItemId);
 	})
-	$(document).on("change","#itemModel0",function(){
+	$(document).on("change","[id^='itemModel']",function(){
+        	let arraycount = this.id.replace("itemModel","");
         	var itemId=$(this).val();
 	          $.ajax({
-  				type : "GET",  
-  				url : api.ITEM_LIST_BYID +"?id="+itemId,
-  				success : function(response) {
-  					$("#unitMod0").val(response.item_units.name)
-  					
-  				},  
-  				complete:function(resp){
-  					if(resp.status==500){
-  						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-  					}
-  				},
-  				error : function(e) {
-  					console.log(e);
-  				}  
-  			}); 
+				type : "GET",  
+				url : api.ITEM_LIST_BYID +"?id="+itemId,
+				success : function(response) {
+					$("#unitMod"+arraycount).val(response.item_units.name)
+					
+				},  
+				complete:function(resp){
+					if(resp.status==500){
+						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+					}
+				},
+				error : function(e) {
+					console.log(e);
+				}  
+			}); 
   	});
 	//on click of addrow button in design modal
 	$(document).on("click",".addrow",function(){
@@ -601,25 +600,7 @@ function getPartyList(){
         $.each(itemList,function(index,value){
 			$("#itemModel"+ arraycount).append('<option value='+value.id+'>'+value.model+'</option>');
 		});
-        $(document).on("change","#itemModel"+ arraycount,function(){
-        	var itemId=$(this).val();
-	          $.ajax({
-  				type : "GET",  
-  				url : api.ITEM_LIST_BYID +"?id="+itemId,
-  				success : function(response) {
-  					$("#unitMod"+arraycount).val(response.item_units.name)
-  					
-  				},  
-  				complete:function(resp){
-  					if(resp.status==500){
-  						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-  					}
-  				},
-  				error : function(e) {
-  					console.log(e);
-  				}  
-  			}); 
-  	});
+        //change handler is bound once via delegated "[id^='itemModel']" selector above
         	
 	
 	}
@@ -889,7 +870,7 @@ function designTable2Json(){
 		}else{
 		   	 $(this).closest("tr").remove();
 		   	adjustIndex();
-		   	toggleExpandAllHeader();
+		   	recalculateTotals();
 		}
 	});
 	}
@@ -974,8 +955,7 @@ function designTable2Json(){
 								deleteSalesItemById(salesItemId);
 								$(salesItemIdTd).closest("tr").remove();
 								adjustIndex();
-								// Check if expand all header should be shown/hidden after row deletion
-								toggleExpandAllHeader();
+								recalculateTotals();
 							}
 						}
 					});		
@@ -1074,36 +1054,34 @@ function designTable2Json(){
 	});
 	
 	function getFirstRowsalesOrder(){
-	$(document).on("click",'#salesTable>tbody>tr>td',function(){
-		let index=$(this).closest('tr').index();
-    		$(document).on("change", "#itemDropDown"+index , function() {
-    			
-    			var itemId = $(this).val();
-    			var item =null;
+	$(document).on("change", "[id^='itemDropDown']" , function() {
 
-    			$.ajax({
-    				type : "GET",  
-    				url : api.ITEM_LIST_BYID +"?id="+itemId,
-    				success : function(response) {
-    					$("input[name='items[" +index+ "].hsnCode']").val(response.hsnCode);
-    					$("input[name='items[" +index+ "].modelNo']").val(response.model);
-    					$("input[name='items[" +index+ "].description']").val(response.itemName);
-    					$("input[name='items[" +index+ "].unitPrice']").val(response.sellPrice);
-    					
-    				},  
-    				complete:function(resp){
-    					if(resp.status==500){
-    						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-    					}
-    				},
-    				error : function(e) {
-    					console.log(e);
-    				}  
-    			}); 
-    			
-    		});
-    		});	
-		
+		let index = this.id.replace("itemDropDown","");
+		var itemId = $(this).val();
+		var item =null;
+
+		$.ajax({
+			type : "GET",
+			url : api.ITEM_LIST_BYID +"?id="+itemId,
+			success : function(response) {
+				$("input[name='items[" +index+ "].hsnCode']").val(response.hsnCode);
+				$("input[name='items[" +index+ "].modelNo']").val(response.model);
+				$("input[name='items[" +index+ "].description']").val(response.itemName);
+				$("input[name='items[" +index+ "].unitPrice']").val(response.sellPrice);
+
+			},
+			complete:function(resp){
+				if(resp.status==500){
+					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
+				}
+			},
+			error : function(e) {
+				console.log(e);
+			}
+		});
+
+    	});
+
 	}
 	
 	var checkDuplicate=false;
@@ -1164,15 +1142,11 @@ function designTable2Json(){
 		}
 	})
 	
-	//ajax call to get all the party list and populate clients dropdown
+	//use already-loaded customerPartyList to populate clients dropdown (no AJAX needed)
 	function getAllPartyList(){
-	$.ajax({
-	    Type:'GET',
-	    url : api.PARTY_LIST,
-	    dataType:'json',
-	    async: 'false',
-	    success  : function(response){
-	    	$.each(response, function( key, value ) {
+	    	$('#clientsDropdown').empty();
+	    	$('#billingClientsDropdown').empty();
+	    	$.each(customerPartyList, function( key, value ) {
 	    		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
 	    		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
 	    		});
@@ -1214,17 +1188,6 @@ function designTable2Json(){
 			}else{ 
 				$("#clientsDropdown").val('').trigger('change');
 			}
-	    	
-	    },  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-		},
-			error : function(e) {
-				console.log(e);
-			}
-	  });
 	}
 	
 	var billingAddressObj;
@@ -1435,7 +1398,6 @@ function designTable2Json(){
 		    Type:'GET',
 		    url : api.USER_LIST,
 		    dataType:'json',
-		    async: 'false',
 		    success  : function(response){
 				
 				$("#respPersonDropdown option:not(:first)").remove();
@@ -1608,7 +1570,7 @@ function designTable2Json(){
 		isDirty = false;
 		$('#salesOrderForm1').submit();
 		$(this).attr('disabled', 'disabled');
-		$('input:not(:button,:submit),textarea,select').change(function () {
+		$('input:not(:button,:submit),textarea,select').off('change.reEnableSaveSo').on('change.reEnableSaveSo', function () {
 			$("#saveSoBtn").attr('disabled', false);
 		});
 	})
@@ -1638,7 +1600,7 @@ function designTable2Json(){
 			$.error("Plaese enter client PO Number ");
 			$("#clientPoNumber").addClass('border-color');
 		}
-		$('input').change(function(){
+		$('input').off('change.clrPoNum').on('change.clrPoNum', function(){
 				$("#clientPoNumber").removeClass('border-color');
 		})   
 		
@@ -1649,7 +1611,7 @@ function designTable2Json(){
 			$("#clientPoDate").addClass('border-color');
 			checkDuplicate=true;
 		}
-		$('input').change(function(){
+		$('input').off('change.clrPoDate').on('change.clrPoDate', function(){
 				$("#clientPoDate").removeClass('border-color');
 				checkDuplicate=false;
 		})   
@@ -1850,83 +1812,46 @@ function designTable2Json(){
 
 		 }
 	 
-	 $(document).on('keyup mouseup click input change','.qty,.unitPrice,.servicePrice,.deleteButton,#salesTable,#partyDropDown',function () {
-			 
-			var sum=0;
-	    var amountArr=[];
+	 function recalculateTotals(){
+		 var sum=0;
 	    $('.amount').each(function(index,value) {
-	    	/*amountArr.push(amountPrice);
-	    	var amount=amountPrice;*/
 	    	var c = $("#amount"+index).val();
 	    	c = c.replace(/,/g,"");
-	    	//amountArr.push(parseFloat($(this).val()));
-	    	
 	    	var amount=parseFloat(c);
 		    sum+=amount;
-		    var sumWithComma = commaSeparateNumber(sum);
-		    $(".total").attr("value", sumWithComma);
-		    $("#total").val(sumWithComma);
-		    var gst=0;
-		    var partyId=$("#partyDropDown option:selected").val();
-		    var gstValue = $("#taxDropDown").val();
-		    var gstRateValue = gstValue/100;
-		    if(partyId!="C1143"){
-		      gst=gstRateValue*sum;
-		    gst = Math.round(gst * 100) / 100
-		    var gstWithComma = commaSeparateNumber(gst);
-		    $(".gst").attr("value", gstWithComma);
-		    $("#gst").val(gstWithComma);
-		    }else{
-		    	gst=0;
-		    }
-		    var grandTotal=sum+gst;
-		    grandTotal = Math.round(grandTotal * 100) / 100
-		    grandTotal=commaSeparateNumber(grandTotal);
-		    $(".grandTotal").attr("value", grandTotal);
-		    $("#grandTotal").val(grandTotal);
-		    
 		    });
-	    // Check if expand all header should be shown/hidden based on data
+	    var sumWithComma = commaSeparateNumber(sum);
+	    $(".total").attr("value", sumWithComma);
+	    $("#total").val(sumWithComma);
+	    var gst=0;
+	    var partyId=$("#partyDropDown option:selected").val();
+	    var gstValue = $("#taxDropDown").val();
+	    var gstRateValue = gstValue/100;
+	    if(partyId!="C1143"){
+	      gst=gstRateValue*sum;
+	      gst = Math.round(gst * 100) / 100;
+	      var gstWithComma = commaSeparateNumber(gst);
+	      $(".gst").attr("value", gstWithComma);
+	      $("#gst").val(gstWithComma);
+	    }else{
+	    	gst=0;
+	    }
+	    var grandTotal=sum+gst;
+	    grandTotal = Math.round(grandTotal * 100) / 100;
+	    grandTotal=commaSeparateNumber(grandTotal);
+	    $(".grandTotal").attr("value", grandTotal);
+	    $("#grandTotal").val(grandTotal);
 	    toggleExpandAllHeader();
+	 }
+
+	 $(document).on('change blur','.qty,.unitPrice,.servicePrice,#partyDropDown',function () {
+		 recalculateTotals();
 	  });
 	 
 	 $(document).on('change', '#taxDropDown',function () {
 		 var gstValue = $("#taxDropDown").val();
 		 $("#gstrate").html("GST @ "+gstValue+"%");
-		// $(".unitPrice").val("").trigger('change');
-		 var sum=0;
-		  $('.amount').each(function(index,value) {
-		    	/*amountArr.push(amountPrice);
-		    	var amount=amountPrice;*/
-		    	var c = $("#amount"+index).val();
-		    	c = c.replace(/,/g,"");
-		    	//amountArr.push(parseFloat($(this).val()));
-		    	
-		    	var amount=parseFloat(c);
-			    sum+=amount;
-			    var sumWithComma = commaSeparateNumber(sum);
-			    $(".total").attr("value", sumWithComma);
-			    $("#total").val(sumWithComma);
-			    var gst=0;
-			    var partyId=$("#partyDropDown option:selected").val();
-			    var gstValue = $("#taxDropDown").val();
-			    var gstRateValue = gstValue/100;
-			    if(partyId!="C1143"){
-			      gst=gstRateValue*sum;
-			    gst = Math.round(gst * 100) / 100
-			    var gstWithComma = commaSeparateNumber(gst);
-			    $(".gst").attr("value", gstWithComma);
-			    $("#gst").val(gstWithComma);
-			    }else{
-			    	gst=0;
-			    }
-			    var grandTotal=sum+gst;
-			    grandTotal = Math.round(grandTotal * 100) / 100
-			    grandTotal=commaSeparateNumber(grandTotal);
-			    $(".grandTotal").attr("value", grandTotal);
-			    $("#grandTotal").val(grandTotal);
-			    
-			    });
+		 recalculateTotals();
 		 });
 		 // ==================== MASTER CHECKBOX FUNCTIONALITY ====================
 		 // Master checkbox to toggle all description expansions

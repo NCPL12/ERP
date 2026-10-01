@@ -46,7 +46,6 @@
 
 <script src="${pageContext.request.contextPath}/resources/dist/js/adminlte.js"></script>
 <script src="${pageContext.request.contextPath}/resources/dist/js/demo.js"></script>
-<script src="${pageContext.request.contextPath}/resources/dist/js/pages/dashboard3.js"></script>
 
 <%@ include file="urls_js.jsp"%>
 <%@ include file="utility_js.jsp"%>

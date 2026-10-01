@@ -13,8 +13,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <script type="text/javascript" src="resources/js/returnableItemList.js"></script>
 <script>
-
-var data=${retunableItemsList};
+// @D0014 lazy-loaded, paginated Returnables list (see README.md)
 var pageContext = '${pageContext.request.contextPath}';
 </script>
 <style>

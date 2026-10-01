@@ -125,7 +125,7 @@ $(document).ready(function () {
     	{
 			"class":"styleOfSlNo",
 			render : function () {
-				return '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>';
+				return canDeleteParty ? '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>' : '';
 			}
 		}
     	

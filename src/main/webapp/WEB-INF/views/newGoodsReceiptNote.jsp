@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('GRN_DELETE')" var="canDeleteGrn" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -16,6 +18,13 @@
 <tiles:insertAttribute name="header-resources" />
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
+
+<c:if test="${!canDeleteGrn}">
+<style type="text/css">
+.deleteButton{ display: none !important; }
+</style>
+</c:if>
+
 <script type="text/javascript">
 var poList=${poList};
 var itemList=${itemList};
@@ -53,7 +62,7 @@ $(function(){
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 			
 		 <tiles:insertAttribute name="header" />

@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PURCHASE_EDIT')" var="canEditPurchase" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -19,6 +21,7 @@ var itemList=${itemList};
 var role = ${role};
 var user=${user};
 var pageContext = '${pageContext.request.contextPath}';
+var canEditPurchase = ${canEditPurchase};
 var errorMessage = '${errorMessage}';
 if (errorMessage && errorMessage != '') {
 	alert("Error: " + errorMessage);
@@ -40,7 +43,7 @@ if (errorMessage && errorMessage != '') {
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -95,7 +98,6 @@ if (errorMessage && errorMessage != '') {
 							<th width="10%"><spring:message code="date"/></th>  
 							<th width="2%" style ="visibility: hidden"><spring:message code="po.version"/></th>
 							<th width="12%"><spring:message code="po"/></th>
-							<th width="5%"><spring:message code="archive"/></th>
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">

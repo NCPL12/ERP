@@ -519,60 +519,30 @@ public class StockService {
 		List<Object> outstandingReportList = new ArrayList();
 		List<Stock> stockList = stockRepo.findStockListByClientId(id);
 		for (Stock stock : stockList) {
-			AuditReader auditReader = AuditReaderFactory.get(em);
-			AuditQuery q = auditReader.createQuery().forRevisionsOfEntity(Stock.class, true, true);
-			q.add(AuditEntity.id().eq(stock.getStockId()))
-			.addOrder(AuditEntity.property("updated").desc());
-			
-			
-			List<Stock>  revisionNumbers = q.getResultList();
-			if(revisionNumbers.size()>0 && revisionNumbers.get(0).getQuantity()>0) {
-				Optional<ItemMaster> item = itemMasterService.getItemById(revisionNumbers.get(0).getItemMaster().getId());
-				
-				System.out.println(item.get());
-				//stock.setItemMaster(item.get());
-//				System.out.println(revisionNumbers.get(0).getStockId());
-//				System.out.println(revisionNumbers.get(0).getStockId()+"Item Obj"+revisionNumbers.get(0).getItemMaster());
-				//List<SalesOrder> soList = salesService.getSalesListByPartyId(id);
-				JSONObject object = new JSONObject();
-				/*if(soList.size()==1) {
-					object.put("clientPo", soList.get(0).getClientPoNumber());
-					
-				}else {
-					for (SalesOrder salesOrder : soList) {
-						List<SalesItem> soItems = salesOrder.getItems();
-						for (SalesItem salesItem : soItems) {
-							List<PurchaseItem> purchaseItemsList = purchaseItemService.getPurchaseItemsBySalesItemId(salesItem.getId());
-                            if(purchaseItemsList.size()>0) {
-                            	if(purchaseItemsList.get(0).getModelNo().equalsIgnoreCase(revisionNumbers.get(0).getItemMaster().getId())) {
-                            		object.put("clientPo", salesOrder.getClientPoNumber());
-                            	}
-                            }else {
-                            	
-                            }
-						}
-						
-						
-						}
-					}*/
-					List<PurchaseItem> poItemList=purchaseItemService.findByModelNumberWithRecentPoItem(item.get().getId());
-					if(poItemList.size()>0) {
-							object.put("price",poItemList.get(0).getUnitPrice());
-					}else {
-						object.put("price","");
-					}
-				
-			//String units = itemObj.get().getItem_units().getName();
-			object.put("model",item.get().getModel());
+			// Use the current stock quantity (already reduced by each DC) so that
+			// once a DC empties the stock it no longer appears as outstanding.
+			if (stock.getQuantity() <= 0) {
+				continue;
+			}
+			Optional<ItemMaster> item = itemMasterService.getItemById(stock.getItemMaster().getId());
+			if (!item.isPresent()) {
+				continue;
+			}
+			JSONObject object = new JSONObject();
+			List<PurchaseItem> poItemList = purchaseItemService.findByModelNumberWithRecentPoItem(item.get().getId());
+			if (poItemList.size() > 0) {
+				object.put("price", poItemList.get(0).getUnitPrice());
+			} else {
+				object.put("price", "");
+			}
+			object.put("model", item.get().getModel());
 			object.put("itemName", item.get().getItemName());
-			object.put("hsnCode",item.get().getHsnCode());
+			object.put("hsnCode", item.get().getHsnCode());
 			object.put("units", item.get().getItem_units().getName());
-			object.put("grnDate", revisionNumbers.get(0).getCreated());
-			object.put("grnQty", revisionNumbers.get(0).getQuantity());
+			object.put("grnDate", stock.getCreated());
+			object.put("grnQty", stock.getQuantity());
 			outstandingReportList.add(object);
 		}
-		}
-		
 		return outstandingReportList;
 	}
 	@SuppressWarnings({ "unused", "rawtypes", "unchecked" })

@@ -10,11 +10,6 @@
 </head>
 <body class="hold-transition sidebar-mini">
 <footer class="main-footer">
-    <strong><spring:message code="app.rights"/></strong>
-  
-    <div class="float-right d-none d-sm-inline-block">
-      <b><spring:message code="app.version"/></b>
-    </div>
   </footer>
 </body>
 </html>

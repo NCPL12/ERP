@@ -13,8 +13,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <script type="text/javascript" src="resources/js/returnableItemList.js"></script>
 <script>
-
-var data=${retunableItemsList};
+// @D0014 lazy-loaded, paginated Returnables list (see README.md)
 var pageContext = '${pageContext.request.contextPath}';
 </script>
 <style>
@@ -31,7 +30,7 @@ var pageContext = '${pageContext.request.contextPath}';
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />

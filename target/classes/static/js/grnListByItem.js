@@ -19,7 +19,7 @@ function loadGrnTable() {
 			"defaultContent":"",
 			render : function(data, type, row) {
 				  var grnId = row.grnId;
-			 	   url = pageContext+"/api/grn/view?grnId="+grnId;
+			 	   url = pageContext+"/grn/"+grnId;
 			 	  return "<a href='"+url+"'>"+grnId+"</a>";
 			}
 		}, {

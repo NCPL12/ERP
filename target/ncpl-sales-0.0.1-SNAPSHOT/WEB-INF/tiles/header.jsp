@@ -54,6 +54,12 @@
 							.pushmenuLink {
 								padding: 0.5rem 1rem;
 								color: #495057;
+								display: inline-block;
+								transition: transform 0.3s ease;
+							}
+
+							body.sidebar-collapse .pushmenuLink {
+								transform: rotate(90deg);
 							}
 
 							.pushmenuLink:hover,
@@ -202,6 +208,7 @@
 								background-color: rgba(255, 255, 255, 0.1) !important;
 							}
 
+
 							/* Prevent sidebar from expanding on hover - keep narrow (no "moving") */
 							.sidebar-mini.sidebar-collapse .main-sidebar:hover,
 							.sidebar-mini.sidebar-collapse .main-sidebar.sidebar-focused,
@@ -300,6 +307,49 @@
 									$(this).attr('title', 'Invoice List');
 								});
 							})
+
+						</script>
+						<script type="text/javascript">
+							// Uniform slide-down/up animation for every sidebar treeview menu
+							// (replaces the default AdminLTE handler so the behavior is identical for all menus)
+							function initSidebarMenuAnimation() {
+								$(document).off('click', '[data-widget="treeview"] .nav-link');
+
+								// Animate the menu of the current page opening on page load
+								$('.nav-sidebar > .nav-item.menu-open > .nav-treeview').each(function () {
+									var $menu = $(this);
+									$menu.stop(true, true).hide().slideDown(350, function () {
+										$(this).css('height', '');
+									});
+								});
+
+								$(document).on('click', '[data-widget="treeview"] .nav-link', function (event) {
+									var $li = $(this).parent('li.nav-item.has-treeview');
+									var $menu = $li.children('.nav-treeview');
+
+									if (!$li.length || !$menu.length) {
+										return;
+									}
+
+									event.preventDefault();
+
+									if ($li.hasClass('menu-open')) {
+										$menu.stop(true, true).slideUp(350, function () {
+											$li.removeClass('menu-open');
+										});
+									} else {
+										$menu.stop(true, true).slideDown(350, function () {
+											$li.addClass('menu-open');
+										});
+									}
+								});
+							}
+
+							if (document.readyState === 'complete') {
+								initSidebarMenuAnimation();
+							} else {
+								$(window).on('load', initSidebarMenuAnimation);
+							}
 
 						</script>
 
