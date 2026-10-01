@@ -67,6 +67,7 @@ import com.ncpl.sales.model.Category;
 import com.ncpl.sales.model.City;
 import com.ncpl.sales.model.Country;
 import com.ncpl.sales.model.DashboardCountDto;
+import com.ncpl.sales.model.DashboardListsDto;
 import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
 import com.ncpl.sales.model.DesignItems;
@@ -97,9 +98,12 @@ import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.model.Type;
 import com.ncpl.sales.model.Units;
+import com.ncpl.sales.model.DashboardTile;
+import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.WorkOrder;
 import com.ncpl.sales.model.WorkOrderItems;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
+import com.ncpl.sales.repository.RoleRepo;
 import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.MonthlyReportStockRepo;
 import com.ncpl.sales.repository.PartyContactRepo;
@@ -304,6 +308,8 @@ public class SalesController {
 	PurchaseItemService purchaseItemService;
 	@Autowired
 	UserService userService;
+	@Autowired
+	RoleRepo roleRepo;
 	@Autowired
 	SalesOrderDesignService designService;
 	@Autowired
@@ -1427,6 +1433,22 @@ public class SalesController {
 		model.addAttribute("projectPreviewCount", counts.getProjectPreviewCount());
 		model.addAttribute("tdsApprovedPendingCount", counts.getTdsApprovedPendingCount());
 		model.addAttribute("pageHeader", "Dashboard");
+
+		Role role = roleRepo.findByName(userService.getCurrentUser().getRole());
+		model.addAttribute("tileVisible", DashboardTile.visible(role == null ? null : role.getDashboardTiles()));
+
+		// Dashboard list cards rendered straight from the same cached snapshot the counts
+		// use, so the page ships with data already on it - no per-card AJAX round-trip.
+		DashboardListsDto lists = dashboardService.getDashboardLists();
+		ObjectMapper mapper = new ObjectMapper();
+		model.addAttribute("pendingSalesListDashboard", mapper.writeValueAsString(lists.getPendingSalesList()));
+		model.addAttribute("pendingPurchaseListDashboard", mapper.writeValueAsString(lists.getPendingPurchaseList()));
+		model.addAttribute("invoiceListDashboard", mapper.writeValueAsString(lists.getInvoiceList()));
+		model.addAttribute("allSalesListDashboard", mapper.writeValueAsString(lists.getAllSalesList()));
+		model.addAttribute("tdsApprovedListDashboard", mapper.writeValueAsString(lists.getTdsApprovedList()));
+		model.addAttribute("salesItemsWithoutDesignListDashboard", mapper.writeValueAsString(lists.getSalesItemsWithoutDesignList()));
+		model.addAttribute("salesOrderWithDesignListDashboard", mapper.writeValueAsString(lists.getSalesOrderWithDesignList()));
+
 		return "dashboard";
 	}
 

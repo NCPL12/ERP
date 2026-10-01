@@ -128,8 +128,11 @@ $(document).ready( function () {
     	]
     });
 
-	//redirect to the party page on double click of row.
+	//redirect to the party edit page on double click of row — only when the role can edit.
     $('#partyList tbody').on('dblclick', 'tr', function () {
+    	if (!canEditParty) {
+    		return;
+    	}
     	var data1 = partyTable.row(this).data();
     	var partyId = data1.id;
     	window.location = pageContext+"/api/party/view?partyId="+partyId;

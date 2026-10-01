@@ -83,7 +83,7 @@
 				render : function(datam, type, row) {
 					var url = null;
 						url ="/ncpl-sales/purchaseOrder/details/"+row.poNumber;
-					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";				
+					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";
 				}
 			}
 			];
@@ -128,6 +128,9 @@
 		var  version;
 		//On double click of row navigate to edit page
 	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+		if (!canEditPurchase) {
+			return;
+		}
 		var data1 = table.row(this).data();
 		var poNumber = data1.poNumber;
 			purchaseOrderId = data1.poNumber;

@@ -14,6 +14,8 @@ $(document).ready(function(){
 	        var map = { 0: "grnId", 1: "poNumber", 4: "created", 6: "invoiceNo", 7: "invoiceDate" };
 	        return map[colIdx] || "created";
 	    }
+	    var grnColumnCount = isArchivedPage ? 11 : 10;
+	    var grnUnorderableTargets = isArchivedPage ? [2,3,5,7,8,9,10] : [2,3,5,7,8,9];
 	    grnDataTable= $('#grnList').DataTable({
 	    	processing: true,
 	    	serverSide: true,
@@ -21,9 +23,105 @@ $(document).ready(function(){
 		    fixedHeader: true,
 		    order:[[ 4, "desc" ]],
 		    'columnDefs': [ {
-	    	    'targets': [2,3,5,7,8,9,10],
+	    	    'targets': grnUnorderableTargets,
 	    	    'orderable': false,
 	    	 }],
+	    	columns: (function(){
+	    		var cols = [ {
+					"data" : "grnId",
+					"defaultContent":"",
+				}, {
+					"data" : "poNumber",
+					"defaultContent":"",
+
+				}, {
+					"data" : "created",
+					"defaultContent":"",
+					"class":"hideTd",
+					"type": "date"
+				}, {
+					"data" : "poDate",
+					"defaultContent":"",
+					"type": "date",
+					render: function (data) {
+						if (!data) {
+							return "";
+						}
+						return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+					}
+				}, {
+					"data" : "created",
+					"defaultContent":"",
+					"type": "date",
+					render: function (data) {
+						if (!data) {
+							return "";
+						}
+						return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+					}
+				}, {
+					"data" : "vendor",
+					"defaultContent":"",
+
+					"class": "text-field-large-nowrap",
+		    		render: function ( data, type, row ) {
+		    		    return data.length > 35 ?
+		    		    		data.substr( 0, 35 ) +'...' :
+		    		    			data;
+		    		}
+
+				},
+				{
+					"data" : "invoiceNo",
+					"defaultContent":"",
+
+				},
+
+				{
+					"data" : "total",
+					"defaultContent":"",
+					"type": "num"
+				},
+
+				{
+					"mData" : "grnId"	,
+					render : function(datam, type, row) {
+						var url = null;
+						//url ="/ncpl-sales/dc/details/"+row.dcId;
+						return "<button type='button' id='"+row.grnId+"' class='btn btn-default btn-flat btn-xs grnView'><i class='fa fa-eye'></i></button>";;
+					}
+				},
+				{
+					"mData" : "pdf"	,
+					render : function(datam, type, row) {
+						var url = null;
+						url ="/ncpl-sales/grn/download/"+row.grnId;
+						return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-fw fa-download'></i></button></a>";
+					}
+				} ];
+	    		if (isArchivedPage) {
+	    			cols.push({
+						"mData" : "archive"	,
+						render : function(datam, type, row) {
+							var archive;
+							if(role=="SUPER ADMIN"){
+								if(row.archive==true){
+									return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
+								}else{
+									return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
+								}
+							}else{
+								if(row.archive==true){
+									return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";
+								}else{
+									return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";
+								}
+							}
+						}
+	    			});
+	    		}
+	    		return cols;
+	    	})(),
 	    	ajax: function (data, callback, settings) {
 	    		var keyword = (data.search && data.search.value) ? data.search.value.trim() : "";
 	    		if (!keyword && data.columns) {
@@ -33,7 +131,7 @@ $(document).ready(function(){
 	    		    }
 	    		}
 	    		if (!keyword) {
-	    		    for (var i = 0; i < 11; i++) {
+	    		    for (var i = 0; i < grnColumnCount; i++) {
 	    		        var colSearch = ($('#grnList thead tr:eq(1) th:eq(' + i + ') input').val() || '').trim();
 	    		        if (colSearch) { keyword = colSearch; break; }
 	    		    }
@@ -50,7 +148,7 @@ $(document).ready(function(){
 	    		        sortDir: sortDir
 	    		};
 	    		// Send column-specific search so backend can filter by column (e.g. Grn No. only)
-	    		for (var c = 0; c < 11; c++) {
+	    		for (var c = 0; c < grnColumnCount; c++) {
 	    		    var colVal = (data.columns && data.columns[c] && data.columns[c].search && data.columns[c].search.value) ? data.columns[c].search.value.trim() : "";
 	    		    if (!colVal) colVal = ($('#grnList thead tr:eq(1) th:eq(' + c + ') input').val() || '').trim();
 	    		    if (colVal) ajaxData["columns[" + c + "][search][value]"] = colVal;
@@ -72,104 +170,15 @@ $(document).ready(function(){
 	    		    }
 	    		});
 	    	},
-	    	"columns": [ {
-				"data" : "grnId",
-				"defaultContent":"",
-			}, {
-				"data" : "poNumber",
-				"defaultContent":"",
-
-			}, {
-				"data" : "created",
-				"defaultContent":"",
-				"class":"hideTd",
-				"type": "date"
-			}, {
-				"data" : "poDate",
-				"defaultContent":"",
-				"type": "date",
-				render: function (data) {
-					if (!data) {
-						return "";
-					}
-					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
-				}
-			}, {
-				"data" : "created",
-				"defaultContent":"",
-				"type": "date",
-				render: function (data) {
-					if (!data) {
-						return "";
-					}
-					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
-				}
-			}, {
-				"data" : "vendor",
-				"defaultContent":"",
-				
-				"class": "text-field-large-nowrap",
-	    		render: function ( data, type, row ) {
-	    		    return data.length > 35 ?
-	    		    		data.substr( 0, 35 ) +'...' :
-	    		    			data;
-	    		}
-
-			},
-			{
-				"data" : "invoiceNo",
-				"defaultContent":"",
-				
-			},
-			
-			{
-				"data" : "total",
-				"defaultContent":"",
-				"type": "num"
-			},
-			
-			{
-				"mData" : "grnId"	,
-				render : function(datam, type, row) {
-					var url = null;
-					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' id='"+row.grnId+"' class='btn btn-default btn-flat btn-xs grnView'><i class='fa fa-eye'></i></button>";;				
-				}
-			},
-			{
-				"mData" : "pdf"	,
-				render : function(datam, type, row) {
-					var url = null;
-					url ="/ncpl-sales/grn/download/"+row.grnId;
-					return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-fw fa-download'></i></button></a>";				
-				}
-			},
-			{
-				"mData" : "archive"	,
-				render : function(datam, type, row) {
-					var archive;
-					if(role=="SUPER ADMIN"){
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
-						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
-						}
-					}else{
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
-						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
-						}
-					}
-				}
-			}
-			]
 	    });
 	    //on double click of list navigate to view page
 	    $('#grnList tbody').on('dblclick', 'tr', function () {
+	 	   if (!canEditGrn) {
+	 		   return;
+	 	   }
 	 	   var data = grnDataTable.row(this).data();
 	 	   var grnId = data.grnId;
-	 	   window.location = pageContext+"/api/grn/view?grnId="+grnId;
+	 	   window.location = pageContext+"/grn/"+grnId;
 	 	});
 })
 
@@ -261,6 +270,7 @@ $(document).on("click",".grnView",function(){
 	    async: 'false',
 	    success  : function(response){
 	    	 $("#grnViewModalTable tbody").empty();
+				$("#grnViewBtn").toggle(!!canEditGrn);
 				$("#grnViewModal").modal("show");
 				var arrayCount=0;
 				itemsList = response;
@@ -304,7 +314,10 @@ $(document).on("click",".grnView",function(){
 	    	});
 				
 				$("#grnViewBtn").on("click",function(){
-				 	   window.location = pageContext+"/api/grn/view?grnId="+grnId;
+					if (!canEditGrn) {
+						return;
+					}
+				 	   window.location = pageContext+"/grn/"+grnId;
 				})
 	    },
 		complete:function(resp){

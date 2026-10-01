@@ -4,6 +4,8 @@ pageEncoding="ISO-8859-1"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PARTY_DELETE')" var="canDeleteParty" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -26,6 +28,7 @@ var partyObj = "";
 if ('${partyObj}' != null && '${partyObj}' != "") {
 partyObj= $.parseJSON(obj);
 }
+var canDeleteParty = ${canDeleteParty};
 var categList=${categoryList}
 var partyList  = ${partyList}
 

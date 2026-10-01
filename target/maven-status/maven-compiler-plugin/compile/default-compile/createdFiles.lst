@@ -11,6 +11,7 @@ com\ncpl\sales\security\UserController.class
 com\ncpl\sales\util\JSONArrayPojoUtil$1.class
 com\ncpl\sales\model\PartyBank.class
 com\ncpl\sales\repository\UnitsRepo.class
+com\ncpl\sales\model\Module.class
 com\ncpl\sales\repository\PurchaseOrderAuditRepo.class
 com\ncpl\sales\model\CompanyAssets.class
 com\ncpl\sales\repository\AppConfigRepo.class
@@ -41,6 +42,8 @@ com\ncpl\sales\aspect\LoggingAspect.class
 com\ncpl\sales\service\PurchaseOrderCustomProperty.class
 com\ncpl\sales\repository\LotRepo.class
 com\ncpl\sales\service\SalesOrderWithNoDesignExcel.class
+com\ncpl\sales\repository\RoleRepo.class
+com\ncpl\sales\service\MonthlyStockMovementService$1.class
 com\ncpl\sales\model\SalesOrder.class
 com\ncpl\sales\generator\FileNameGenerator.class
 com\ncpl\sales\service\OptimizedMaterialTrackerService.class
@@ -53,6 +56,7 @@ com\ncpl\sales\service\PartyContactService.class
 com\ncpl\sales\service\SalesOrderDownloadExcel.class
 com\ncpl\sales\service\PartyAddressService.class
 com\ncpl\sales\service\PurchaseItemService.class
+com\ncpl\sales\controller\EmployeeController.class
 com\ncpl\sales\service\DcReportByDateExcel.class
 com\ncpl\sales\config\SwaggerConfig.class
 com\ncpl\sales\repository\EmployeeRepo.class
@@ -62,6 +66,7 @@ com\ncpl\sales\model\DeliveryChallan.class
 com\ncpl\sales\service\MonthlyStockReportExcel.class
 com\ncpl\sales\service\ItemUploadService.class
 com\ncpl\sales\repository\PartyBankRepo.class
+com\ncpl\sales\model\AssetType.class
 com\ncpl\sales\service\PartyService.class
 com\ncpl\sales\repository\PurchaseRepo.class
 com\ncpl\sales\service\PartyCategoryService.class
@@ -80,13 +85,16 @@ com\ncpl\sales\service\StockReportByDateExcel.class
 com\ncpl\sales\util\JSONObjectConverter.class
 com\ncpl\sales\service\PurchasePdf.class
 com\ncpl\sales\service\WorkOrderService.class
+com\ncpl\sales\repository\AssetTypeRepo.class
 com\ncpl\sales\repository\CityRepo.class
 com\ncpl\sales\service\SalesItemWithoutDesignExcel.class
+com\ncpl\sales\config\RolePermissionSeeder.class
 com\ncpl\sales\service\StockService.class
 com\ncpl\sales\model\Party.class
 com\ncpl\sales\repository\SalesRepo.class
 com\ncpl\sales\service\NonBillableService.class
 com\ncpl\sales\service\CountryService.class
+com\ncpl\sales\model\Role.class
 com\ncpl\sales\service\SalesOrderAuditService.class
 com\ncpl\sales\api\PurchaseRestController.class
 com\ncpl\sales\service\DailyLrNoPurchaseExcel.class
@@ -117,6 +125,7 @@ com\ncpl\sales\service\SalesOrderWithoutDesignExcel.class
 com\ncpl\sales\model\Returnable.class
 com\ncpl\sales\SalesApp.class
 com\ncpl\sales\service\invoiceExcel.class
+com\ncpl\sales\service\AssetTypeService.class
 com\ncpl\sales\service\CompanyAssetService.class
 com\ncpl\sales\security\UserRepo.class
 com\ncpl\sales\repository\FileRepo.class
@@ -139,6 +148,7 @@ com\ncpl\sales\model\FileEntity.class
 com\ncpl\sales\repository\PartyAddressRepo.class
 com\ncpl\sales\service\SalesService.class
 com\ncpl\sales\service\StockListByCustomerAllClientExcel.class
+com\ncpl\sales\controller\UserManagementController.class
 com\ncpl\common\Constants.class
 com\ncpl\sales\service\SalesItemWithNoPOExcel.class
 com\ncpl\sales\service\StockByCustomerForAllClients.class
@@ -164,13 +174,16 @@ com\ncpl\sales\repository\SupplierRepo.class
 com\ncpl\sales\model\Designation.class
 com\ncpl\sales\repository\SalesOrderDesignItemsRepo.class
 com\ncpl\sales\model\InvoiceItem.class
+com\ncpl\sales\controller\RoleController.class
 com\ncpl\sales\service\SalesOrderCreatedEmailSchedular.class
 com\ncpl\sales\repository\PartyRepo.class
 com\ncpl\sales\security\LoginSuccessHandler.class
 com\ncpl\sales\service\stockModifiedExcel.class
 com\ncpl\sales\service\DailyPurchaseExcel.class
+com\ncpl\sales\model\RolePermissionDto.class
 com\ncpl\sales\repository\PartyCategoryRepo.class
 com\ncpl\sales\service\WeeklyPurchaseExcel.class
+com\ncpl\sales\model\DashboardListsDto.class
 com\ncpl\sales\model\SalesOrderAudit.class
 com\ncpl\sales\model\ErrorResponse.class
 com\ncpl\sales\model\DeliveryChallanItems.class
@@ -197,6 +210,7 @@ com\ncpl\sales\service\DcPartialItemsEmailSchedular.class
 com\ncpl\sales\controller\itemMasterController.class
 com\ncpl\sales\repository\DeliveryChallanItemsRepo.class
 com\ncpl\sales\service\ActiveSalesItemExcel.class
+com\ncpl\sales\controller\AccessDeniedController.class
 com\ncpl\sales\service\ExcelLogoService.class
 com\ncpl\sales\service\OptimizedMaterialTrackerExcel.class
 com\ncpl\sales\service\PartyBankService.class
@@ -216,8 +230,10 @@ com\ncpl\sales\generator\WorkOrderIdGenerator.class
 com\ncpl\sales\repository\ItemsWithMinQtyRepo.class
 com\ncpl\sales\model\Lot.class
 com\ncpl\sales\repository\PurchaseCopyRepo.class
+com\ncpl\sales\repository\LaptopAssignmentRepo.class
 com\ncpl\sales\security\User.class
 com\ncpl\sales\api\SalesRestController.class
+com\ncpl\sales\security\UserStatusFilter.class
 com\ncpl\sales\model\Stock.class
 com\ncpl\sales\config\TilesConfig.class
 com\ncpl\sales\model\EmployeeMaster.class
@@ -226,6 +242,8 @@ com\ncpl\sales\model\WorkOrder.class
 com\ncpl\sales\repository\PhotoIdRepo.class
 com\ncpl\sales\generator\SupplierIdGenerator.class
 com\ncpl\sales\service\GrnExcel.class
+com\ncpl\sales\model\LaptopAssignment.class
+com\ncpl\sales\model\RolePermission.class
 com\ncpl\sales\service\DesignationService.class
 com\ncpl\sales\model\PhotoId.class
 com\ncpl\sales\service\ItemMasterService.class
@@ -234,11 +252,13 @@ com\ncpl\sales\repository\DeliveryChallanRepo.class
 com\ncpl\sales\service\EmailService.class
 com\ncpl\sales\service\ItemMasterUploadService.class
 com\ncpl\sales\controller\SalesController.class
+com\ncpl\sales\repository\RolePermissionRepo.class
 com\ncpl\sales\service\PurchaseSignatureLogo.class
 com\ncpl\sales\service\TdsApproved.class
 com\ncpl\sales\service\ItemListByDateExcel.class
 com\ncpl\sales\model\GrnItems.class
 com\ncpl\sales\repository\NonBillableRepo.class
+com\ncpl\sales\model\DashboardTile.class
 com\ncpl\sales\exception\GlobalExceptionHandler.class
 com\ncpl\sales\service\DcExcel.class
 com\ncpl\sales\service\DcLogoService.class

@@ -215,7 +215,15 @@
 		SAVE_TRBLE_ISSUE_HIGH_PRIORITY:  parentApi + "/save/trble-issue/high-priority",
 		SAVE_ROAMING_PACKAGES : parentApi + "/save/roaming-packages",
 		SUMMARY_REPORTS : parentApi + "/summary-reports",
-		
+		//User Management API
+		USER_MANAGEMENT_LIST : parentApi + "/users/all",
+		USER_MANAGEMENT_UPDATE : parentApi + "/users",
+		USER_MANAGEMENT_DELETE : parentApi + "/users",
+		USER_MANAGEMENT_CHANGE_PASSWORD : parentApi + "/users",
+		USER_CURRENT : parentApi + "/users/current",
+		//Role & Permission API
+		ROLE_API : parentApi + "/roles",
+
 		//inventory location
 		INV_LOCATION_SAVE : parentApi + "/invlocation/save/",
 		INV_LOCATION_LIST : parentApi + "/invlocation/list/",
@@ -377,6 +385,11 @@
 		SO_DESIGNITEM_LIST_BY_SOITEMID:parentApi+"/designItem_list/sales_item_id",
 		EMPLOYEE_LIST:parentApi+"/employee_list",
 		COMPANY_ASSET_CANDIDATES:parentApi+"/company_asset_candidates",
+		ASSET_TYPE_LIST:parentApi+"/asset_type/list",
+		ASSET_TYPE_ADD:parentApi+"/asset_type/add",
+		EMPLOYEE_MANAGEMENT_LIST:parentApi+"/employees/all",
+		EMPLOYEE_MANAGEMENT_SAVE:parentApi+"/employees",
+		DELETE_COMPANY_ASSET:contextRoot+"companyAssets/",
 
 		
 

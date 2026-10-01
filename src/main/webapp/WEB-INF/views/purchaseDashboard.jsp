@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PURCHASE_EDIT')" var="canEditPurchase" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -19,6 +21,7 @@ var itemList=${itemList};
 var role = ${role};
 var user=${user};
 var pageContext = '${pageContext.request.contextPath}';
+var canEditPurchase = ${canEditPurchase};
 var errorMessage = '${errorMessage}';
 if (errorMessage && errorMessage != '') {
 	alert("Error: " + errorMessage);

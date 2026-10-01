@@ -103,8 +103,11 @@ public class DeliveryChallanService {
 	public List<DeliveryChallanItems> getCompanyAssetCandidates() {
 		List<DeliveryChallanItems> candidates = dcItemRepo.findCompanyAssetCandidates();
 		for (DeliveryChallanItems item : candidates) {
-			Optional<ItemMaster> itemObj = itemService.getItemById(item.getSoModelNo());
-			item.set("modelName", itemObj.isPresent() ? itemObj.get().getModel() : item.getSoModelNo());
+			String soModelNo = item.getSoModelNo();
+			Optional<ItemMaster> itemObj = (soModelNo == null || soModelNo.trim().isEmpty())
+					? Optional.empty() : itemService.getItemById(soModelNo);
+			item.set("modelName", itemObj.isPresent() ? itemObj.get().getModel() : soModelNo);
+			item.set("itemDescription", itemObj.isPresent() ? itemObj.get().getItemName() : null);
 			item.set("dcId", item.getDeliveryChallan() != null ? item.getDeliveryChallan().getDcId() : null);
 		}
 		return candidates;

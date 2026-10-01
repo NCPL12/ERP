@@ -162,6 +162,16 @@ text-align: center;
 	margin-left:50px!important;
 }
 
+/* Delivery Challan client/PO value text (used inside the DC info card on the page itself —
+   see deliveryChallan.jsp's .dc-field-value). */
+.dc-header-value{
+	color: #212529;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+
 /* Top-level sidebar section headers (Projects, Masters, Sales, Purchase, Reporting, Charts, Archived Data)
    always show as blue pills, regardless of active page. Kept here (not header.jsp) since
    some views (e.g. editPurchaseOrder.jsp) build their own <head> and skip the header tile,
@@ -263,4 +273,13 @@ text-align: center;
    sidebar itself). */
 .wrapper {
 	overflow-x: hidden;
+}
+
+/* Sidebar stays scrollable but hides the scrollbar track/thumb. */
+.main-sidebar .sidebar {
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE/Edge */
+}
+.main-sidebar .sidebar::-webkit-scrollbar {
+	display: none; /* Chrome/Safari */
 }

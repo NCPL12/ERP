@@ -32,16 +32,19 @@
 	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script type="text/javascript">
-var itemList=${itemList};
-var customerPartyList=${customerPartyList};
-var supplierPartyList=${supplierPartyList};
-var allSupplierslist = ${allSupplierslist};
-var allStocksList = ${allStocksList};
+var itemList = [];
+// var customerPartyList=${customerPartyList};
+// var supplierPartyList=${supplierPartyList};
+var allSupplierslist = [];
+var allStocksList = [];
 var makeList=${makeList};
 var role = ${role};
 var user = ${user};
-// @D0014 per-user Item Master access override, toggled directly in the DB (see README.md)
-var itemMasterAccess = ${itemMasterAccess};
+window.itemMasterLazyConfig = {
+	enabled: true,
+	toolTrackerOnly: false,
+	api: { list: '${pageContext.request.contextPath}/api/itemMaster/page' }
+};
 </script>
 <style type="text/css">
 .custom-box-header {
@@ -87,7 +90,7 @@ var itemMasterAccess = ${itemMasterAccess};
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 		 <tiles:insertAttribute name="header" /> 
 		

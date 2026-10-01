@@ -4,7 +4,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
-<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,6 +13,13 @@
 <script src="<c:url value="/resources/js/reportDashboard.js" />"></script>
 <script type="text/javascript">
 var pageContext = '${pageContext.request.contextPath}';
+var pendingSalesListDashboard = ${pendingSalesListDashboard};
+var pendingPurchaseListDashboard = ${pendingPurchaseListDashboard};
+var invoiceListDashboard = ${invoiceListDashboard};
+var allSalesListDashboard = ${allSalesListDashboard};
+var tdsApprovedListDashboard = ${tdsApprovedListDashboard};
+var salesItemsWithoutDesignListDashboard = ${salesItemsWithoutDesignListDashboard};
+var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 </script>
 <style>
 .hideTd{
@@ -50,6 +56,53 @@ var pageContext = '${pageContext.request.contextPath}';
   align-items: center;
   justify-content: center;
 }
+
+/* Stat tiles: fill available width, reflow cleanly whatever the role hides */
+.dash-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.dash-tiles-grid .small-box {
+  margin-bottom: 0;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* List cards: one balanced flow instead of two hand-split columns, so a
+   role missing several cards from one side doesn't leave a tall empty gap */
+.dash-lists-grid {
+  columns: 420px 2;
+  column-gap: 10px;
+  margin-top: 10px;
+}
+.dash-lists-grid .card {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+.dash-lists-grid .card-body {
+  overflow-x: auto;
+}
+.dash-lists-grid .card-body table.dataTable {
+  width: 100% !important;
+}
+.dash-lists-grid .dataTables_wrapper {
+  width: 100%;
+}
+.dash-lists-grid .dataTables_filter {
+  float: none;
+  text-align: right;
+  margin-bottom: 0.6rem;
+}
+.dash-lists-grid .dataTables_filter input {
+  margin-left: 0.4rem;
+}
+.dash-lists-grid .dataTables_length {
+  margin-bottom: 0.6rem;
+}
 </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -62,11 +115,11 @@ var pageContext = '${pageContext.request.contextPath}';
     <section class="content">
       <div class="container-fluid">
         <!-- Small boxes (Stat box) -->
-        <div class="row mt-3">
-          <security:authorize access="!hasAuthority('PURCHASE')">
-          <div class="col-lg-2 col-6">
+        <div class="dash-tiles-grid">
+          <c:if test="${tileVisible.contains('SALES_ORDER')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-info">
+            <div class="small-box bg-info" id="pendingSaleslink">
               <div class="inner">
                 <h3 id="salesOrderCount">${salesOrderCount}</h3>
 
@@ -74,16 +127,16 @@ var pageContext = '${pageContext.request.contextPath}';
               </div>
               <div class="icon">
               <i class="ion ion-stats-bars"></i>
-               
+
               </div>
-            <a href="#" id="pendingSaleslink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
             </div>
           </div>
-          </security:authorize>
+          </c:if>
           <!-- ./col -->
-          <div class="col-lg-2 col-6">
+          <c:if test="${tileVisible.contains('PURCHASE_ORDER')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-success">
+            <div class="small-box bg-success" id="pendingPurchaselink">
               <div class="inner">
                 <h3 id="purchaseOrderCount">${purchaseOrderCount}</h3>
 
@@ -92,14 +145,14 @@ var pageContext = '${pageContext.request.contextPath}';
               <div class="icon">
                <i class="ion ion-ios-cart-outline"></i>
               </div>
-           <a href="#" id="pendingPurchaselink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
+          </c:if>
           <!-- ./col -->
-          <security:authorize access="!hasAuthority('PURCHASE')">
-          <div class="col-lg-2 col-6">
+          <c:if test="${tileVisible.contains('INVOICE')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-warning">
+            <div class="small-box bg-warning" id="invoicelink">
               <div class="inner">
                 <h3 id="invoiceCount">${invoiceCount}</h3>
 
@@ -108,14 +161,15 @@ var pageContext = '${pageContext.request.contextPath}';
               <div class="icon">
                 <i class="ion ion-person-add"></i>
               </div>
-               <a href="#" id="invoicelink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-         
+          </c:if>
+
           <!-- ./col -->
-          <div class="col-lg-2 col-6">
+          <c:if test="${tileVisible.contains('PROJECTS')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-danger">
+            <div class="small-box bg-danger" id="saleslink">
               <div class="inner">
                 <h3 id="projectPreviewCount">${projectPreviewCount}</h3>
 
@@ -124,12 +178,13 @@ var pageContext = '${pageContext.request.contextPath}';
               <div class="icon">
                 <i class="ion ion-pie-graph"></i>
               </div>
-        <a href="#" id="saleslink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-            <div class="col-lg-2 col-6">
+          </c:if>
+          <c:if test="${tileVisible.contains('TDS_APPROVED')}">
+            <div>
             <!-- small box -->
-            <div class="small-box bg-red">
+            <div class="small-box bg-red" id="tdsLink">
               <div class="inner">
                 <h3 id="tdsItemsCount">${tdsItemsCount}</h3>
 
@@ -138,12 +193,13 @@ var pageContext = '${pageContext.request.contextPath}';
               <div class="icon">
                 <i class="ion ion-checkmark"></i>
               </div>
-            <a href="#" id="tdsLink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-          <div class="col-lg-2 col-6">
+          </c:if>
+          <c:if test="${tileVisible.contains('SO_WITHOUT_DESIGN')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-primary">
+            <div class="small-box bg-teal" id="sowithoutdesignlink">
               <div class="inner">
                 <h3 id="sowithoutDesignCount">${sowithoutDesignCount}</h3>
 
@@ -152,13 +208,13 @@ var pageContext = '${pageContext.request.contextPath}';
                <div class="icon">
                <i class="ion ion-laptop"></i>
               </div>
-              <a href="#" id="sowithoutdesignlink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-          </security:authorize>
-          <div class="col-lg-2 col-6">
+          </c:if>
+          <c:if test="${tileVisible.contains('SO_WITH_DESIGN')}">
+          <div>
             <!-- small box -->
-            <div class="small-box bg-primary">
+            <div class="small-box bg-primary" id="sowithdesignlink">
               <div class="inner">
                 <h3 id="sowithDesignCount">${sowithDesignCount}</h3>
 
@@ -167,17 +223,15 @@ var pageContext = '${pageContext.request.contextPath}';
                <div class="icon">
                <i class="ion ion-laptop"></i>
               </div>
-              <a href="#" id="sowithdesignlink" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a> 
             </div>
           </div>
-          
+          </c:if>
+
           <!-- ./col -->
         </div>
         <!-- /.row -->
-        <div class="row">
-        <div class="col-lg-6">
-        <security:authorize access="!hasAuthority('PURCHASE')">
-          
+        <div class="dash-lists-grid">
+            <c:if test="${tileVisible.contains('SALES_ORDER')}">
             <div class="card">
               <div class="card-header border-0">
                 <div class="d-flex justify-content-between">
@@ -190,8 +244,10 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
+            </c:if>
             <!-- /.card -->
 
+            <c:if test="${tileVisible.contains('INVOICE')}">
             <div class="card">
               <div class="card-header border-0">
                 <h3 class="card-title">Invoice List (TBD)</h3>
@@ -202,6 +258,8 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
+            </c:if>
+            <c:if test="${tileVisible.contains('TDS_APPROVED')}">
             <div class="card">
               <div class="card-header border-0">
                 <h3 class="card-title">Tds Approved Items</h3>
@@ -212,7 +270,8 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
-             </security:authorize>
+            </c:if>
+            <c:if test="${tileVisible.contains('SO_WITH_DESIGN')}">
             <div class="card">
               <div class="card-header border-0">
                 <div class="d-flex justify-content-between">
@@ -225,11 +284,8 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
-            <!-- /.card -->
-          </div>
-         
-          <!-- /.col-md-6 -->
-          <div class="col-lg-6">
+            </c:if>
+            <c:if test="${tileVisible.contains('PURCHASE_ORDER')}">
             <div class="card">
               <div class="card-header border-0">
                 <div class="d-flex justify-content-between">
@@ -242,8 +298,9 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
+            </c:if>
             <!-- /.card -->
-		<security:authorize access="!hasAuthority('PURCHASE')">
+            <c:if test="${tileVisible.contains('PROJECTS')}">
             <div class="card">
               <div class="card-header border-0">
               <div class="d-flex justify-content-between">
@@ -256,6 +313,8 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
+            </c:if>
+            <c:if test="${tileVisible.contains('SO_WITHOUT_DESIGN')}">
             <div class="card">
               <div class="card-header border-0">
                 <h3 class="card-title">SO Without Design</h3>
@@ -266,14 +325,9 @@ var pageContext = '${pageContext.request.contextPath}';
 				</table>
               </div>
             </div>
-            </security:authorize>
-            
-          
-          </div>
-          <!-- /.col-md-6 -->
+            </c:if>
+
         </div>
-        
-        <!-- /.row -->
         <!-- /.row (main row) -->
       </div><!-- /.container-fluid -->
     </section>

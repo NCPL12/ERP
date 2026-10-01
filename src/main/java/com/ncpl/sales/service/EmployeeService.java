@@ -23,4 +23,12 @@ public class EmployeeService {
 		Optional<EmployeeMaster> empObj=employeeRepo.findById(empId);
 		return empObj;
 	}
+
+	public EmployeeMaster saveEmployee(EmployeeMaster employee){
+		return employeeRepo.save(employee);
+	}
+
+	public void deleteEmployee(int id){
+		employeeRepo.deleteById(id);
+	}
 }

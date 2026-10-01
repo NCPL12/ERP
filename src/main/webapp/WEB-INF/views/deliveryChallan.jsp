@@ -6,6 +6,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('DELIVERY_CHALLAN_DELETE')" var="canDeleteDeliveryChallan" />
 
 
 <c:url var="ROOT" value="/"></c:url>
@@ -22,6 +24,13 @@
 <script type="text/javascript" src="resources/js/deliveryChallan.js"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
+
+<c:if test="${!canDeleteDeliveryChallan}">
+<style type="text/css">
+.deleteButton{ display: none !important; }
+</style>
+</c:if>
+
 <script type="text/javascript">
 var salesList = ${salesOrderList};
 var partyList = ${partyList};
@@ -67,10 +76,92 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 #dcTable tr:hover {
     background-color:#8080801c;
 }
+
+/* ---- DC info card (Client / Client PO Number / Client Name) ---- */
+.dc-info-card{
+	border: none;
+	border-radius: 10px;
+	box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.dc-info-card .card-body{
+	padding: 24px 28px;
+}
+.dc-field-grid{
+	display: grid;
+	grid-template-columns: 180px 16px 1fr;
+	row-gap: 18px;
+	column-gap: 12px;
+	align-items: center;
+}
+.dc-field-label{
+	font-weight: 700;
+	color: #212529;
+}
+.dc-field-colon{
+	color: #212529;
+}
+.dc-field-value{
+	min-width: 0;
+}
+.dc-field-value .dc-header-value{
+	color: #495057;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: block;
+}
+@media (max-width: 575.98px){
+	.dc-field-grid{
+		grid-template-columns: 1fr;
+		row-gap: 8px;
+	}
+	.dc-field-colon{
+		display: none;
+	}
+}
+
+/* ---- Card polish to match the flat, boxed enterprise look ---- */
+.card.mb-3,
+#salesDiv.card{
+	border: none;
+	border-radius: 10px;
+	box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.card.mb-3 .card-header{
+	background: transparent;
+	border-bottom: 1px solid #e9ecef;
+	padding: 18px 28px 14px;
+}
+.card.mb-3 .card-header h5{
+	margin: 0;
+	font-weight: 700;
+	color: #212529;
+}
+.card.mb-3 .card-body{
+	padding: 20px 28px 24px;
+}
+.card.mb-3 .card-body textarea{
+	background: #f8f9fa;
+	border-color: #e9ecef;
+}
+
+#dcTable>thead>tr>th{
+	background: #f8f9fa;
+	font-weight: 700;
+	color: #212529;
+	border-top: none;
+}
+#dcTable>tbody>tr>td{
+	background: #fff;
+}
+#dcTable>tbody>tr>td .form-control[readonly]{
+	background: #f8f9fa;
+	border-color: #e9ecef;
+}
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 
@@ -80,7 +171,38 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 				action="${pageContext.request.contextPath}/add/delivery_challan">
 				<input type="hidden" name="soNumber" id="soNumber">
 				<input type="hidden" name="clientId" id="clientId">
-				
+
+				<!-- Client / Client PO Number / Client Name -->
+				<div class="card mb-3 dc-info-card">
+					<div class="card-body">
+						<div class="dc-field-grid">
+							<span class="dc-field-label">Client</span>
+							<span class="dc-field-colon">:</span>
+							<div class="dc-field-value">
+								<select class="form-control select2 select2-hidden-accessible dropdownWidth230"
+									name="partyName" id="partyName">
+									<option value="">Select Client Name</option>
+								</select>
+							</div>
+
+							<span class="dc-field-label">Client PO Number</span>
+							<span class="dc-field-colon">:</span>
+							<div class="dc-field-value">
+								<select class="form-control select2 select2-hidden-accessible dropdownwidth150"
+									name="soNumber" id="clientPoDropdown">
+									<option value="">Select Client PO No.</option>
+								</select>
+							</div>
+
+							<span class="dc-field-label">Client Name</span>
+							<span class="dc-field-colon">:</span>
+							<div class="dc-field-value">
+								<span id="clientName" class="dc-header-value"></span>
+							</div>
+						</div>
+					</div>
+				</div>
+
 				<!-- DC Comment Box -->
 				<div class="card mb-3">
 					<div class="card-header">
@@ -104,7 +226,6 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 									<th width="7%">Total Qty</th>
 									<th width="7%">Delivered Qty</th>
 									<th width="7%">Today's Qty</th>
-									<th width="7%">Company Asset</th>
 
 									<!-- <th><i
 										class="add fa fa-plus-square fa-2x text-center mx-auto"

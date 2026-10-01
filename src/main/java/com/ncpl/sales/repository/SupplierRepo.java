@@ -34,4 +34,8 @@ public interface SupplierRepo extends JpaRepository<Supplier, String>{
 
 	@Query(" from Supplier where item_master_id IN :itemMasterIds and party_id=:supplierName")
 	List<Supplier> findSupplierListBySupplierNameIn(@Param("itemMasterIds") List<String> itemMasterIds, @Param("supplierName") String supplierName);
+
+	//  @D0050: preferred supplier cost for ALL items in one query (used by findItemDetails)
+	@Query("select s.itemMaster.id, s.costPrice from Supplier s where lower(s.preferred) = 'yes'")
+	List<Object[]> findPreferredCostByItem();
 }

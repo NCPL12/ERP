@@ -88,8 +88,6 @@ import com.ncpl.sales.service.PartyService;
 import com.ncpl.sales.service.PurchaseCopyService;
 import com.ncpl.sales.service.PurchaseItemService;
 import com.ncpl.sales.service.PurchaseOrderCustomProperty;
-import com.ncpl.sales.model.PurchaseOrderAudit;
-import com.ncpl.sales.service.PurchaseOrderAuditService;
 import com.ncpl.sales.service.PurchaseOrderService;
 import com.ncpl.sales.service.PurchasePdf;
 import com.ncpl.sales.service.PurchaseUploadExcel;
@@ -112,9 +110,6 @@ public class PurchaseController {
 
 	@Autowired
 	PurchaseOrderService purchaseService;
-	// @D0017 Purchase Order audit log, mirrors SalesOrderAudit (see README.md)
-	@Autowired
-	PurchaseOrderAuditService purchaseOrderAuditService;
 	@Autowired
 	NcplUtil utilService;
 	@Autowired
@@ -633,13 +628,10 @@ public class PurchaseController {
 		// 	model.addAttribute("makeList", mapper.writeValueAsString(new ArrayList<>()));
 		// 	return "itemMaster";
 		// }
-
-	@GetMapping("/itemMaster")
+//	 @D0050
+		@GetMapping("/itemMaster")
 	public String getItemMaster(Model model) throws JsonProcessingException {
 		itemMasterService.trimSpacesFromModelNo();
-		List<ItemMaster> itemList=itemMasterService.getItemListWithoutTools();
-		List<Stock> allStocksList = stockService.getAllStockList();
-		List<Supplier> allSupplierslist = itemMasterService.getAllSupplierList();
 		List<Party> customerpartyList = partyService.getPartyListByTypeCustomer();
 		List<Party> supplierPartyList = partyService.getPartyListbyTypeSupplier();
 		List<Make> makeList=makeService.getMakeList();
@@ -649,16 +641,15 @@ public class PurchaseController {
 		ObjectMapper mapper = utilService.getObjectMapper();
 		model.addAttribute("role", mapper.writeValueAsString(role));
 		model.addAttribute("user", mapper.writeValueAsString(user));
-		// @D0014 per-user Item Master access override, toggled directly in the DB (see README.md)
-		model.addAttribute("itemMasterAccess", mapper.writeValueAsString(userObj.isItemMasterAccess()));
-		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		// the table now loads page by page from /api/itemMaster/page, so these stay empty
+		model.addAttribute("itemList", "[]");
+		model.addAttribute("allSupplierslist", "[]");
+		model.addAttribute("allStocksList", "[]");
 		model.addAttribute("supplierPartyList", mapper.writeValueAsString(supplierPartyList));
-		 model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
+		model.addAttribute("customerPartyList", mapper.writeValueAsString(customerpartyList));
 		model.addAttribute("pageHeader", "Item Master");
-		model.addAttribute("allSupplierslist", mapper.writeValueAsString(allSupplierslist));
-		model.addAttribute("allStocksList", mapper.writeValueAsString(allStocksList));
 		model.addAttribute("makeList", mapper.writeValueAsString(makeList));
-			return "itemMaster";
+		return "itemMaster";
 	}
 	/*@GetMapping("/itemMaster")
 	public String getItemMaster(Model model) throws JsonProcessingException {
@@ -984,7 +975,6 @@ public class PurchaseController {
 		addressMap.put("shippingAddress", shippingAddress);
 		addressMap.put("modeOfPayment", customProperty.getModeOfPayment());
 		addressMap.put("jurisdiction", customProperty.getJursidiction());
-		// @D0013 stray syntax typo fix, was breaking the whole build (see README.md)
 		addressMap.put("frieght", customProperty.getFrieght());
 		addressMap.put("delivery", customProperty.getDelivery());
 		addressMap.put("warranty", customProperty.getWarranty());
@@ -2038,77 +2028,6 @@ public class PurchaseController {
 			 purchaseService.unArchivePO(poNum);
 				return new ResponseEntity<>(HttpStatus.OK);
 			}
-
-		 // @D0017 Purchase Order audit log, mirrors SalesOrderAudit's /audit/sales-order (see README.md)
-		 @GetMapping("/audit/purchase-order")
-			public String purchaseOrderAuditPage(Model model) {
-				List<PurchaseOrderAudit> recentAudits = purchaseOrderAuditService.getAllAuditLogs();
-				model.addAttribute("audits", recentAudits);
-				model.addAttribute("actions", getPurchaseOrderAuditActions());
-				return "purchase-order-audit";
-			}
-
-		 @GetMapping("/api/audit/purchase-order/all")
-			@ResponseBody
-			public ResponseEntity<List<PurchaseOrderAudit>> getAllPurchaseOrderAuditLogs() {
-				return new ResponseEntity<>(purchaseOrderAuditService.getAllAuditLogs(), HttpStatus.OK);
-			}
-
-		 @GetMapping("/api/audit/purchase-order/by-po-number")
-			@ResponseBody
-			public ResponseEntity<List<PurchaseOrderAudit>> getAuditByPoNumber(@RequestParam("poNumber") String poNumber) {
-				return new ResponseEntity<>(purchaseOrderAuditService.getAuditByPoNumber(poNumber), HttpStatus.OK);
-			}
-
-		 @GetMapping("/api/audit/purchase-order/by-user")
-			@ResponseBody
-			public ResponseEntity<List<PurchaseOrderAudit>> getPurchaseOrderAuditByUser(@RequestParam("performedBy") String performedBy) {
-				return new ResponseEntity<>(purchaseOrderAuditService.getAuditByPerformedBy(performedBy), HttpStatus.OK);
-			}
-
-		 @GetMapping("/api/audit/purchase-order/by-action")
-			@ResponseBody
-			public ResponseEntity<List<PurchaseOrderAudit>> getPurchaseOrderAuditByAction(@RequestParam("action") String action) {
-				return new ResponseEntity<>(purchaseOrderAuditService.getAuditByAction(action), HttpStatus.OK);
-			}
-
-		 @GetMapping("/api/audit/purchase-order/search")
-			@ResponseBody
-			public ResponseEntity<List<PurchaseOrderAudit>> searchPurchaseOrderAuditLogs(
-					@RequestParam(value = "poNumber", required = false) String poNumber,
-					@RequestParam(value = "performedBy", required = false) String performedBy,
-					@RequestParam(value = "action", required = false) String action,
-					@RequestParam(value = "startDate", required = false) String startDate,
-					@RequestParam(value = "endDate", required = false) String endDate) {
-				try {
-					java.sql.Timestamp startTimestamp = null;
-					java.sql.Timestamp endTimestamp = null;
-					if (startDate != null && !startDate.isEmpty()) {
-						startTimestamp = java.sql.Timestamp.valueOf(startDate + " 00:00:00");
-					}
-					if (endDate != null && !endDate.isEmpty()) {
-						endTimestamp = java.sql.Timestamp.valueOf(endDate + " 23:59:59");
-					}
-					List<PurchaseOrderAudit> audits = purchaseOrderAuditService.getAuditByMultipleCriteria(
-							poNumber, performedBy, action, startTimestamp, endTimestamp);
-					return new ResponseEntity<>(audits, HttpStatus.OK);
-				} catch (Exception e) {
-					return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-				}
-			}
-
-		 private List<String> getPurchaseOrderAuditActions() {
-			 List<String> actions = new ArrayList<>();
-			 actions.add(PurchaseOrderAuditService.ACTION_CREATE);
-			 actions.add(PurchaseOrderAuditService.ACTION_UPDATE);
-			 actions.add(PurchaseOrderAuditService.ACTION_ARCHIVE);
-			 actions.add(PurchaseOrderAuditService.ACTION_UNARCHIVE);
-			 actions.add(PurchaseOrderAuditService.ACTION_CREATE_PURCHASE_ITEM);
-			 actions.add(PurchaseOrderAuditService.ACTION_UPDATE_PURCHASE_ITEM);
-			 actions.add(PurchaseOrderAuditService.ACTION_DELETE_PURCHASE_ITEM);
-			 return actions;
-		 }
-
 		 @PostMapping("/api/update_dc_archive")
 			public ResponseEntity<?> updateDCArchive(@RequestParam("dcNum") int dcNum) {
 				deliveryChallanService.archiveDC(dcNum);
@@ -2185,16 +2104,11 @@ public class PurchaseController {
 		 @GetMapping("/api/employee_list")
 		 public  ResponseEntity<?> getEmployeeMasterList() {
 			List<EmployeeMaster> employeeList= employeeService.getEmployeeList();
-
+			
 				return new ResponseEntity<>(employeeList,HttpStatus.OK) ;
 		 }
-
-		 @GetMapping("/api/company_asset_candidates")
-		 public ResponseEntity<?> getCompanyAssetCandidates() {
-			 return new ResponseEntity<>(deliveryChallanService.getCompanyAssetCandidates(), HttpStatus.OK);
-		 }
-
-
+		 
+		 
 		 @GetMapping("/companyAssets")
 			public String getCompanyAssets(Model model) throws JsonProcessingException {
 				List<CompanyAssets> companyAssetList=companyAssetService.getAllCompanyAssetList();

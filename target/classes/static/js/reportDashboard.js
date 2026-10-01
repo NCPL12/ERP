@@ -26,48 +26,36 @@ $(document).ready(function () {
 
 	loadDashboardCountsFromApi();
 
-	//getAllSalesListWithStatusNotClosed();
-	//getAllPurchaseList();
-	//getAllInvoiceList();
-	//getAllSalesList();
-	//getTdsApprovedList();
-	//getSalesItemsWithoutDesignList();
-	getPartialRecordOfPendingSalesList();
-	getPartialPurchaseList();
-	getPartialInvoiceList();
-	getPartialSalesList();
-	getTdsApprovedListPartial();
-	getSalesItemsWithoutDesignListPartial();
-	getAllSOWithDesignAndPONotDoneListPartial();
-	
-	$(document).on("click","#pendingSaleslink",function(){
-		getAllSalesListWithStatusNotClosed();
-		$(this).hide();
-	})
-	$(document).on("click","#pendingPurchaselink",function(){
-		getAllPurchaseList();
-		$(this).hide();
-	})
-	$(document).on("click","#invoicelink",function(){
-		getAllInvoiceList();
-		$(this).hide();
-	})
-	$(document).on("click","#saleslink",function(){
-		getAllSalesList();
-		$(this).hide();
-	})
-	$(document).on("click","#tdsLink",function(){
-		getTdsApprovedList();
-		$(this).hide();
-	})
-	$(document).on("click","#sowithoutdesignlink",function(){
-		getSalesItemsWithoutDesignList();
-		$(this).hide();
-	})
-	$(document).on("click","#sowithdesignlink",function(){
-		getAllSOWithDesignAndPONotDoneList();
-		$(this).hide();
-	})
+	// Rendered straight from data the server already embedded in the page (see
+	// SalesController.dashboard()) - no AJAX round-trip needed for first paint.
+	loadSalesTableWithStatusNotClosed(pendingSalesListDashboard);
+	loadPurchaseTable(pendingPurchaseListDashboard);
+	loadInvoiceTable(invoiceListDashboard);
+	loadSalesTable(allSalesListDashboard);
+	loadTdsApprovedTable(tdsApprovedListDashboard);
+	loadSalesItemsWithoutDesignTable(salesItemsWithoutDesignListDashboard);
+	loadSalesItemsWithDesignTable(salesOrderWithDesignListDashboard);
+});
+
+/** Tile id -> the id of the table its data lives in further down the page. */
+var dashboardTileScrollTargets = {
+	'pendingSaleslink': 'salesListWithStatusNotClosed',
+	'pendingPurchaselink': 'purchaseTable',
+	'invoicelink': 'invoiceTable',
+	'saleslink': 'salesListTable',
+	'tdsLink': 'tdsApprovedItemsTable',
+	'sowithoutdesignlink': 'salesItemsWithoutDesignTble',
+	'sowithdesignlink': 'soWithDesignTable'
+};
+
+/** Clicking anywhere on a dashboard tile scrolls down to that tile's table. */
+$(document).on("click", ".dash-tiles-grid .small-box", function (e) {
+	e.preventDefault();
+	var tableId = dashboardTileScrollTargets[this.id];
+	var $table = tableId ? $("#" + tableId) : null;
+	if ($table && $table.length) {
+		$("html, body").animate({ scrollTop: Math.max(0, $table.closest(".card").offset().top - 70) }, 500);
+	}
 });
 
 function getAllSalesListWithStatusNotClosed(){
@@ -117,10 +105,7 @@ function loadSalesTableWithStatusNotClosed(response) {
 	 		],
 
 			"order": [[ 2, "desc" ]],
-			 "ajax": {
-				   'url': api.SALES_LIST_PENDING,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 
@@ -241,10 +226,7 @@ function loadPurchaseTable(response) {
 	 		}
 	 		],
 			"order": [[ 2, "desc" ]],
-			 "ajax": {
-				   'url': api.PURCHASE_LIST_PENDING,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 
@@ -342,10 +324,7 @@ function loadInvoiceTable(response) {
 			orderCellsTop: true,
 			"order": [[ 1, "desc" ]],
 			processing : true,
-			 "ajax": {
-				   'url': api.INVOICE_LIST,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 
@@ -442,10 +421,7 @@ function loadSalesTable(response) {
 	 		}
 	 		],
 			"order": [[ 2, "desc" ]],
-			 "ajax": {
-				   'url': api.GET_ALL_SALES_LIST,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 
@@ -556,10 +532,7 @@ function loadTdsApprovedTable(response) {
 	    	    'targets': [0,1,2], /* table column index */
 	    	    'orderable': false, /* here set the true or false */
 	    	 }],
-			 "ajax": {
-				   'url': api.GET_TDS_APPROVED_LIST,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": tdsApprovedItemColumns()
 		});
@@ -677,10 +650,7 @@ function loadSalesItemsWithoutDesignTable(response) {
 	 		}
 	 		],
 	    	 "order": [[ 2, "desc" ]],
-			 "ajax": {
-				   'url': api.GET_SALES_ITEMS_LIST_WITHOUT_DESIGN,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 
@@ -793,10 +763,7 @@ function loadSalesItemsWithDesignTable(response) {
 	 		}
 	 		],
 	    	 "order": [[ 2, "desc" ]],
-			 "ajax": {
-				   'url': api.GET_SALES_LIST_WITH_DESIGN,
-				   'dataSrc': ''
-				},
+		 "data": response,
 			"destroy": true,
 			"columns": [
 

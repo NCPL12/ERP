@@ -23,10 +23,6 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 	@Query("SELECT new map(im.id as id, im.model as model) FROM ItemMaster im")
 	public List<java.util.Map<String, Object>> findAllIdAndModel();
 
-	// Lightweight id+model+itemName projection for sales order page dropdowns
-	@Query("SELECT new map(im.id as id, im.model as model, im.itemName as itemName) FROM ItemMaster im ORDER BY im.model ASC")
-	public List<java.util.Map<String, Object>> findItemIdModelNameList();
-
 	@Query(" from ItemMaster where lower(trim(model)) = lower(trim(:model)) ")
 	public ItemMaster getItemByModelNoNormalized(@Param("model") String model);
 
@@ -76,5 +72,9 @@ public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
 
 		@Query(value = "SELECT id, model FROM tbl_item_master ORDER BY model", nativeQuery = true)
 		List<Object[]> findGrnItemList();
+
+		//  @D0050: id + name only, used by findItemDetails() (one query instead of loading all items)
+		@Query(value = "SELECT id, item_name FROM tbl_item_master ORDER BY model", nativeQuery = true)
+		List<Object[]> findItemIdAndName();
 
 }

@@ -325,7 +325,7 @@ function getClientNameBySoId(soId){
 		url : api.GET_SALESORDER_BYID  +"?salesOrderId="+soId,
 		success : function(response) {
 		$("#clientId").val(response.party.id);
-		$("#clientName").text(response.party.partyName);
+		$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
 		},
 		complete:function(resp){
 			if(resp.status==500){
@@ -372,7 +372,6 @@ function getAllDescription(soId){
 					"<td width='7%' id='totalQty"+index+"'>" + value.quantity + "</td>" +
 					"<td width='7%' id='deliveredQty"+index+"'>" + value.deliveredQty + "</td>" +
 					"<td width='7%'><input type='text' id='todaysQty"+index+"' name='items["+index+"].todaysQty' class='form-control PositionofTextbox todaysQty'/></td>" +
-					"<td width='7%' align='center'><input type='checkbox' class='companyAssetCheckBox' id='companyAsset"+index+"' name='items["+index+"].companyAsset' value='true'/></td>" +
 					"<td style='display:none' id='designTd"+index+"' align='center'><a href='#' aria-hidden='true' class='design' id='design"+index+"'>Design</a></td>" +
 					"<td style='display:none'><input class='descriptionDropdown' id='descriptionDropdown"+index+"' name='items["+index+"].description' value='" + value.id + "' /></td>" +
 					"<td style='display:none'><input type='hidden' class='designArrData' id='designArrData"+index+"' name='designArrData'/></td>" +
@@ -444,7 +443,6 @@ function addDcRow(){
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox totalQty" readonly="readonly" name="items['+arraycount+'].totalQuantity" id="totalQty'+ arraycount +'"/> </td>';
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox deliveredQty" readonly="readonly" name="items['+arraycount+'].deliveredQuantity" id="deliveredQty'+ arraycount +'" /></td>';
 	columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox todaysQty" readonly="readonly"  name="items['+arraycount+'].todaysQty" id="todaysQty'+ arraycount +'" /></td>';
-	columns += '<td width="7%" align="center"><input type="checkbox" class="companyAssetCheckBox" id="companyAsset'+arraycount+'" name="items['+arraycount+'].companyAsset" value="true"/></td>';
 	columns += '<td style="display:none" id="designTd'+arraycount+'" align="center"><a href="#" aria-hidden="true" class="design" id="design'+arraycount+'">Design</a></td>';
 	columns += '<td style="display:none"><input type="hidden" id="remainingQty'+ arraycount +'" /></td>';
 	columns += '<td style="display:none"><input type="hidden" class="designArrData" id="designArrData'+ arraycount +'" name="designArrData"/></td>';
@@ -963,7 +961,7 @@ function getDcObjectByDcId(dcId){
 			$('#clientPoDropdown').val(dcObj.soNumber);
 			$('#clientPoDropdown').attr("disabled",true);
 			$('#clientPoDropdown').select2(dcObj, {id: dcObj.soNumber, a_key:dcObj.soNumber});
-			$("#clientName").text(dcObj.clientName);
+			$("#clientName").text(dcObj.clientName).attr("title", dcObj.clientName);
 			$('#clientPoDropdown,#clientName').attr("disabled",true);
             $("#descriptionDropdown" + key).replaceWith('<input type="text" class="form-control PositionofTextbox description" id="description' + key + '" name="items['+key+'].description">');
             $("#description" + key).val(value.description);

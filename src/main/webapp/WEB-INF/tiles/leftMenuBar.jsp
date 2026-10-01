@@ -102,6 +102,7 @@
                         </a>
 
                         <ul class="nav nav-treeview">
+                          <security:authorize access="hasAuthority('ITEM_MASTER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/itemMaster"
                               class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
@@ -111,10 +112,11 @@
                               </p>
                             </a>
                           </li>
-
+                          </security:authorize>
 
                         </ul>
                         <ul class="nav nav-treeview">
+                          <security:authorize access="hasAuthority('COMPANY_ASSETS_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/companyAssets"
                               class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
@@ -124,12 +126,13 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
                         </ul>
                       </li>
                     </security:authorize>
 
                     <!-- Creating Masters -->
-                    <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
+                    <security:authorize access="hasAuthority('DASHBOARD_VIEW')">
                       <c:set var="projectsOpen" value="${uri == '/dashboard'}" />
                       <li class="nav-item has-treeview ${projectsOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${projectsOpen ? 'active' : ''}">
@@ -171,6 +174,7 @@
                         <ul class="nav nav-treeview">
 
                           <!-- Party Dash board -->
+                          <security:authorize access="hasAuthority('PARTY_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/partyList"
                               class="nav-link ${uri == '/partyList' ? 'active' : ''}">
@@ -180,7 +184,9 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
 
+                          <security:authorize access="hasAuthority('ITEM_MASTER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/itemMaster"
                               class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
@@ -190,6 +196,8 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
+                          <security:authorize access="hasAuthority('COMPANY_ASSETS_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/companyAssets"
                               class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
@@ -199,6 +207,7 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
 
 
                         </ul>
@@ -222,7 +231,7 @@
 
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE','STORE')">
+                          access="hasAuthority('SALES_ORDER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/salesList"
                               class="nav-link ${uri == '/salesList' ? 'active' : ''}">
@@ -234,7 +243,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','SALES','PURCHASE STORE')">
+                          access="hasAuthority('DELIVERY_CHALLAN_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/dcList"
                               class="nav-link ${uri == '/dcList' ? 'active' : ''}">
@@ -246,7 +255,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
+                          access="hasAuthority('RETURNABLE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/returnableList"
                               class="nav-link ${uri == '/returnableList' ? 'active' : ''}">
@@ -257,7 +266,7 @@
                             </a>
                           </li>
                         </security:authorize>
-                        <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
+                        <security:authorize access="hasAuthority('INVOICE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/invoiceList"
                               class="nav-link ${uri == '/invoiceList' ? 'active' : ''}">
@@ -267,6 +276,8 @@
                               </p>
                             </a>
                           </li>
+                        </security:authorize>
+                        <security:authorize access="hasAuthority('WORK_ORDER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/workOrderList"
                               class="nav-link ${uri == '/workOrderList' ? 'active' : ''}">
@@ -297,7 +308,7 @@
                       </security:authorize>
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER')">
+                          access="hasAuthority('PURCHASE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/purchase"
                               class="nav-link ${uri == '/purchase' ? 'active' : ''}">
@@ -309,7 +320,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','PURCHASE STORE')">
+                          access="hasAuthority('GRN_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/grnLists"
                               class="nav-link ${uri == '/grnLists' ? 'active' : ''}">
@@ -321,7 +332,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN')">
+                          access="hasAuthority('NON_BILLABLE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/nonBillableList"
                               class="nav-link ${uri == '/nonBillableList' ? 'active' : ''}">
@@ -337,7 +348,7 @@
 
                     <!--Report section starts  -->
                     <security:authorize
-                      access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
+                      access="hasAuthority('REPORTS_VIEW')">
                       <c:set var="reportOpen" value="${uri == '/sales_report'}" />
                       <li class="nav-item has-treeview ${reportOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${reportOpen ? 'active' : ''}">
@@ -389,7 +400,7 @@
                     </security:authorize>
 
                     <security:authorize
-                      access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE')">
+                      access="hasAuthority('ARCHIVES_VIEW')">
                       <!-- Archived section started here -->
                       <c:set var="archivedOpen"
                         value="${uri == '/salesList_archived' or uri == '/purchase_archived' or uri == '/dc_archived' or uri == '/grn_archived'}" />
@@ -444,6 +455,34 @@
                       </li>
                     </security:authorize>
 
+                    <security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+                      <c:set var="adminOpen" value="${uri == '/user-management' or uri == '/role-management'}" />
+                      <li class="nav-item has-treeview ${adminOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${adminOpen ? 'active' : ''}">
+                          <i class="nav-icon fas fa-user-shield"></i>
+                          <p>
+                            Administration
+                            <i class="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                          <li class="nav-item">
+                            <a href="${pageContext.request.contextPath}/user-management"
+                              class="nav-link ${uri == '/user-management' ? 'active' : ''}">
+                              <i class="nav-icon fas fa-user-cog"></i>
+                              <p>Users</p>
+                            </a>
+                          </li>
+                          <li class="nav-item">
+                            <a href="${pageContext.request.contextPath}/role-management"
+                              class="nav-link ${uri == '/role-management' ? 'active' : ''}">
+                              <i class="nav-icon fas fa-user-lock"></i>
+                              <p>Roles &amp; Access</p>
+                            </a>
+                          </li>
+                        </ul>
+                      </li>
+                    </security:authorize>
 
                     <!--Items section starts  -->
 

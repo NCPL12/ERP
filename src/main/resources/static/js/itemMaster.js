@@ -666,7 +666,6 @@ function loadItemTable() {
 			}
 		});
 		datatable = $('#itemMasterList').DataTable(serverConfig);
-		datatable = $('#itemMasterList').DataTable(serverConfig);
 	}else{
 		var clientConfig = $.extend(true, {}, baseConfig, {
 			"data": itemList
@@ -676,6 +675,9 @@ function loadItemTable() {
 	datatable.buttons().container().appendTo($('#itemMasterList_length'));
 
 	$('#itemMasterList tbody').on('dblclick', 'tr', function () {
+		if (!canEditItemMaster) {
+			return;
+		}
 		var row = datatable.row($(this).closest("tr").get(0));
 		var rowData = row.data();
 
@@ -1417,6 +1419,9 @@ function loadSupplierTable(response) {
 
 		//On dbclick goto edit mode
 		$('#supplierList tbody').on('dblclick', 'tr', function () {
+			if (!canEditItemMaster) {
+				return;
+			}
 			var row = supplierTable.row($(this).closest("tr").get(0));
 			var rowData = row.data();
 			$.each(rowData, function (key, value) {
@@ -1586,7 +1591,7 @@ function makeListTable(makeList){
 		    	"title":'Delete',
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
-		                    return '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>';
+		                    return canDeleteItemMaster ? '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>' : '';
 		                }
 		    }
 		    ]

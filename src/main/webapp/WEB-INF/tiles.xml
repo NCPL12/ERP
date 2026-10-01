@@ -358,13 +358,36 @@
 				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
 				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
 			</definition>
-			<definition name="companyAssets" template="/WEB-INF/views/companyAssets.jsp"> 
+			<definition name="companyAssets" template="/WEB-INF/views/companyAssets.jsp">
 				<put-attribute name="title" value="Company Assets" />
 				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
 				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
 				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
-				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
-				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
 			</definition>
-			
+			<definition name="companyAssetDetails" template="/WEB-INF/views/companyAssetDetails.jsp">
+				<put-attribute name="title" value="Asset Details" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
+			</definition>
+			<definition name="userManagement" template="/WEB-INF/views/userManagement.jsp">
+				<put-attribute name="title" value="User Management" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
+			</definition>
+			<definition name="roleManagement" template="/WEB-INF/views/roleManagement.jsp">
+				<put-attribute name="title" value="Roles &amp; Access" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
+			</definition>
+
         </tiles-definitions>

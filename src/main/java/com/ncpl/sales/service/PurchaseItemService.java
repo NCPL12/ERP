@@ -315,8 +315,7 @@ public class PurchaseItemService {
 		return poItemList;
 
 	}
-	
-	@SuppressWarnings("unused")
+
 	public List<PurchaseItem> getPurchaseItemList(String poNumber) {
 
 		List<PurchaseItem> purchaseItems = purchaseItemRepo.findByPurchaseOrder_PoNumber(poNumber);

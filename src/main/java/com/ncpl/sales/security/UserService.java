@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,22 +20,76 @@ public class UserService implements UserDetailsService{
 	private UserRepo userRepo;
 	@Autowired
 	EncryptedPasswordUtils encryptPasswd;
-	 
-	//validating user using database 
+	@Autowired
+	private com.ncpl.sales.repository.RolePermissionRepo rolePermissionRepo;
+
+	//validating user using database
 		@Override
 		public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		    System.out.println("Loading User Obj by UserName");
+			System.out.println("Loading User Obj by UserName: " + username);
 			User user = userRepo.findUserByUserName(username);
 
-			if (user != null) {
-				Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-				//for (Role role : user.getRoles()){
-					grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));
-				//}
-				return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),grantedAuthorities);
-			} else {
-				throw new BadCredentialsException("Invalid Username or Password");
+			if (user == null) {
+				throw new UsernameNotFoundException("User not found: " + username);
 			}
+
+			Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
+
+			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
+				if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
+				if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
+				if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+			}
+
+			return new org.springframework.security.core.userdetails.User(
+					user.getUsername(),
+					user.getPassword(),
+					user.isEnabled(),   // enabled
+					true,                // accountNonExpired
+					true,                // credentialsNonExpired
+					true,                // accountNonLocked
+					grantedAuthorities);
+		}
+
+		/** One user by id, used by the User Management admin page. */
+		public User getUserByUserId(Long userId) {
+			if (userId == null || userId <= 0) {
+				return null;
+			}
+			return userRepo.findById(userId).orElse(null);
+		}
+
+		/** Save a new user (with encrypted password). */
+		public User saveUser(User user) {
+			if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+				user.setPassword(encryptPasswd.encrytePassword(user.getPassword()));
+			}
+			return userRepo.save(user);
+		}
+
+		public User updateUser(User user) {
+			return userRepo.save(user);
+		}
+
+		public void deleteUser(Long userId) {
+			if (userId != null && userId > 0) {
+				userRepo.deleteById(userId);
+			}
+		}
+
+		public boolean userExists(String username) {
+			return userRepo.findUserByUserName(username) != null;
+		}
+
+		public boolean changePassword(Long userId, String password) {
+			User user = userRepo.findById(userId).orElse(null);
+			if (user == null) {
+				return false;
+			}
+			String encryptedPassword = encryptPasswd.encrytePassword(password);
+			int updatedRows = userRepo.updatePassword(userId, encryptedPassword);
+			return updatedRows > 0;
 		}
 
 	public User save() {
@@ -83,8 +136,12 @@ public List<User> getAllUsers() {
 	
 	public User getCurrentUser() {
 		User user = null;
-		String userName = SecurityContextHolder.getContext().getAuthentication().getName();
-		user = findByUserName(userName);
+		try {
+			String userName = SecurityContextHolder.getContext().getAuthentication().getName();
+			user = findByUserName(userName);
+		} catch (Exception e) {
+			System.out.println("Error getting current user: " + e.getMessage());
+		}
 		return user;
 	}
 }

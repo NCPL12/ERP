@@ -5,6 +5,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('SALES_ORDER_DELETE')" var="canDeleteSalesOrder" />
 
 
 <c:url var="ROOT" value="/"></c:url>
@@ -28,6 +30,13 @@ response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
 	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/salesOrder.css">
 	<script src="<c:url value="/resources/js/salesOrder.js" />"></script>
 	<script src="${RESOURCES}js/common.js" ></script>
+
+	<c:if test="${!canDeleteSalesOrder}">
+	<style type="text/css">
+	.deleteButton{ display: none !important; }
+	.deleteDesignBtn{ display: none !important; }
+	</style>
+	</c:if>
 
 	<!--  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script> -->

@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('DELIVERY_CHALLAN_EDIT')" var="canEditDeliveryChallan" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,6 +21,7 @@ var partyList = ${partyList};
 var role = ${role};
 var pageContext = '${pageContext.request.contextPath}';
 var isArchivedPage = false;
+var canEditDeliveryChallan = ${canEditDeliveryChallan};
 </script>
 </head>
 <body>
@@ -43,8 +46,6 @@ var isArchivedPage = false;
 							<th width="8%">DC</th>
 							<th width="3%">View</th>
 							<th width="2%">Returnable</th>
-							<th width="4%">Archive</th>
-							
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">

@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PARTY_EDIT')" var="canEditParty" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,6 +17,7 @@
 <script>
 // @D0015 lazy-loaded, paginated Party list (see README.md)
 var pageContext = '${pageContext.request.contextPath}';
+var canEditParty = ${canEditParty};
 </script>
 <style>
 	/*styled to fix custom length**/
