@@ -216,8 +216,8 @@
                       </li>
                     </security:authorize>
 
-                    <c:set var="salesOpen"
-                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
+                   <c:set var="salesOpen"
+    value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableDCList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
                     <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
                       <security:authorize
                         access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER','SALES')">
@@ -255,7 +255,7 @@
                             </a>
                           </li>
                         </security:authorize>
-                        <security:authorize
+                        <!-- <security:authorize
                           access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/returnableList"
@@ -266,7 +266,22 @@
                               </p>
                             </a>
                           </li>
-                        </security:authorize>
+                        </security:authorize> -->
+
+                        <security:authorize
+    access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
+
+    <li class="nav-item">
+        <a href="${pageContext.request.contextPath}/returnableDCList"
+           class="nav-link ${uri == '/returnableDCList' ? 'active' : ''}">
+            <i class="nav-icon fas fa-undo"></i>
+            <p>
+                Returnable DC
+            </p>
+        </a>
+    </li>
+
+</security:authorize>
                         <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/invoiceList"

@@ -55,6 +55,7 @@ com\ncpl\sales\service\DcReportByDateExcel.class
 com\ncpl\sales\config\SwaggerConfig.class
 com\ncpl\sales\repository\EmployeeRepo.class
 com\ncpl\sales\service\StockEmailScheduler.class
+com\ncpl\sales\service\ReturnableDcService.class
 com\ncpl\sales\service\DcSignatureLogo.class
 com\ncpl\sales\model\DeliveryChallan.class
 com\ncpl\sales\service\MonthlyStockReportExcel.class
@@ -92,6 +93,7 @@ com\ncpl\sales\repository\TypeRepo.class
 com\ncpl\sales\service\MaterialTrackerExcel.class
 com\ncpl\sales\repository\InvoiceCopyRepo.class
 com\ncpl\sales\model\Type.class
+com\ncpl\sales\controller\ReturnableDcController$ReturnableDc.class
 com\ncpl\sales\service\ActiveSOWithItremsExcel.class
 com\ncpl\sales\service\LrNumberEmailSchedular.class
 com\ncpl\sales\model\PurchaseOrder.class
@@ -187,6 +189,7 @@ com\ncpl\sales\service\EmployeeService.class
 com\ncpl\sales\repository\projection\SoWithoutDesignSummaryProjection.class
 com\ncpl\sales\model\PartyCategory.class
 com\ncpl\sales\repository\PurchaseItemRepo.class
+com\ncpl\sales\controller\ReturnableDcController.class
 com\ncpl\sales\service\PhotoIdService.class
 com\ncpl\sales\service\SalesItemsWherePoNotDoneExcel.class
 com\ncpl\sales\service\PurchaseCopyService.class

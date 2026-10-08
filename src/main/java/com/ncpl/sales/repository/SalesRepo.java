@@ -158,5 +158,16 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 			"AND (SELECT SUM(si.quantity) FROM tbl_sales_item si WHERE si.sales_order_id = so.id) > " +
 			"(SELECT COALESCE(SUM(di.todays_qty), 0) FROM tbl_dc d JOIN tbl_dc_items di ON d.dc_id = di.dc_id WHERE d.so_number = so.id)", nativeQuery = true)
 	long countPendingSalesOrdersPartialDC();
-}
 
+@Query(value =
+    "SELECT so.* FROM tbl_sales_order so " +
+    "LEFT JOIN (SELECT sales_order_id, SUM(quantity) AS qty " +
+    "           FROM tbl_sales_item GROUP BY sales_order_id) s ON s.sales_order_id = so.id " +
+    "LEFT JOIN (SELECT d.so_number, SUM(di.todays_qty) AS dc_qty " +
+    "           FROM tbl_dc d JOIN tbl_dc_items di ON di.dc_id = d.dc_id " +
+    "           GROUP BY d.so_number) x ON x.so_number = so.id " +
+    "WHERE so.archive = 0 " +
+    "AND (x.so_number IS NULL OR s.qty > COALESCE(x.dc_qty, 0))",
+    nativeQuery = true)
+public List<SalesOrder> getPendingSoListOptimized();
+}

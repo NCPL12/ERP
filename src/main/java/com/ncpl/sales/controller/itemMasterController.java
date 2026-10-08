@@ -331,6 +331,15 @@ public class itemMasterController {
 		 List<ItemMaster> itemList=itemMasterService.getItemList();
 			return new ResponseEntity<>(itemList,HttpStatus.OK) ;
 	 }
+
+	// @D0050: one page of the Item Master table (server-side paging, used by itemMaster.js)
+	@GetMapping(path="/api/itemMaster/page", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<?> itemMasterPage(@RequestParam(name="pageNo", defaultValue="0") int pageNo,
+			@RequestParam(name="pageSize", defaultValue="25") int pageSize,
+			@RequestParam(name="searchValue", required=false, defaultValue="") String searchValue,
+			@RequestParam(name="toolTrackerOnly", defaultValue="false") boolean toolTrackerOnly) {
+		return new ResponseEntity<>(itemMasterService.getItemMasterPage(pageNo, pageSize, searchValue, toolTrackerOnly), HttpStatus.OK);
+	}
 	
 	 @GetMapping("/api/get_all_itemList/{pageNo}/{pageSize}")
 	    public  ResponseEntity<?> getPaginatedItems(@PathVariable int pageNo, 

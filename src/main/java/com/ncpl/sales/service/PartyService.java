@@ -3,6 +3,7 @@ package com.ncpl.sales.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,6 +67,26 @@ public class PartyService {
 		Collections.sort(partyList);
 		
 		return partyList;
+	}
+
+	// NEW: fast list for the Party List page (one query, only needed columns)
+	public List<Map<String, Object>> getPartyListRows() {
+		List<Object[]> rows = partyRepo.findPartyListRows();
+		List<Map<String, Object>> result = new ArrayList<>(rows.size());
+		for (Object[] r : rows) {
+			Map<String, Object> m = new LinkedHashMap<>();
+			m.put("id", r[0]);
+			m.put("partyName", r[1]);
+			m.put("phone1", r[2]);
+			m.put("website", r[3]);
+			m.put("remarks", r[4]);
+			m.put("type", r[5]);
+			m.put("city", r[6]);
+			m.put("state", r[7]);
+			m.put("country", r[8]);
+			result.add(m);
+		}
+		return result;
 	}
 	
 	public Party getPartyById(String id) {

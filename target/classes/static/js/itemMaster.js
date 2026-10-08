@@ -660,7 +660,6 @@ function loadItemTable() {
 			}
 		});
 		datatable = $('#itemMasterList').DataTable(serverConfig);
-		datatable = $('#itemMasterList').DataTable(serverConfig);
 	}else{
 		var clientConfig = $.extend(true, {}, baseConfig, {
 			"data": itemList

@@ -223,6 +223,50 @@ public class ItemMasterService {
 	public long getItemCount(String searchValue) {
 		return getItemCount(searchValue, false);
 	}
+
+	//  @D0050: data for ONE page of the Item Master table
+	// (stock, supplier and client counts only for the items on this page)
+	public Map<String, Object> getItemMasterPage(int pageNo, int pageSize, String searchValue, boolean toolTrackerOnly) {
+		List<ItemMaster> items = getPaginatedItemList(pageNo, pageSize, searchValue, toolTrackerOnly);
+		long total = getItemCount(searchValue, toolTrackerOnly);
+
+		List<String> ids = new ArrayList<>();
+		for (ItemMaster im : items) {
+			ids.add(im.getId());
+		}
+
+		Map<String, Double> stockMap = new HashMap<>();
+		Map<String, List<String>> customerMap = new HashMap<>();
+		Map<String, Integer> supplierMap = new HashMap<>();
+		Map<String, Double> costMap = new HashMap<>();
+
+		if (!ids.isEmpty()) {
+			for (Stock s : stockRepo.findStocksByItemIds(ids)) {
+				String itemId = s.getItemMaster().getId();
+				double qty = s.getQuantity();
+				stockMap.merge(itemId, qty, Double::sum);
+				if (qty != 0 && s.getParty() != null) {
+					customerMap.computeIfAbsent(itemId, k -> new ArrayList<>()).add(s.getParty().getPartyName());
+				}
+			}
+			for (Supplier sp : supplierRepo.findByItemMasterIds(ids)) {
+				String itemId = sp.getItemMaster().getId();
+				supplierMap.merge(itemId, 1, Integer::sum);
+				if ("Yes".equals(sp.getPreferred()) || !costMap.containsKey(itemId)) {
+					costMap.put(itemId, sp.getCostPrice());
+				}
+			}
+		}
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("totalItems", total);
+		result.put("items", items);
+		result.put("stockSummaryMap", stockMap);
+		result.put("supplierSummaryMap", supplierMap);
+		result.put("customerSummaryMap", customerMap);
+		result.put("costPriceSummaryMap", costMap);
+		return result;
+	}
 	
 	/**
 	 * Get items without tools and company assets
@@ -583,6 +627,8 @@ public class ItemMasterService {
 	
 
 
+	//@D0050 OPTIMIZED: was 2 queries per item (about 14,000 queries for 6,881 items).
+	// Now 3 queries in total, joined in memory.
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Map findItemDetails() {
 		Map<String, List<Object>> itemDetails = new HashMap<String, List<Object>>();
@@ -590,43 +636,28 @@ public class ItemMasterService {
 		List<Object> itemDescList= new ArrayList();
 		List<Object> quantityList = new ArrayList();
 		List<Object> costList = new ArrayList();
-		
-		List<ItemMaster> itemList= getItemList();
-		
-		for (ItemMaster itemMaster : itemList) {
-			String itemId = itemMaster.getId();
-			if(itemId == null || itemId == ""){
-				itemIdList.add("");
-			}else{
-				itemIdList.add(itemId);
-			}
-			String itemDesc = itemMaster.getItemName();
-			if(itemDesc == null || itemDesc == ""){
-				itemDescList.add("");
-			}else{
-				itemDescList.add(itemDesc);
-			}
-			float quantity = 0;
-			List<Stock> stockList = stockService.getStockList(itemId);
-			for (Stock stock : stockList) {
-				float stockCount = stock.getQuantity();
-				quantity = quantity +stockCount;
-			}
-			quantityList.add(quantity);
-			List<Supplier> supplierList = getSupplierList(itemId);
-			String preferred = "";
-			for (Supplier supplier : supplierList) {
-				preferred = supplier.getPreferred();
-				if(preferred.equalsIgnoreCase("yes")){
-					costList.add(supplier.getCostPrice());
-					break;
-				}
-			}
-			if(preferred == "" || preferred.equalsIgnoreCase("no")){
-				costList.add((double) 0);
-			}
-			 
+
+		// 1 query: total stock quantity per item
+		Map<String, Float> qtyByItem = new HashMap<>();
+		for (Object[] r : stockRepo.getStockTotalsGroupedByItemId()) {
+			qtyByItem.put((String) r[0], r[1] == null ? 0f : ((Number) r[1]).floatValue());
 		}
+
+		// 1 query: preferred supplier cost per item
+		Map<String, Double> costByItem = new HashMap<>();
+		for (Object[] r : supplierRepo.findPreferredCostByItem()) {
+			costByItem.putIfAbsent((String) r[0], r[1] == null ? 0d : ((Number) r[1]).doubleValue());
+		}
+
+		// 1 query: id + name only
+		for (Object[] r : itemMasterRepo.findItemIdAndName()) {
+			String itemId = (String) r[0];
+			itemIdList.add(itemId == null ? "" : itemId);
+			itemDescList.add(r[1] == null ? "" : r[1]);
+			quantityList.add(qtyByItem.getOrDefault(itemId, 0f));
+			costList.add(costByItem.getOrDefault(itemId, 0d));
+		}
+
 		itemDetails.put("itemId", itemIdList);
 		itemDetails.put("itemDesc", itemDescList);
 		itemDetails.put("itemqQuantity", quantityList);

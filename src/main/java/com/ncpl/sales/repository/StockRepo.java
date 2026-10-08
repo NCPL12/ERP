@@ -68,5 +68,9 @@ public interface StockRepo extends JpaRepository<Stock,String>{
 			+ ") latest WHERE latest.rn = 1 AND latest.revtype != 2 AND latest.quantity > 0 "
 			+ "GROUP BY latest.item_master_id", nativeQuery = true)
 	List<Object[]> getStockTotalsAsOfDate(@Param("timestampMillis") long timestampMillis);
+
+	//  @D0050: all stock rows for a set of items (used by the Item Master page for one page of items)
+	@Query("SELECT s FROM Stock s WHERE s.itemMaster.id IN :itemIds")
+	List<Stock> findStocksByItemIds(@Param("itemIds") List<String> itemIds);
 	
 }
