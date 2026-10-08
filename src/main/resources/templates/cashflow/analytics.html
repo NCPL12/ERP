@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+    <meta name="csrf-token" th:content="${_csrf.token}" />
+    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Neptune Cash Flow Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/animations.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        
+        .analytics-container {
+            display: flex;
+            gap: 28px;
+            margin: 28px 0;
+            height: 900px;
+        }
+        
+        .monthly-chart-section {
+            flex: 0 0 40%;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .monthly-chart-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .chart-container-half {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            margin-bottom: 12px;
+        }
+        
+        .chart-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent);
+            margin: 16px 0;
+            border-radius: 2px;
+        }
+        
+        .mini-chart-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .weekly-charts-section {
+            flex: 0 0 60%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 28px;
+        }
+        
+        .week-chart-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 330px;
+            position: relative;
+        }
+        .week-chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            border-radius: 20px 20px 0 0;
+        }
+        .week-chart-card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .week-chart-card:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .week-chart-card:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .week-chart-card:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        
+        .week-chart-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .chart-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #0f172a;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+        
+        .chart-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 18px;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        
+        @media (max-width: 1200px) {
+            .analytics-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .monthly-chart-section {
+                flex: 1;
+                height: 450px;
+            }
+            
+            .weekly-charts-section {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 350px);
+            }
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 60px;
+        }
+        
+        .loading-spinner.show {
+            display: block;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 28px 32px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #ef4444);
+        }
+        .page-header h4 {
+            color: #0f172a;
+            font-weight: 800;
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Full Page Animation */
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #10b981 50%, #3b82f6 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        #pageAnimation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .page-animation-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: pageSlideUp 1s ease-out;
+        }
+
+        @keyframes pageSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-animation-icon {
+            font-size: 80px;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .page-animation-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .page-animation-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+            border-radius: 10px;
+            animation: progressFill 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+        
+        .filter-toolbar {
+            animation: slideUp 0.5s ease-out;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            position: relative;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+
+        .filter-toolbar .filters-info {
+            margin-left: auto;
+            color: #64748b;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 10px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('neptuneColorTheme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));</script>
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/app-theme.css?v=20260825-table-alignment}">
+</head>
+<body>
+    <!-- Page Animation -->
+    <div id="pageAnimation">
+        <div class="page-animation-content">
+            <div class="page-animation-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="page-animation-title">ANALYTICS</div>
+            <div class="page-animation-subtitle">Cash Flow Analytics Dashboard</div>
+            <div class="page-progress-container">
+                <div class="page-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="cashflow/fragments/navigation :: navbar('analytics')"></div>
+
+    <div class="container-fluid mt-4">
+        <div th:replace="cashflow/fragments/navigation :: tabbar('analytics')"></div>
+
+        <div class="filter-toolbar">
+            <label>
+                From Date
+                <input type="date" id="filterFromDate">
+            </label>
+            <label>
+                To Date
+                <input type="date" id="filterToDate">
+            </label>
+            <div class="filters-info">
+                Change the date range to refresh the analytics instantly.
+            </div>
+        </div>
+        
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Analyzing data...</p>
+        </div>
+        
+        <div class="page-header">
+            <h4>📊 Cashflow Analytics Dashboard</h4>
+            <p class="mb-0 text-muted" id="monthlyAnalysisLabel">Comprehensive monthly and weekly cashflow analysis</p>
+        </div>
+        
+        <div id="analyticsContent">
+            
+            <div class="analytics-container">
+                <!-- Left: Monthly Charts (40%) - TWO STACKED CHARTS -->
+                <div class="monthly-chart-section">
+                    <div class="chart-title" id="monthlyChartTitle">October 2025 Daily Analysis</div>
+                    <div class="chart-subtitle">Daily Cashflow Breakdown</div>
+                    
+                    <!-- Top: Net Cashflow Line Chart -->
+                    <div class="chart-container-half">
+                        <div class="mini-chart-label">Net Cashflow Trend</div>
+                        <canvas id="netCashflowChart"></canvas>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="chart-divider"></div>
+                    
+                    <!-- Bottom: Inflow/Outflow Bar Chart -->
+                    <div class="chart-container-half">
+                        <div class="mini-chart-label">Inflow vs Outflow</div>
+                        <canvas id="inflowOutflowChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Right: Weekly Charts Grid (60%) -->
+                <div class="weekly-charts-section">
+                    <!-- Week 1 -->
+                    <div class="week-chart-card">
+                        <div class="chart-title">Week 1</div>
+                        <div class="chart-subtitle" id="week1Label">Week 1 (Nov 1-7)</div>
+                        <div class="chart-container">
+                            <canvas id="week1Chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Week 2 -->
+                    <div class="week-chart-card">
+                        <div class="chart-title">Week 2</div>
+                        <div class="chart-subtitle" id="week2Label">Week 2 (Nov 8-14)</div>
+                        <div class="chart-container">
+                            <canvas id="week2Chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Week 3 -->
+                    <div class="week-chart-card">
+                        <div class="chart-title">Week 3</div>
+                        <div class="chart-subtitle" id="week3Label">Week 3 (Nov 15-21)</div>
+                        <div class="chart-container">
+                            <canvas id="week3Chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Week 4 -->
+                    <div class="week-chart-card">
+                        <div class="chart-title">Week 4</div>
+                        <div class="chart-subtitle" id="week4Label">Week 4 (Nov 22-30)</div>
+                        <div class="chart-container">
+                            <canvas id="week4Chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
+    <script>
+        let netCashflowChart = null;
+        let inflowOutflowChart = null;
+        let weekCharts = {};
+        let currentFilters = { fromDate: '', toDate: '' };
+        let filtersInitialized = false;
+
+        function buildFilterQuery(filters) {
+            const params = new URLSearchParams();
+            if (filters && filters.fromDate) {
+                params.append('fromDate', filters.fromDate);
+            }
+            if (filters && filters.toDate) {
+                params.append('toDate', filters.toDate);
+            }
+            const query = params.toString();
+            return query ? `?${query}` : '';
+        }
+        
+        // Upload button is only available on Overview tab
+        // Data is shared via session across all tabs
+        
+        async function fetchAnalyticsData(filters = currentFilters, silent = false) {
+            const query = buildFilterQuery(filters);
+            if (!silent) showLoading(true);
+            try {
+                const response = await fetch(`/api/cashflow/analytics/cached${query}`, {
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const payload = await response.json();
+                    renderCharts(payload);
+                } else if (response.status === 404) {
+                    renderCharts(null);
+                    if (!silent) {
+                        showToast('No analytics available for the selected period.', 'warning');
+                    }
+                } else {
+                    const message = await response.text().catch(() => 'Failed to load analytics.');
+                    if (!silent) {
+                        showToast(message, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch analytics', error);
+                if (!silent) {
+                    showToast('Error fetching analytics data.', 'error');
+                }
+            } finally {
+                if (!silent) showLoading(false);
+            }
+        }
+        
+        function renderCharts(data) {
+            if (!data || !Array.isArray(data.monthlyData)) {
+                document.getElementById('monthlyChartTitle').textContent = 'Analytics';
+                document.getElementById('monthlyAnalysisLabel').textContent = 'Upload an Excel file or adjust the filter to view analytics.';
+                renderMonthlyChart([]);
+                renderEmptyWeeklyCharts({});
+                return;
+            }
+
+            // Update monthly chart title with actual month
+            if (data.weeklyDataMonth) {
+                document.getElementById('monthlyChartTitle').textContent = data.weeklyDataMonth + ' Daily Analysis';
+                document.getElementById('monthlyAnalysisLabel').textContent = 
+                    `Daily and weekly breakdown for ${data.weeklyDataMonth}`;
+            }
+            
+            renderMonthlyChart(data.monthlyData);
+            
+            // Check if weekly data has any values
+            const weeklyData = data.weeklyData || {};
+            const hasWeeklyData = Object.values(weeklyData).some(week => 
+                week && (week.inflow > 0 || week.outflow > 0 || week.transactionCount > 0)
+            );
+            
+            console.log('Weekly Data Check:', {
+                hasData: hasWeeklyData,
+                weeklyDataMonth: data.weeklyDataMonth,
+                weeks: Object.keys(data.weeklyData).length
+            });
+            
+            if (hasWeeklyData) {
+                renderWeeklyCharts(weeklyData);
+            } else {
+                console.warn('No weekly data found - showing empty charts');
+                renderEmptyWeeklyCharts(weeklyData);
+            }
+        }
+        
+        function renderMonthlyChart(monthlyData) {
+            if (!Array.isArray(monthlyData) || monthlyData.length === 0) {
+                renderNetCashflowChart(['No Data'], [0]);
+                renderInflowOutflowChart(['No Data'], [0], [0]);
+                return;
+            }
+            // Filter days with data
+            const daysWithData = monthlyData.filter(d => 
+                d.inflow > 0 || d.outflow > 0
+            );
+            
+            const dataToShow = daysWithData.length > 0 && daysWithData.length < 20 
+                ? daysWithData 
+                : monthlyData;
+            
+            const labels = dataToShow.map(d => d.month);
+            const inflowData = dataToShow.map(d => d.inflow);
+            const outflowData = dataToShow.map(d => d.outflow);
+            const netData = dataToShow.map(d => d.netCashflow);
+            
+            // Render both charts
+            renderNetCashflowChart(labels, netData);
+            renderInflowOutflowChart(labels, inflowData, outflowData);
+        }
+        
+        // Chart 1: Net Cashflow Line Chart - FIXED VERSION
+        function renderNetCashflowChart(labels, netData) {
+            const ctx = document.getElementById('netCashflowChart').getContext('2d');
+            
+            if (netCashflowChart) {
+                netCashflowChart.destroy();
+            }
+            
+            const maxValue = Math.max(...netData.map(Math.abs), 0);
+            const minValue = Math.min(...netData, 0);
+            const yAxisMax = maxValue > 0 ? Math.ceil(maxValue * 1.15) : 1;
+            const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.15) : 0;
+            
+            const range = yAxisMax - yAxisMin || 1;
+            const stepSize = Math.max(1, Math.ceil(range / 10));
+            
+            netCashflowChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Net Cashflow',
+                        data: netData,
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderWidth: 4,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 14,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const value = Number(context.parsed.y);
+                                    return 'Net: ₹' + value.toLocaleString('en-IN', {
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                font: { size: 9, weight: '600' },
+                                color: '#6b7280',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            min: yAxisMin,
+                            max: yAxisMax,
+                            ticks: {
+                                stepSize: stepSize,
+                                font: { size: 10, weight: '600' },
+                                color: '#374151',
+                                callback: function(value) {
+                                    // Handle negative and positive values uniformly
+                                    const absValue = Math.abs(value);
+                                    const sign = value < 0 ? '-' : '';
+                                    
+                                    if (absValue >= 10000000) {
+                                        return sign + '₹' + (absValue / 10000000).toFixed(1) + 'Cr';
+                                    }
+                                    if (absValue >= 100000) {
+                                        return sign + '₹' + (absValue / 100000).toFixed(1) + 'L';
+                                    }
+                                    if (absValue >= 1000) {
+                                        return sign + '₹' + (absValue / 1000).toFixed(0) + 'K';
+                                    }
+                                    return sign + '₹' + absValue.toFixed(0);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.06)',
+                                drawBorder: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Chart 2: Inflow/Outflow Bar Chart - IMPROVED VERSION
+        function renderInflowOutflowChart(labels, inflowData, outflowData) {
+            const ctx = document.getElementById('inflowOutflowChart').getContext('2d');
+            
+            if (inflowOutflowChart) {
+                inflowOutflowChart.destroy();
+            }
+            
+            const maxValue = Math.max(...inflowData, ...outflowData, 0);
+            const yAxisMax = maxValue > 0 ? maxValue * 1.12 : 1;
+            const stepSize = Math.max(1, Math.ceil(yAxisMax / 10));
+            
+            inflowOutflowChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Inflow',
+                            data: inflowData,
+                            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.85
+                        },
+                        {
+                            label: 'Outflow',
+                            data: outflowData,
+                            backgroundColor: 'rgba(251, 146, 60, 0.85)',
+                            borderColor: 'rgba(251, 146, 60, 1)',
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.85
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 12,
+                                font: { size: 11, weight: '700' },
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                boxHeight: 8
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 14,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label;
+                                    const value = Number(context.parsed.y);
+                                    if (value === 0) return null;
+                                    return label + ': ₹' + value.toLocaleString('en-IN', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                font: { size: 9, weight: '600' },
+                                color: '#6b7280',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: yAxisMax,
+                            ticks: {
+                                stepSize: stepSize,
+                                font: { size: 10, weight: '600' },
+                                color: '#374151',
+                                callback: function(value) {
+                                    if (value >= 10000000) return '₹' + (value / 10000000).toFixed(1) + 'Cr';
+                                    if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + 'L';
+                                    if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'K';
+                                    return '₹' + value;
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.06)',
+                                drawBorder: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Weekly Charts - PROPERLY ALIGNED BAR CHARTS WITH LEGENDS
+        function renderWeeklyCharts(weeklyData) {
+            [1, 2, 3, 4].forEach(weekNum => {
+                const weekData = weeklyData[weekNum];
+                if (!weekData) return;
+                
+                document.getElementById(`week${weekNum}Label`).textContent = weekData.weekLabel;
+                
+                const ctx = document.getElementById(`week${weekNum}Chart`).getContext('2d');
+                
+                if (weekCharts[weekNum]) {
+                    weekCharts[weekNum].destroy();
+                }
+                
+                // Calculate max value for this week
+                const maxValue = Math.max(
+                    weekData.inflow, 
+                    weekData.outflow, 
+                    Math.abs(weekData.netCashflow)
+                );
+                
+                // Set Y-axis max with minimal padding for taller bars
+                const yAxisMax = maxValue > 0 ? maxValue * 1.15 : 100000;
+                
+                // Calculate step size for finer grid
+                const stepSize = Math.ceil(yAxisMax / 10);
+                
+                weekCharts[weekNum] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Inflow', 'Outflow', 'Net Cashflow'],
+                        datasets: [
+                            {
+                                label: 'Amount',
+                                data: [weekData.inflow, weekData.outflow, weekData.netCashflow],
+                                backgroundColor: [
+                                    'rgba(16, 185, 129, 0.85)',
+                                    'rgba(251, 146, 60, 0.85)',
+                                    weekData.netCashflow >= 0 
+                                        ? 'rgba(59, 130, 246, 0.85)' 
+                                        : 'rgba(239, 68, 68, 0.85)'
+                                ],
+                                borderColor: [
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(251, 146, 60, 1)',
+                                    weekData.netCashflow >= 0 
+                                        ? 'rgba(59, 130, 246, 1)' 
+                                        : 'rgba(239, 68, 68, 1)'
+                                ],
+                                borderWidth: 2,
+                                borderRadius: 6,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    padding: 10,
+                                    font: { size: 10, weight: '600' },
+                                    generateLabels: function(chart) {
+                                        return [
+                                            {
+                                                text: 'Inflow',
+                                                fillStyle: 'rgba(16, 185, 129, 0.85)',
+                                                strokeStyle: 'rgba(16, 185, 129, 1)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 0
+                                            },
+                                            {
+                                                text: 'Outflow',
+                                                fillStyle: 'rgba(251, 146, 60, 0.85)',
+                                                strokeStyle: 'rgba(251, 146, 60, 1)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 1
+                                            },
+                                            {
+                                                text: 'Net Cashflow',
+                                                fillStyle: weekData.netCashflow >= 0 
+                                                    ? 'rgba(59, 130, 246, 0.85)' 
+                                                    : 'rgba(239, 68, 68, 0.85)',
+                                                strokeStyle: weekData.netCashflow >= 0 
+                                                    ? 'rgba(59, 130, 246, 1)' 
+                                                    : 'rgba(239, 68, 68, 1)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 2
+                                            }
+                                        ];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                titleFont: { size: 13, weight: 'bold' },
+                                bodyFont: { size: 12 },
+                                padding: 12,
+                                cornerRadius: 6,
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = Number(context.parsed.y);
+                                        const label = context.label;
+                                        
+                                        let formatted = label + ': ₹' + value.toLocaleString('en-IN', {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        });
+                                        
+                                        // Add transaction count for Net Cashflow
+                                        if (label === 'Net Cashflow') {
+                                            return [formatted, 'Transactions: ' + weekData.transactionCount];
+                                        }
+                                        return formatted;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { 
+                                    font: { size: 11, weight: '600' },
+                                    color: '#4b5563'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: yAxisMax,
+                                ticks: {
+                                    stepSize: stepSize,
+                                    precision: 0,
+                                    font: { size: 10, weight: '500' },
+                                    color: '#4b5563',
+                                    callback: function(value) {
+                                        const valueInLakhs = value / 100000;
+                                        return '₹' + valueInLakhs.toFixed(2) + 'L';
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.08)',
+                                    drawBorder: false
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        
+        function renderEmptyWeeklyCharts(weeklyData = {}) {
+            [1, 2, 3, 4].forEach(weekNum => {
+                const weekData = weeklyData[weekNum] || {
+                    weekLabel: `Week ${weekNum}`
+                };
+                
+                document.getElementById(`week${weekNum}Label`).textContent = weekData.weekLabel;
+                
+                const ctx = document.getElementById(`week${weekNum}Chart`).getContext('2d');
+                
+                if (weekCharts[weekNum]) {
+                    weekCharts[weekNum].destroy();
+                }
+                
+                weekCharts[weekNum] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Inflow', 'Outflow', 'Net Cashflow'],
+                        datasets: [
+                            {
+                                label: 'Amount',
+                                data: [0, 0, 0],
+                                backgroundColor: [
+                                    'rgba(16, 185, 129, 0.4)',
+                                    'rgba(251, 146, 60, 0.4)',
+                                    'rgba(59, 130, 246, 0.4)'
+                                ],
+                                borderColor: [
+                                    'rgba(16, 185, 129, 0.6)',
+                                    'rgba(251, 146, 60, 0.6)',
+                                    'rgba(59, 130, 246, 0.6)'
+                                ],
+                                borderWidth: 2,
+                                borderRadius: 6,
+                                barPercentage: 0.7,
+                                categoryPercentage: 0.8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    padding: 10,
+                                    font: { size: 10, weight: '600' },
+                                    generateLabels: function(chart) {
+                                        return [
+                                            {
+                                                text: 'Inflow',
+                                                fillStyle: 'rgba(16, 185, 129, 0.4)',
+                                                strokeStyle: 'rgba(16, 185, 129, 0.6)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 0
+                                            },
+                                            {
+                                                text: 'Outflow',
+                                                fillStyle: 'rgba(251, 146, 60, 0.4)',
+                                                strokeStyle: 'rgba(251, 146, 60, 0.6)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 1
+                                            },
+                                            {
+                                                text: 'Net Cashflow',
+                                                fillStyle: 'rgba(59, 130, 246, 0.4)',
+                                                strokeStyle: 'rgba(59, 130, 246, 0.6)',
+                                                lineWidth: 2,
+                                                hidden: false,
+                                                index: 2
+                                            }
+                                        ];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function() {
+                                        return 'No transactions';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { 
+                                    font: { size: 10, weight: '600' },
+                                    color: '#9ca3af'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                max: 100000,
+                                ticks: {
+                                    stepSize: 10000,
+                                    precision: 0,
+                                    font: { size: 10, weight: '500' },
+                                    color: '#6c757d',
+                                    callback: function(value) {
+                                        const valueInLakhs = value / 100000;
+                                        return '₹' + valueInLakhs.toFixed(2) + 'L';
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.06)',
+                                    drawBorder: false
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').classList.toggle('show', show);
+            document.getElementById('analyticsContent').style.opacity = show ? '0.3' : '1';
+        }
+        
+        function showToast(message, type) {
+            alert(message);
+        }
+        
+        // Check for cached data on page load
+        async function checkSessionData() {
+            try {
+                const response = await fetch('/api/cashflow/session-info', {
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const sessionInfo = await response.json();
+                    if (sessionInfo.hasData) {
+                        document.getElementById('fileNameText').textContent = sessionInfo.fileName;
+                        document.getElementById('fileNameDisplay').classList.remove('d-none');
+                        // Fetch the actual cached data
+                        await fetchAnalyticsData(currentFilters, true);
+                        console.log('Loaded cached session data');
+                    } else {
+                        console.log('No cached data in session');
+                    }
+                }
+            } catch (error) {
+                console.log('No cached data available', error);
+            }
+        }
+        
+        document.getElementById('deleteFileBtn').addEventListener('click', async function(e) {
+            e.stopPropagation();
+            if (confirm('Delete this file? All analyzed data will be cleared.')) {
+                try {
+                    const response = await fetch('/api/cashflow/session', { method: 'DELETE' });
+                    if (response.ok) {
+                        document.getElementById('fileNameDisplay').classList.add('d-none');
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                    alert('Failed to delete file');
+                }
+            }
+        });
+        
+        dashboardFilters.initTimeFilters({
+            onChange: (filters) => {
+                currentFilters = filters;
+                fetchAnalyticsData(filters, filtersInitialized);
+                filtersInitialized = true;
+            }
+        });
+
+        checkSessionData();
+
+        // Page Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageAnimation = document.getElementById('pageAnimation');
+            const body = document.body;
+            
+            if (pageAnimation) {
+                body.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    if (pageAnimation) {
+                        pageAnimation.style.display = 'none';
+                        body.style.overflow = '';
+                    }
+                }, 3000);
+            }
+        });
+    </script>
+<script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
+</body>
+</html>
+
+

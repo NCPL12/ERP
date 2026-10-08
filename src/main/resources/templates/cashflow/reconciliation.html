@@ -1,0 +1,714 @@
+<div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: slideUp 0.5s ease-out;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+
+        .board {
+            display: grid;
+            gap: 28px;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+        }
+
+        .panel {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        /* Full Page Animation */
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #06b6d4 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        #pageAnimation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .page-animation-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: pageSlideUp 1s ease-out;
+        }
+
+        @keyframes pageSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-animation-icon {
+            font-size: 80px;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .page-animation-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .page-animation-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+            border-radius: 10px;
+            animation: progressFill 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        .panel:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(30, 60, 114, 0.08);
+        }
+
+        .panel-header h5 {
+            margin: 0;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .panel-body {
+            padding: 0 24px 24px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .panel-body table {
+            margin-bottom: 0;
+        }
+
+        .entity-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: 40px minmax(220px, 1fr) 20% 20%;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.65rem 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.95rem;
+        }
+
+        .entity-grid.header {
+            background: #f8faff;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .entity-grid.header > div,
+        .entity-grid > div:first-child,
+        .entity-grid .text-center {
+            white-space: nowrap;
+        }
+
+        .entity-grid.header > div {
+            font-size: 0.8rem;
+            letter-spacing: 0.01em;
+        }
+
+        .entity-grid .text-center {
+            text-align: center;
+        }
+
+        .entity-grid .name {
+            white-space: normal;
+            word-break: break-word;
+            min-width: 0;
+        }
+
+        .entity-body .entity-grid.entity-row:nth-child(even) {
+            background: #ffffff;
+        }
+
+        .entity-body .entity-grid.entity-row:nth-child(odd) {
+            background: #fdfdfe;
+        }
+
+        .entity-grid .text-end {
+            text-align: right;
+        }
+
+        .entity-grid .name {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .entity-grid.no-data {
+            justify-items: center;
+            grid-template-columns: 1fr;
+            padding: 0.75rem 0;
+            border-bottom: none;
+            color: #6b7280;
+        }
+
+        .reconciliation-table-fixed th,
+        .reconciliation-table-fixed td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        .reconciliation-table-fixed td:nth-child(2) {
+            white-space: normal;
+        }
+
+        /* Chart Container Styling */
+        #reconciliationDebtorsChart,
+        #reconciliationCreditorsChart {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #reconciliationDebtorsChart {
+            parent: parent;
+        }
+
+        /* Ensure chart parent containers don't clip content */
+        canvas[id*="reconciliation"] {
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .selection-summary {
+            margin-top: 28px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            padding: 28px;
+            position: relative;
+        }
+        .selection-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #1e3c72, #3b82f6);
+            border-radius: 20px 20px 0 0;
+        }
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .selection-summary .metric {
+            flex: 1 1 220px;
+        }
+
+        .selection-summary .metric span {
+            display: block;
+            color: #6c757d;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .selection-summary .metric strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 22px;
+            color: #1e3c72;
+            font-weight: 800;
+        }
+
+        .selection-summary .context {
+            flex: 2 1 320px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .invoice-row {
+            transition: background-color 0.2s;
+        }
+
+        .invoice-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .invoice-row.paid {
+            background-color: #d4edda;
+            opacity: 0.8;
+        }
+
+        .invoice-row.received {
+            background-color: #d1ecf1;
+            opacity: 0.8;
+        }
+
+        .invoice-row.paid td,
+        .invoice-row.received td {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+            width: 1.25em;
+            height: 1.25em;
+            margin-top: 0.125em;
+            vertical-align: top;
+            background-color: #e2e8f0;
+            border: 1px solid #4b5563;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+        }
+
+        .form-check-input:checked {
+            background-color: #1e3c72;
+            border-color: #1e3c72;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+
+        .form-check-input:focus {
+            border-color: #86b7fe;
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(30, 60, 114, 0.25);
+        }
+
+        .form-check-input:disabled {
+            pointer-events: none;
+            filter: none;
+            opacity: 0.5;
+        }
+    </style>
+    <div class="modal fade" id="reconciliationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f0f4f8;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none;">
+                    <div>
+                        <h5 class="modal-title mb-0">RECONCILIATION</h5>
+                        <small class="text-white-50">Receivables & Payables</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm" style="background: #f9fafb; border-left: 4px solid #ef4444;">
+                    <div class="card-body p-3">
+                        <h6 class="mb-2 text-danger"><i class="fas fa-user-minus me-2"></i>Highest Debtor</h6>
+                        <p class="mb-1"><strong id="highestDebtorName">-</strong></p>
+                        <p class="mb-0">Amount: <strong id="highestDebtorAmount">₹0</strong></p>
+                        <p class="mb-0">Days Overdue: <strong id="highestDebtorDays">-</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm" style="background: #f9fafb; border-left: 4px solid #10b981;">
+                    <div class="card-body p-3">
+                        <h6 class="mb-2 text-success"><i class="fas fa-user-plus me-2"></i>Highest Creditor</h6>
+                        <p class="mb-1"><strong id="highestCreditorName">-</strong></p>
+                        <p class="mb-0">Amount: <strong id="highestCreditorAmount">₹0</strong></p>
+                        <p class="mb-0">Days Until Due: <strong id="highestCreditorDays">-</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm" style="min-height: 320px; padding: 16px;">
+                    <div class="card-title mb-2 fw-bold">Top Debtors (Receivables)</div>
+                    <div style="height: 220px;">
+                        <canvas id="reconciliationDebtorsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm mt-3" style="background: #f9fafb; border-left: 4px solid #ef4444;">
+                    <div class="card-body p-3">
+                        <h6 class="mb-2 text-danger"><i class="fas fa-user-minus me-2"></i>Top Debtors Details</h6>
+                        <div class="entity-table" style="max-height: 260px; overflow-y: auto;">
+                            <div class="entity-grid header">
+                                <div>#</div>
+                                <div>Name</div>
+                                <div class="text-end">Amount</div>
+                                <div class="text-end">Days Overdue</div>
+                            </div>
+                            <div id="reconciliationDebtorsList" class="entity-body">
+                                <div class="entity-grid entity-row text-center text-muted">
+                                    <div colspan="4">No data yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm" style="min-height: 320px; padding: 16px;">
+                    <div class="card-title mb-2 fw-bold">Top Creditors (Payables)</div>
+                    <div style="height: 220px;">
+                        <canvas id="reconciliationCreditorsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm mt-3" style="background: #f9fafb; border-left: 4px solid #10b981;">
+                    <div class="card-body p-3">
+                        <h6 class="mb-2 text-success"><i class="fas fa-user-plus me-2"></i>Top Creditors Details</h6>
+                        <div class="entity-table" style="max-height: 260px; overflow-y: auto;">
+                            <div class="entity-grid header">
+                                <div>#</div>
+                                <div>Name</div>
+                                <div class="text-end">Amount</div>
+                                <div class="text-end">Days Until Due</div>
+                            </div>
+                            <div id="reconciliationCreditorsList" class="entity-body">
+                                <div class="entity-grid entity-row text-center text-muted">
+                                    <div colspan="4">No data yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h5 class="mb-0">Reconciliation Filters</h5>
+                <p class="small text-muted mb-0">Search by Customer/Vendor, apply date range, or set a minimum amount.</p>
+            </div>
+        </div>
+        <div class="filter-toolbar mb-4">
+            <label>
+                Search
+                <input class="form-control" type="text" id="reconciliationSearchName" placeholder="Customer / Vendor">
+            </label>
+            <label>
+                From Date
+                <input class="form-control" type="date" id="reconciliationFilterFromDate">
+            </label>
+            <label>
+                To Date
+                <input class="form-control" type="date" id="reconciliationFilterToDate">
+            </label>
+            <label>
+                Min Amount
+                <input class="form-control" type="number" id="reconciliationMinAmount" placeholder="Min Amount">
+            </label>
+            <div class="ms-auto d-flex align-items-end">
+                <button type="button" class="btn btn-secondary btn-sm" id="reconciliationClearFilters">Clear</button>
+            </div>
+        </div>
+
+        <div class="board">
+            <div class="panel">
+                <div class="panel-header d-flex align-items-center justify-content-between">
+                    <h5><i class="fas fa-arrow-down-wide-short text-success me-2"></i>Receivables</h5>
+                    <span class="badge bg-light text-success" id="receivablesSummary">₹0 | 0 items</span>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-hover align-middle" style="table-layout: fixed; width: 100%;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="table-align-checkbox"></th>
+                                <th class="table-align-name">Customer</th>
+                                <th class="table-align-invoice">Invoice #</th>
+                                <th class="table-align-date">Due</th>
+                                <th class="table-align-amount text-end">Amount</th>
+                                <th class="table-align-status">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="receivablesTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Upload a workbook to view receivables.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header d-flex align-items-center justify-content-between">
+                    <h5><i class="fas fa-arrow-up-wide-short text-danger me-2"></i>Payables</h5>
+                    <span class="badge bg-light text-danger" id="payablesSummary">₹0 | 0 items</span>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-hover align-middle" style="table-layout: fixed; width: 100%;">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="table-align-checkbox"></th>
+                                <th class="table-align-name">Vendor</th>
+                                <th class="table-align-invoice">Invoice #</th>
+                                <th class="table-align-date">Due</th>
+                                <th class="table-align-amount text-end">Amount</th>
+                                <th class="table-align-status">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payablesTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Upload a workbook to view payables.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="selection-summary">
+            <div style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 40px;">
+                    <div style="flex: 1 1 300px;">
+                        <div style="color: #6c757d; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                            Adjusted Bank Balance
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="editAdjustedBalanceBtn" title="Manually adjust balance" style="padding: 2px 8px; font-size: 11px;">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success ms-2" id="exportReconciliationBtn" title="Export reconciliation to Excel" style="padding: 2px 8px; font-size: 11px;">
+                                <i class="fas fa-file-excel me-1"></i>Export
+                            </button>
+                        </div>
+                        <div id="adjustedBankBalance" style="font-size: 32px; font-weight: 800; color: #10b981; margin-bottom: 16px;">₹0</div>
+                        <div style="font-size: 13px; color: #495057; line-height: 1.6;">
+                            <div id="adjustmentDetails"></div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Adjusted Balance Input Modal -->
+                    <div class="modal fade" id="editAdjustedBalanceModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none;">
+                                    <h5 class="modal-title">Adjust Bank Balance</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Enter Adjusted Bank Balance</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">₹</span>
+                                            <input type="number" class="form-control" id="manualAdjustedBalanceInput" placeholder="0" step="0.01">
+                                        </div>
+                                        <small class="text-muted mt-2 d-block">Manually set the adjusted bank balance for reconciliation.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer" style="border-top: 1px solid #e2e8f0;">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary btn-sm" id="saveAdjustedBalanceBtn">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex: 1 1 300px;">
+                        <div style="color: #6c757d; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Summary</div>
+                        <div id="adjustmentSummary" style="font-size: 14px; color: #495057; line-height: 1.8;">
+                            <p class="mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Receivables Marked: <strong id="receivablesCount">0</strong> items | <strong id="receivablesAmount">₹0</strong></p>
+                            <p class="mb-0"><i class="fas fa-minus-circle text-danger me-2"></i>Payables Marked: <strong id="payablesCount">0</strong> items | <strong id="payablesAmount">₹0</strong></p>
+                            <p class="mt-3 mb-0 text-muted small"><i class="fas fa-info-circle me-2"></i>Click on any row to mark it as received/paid. Bank balance will update automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+        <!-- Confirmation Modal -->
+        <div class="modal fade" id="reconciliationConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none; border-radius: 16px 16px 0 0;">
+                        <h6 class="modal-title mb-0">Confirm Selection</h6>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+                    </div>
+                    <div class="modal-body text-center p-4">
+                        <div style="font-size: 40px; color: #3b82f6; margin-bottom: 12px;">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <p class="mb-2 text-dark font-weight-bold" id="reconciliationConfirmMessage" style="font-size: 16px; font-weight: 600;">Mark this?</p>
+                        <p class="text-muted small mb-0" id="reconciliationConfirmAmount" style="font-size: 14px; font-weight: 500;">-</p>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-center border-0 pt-0 pb-4">
+                        <button type="button" class="btn btn-light btn-sm px-4" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 500;">Cancel</button>
+                        <button type="button" class="btn btn-primary btn-sm px-4" id="reconciliationConfirmYesBtn" style="border-radius: 8px; font-weight: 500;">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

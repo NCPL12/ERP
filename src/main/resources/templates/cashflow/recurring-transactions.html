@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="UTF-8" />
+<meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+<meta name="csrf-token" th:content="${_csrf.token}" />
+<meta name="csrf-header" th:content="${_csrf.headerName}" />
+<script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+<script th:src="@{/cashflow-analyzer/js/auth.js}"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+</head><body>
+<a th:href="@{/cashflow-analyzer/overview}">Back to Cashflow Overview</a><div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 28px 32px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 28px;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #ec4899, #d946ef, #a855f7);
+        }
+        .page-header h4 {
+            color: #0f172a;
+            font-weight: 800;
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+        .page-header p {
+            margin: 8px 0 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .loading-bar-container {
+            width: 100%;
+            margin-bottom: 18px;
+            display: none;
+        }
+
+        .loading-bar {
+            width: 0%;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
+            transition: width 0.4s ease;
+        }
+
+        .loading-bar.active {
+            display: block;
+        }
+
+        .loading-label {
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .action-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(236, 72, 153, 0.3);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #ec4899, #d946ef);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .metric-card h6 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card .value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+
+        .data-table-container {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out 0.2s both;
+        }
+
+        .data-table-header {
+            background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+            color: white;
+            padding: 20px 28px;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        table {
+            margin-bottom: 0;
+        }
+
+        thead tr {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        thead th {
+            color: #475569;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            border: none;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        tbody td {
+            padding: 16px 20px;
+            vertical-align: middle;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .cat-utility { background: #dcfce7; color: #166534; }
+        .cat-salary { background: #dbeafe; color: #1e40af; }
+        .cat-rent { background: #fce7f3; color: #9d174d; }
+        .cat-subscription { background: #f3e8ff; color: #5e21b5; }
+        .cat-other { background: #fef3c7; color: #92400e; }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-edit {
+            color: #3b82f6;
+        }
+
+        .btn-edit:hover {
+            background: #dbeafe;
+        }
+
+        .btn-delete {
+            color: #ef4444;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+        }
+
+        .no-data-message {
+            padding: 60px 20px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #ec4899 0%, #d946ef 100%);
+            color: white;
+            border: none;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #ec4899;
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+        }
+
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ec4899 0%, #d946ef 50%, #ec4899 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.85) 100%);
+            border-radius: 10px;
+            animation: progressFill 2.2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+    </style>
+    <div class="modal fade" id="recurringTransactionsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f0f4f8;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none;">
+                    <div>
+                        <h5 class="modal-title mb-0">Recurring Transactions</h5>
+                        <small class="text-white-50"></small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    
+        <div th:insert="cashflow/fragments/navigation :: navbar('recurring')"></div>
+        <div th:insert="cashflow/fragments/navigation :: tabbar('recurring')"></div>
+
+        <div class="page-header">
+            <h4><i class="fas fa-recycle me-3" style="color: #d946ef;"></i>Recurring Transactions</h4>
+            <p>Manage fixed expenses like electricity, salaries, rent, subscriptions, etc.</p>
+        </div>
+
+        <div id="recurringLoadingBar" class="loading-bar-container">
+            <div class="loading-label">Loading recurring transactions...</div>
+            <div class="loading-bar" id="recurringLoadingBarInner"></div>
+        </div>
+
+        <div class="action-toolbar">
+            <button class="btn-add" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Add New
+            </button>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric-card">
+                <h6><i class="fas fa-list me-2" style="color: #ec4899;"></i>Total Items</h6>
+                <div class="value" id="totalCount">0</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Recurring transactions</div>
+            </div>
+            <div class="metric-card">
+                <h6><i class="fas fa-calendar-check me-2" style="color: #d946ef;"></i>Monthly Total</h6>
+                <div class="value" style="color: #ef4444;" id="monthlyTotal">₹0</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Combined monthly cost</div>
+            </div>
+            <div class="metric-card">
+                <h6><i class="fas fa-clock me-2" style="color: #a855f7;"></i>Due Soon</h6>
+                <div class="value" id="dueSoonCount">0</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">Next 7 days</div>
+            </div>
+        </div>
+
+        <div class="data-table-container">
+            <div class="data-table-header">
+                <i class="fas fa-list-check"></i>
+                Your Recurring Expenses
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="table" id="recurringTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Name</th>
+                            <th style="width: 12%;">Category</th>
+                            <th style="width: 12%;">Frequency</th>
+                            <th style="width: 10%;">Day</th>
+                            <th style="width: 13%;">Amount</th>
+                            <th style="width: 15%;">Next Due</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 8%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recurringTableBody">
+                        <tr>
+                            <td colspan="8" class="no-data-message">
+                                <div class="no-data-icon"><i class="fas fa-inbox"></i></div>
+                                <div>No recurring transactions yet. Click "Add New" to create your first entry.</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="recurringModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Recurring Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recurringForm">
+                        <input type="hidden" id="transactionId">
+                        <div class="mb-3">
+                            <label class="form-label">Name *</label>
+                            <input type="text" class="form-control" id="name" placeholder="e.g., Electricity Bill" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" id="description" placeholder="Brief description">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category *</label>
+                                <select class="form-select" id="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="UTILITY">Utilities</option>
+                                    <option value="SALARY">Salaries</option>
+                                    <option value="RENT">Rent</option>
+                                    <option value="SUBSCRIPTION">Subscriptions</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Frequency *</label>
+                                <select class="form-select" id="type" required>
+                                    <option value="">Select Frequency</option>
+                                    <option value="WEEKLY">Weekly</option>
+                                    <option value="MONTHLY">Monthly</option>
+                                    <option value="QUARTERLY">Quarterly</option>
+                                    <option value="YEARLY">Yearly</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Day of Month *</label>
+                                <input type="number" class="form-control" id="dayOfMonth" min="1" max="31" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Amount (₹) *</label>
+                                <input type="number" class="form-control" id="amount" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Next Due Date *</label>
+                            <input type="date" class="form-control" id="nextDueDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRecurringTransaction()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body></html>

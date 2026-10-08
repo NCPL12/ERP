@@ -1,0 +1,689 @@
+<!-- Aging Analysis Modal Fragment - Based on Working Standalone Page -->
+<div th:fragment="modal">
+    <div class="modal fade" id="agingAnalysisModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f0f4f8;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none;">
+                    <div>
+                        <h5 class="modal-title mb-0">AGING ANALYSIS</h5>
+                        <small class="text-white-50">Track Overdue Receivables & Payables</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+        
+                    <div class="filter-toolbar">
+                        <label>
+                            From Date
+                            <input type="date" id="filterFromDate">
+                        </label>
+                        <label>
+                            To Date
+                            <input type="date" id="filterToDate">
+                        </label>
+                        <div class="filters-info">
+                            Filter the aging view by date range (based on due date). Clear filters to view all data.
+                        </div>
+                    </div>
+                    
+                    <div class="page-header">
+                        <h4> Aging Analysis</h4>
+                        <p class="mb-0 text-muted">Track overdue receivables and payables by aging buckets</p>
+                    </div>
+                    
+                    <!-- Summary Cards -->
+                    <div class="summary-cards">
+                        <div class="summary-card" style="border-left: 4px solid #10b981;">
+                            <div class="amount" style="color: #10b981;" id="currentAmount">0</div>
+                            <div class="label">Current (Not Due)</div>
+                        </div>
+                        <div class="summary-card" style="border-left: 4px solid #f59e0b;">
+                            <div class="amount" style="color: #f59e0b;" id="days030Amount">0</div>
+                            <div class="label">0-30 Days</div>
+                        </div>
+                        <div class="summary-card" style="border-left: 4px solid #f97316;">
+                            <div class="amount" style="color: #f97316;" id="days3160Amount">0</div>
+                            <div class="label">31-60 Days</div>
+                        </div>
+                        <div class="summary-card" style="border-left: 4px solid #ef4444;">
+                            <div class="amount" style="color: #ef4444;" id="days6190Amount">0</div>
+                            <div class="label">61-90 Days</div>
+                        </div>
+                        <div class="summary-card" style="border-left: 4px solid #dc2626;">
+                            <div class="amount" style="color: #dc2626;" id="days90plusAmount">0</div>
+                            <div class="label">90+ Days</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="dashboard-container">
+                        <div class="aging-card">
+                            <div class="card-title"> Receivables Aging</div>
+                            <div class="chart-container">
+                                <canvas id="receivablesChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="aging-card">
+                            <div class="card-title"> Payables Aging</div>
+                            <div class="chart-container">
+                                <canvas id="payablesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Table -->
+                    <div class="aging-table">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="card-title mb-0"> Detailed Aging Report</div>
+                            <button class="btn btn-outline-primary btn-sm" id="downloadAgingReportBtn">
+                                <i class="fas fa-download me-1"></i>Download Excel
+                            </button>
+                        </div>
+                        <ul class="nav nav-pills aging-bucket-tabs mb-3" id="agingBucketTabs"></ul>
+                        <table class="table table-hover">
+                            <colgroup>
+                                <col style="width:28%"><col style="width:14%"><col style="width:14%">
+                                <col style="width:15%"><col style="width:14%"><col style="width:15%">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Customer/Vendor</th>
+                                    <th>Invoice #</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Days Overdue</th>
+                                    <th>Aging Bucket</th>
+                                </tr>
+                            </thead>
+                            <tbody id="agingTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading aging data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .summary-card .amount {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .summary-card .label {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .aging-bucket-tabs .nav-link {
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 13px;
+            color: #1e3c72;
+            border: 1px solid rgba(30,60,114,0.15);
+            margin-bottom: 6px;
+        }
+
+        .aging-bucket-tabs .nav-link.active {
+            background: #1e3c72;
+            color: #fff;
+        }
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            position: relative;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+
+        .filters-info {
+            margin-left: auto;
+            color: #64748b;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 10px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 28px;
+            margin-bottom: 28px;
+        }
+        
+        .aging-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .aging-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        .aging-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 16px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .aging-table {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            position: relative;
+        }
+        .aging-table::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #1e3c72, #3b82f6);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .table { margin-bottom: 0; }
+        #agingAnalysisModal .aging-table table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+        #agingAnalysisModal .aging-table th,
+        #agingAnalysisModal .aging-table td { vertical-align: middle; }
+        #agingAnalysisModal .aging-table th:nth-child(1),
+        #agingAnalysisModal .aging-table td:nth-child(1),
+        #agingAnalysisModal .aging-table th:nth-child(2),
+        #agingAnalysisModal .aging-table td:nth-child(2) { text-align: left; }
+        #agingAnalysisModal .aging-table th:nth-child(3),
+        #agingAnalysisModal .aging-table td:nth-child(3),
+        #agingAnalysisModal .aging-table th:nth-child(5),
+        #agingAnalysisModal .aging-table td:nth-child(5),
+        #agingAnalysisModal .aging-table th:nth-child(6),
+        #agingAnalysisModal .aging-table td:nth-child(6) { text-align: center; }
+        #agingAnalysisModal .aging-table th:nth-child(4),
+        #agingAnalysisModal .aging-table td:nth-child(4) { text-align: right; }
+        .table thead th {
+            background: #f8f9fa;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .badge-current { background: #10b981; }
+        .badge-030 { background: #f59e0b; }
+        .badge-3160 { background: #f97316; }
+        .badge-6190 { background: #ef4444; }
+        .badge-90plus { background: #dc2626; }
+    </style>
+
+    <script>
+        (function() {
+            let charts = {};
+            let currentFilters = { fromDate: '', toDate: '' };
+            let filtersInitialized = false;
+            let agingDetails = [];
+            let currentBucketFilter = 'ALL';
+
+            function buildFilterQuery(filters) {
+                const params = new URLSearchParams();
+                if (filters && filters.fromDate) {
+                    params.append('fromDate', filters.fromDate);
+                }
+                if (filters && filters.toDate) {
+                    params.append('toDate', filters.toDate);
+                }
+                const query = params.toString();
+                return query ? `?${query}` : '';
+            }
+
+            function setLoading(show) {
+                const container = document.querySelector('.dashboard-container');
+                if (container) {
+                    container.style.opacity = show ? '0.35' : '1';
+                }
+                document.body.style.cursor = show ? 'progress' : 'default';
+            }
+
+            function showToast(message, type = 'info') {
+                console.log(`[${type}] ${message}`);
+                alert(message);
+            }
+
+            async function downloadAgingReport() {
+                const query = buildFilterQuery(currentFilters);
+                try {
+                    const response = await fetch(`/api/cashflow/aging-analysis/download${query}`, {
+                        credentials: 'same-origin'
+                    });
+                    if (!response.ok) {
+                        showToast('Failed to download aging report', 'error');
+                        return;
+                    }
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'Aging-Analysis-Report.xlsx';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error('Error downloading report:', error);
+                    showToast('Failed to download aging report', 'error');
+                }
+            }
+            
+            // Modal Open Event - Load data when modal is shown
+            function initializeModal() {
+                const agingModal = document.getElementById('agingAnalysisModal');
+                if (agingModal) {
+                    console.log('Initializing Aging Analysis modal');
+                    agingModal.removeEventListener('shown.bs.modal', handleModalShow);
+                    agingModal.addEventListener('shown.bs.modal', handleModalShow);
+                }
+                
+                const downloadBtn = document.getElementById('downloadAgingReportBtn');
+                if (downloadBtn) {
+                    downloadBtn.removeEventListener('click', downloadAgingReport);
+                    downloadBtn.addEventListener('click', downloadAgingReport);
+                }
+            }
+            
+            function handleModalShow() {
+                console.log('Aging Analysis modal opened');
+                checkSessionData();
+            }
+            
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeModal);
+            } else {
+                initializeModal();
+            }
+            
+            async function fetchAgingData(filters = currentFilters, silent = false) {
+                const query = buildFilterQuery(filters);
+                if (!silent) setLoading(true);
+                try {
+                    const response = await fetch(`/api/cashflow/aging-analysis/cached${query}`, {
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const payload = await response.json();
+                        renderAgingAnalysis(payload);
+                    } else if (response.status === 404) {
+                        renderAgingAnalysis(null);
+                        if (!silent) console.warn('No aging data for selected filters.');
+                    } else {
+                        const message = await response.text().catch(() => 'Failed to load aging analysis.');
+                        if (!silent) showToast(message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch aging analysis', error);
+                    if (!silent) showToast('Failed to load aging analysis.', 'error');
+                } finally {
+                    if (!silent) setLoading(false);
+                }
+            }
+            
+            // Check for cached data on modal open
+            async function checkSessionData() {
+                try {
+                    const response = await fetch('/api/cashflow/session-info', {
+                        credentials: 'same-origin'
+                    });
+                    if (response.ok) {
+                        const sessionInfo = await response.json();
+                        if (sessionInfo.hasData) {
+                            console.log('Found session data, fetching aging analysis...');
+                            await fetchAgingData(currentFilters, true);
+                        } else {
+                            console.log('No session data available');
+                            renderAgingAnalysis(null);
+                        }
+                    }
+                } catch (error) {
+                    console.log('No cached data available', error);
+                    renderAgingAnalysis(null);
+                }
+            }
+            
+            function renderAgingAnalysis(data) {
+                console.log('Rendering aging analysis with data:', data);
+
+                if (!data) {
+                    const emptyBuckets = {
+                        current: 0,
+                        days030: 0,
+                        days3160: 0,
+                        days6190: 0,
+                        days90plus: 0
+                    };
+                    document.getElementById('currentAmount').textContent = formatCurrency(0);
+                    document.getElementById('days030Amount').textContent = formatCurrency(0);
+                    document.getElementById('days3160Amount').textContent = formatCurrency(0);
+                    document.getElementById('days6190Amount').textContent = formatCurrency(0);
+                    document.getElementById('days90plusAmount').textContent = formatCurrency(0);
+
+                    renderReceivablesChart(emptyBuckets);
+                    renderPayablesChart(emptyBuckets);
+                    agingDetails = [];
+                    currentBucketFilter = 'ALL';
+                    renderBucketTabs({ receivableRanges: [] });
+                    renderAgingTable([]);
+                    return;
+                }
+                
+                const receivables = data.receivables || {};
+                const payables = data.payables || {};
+
+                document.getElementById('currentAmount').textContent = formatCurrency(Number(receivables.current || 0));
+                document.getElementById('days030Amount').textContent = formatCurrency(Number(receivables.days030 || 0));
+                document.getElementById('days3160Amount').textContent = formatCurrency(Number(receivables.days3160 || 0));
+                document.getElementById('days6190Amount').textContent = formatCurrency(Number(receivables.days6190 || 0));
+                document.getElementById('days90plusAmount').textContent = formatCurrency(Number(receivables.days90plus || 0));
+                
+                renderReceivablesChart({
+                    current: Number(receivables.current || 0),
+                    days030: Number(receivables.days030 || 0),
+                    days3160: Number(receivables.days3160 || 0),
+                    days6190: Number(receivables.days6190 || 0),
+                    days90plus: Number(receivables.days90plus || 0)
+                });
+                renderPayablesChart({
+                    current: Number(payables.current || 0),
+                    days030: Number(payables.days030 || 0),
+                    days3160: Number(payables.days3160 || 0),
+                    days6190: Number(payables.days6190 || 0),
+                    days90plus: Number(payables.days90plus || 0)
+                });
+                
+                agingDetails = Array.isArray(data.details) ? data.details : [];
+                currentBucketFilter = 'ALL';
+                renderBucketTabs(data);
+                renderAgingTable(agingDetails, currentBucketFilter);
+            }
+            
+            function renderReceivablesChart(data) {
+                const ctx = document.getElementById('receivablesChart').getContext('2d');
+                if (charts.receivables) charts.receivables.destroy();
+                
+                charts.receivables = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Current', '0-30 Days', '31-60 Days', '61-90 Days', '90+ Days'],
+                        datasets: [{
+                            label: 'Amount ( )',
+                            data: [data.current, data.days030, data.days3160, data.days6190, data.days90plus],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(249, 115, 22, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(220, 38, 38, 0.8)'
+                            ],
+                            borderRadius: 8,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => 'Amount: ' + context.parsed.y.toLocaleString('en-IN')
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => {
+                                        if (value >= 1e7) return '' + (value/1e7).toFixed(1) + 'Cr';
+                                        if (value >= 1e5) return '' + (value/1e5).toFixed(1) + 'L';
+                                        return '' + (value/1000).toFixed(0) + 'K';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function renderPayablesChart(data) {
+                const ctx = document.getElementById('payablesChart').getContext('2d');
+                if (charts.payables) charts.payables.destroy();
+                
+                charts.payables = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Current', '0-30 Days', '31-60 Days', '61-90 Days', '90+ Days'],
+                        datasets: [{
+                            data: [data.current, data.days030, data.days3160, data.days6190, data.days90plus],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(249, 115, 22, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(220, 38, 38, 0.8)'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => context.label + ': ' + context.parsed.toLocaleString('en-IN')
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function renderBucketTabs(data) {
+                const container = document.getElementById('agingBucketTabs');
+                if (!container) return;
+                const rangesSource = (data && data.receivableRanges && data.receivableRanges.length)
+                    ? data.receivableRanges
+                    : (data && data.payableRanges) || [];
+                const labels = ['ALL', 'Current'];
+                rangesSource.forEach(range => {
+                    if (!labels.includes(range.label)) {
+                        labels.push(range.label);
+                    }
+                });
+                container.innerHTML = '';
+                labels.forEach(label => {
+                    const li = document.createElement('li');
+                    li.className = 'nav-item';
+                    li.innerHTML = `<button type="button" class="nav-link ${label === currentBucketFilter ? 'active' : ''}" data-label="${label}">${label === 'ALL' ? 'All Ranges' : label}</button>`;
+                    container.appendChild(li);
+                });
+                container.querySelectorAll('.nav-link').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        currentBucketFilter = btn.getAttribute('data-label');
+                        container.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                        btn.classList.add('active');
+                        renderAgingTable(agingDetails, currentBucketFilter);
+                    });
+                });
+            }
+            
+            function renderAgingTable(details, filter = 'ALL') {
+                const tbody = document.getElementById('agingTableBody');
+                tbody.innerHTML = '';
+                const rows = !details ? [] : (filter === 'ALL' ? details : details.filter(item => item.bucket === filter));
+                
+                if (!rows || rows.length === 0) {
+                    const label = filter === 'ALL' ? 'No overdue invoices' : `No invoices for ${filter}`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center">${label}</td></tr>`;
+                    return;
+                }
+                
+                rows.forEach(item => {
+                    const row = document.createElement('tr');
+                    const bucket = (item.bucket || '').toLowerCase();
+                    let badgeClass = 'badge-90plus';
+                    if (bucket === 'current') {
+                        badgeClass = 'badge-current';
+                    } else if (bucket.includes('0-30')) {
+                        badgeClass = 'badge-030';
+                    } else if (bucket.includes('31-60')) {
+                        badgeClass = 'badge-3160';
+                    } else if (bucket.includes('61-90')) {
+                        badgeClass = 'badge-6190';
+                    }
+                    
+                    row.innerHTML = `
+                        <td><strong>${item.name}</strong></td>
+                        <td>${item.invoice || 'N/A'}</td>
+                        <td>${item.dueDate}</td>
+                        <td><strong>${parseFloat(item.amount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+                        <td>${item.daysOverdue >= 0 ? item.daysOverdue + ' days' : 'Not due'}</td>
+                        <td><span class="badge ${badgeClass}">${item.bucket}</span></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            function formatCurrency(value) {
+                const amount = Number(value || 0);
+                if (amount <= 0) return '0';
+                if (amount >= 10000000) return '' + (amount/10000000).toFixed(1) + 'Cr';
+                if (amount >= 100000) return '' + (amount/100000).toFixed(1) + 'L';
+                if (amount >= 1000) return '' + (amount/1000).toFixed(0) + 'K';
+                return '' + amount.toFixed(0);
+            }
+            
+            // Add event listeners for date range filters
+            const filterFromDate = document.getElementById('filterFromDate');
+            const filterToDate = document.getElementById('filterToDate');
+            
+            const updateDateRangeFilters = () => {
+                currentFilters.fromDate = filterFromDate ? filterFromDate.value : '';
+                currentFilters.toDate = filterToDate ? filterToDate.value : '';
+                fetchAgingData(currentFilters, filtersInitialized);
+                filtersInitialized = true;
+            };
+            
+            if (filterFromDate) {
+                filterFromDate.addEventListener('change', updateDateRangeFilters);
+            }
+            if (filterToDate) {
+                filterToDate.addEventListener('change', updateDateRangeFilters);
+            }
+        })();
+    </script>
+</div>

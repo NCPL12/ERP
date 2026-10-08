@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+    <meta name="csrf-token" th:content="${_csrf.token}" />
+    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <title>Neptune Cash Flow Analyzer - Finance Cash Plan</title>
+    <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+    <script>
+        document.documentElement.setAttribute('data-theme',localStorage.getItem('neptuneColorTheme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));
+        if(localStorage.getItem('financeSidebarCollapsed')==='true') document.documentElement.classList.add('sidebar-precollapsed');
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/app-theme.css?v=20260825-table-alignment}" />
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/finance-cash-plan.css?v=20260924-simple-statement}" />
+</head>
+<body>
+<aside class="finance-sidebar">
+    <div class="finance-brand">
+        <span class="finance-brand-icon"><img th:src="@{/cashflow-analyzer/images/neptune-logo.ico}" alt="Neptune logo" /></span>
+        <span>Finance<br/>Overview</span>
+    </div>
+    <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar" title="Collapse sidebar"><i class="fas fa-chevron-left"></i></button>
+    <nav class="finance-nav" aria-label="Finance navigation">
+        <a th:href="@{/cashflow-analyzer/overview}"><i class="fas fa-house"></i><span>Overview</span></a>
+        <a th:href="@{/cashflow-analyzer/receivables}"><i class="fas fa-arrow-trend-up"></i><span>Receivables</span></a>
+        <a th:href="@{/cashflow-analyzer/payables}"><i class="fas fa-arrow-trend-down"></i><span>Payables</span></a>
+        <a th:href="@{/cashflow-analyzer/advances}"><i class="fas fa-money-bill-transfer"></i><span>Advances</span></a>
+        <a th:href="@{/cashflow-analyzer/cost-centres}"><i class="fas fa-diagram-project"></i><span>Cost Centres</span></a>
+        <a th:href="@{/cashflow-analyzer/reconciliation}"><i class="fas fa-circle-check"></i><span>Reconciliation</span></a>
+        <a th:href="@{/cashflow-analyzer/aging}"><i class="fas fa-chart-column"></i><span>Aging Analysis</span></a>
+        <a class="active" th:href="@{/cashflow-analyzer/finance-cash-plan}"><i class="fas fa-table-list"></i><span>Finance Cash Plan</span></a>
+        <button type="button" class="graphs-toggle" data-graphs-toggle aria-expanded="false"><i class="fas fa-chart-line"></i><span>Graphs</span><i class="fas fa-chevron-down finance-nav-chevron"></i></button>
+        <div class="finance-nav-submenu" data-graphs-submenu><a class="finance-nav-child" th:href="@{/cashflow-analyzer/cashflow-forecast}"><i class="fas fa-chart-line"></i><span>Cash Flow Forecast</span></a></div>
+    </nav>
+    <div class="finance-sidebar-sync">
+        <div id="syncStatusCard" class="sync-status-card" title="Checking Tally connection">
+            <div class="sync-icon" id="syncIcon"><i class="fas fa-circle"></i></div>
+            <div class="sync-info"><div class="sync-status-text" id="syncStatusText">Checking Tally…</div><div class="sync-timestamp" id="syncTimestamp"><span class="sync-timestamp-label">Last sync</span><span class="sync-timestamp-value" id="syncTimestampValue">Loading…</span></div></div>
+            <div class="sync-button-group"><button class="sync-btn" id="syncNowBtn" type="button" title="Synchronize with Tally now"><i class="fas fa-refresh"></i><span> Sync Now</span></button></div>
+        </div>
+    </div>
+    <div class="finance-sidebar-footer">
+        <button type="button" class="finance-theme-toggle" data-theme-toggle><i class="fas fa-moon" data-theme-icon></i> <span data-theme-label>Dark mode</span></button>
+        <a class="erp-back-link" th:if="${!cashflowStandalone}" th:href="@{/dashboard}" title="Back to ERP Dashboard"><i class="fas fa-arrow-left"></i><span>Back to ERP</span></a>
+        <form th:action="@{/logout}" method="post"><button type="submit" onclick="sessionStorage.removeItem('neptuneWelcomeShown')"><i class="fas fa-right-from-bracket"></i> <span>Logout</span></button></form>
+    </div>
+</aside>
+
+<main class="plan-page">
+    <header class="plan-heading">
+        <div><h1>Monthly Cash Flow Statement</h1><p>Tally cash in and cash out with monthly adjustments entered by Finance.</p></div>
+    </header>
+
+    <section class="control-card">
+        <label>Starting month<input type="month" id="startMonth" /></label>
+        <label>Plan length<select id="monthCount"><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></label>
+        <button class="primary" id="refreshPlan"><i class="fas fa-rotate"></i> Refresh</button>
+        <div class="plan-status" id="planStatus" role="status"></div>
+    </section>
+
+    <section class="plan-card">
+        <div class="section-title">
+            <div><h2>Monthly cash flow</h2><p>Net flow = total cash in − total cash out.</p></div>
+            <div class="statement-actions">
+                <button class="secondary" id="manualEdit"><i class="fas fa-pen"></i> Edit manually</button>
+                <button class="primary" id="saveManual" hidden><i class="fas fa-floppy-disk"></i> Save</button>
+                <button class="secondary" id="cancelManual" hidden>Cancel</button>
+                <button class="secondary" id="downloadCsv"><i class="fas fa-file-csv"></i> Export CSV</button>
+            </div>
+        </div>
+        <div class="notice-row" id="planNotices"></div>
+        <div class="table-wrap"><table class="summary-table"><thead id="summaryHead"></thead><tbody id="summaryBody"></tbody></table></div>
+        <p class="support-note">Cash in and cash out are loaded from Tally. Use <strong>Edit manually</strong> to enter monthly adjustments.</p>
+    </section>
+</main>
+
+<script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
+<script th:src="@{/cashflow-analyzer/js/finance-cash-plan.js?v=20260924-simple-statement}"></script>
+</body>
+</html>
+
+
+
+
+
+
+

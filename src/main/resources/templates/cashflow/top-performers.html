@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"><head>
+<meta charset="UTF-8" />
+<meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+<meta name="csrf-token" th:content="${_csrf.token}" />
+<meta name="csrf-header" th:content="${_csrf.headerName}" />
+<script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+<script th:src="@{/cashflow-analyzer/js/auth.js}"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+</head><body>
+<a th:href="@{/cashflow-analyzer/overview}">Back to Cashflow Overview</a><div th:fragment="modal" xmlns:th="http://www.thymeleaf.org">
+    <style>
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: slideUp 0.5s ease-out;
+            position: relative;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+        
+        .filter-toolbar input[type="date"] {
+            min-width: 200px;
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 20px 20px 0 0;
+        }
+        .summary-card:nth-child(1)::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .summary-card:nth-child(2)::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .summary-card:nth-child(3)::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .summary-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-card h6 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 992px) {
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Full Page Animation */
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #8b5cf6 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        #pageAnimation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .page-animation-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: pageSlideUp 1s ease-out;
+        }
+
+        @keyframes pageSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-animation-icon {
+            font-size: 80px;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .page-animation-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .page-animation-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+            border-radius: 10px;
+            animation: progressFill 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        .insight-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .insight-card h5 {
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 280px;
+            min-height: 280px;
+            flex: 0 0 auto;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .entity-table {
+            margin-top: 16px;
+        }
+
+        .entity-table table {
+            width: 100%;
+        }
+
+        .entity-table th,
+        .entity-table td {
+            padding: 10px 14px;
+        }
+
+        .entity-table td:first-child {
+            max-width: none;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        .entity-table th {
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            font-size: 16px;
+            color: #64748b;
+        }
+    </style>
+    <div class="modal fade" id="top-performersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f0f4f8;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border: none;">
+                    <div>
+                        <h5 class="modal-title mb-0">TOP PERFORMERS</h5>
+                        <small class="text-white-50">Top Customers & Vendors</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    
+        <div class="filter-toolbar">
+            <label>
+                From Date
+                <input type="date" id="top-performers-FromDate">
+            </label>
+            <label>
+                To Date
+                <input type="date" id="top-performers-ToDate">
+            </label>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span class="text-muted small">Data updates immediately when you change filters.</span>
+            </div>
+        </div>
+
+        <div class="summary-row">
+            <div class="summary-card">
+                <h6>Total Inflow</h6>
+                <div class="value" id="totalInflowValue">₹0</div>
+            </div>
+            <div class="summary-card">
+                <h6>Total Outflow</h6>
+                <div class="value" id="totalOutflowValue">₹0</div>
+            </div>
+            <div class="summary-card">
+                <h6>Net Cash Flow</h6>
+                <div class="value" id="netCashFlowValue">₹0</div>
+            </div>
+        </div>
+
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-user-tie me-2 text-primary"></i>Top Customers</h5>
+                    <button class="btn btn-sm btn-success" onclick="downloadTopPerformers('customers')">
+                        <i class="fas fa-download me-1"></i>Download Excel
+                    </button>
+                </div>
+                <div class="chart-wrapper mb-3">
+                    <canvas id="topCustomersChart"></canvas>
+                </div>
+                <div class="entity-table">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th class="text-end">Invoices</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Upload a workbook to view customer performance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-truck-fast me-2 text-danger"></i>Top Vendors</h5>
+                    <button class="btn btn-sm btn-success" onclick="downloadTopPerformers('vendors')">
+                        <i class="fas fa-download me-1"></i>Download Excel
+                    </button>
+                </div>
+                <div class="chart-wrapper mb-3">
+                    <canvas id="topVendorsChart"></canvas>
+                </div>
+                <div class="entity-table">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th class="text-end">Invoices</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendorsTableBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Upload a workbook to view vendor performance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="insight-card" style="grid-column: 1 / -1;">
+                <h5><i class="fas fa-chart-line me-2 text-success"></i>Daily Trend</h5>
+                <div class="chart-wrapper">
+                    <canvas id="dailyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body></html>
