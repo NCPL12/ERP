@@ -1,3 +1,4 @@
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\LaptopAssignmentRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PurchaseCopy.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\aspect\LoggingAspect.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\StockReportByDateExcel.java
@@ -26,6 +27,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\common\Constants.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\PurchaseRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\WeeklyEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Designation.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\RoleRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SalesRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesItemWithoutDesignExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\FileEntity.java
@@ -39,19 +41,23 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\WorkOrder
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\PartyService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DcReportByDateExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\util\JSONArrayPojoUtil.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\MonthlyStockBaselineImportService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\InvoiceRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\GrnReportByDateExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Accessories.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\PartyCategoryRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PartyAddress.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\CompanyAssetService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\RolePermission.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\util\DateConverterUtil.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\PurchaseExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\TdsApprovedWeeklyExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Party.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ActiveSalesItemExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SalesOrderAuditRepo.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\RolePermissionDto.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\StockValueByItemEmailScedular.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\AssetType.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\City.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Lot.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Tds.java
@@ -61,6 +67,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\DashboardCo
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\SalesOrderDesign.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\StockByCustomerForAllClients.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderWithoutDesignExcel.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\MonthlyStockMovementRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Make.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ExcelLogoService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ItemMasterService.java
@@ -71,6 +78,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\TdsServic
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\WorkOrder.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\SalesItemStatus.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\PhotoIdService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Module.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\PartyCategoryService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\EmployeeMaster.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DcPartialItemsEmailSchedular.java
@@ -85,6 +93,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Returnable.
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderDesignService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PartyCategory.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\security\LoginSuccessHandler.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\EmployeeController.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\StockRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\EmailService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\erp\stockreport\MonthlyStockReportService.java
@@ -96,6 +105,8 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\generator\Invoice
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\NonBillableService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\WorkOrderItemsRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\TdsLotUpdateReportService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Role.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\api\AssetTypeRestController.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\NonBillableRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Country.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\TdsItemRepo.java
@@ -114,7 +125,10 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\api\SalesRestCont
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\PurchaseCopyService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\SalesApp.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\MaterialTrackerExcelLogoService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\UserManagementController.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\EmployeeService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\AccessDeniedController.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\RolePermissionRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\WorkOrderItems.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\GrnRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\CompanyAssets.java
@@ -124,9 +138,11 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\SalesC
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DelivaryDateEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Stages.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\AppConfig.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\DashboardListsDto.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DashboardService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\GrnItems.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SalesItemRepo.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\RoleController.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\TypeService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\CountryService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\MonthlyStockReportExcel.java
@@ -148,12 +164,14 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\LrNumberE
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\LotRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\config\SwaggerConfig.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SupplierRepo.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\LaptopAssignment.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Category.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\ItemMaster.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\generator\PartyAddressIdGenerator.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Grn.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Supplier.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\NonBillable.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\AssetTypeRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\config\VelocityConfigBean.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ItemsWithMinQtyEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SiteQuantityReportExcel.java
@@ -170,6 +188,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrde
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\FileRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ItemMasterEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\controller\PurchaseController.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\DashboardTile.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\MakeService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DesignUploadService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DcSignatureLogo.java
@@ -187,9 +206,11 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\SalesOrder.
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\Invoice.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PurchaseOrderAudit.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PurchaseItem.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\security\UserStatusFilter.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\AppConfigRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\InvCopyService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DashboardCountsRefreshScheduler.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\AssetTypeService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\PhotoIdRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\stockModifiedExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderAuditService.java
@@ -209,6 +230,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\NonBillable
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\PurchaseOrderAuditRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderUploadService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\InvoiceCopy.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\MonthlyStockMovement.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ItemMasterUploadService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SalesOrderDesignRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\DcLogoService.java
@@ -226,6 +248,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesExce
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\ActiveSalesOrderWithItremsExcel.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\SalesOrderCreatedEmailSchedular.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\OptimizedMaterialTrackerExcel.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\config\RolePermissionSeeder.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\generator\PartyIdGenerator.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\projection\PartyDropdownProjection.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\model\PartyBank.java
@@ -234,6 +257,7 @@ D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\InvoicePd
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\CompanyAssetsRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\CountryRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\OptimizedMaterialTrackerService.java
+D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\service\MonthlyStockMovementService.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\SalesOrderDesignItemsRepo.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\security\UserController.java
 D:\ERP-latest-june\erp-june23\ERP\src\main\java\com\ncpl\sales\repository\DesignationRepo.java

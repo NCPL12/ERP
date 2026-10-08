@@ -256,6 +256,14 @@
 				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
 				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
 			</definition>
+			<definition name="returnableCreate" template="/WEB-INF/views/returnableCreate.jsp">
+				<put-attribute name="title" value="Create Returnable" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
+			</definition>
 			<definition name="returnableList" template="/WEB-INF/views/returnableItemsList.jsp"> 
 				<put-attribute name="title" value="Returnable Items List" />
 				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
@@ -263,6 +271,14 @@
 				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
 				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
 				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+			</definition>
+			<definition name="returnableView" template="/WEB-INF/views/returnableView.jsp">
+				<put-attribute name="title" value="Returnable View" />
+				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
+				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
+				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
 			</definition>
 			<definition name="workOrder" template="/WEB-INF/views/workOrder.jsp"> 
 				<put-attribute name="title" value="Work Order" />

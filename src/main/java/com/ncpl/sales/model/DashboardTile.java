@@ -33,6 +33,21 @@ public enum DashboardTile {
 			}
 			return all;
 		}
-		return new HashSet<>(Arrays.asList(dashboardTilesCsv.split(",")));
+		Set<String> valid = new HashSet<>();
+		if (!dashboardTilesCsv.trim().isEmpty()) {
+			for (String k : dashboardTilesCsv.split(",")) {
+				if (k != null) {
+					String t = k.trim();
+					if (!t.isEmpty()) {
+						try {
+							DashboardTile.valueOf(t);
+							valid.add(t);
+						} catch (Exception ignored) {
+						}
+					}
+				}
+			}
+		}
+		return valid;
 	}
 }

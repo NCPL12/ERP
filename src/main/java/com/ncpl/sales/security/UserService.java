@@ -34,12 +34,14 @@ public class UserService implements UserDetailsService{
 			}
 
 			Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
+			if (user.getRole() != null) {
+				grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
 
-			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
-				if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
-				if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
-				if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+				for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
+					if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
+					if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
+					if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+				}
 			}
 
 			return new org.springframework.security.core.userdetails.User(

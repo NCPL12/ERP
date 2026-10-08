@@ -13,15 +13,21 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.ncpl.sales.model.DeliveryChallan;
 import com.ncpl.sales.model.DeliveryChallanItems;
 import com.ncpl.sales.model.DesignItems;
+import com.ncpl.sales.model.Party;
+import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.Returnable;
 import com.ncpl.sales.model.ReturnableItems;
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
+import com.ncpl.sales.repository.DeliveryChallanRepo;
+import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.ReturnableItemsRepo;
 import com.ncpl.sales.repository.ReturnableRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
@@ -41,31 +47,53 @@ public class ReturnableService {
 	StockService stockService;
 	@Autowired
 	SalesOrderDesignService soDesignService;
+	@Autowired
+	DeliveryChallanRepo dcRepo;
+	@Autowired
+	PartyRepo partyRepo;
+	@Autowired
+	PartyAddressService partyAddressService;
+	@Autowired
+	ItemMasterService itemMasterService;
 	
+	@Transactional
 	public Returnable saveReturnableDc(Returnable returnable,String partyId) {
-		
-		List<ReturnableItems> returnableItemsList=returnable.getItems();
-		for (ReturnableItems returnableItems : returnableItemsList) {
-			Optional<DeliveryChallanItems> dcItem = deliveryChallanItemsRepo.findById(returnableItems.getDcItemId());
-			Optional<SalesItem> salesItem=salesItemRepo.findById(dcItem.get().getDescription());
-			SalesOrderDesign designObj = soDesignService.findSalesOrderDesignObjBysalesItemId(salesItem.get().getId());
-			List<DesignItems> designItemList=designObj.getItems();
-			String itemId =(String) designItemList.get(0).getItemId();
-			SalesOrder soObj = salesItem.get().getSalesOrder();
+		List<ReturnableItems> items = returnable.getItems();
+		if (items == null || items.isEmpty()) return returnableRepo.save(returnable);
+		// keep only rows with returnedQty > 0 — same rule as list query (returnedQty <> 0)
+		List<ReturnableItems> filtered = items.stream()
+				.filter(ri -> ri.getReturnedQty() > 0)
+				.collect(Collectors.toList());
+		if (filtered.isEmpty()) return returnableRepo.save(returnable);
+		returnable.setItems(filtered);
+		for (ReturnableItems returnableItems : filtered) {
+			Optional<DeliveryChallanItems> dcItemOpt = deliveryChallanItemsRepo.findById(returnableItems.getDcItemId());
+			if (!dcItemOpt.isPresent()) continue;
+			DeliveryChallanItems dcItem = dcItemOpt.get();
+			// derivable clientId is from the SO that owns this DC item — do not trust hidden partyId
+			Optional<SalesItem> salesItemOpt = salesItemRepo.findById(dcItem.getDescription());
+			if (!salesItemOpt.isPresent()) continue;
+			SalesItem salesItem = salesItemOpt.get();
+			SalesOrderDesign designObj = soDesignService.findSalesOrderDesignObjBysalesItemId(salesItem.getId());
+			if (designObj == null || designObj.getItems() == null || designObj.getItems().isEmpty()) continue;
+			String itemId = designObj.getItems().get(0).getItemId();
+			SalesOrder soObj = salesItem.getSalesOrder();
 			String clientId = soObj.getParty().getId();
-			String className = "grn";
-
 			float qty = returnableItems.getReturnedQty();
-			stockService.updateStockQuantityFromGrn(itemId, clientId, qty, className, soObj);
+			// guard: cannot return more than delivered today
+			if (qty > dcItem.getTodaysQty()) qty = dcItem.getTodaysQty();
+			if (qty <= 0) continue;
+			stockService.updateStockQuantityFromGrn(itemId, clientId, qty, "grn", soObj);
 		}
-		Returnable returnableObj = returnableRepo.save(returnable);
-		
-		return returnableObj;
-		
+		return returnableRepo.save(returnable);
 	}
 
 	public List<ReturnableItems> getReturnableItemsList() {
 		return enrich(returnableItemsRepo.findAllNonZeroReturned());
+	}
+
+	public List<ReturnableItems> getReturnableItemsByReturnableId(int returnableId) {
+		return enrich(returnableItemsRepo.findByReturnableId(returnableId));
 	}
 
 	// @D0014 lazy-loaded, paginated Returnables list (see README.md)
@@ -102,18 +130,80 @@ public class ReturnableService {
 			salesItemMap.put(si.getId(), si);
 		}
 
+		// header info: Returnable -> DC -> SO -> Party / shipping
+		List<Integer> dcIds = returnableItemsList.stream()
+				.map(ri -> ri.getReturnable() != null ? ri.getReturnable().getDcId() : null)
+				.filter(java.util.Objects::nonNull).distinct().collect(Collectors.toList());
+		Map<Integer, DeliveryChallan> dcMap = new HashMap<>();
+		if (!dcIds.isEmpty()) {
+			for (DeliveryChallan dc : dcRepo.findByDcIdIn(dcIds)) dcMap.put(dc.getDcId(), dc);
+		}
+
 		ArrayList<ReturnableItems> returnableList = new ArrayList<>();
 		for (ReturnableItems returnableItems : returnableItemsList) {
 			DeliveryChallanItems dcItem = dcItemMap.get(returnableItems.getDcItemId());
 			if (dcItem == null) continue;
 			SalesItem salesItem = salesItemMap.get(dcItem.getDescription());
 			if (salesItem == null) continue;
+			Returnable ret = returnableItems.getReturnable();
+			DeliveryChallan dc = dcMap.get(ret != null ? ret.getDcId() : null);
+			SalesOrder so = salesItem.getSalesOrder();
+
+			// item-level (for modal/view) — like DeliveryChallanService.getDcItemList sets soModelNo
 			returnableItems.set("description", salesItem.getDescription());
 			returnableItems.set("unit", salesItem.getItem_units().getName());
-			returnableItems.set("clientId", salesItem.getSalesOrder().getParty().getId());
+			returnableItems.set("clientId", so.getParty().getId());
 			returnableItems.set("totalQty", salesItem.getQuantity());
 			returnableItems.set("deliveredQty", dcItem.getTodaysQty());
-			returnableItems.set("dcNo", returnableItems.getReturnable().getDcId());
+			// soModelNo from DesignItems -> ItemMaster.model
+			try {
+				List<DesignItems> designItems = soDesignService.getDesignItemListBySOItemId(salesItem.getId());
+				ArrayList<String> models = new ArrayList<>();
+				for (DesignItems di : designItems) {
+					String itemId = di.getItemId();
+					java.util.Optional<com.ncpl.sales.model.ItemMaster> im = itemMasterService.getItemById(itemId);
+					if (im.isPresent() && im.get().getModel() != null) models.add(im.get().getModel());
+					else if (itemId != null) models.add(itemId);
+				}
+				returnableItems.set("soModelNo", String.join(", ", models));
+			} catch (Exception e) {
+				returnableItems.set("soModelNo", dcItem.getSoModelNo());
+			}
+
+			// header-level columns requested for /returnableList: No, returnableId, soNumber, clientName, clientPo, shippingAddress, dcNo, date
+			returnableItems.set("returnableId", ret != null ? ret.getId() : null);
+			returnableItems.set("dcNo", ret != null ? ret.getDcId() : null);
+			String soNumber = dc != null ? dc.getSoNumber() : (so != null ? so.getId() : null);
+			returnableItems.set("soNumber", soNumber);
+			String clientName = so != null && so.getParty() != null ? so.getParty().getPartyName() : null;
+			returnableItems.set("clientName", clientName);
+			String clientPo = so != null ? so.getClientPoNumber() : null;
+			returnableItems.set("clientPo", clientPo);
+			String shippingAddress = null;
+			if (so != null) {
+				String shipId = so.getShippingAddress();
+				if (shipId != null && !shipId.isEmpty()) {
+					Party partyObj = partyRepo.findById(shipId);
+					if (partyObj != null) shippingAddress = partyObj.getAddr1();
+					else {
+						try {
+							Optional<PartyAddress> pa = partyAddressService.getAddressByAddressId(shipId);
+							if (pa.isPresent()) shippingAddress = pa.get().getAddr1();
+						} catch (Exception ignored) {}
+					}
+				}
+				if ((shippingAddress == null || shippingAddress.isEmpty()) && so.getParty() != null) {
+					shippingAddress = so.getParty().getAddr1();
+				}
+			}
+			returnableItems.set("shippingAddress", shippingAddress);
+			java.util.Date dateVal = null;
+			if (ret != null && ret.getCreated() != null) dateVal = ret.getCreated();
+			else if (dcItem.getCreated() != null) dateVal = dcItem.getCreated();
+			else if (returnableItems.getCreated() != null) dateVal = returnableItems.getCreated();
+			returnableItems.set("date", dateVal);
+			// keep dcNo alias used by JS modal
+			returnableItems.set("dcNo", ret != null ? ret.getDcId() : null);
 			returnableList.add(returnableItems);
 		}
 		return returnableList;

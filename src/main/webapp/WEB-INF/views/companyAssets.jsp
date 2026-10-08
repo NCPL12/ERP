@@ -60,10 +60,15 @@ var canDeleteCompanyAssets = ${canDeleteCompanyAssets};
 	display: flex;
 	align-items: center;
 }
+#companyAssetList_wrapper .dataTables_length label{
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	white-space: nowrap;
+}
 #companyAssetList_wrapper .dataTables_length select{
 	height: 34px;
-	padding: 2px 8px;
-	margin: 0 6px;
+	padding: 2px 24px 2px 8px;
 }
 #companyAssetList_wrapper .dataTables_filter label{
 	display: flex;
@@ -76,19 +81,12 @@ var canDeleteCompanyAssets = ${canDeleteCompanyAssets};
 	height: 34px;
 	margin-left: 0;
 }
-#companyAssetList_wrapper .button-div-style{
-	display: flex;
-	align-items: center;
-}
 @media (max-width: 767.98px){
 	#companyAssetList_wrapper .dataTables_filter{
 		flex-wrap: wrap;
 		justify-content: flex-start !important;
 		gap: 10px;
 		margin-top: 10px;
-	}
-	#companyAssetList_wrapper .button-div-style{
-		margin-right: 0 !important;
 	}
 }
 
@@ -303,11 +301,6 @@ var canDeleteCompanyAssets = ${canDeleteCompanyAssets};
 
 		<div id="companyAssetDiv" class="card">
 			<div class="card-body">
-				<div class="button-div-style" align="right">
-					<security:authorize access="hasAuthority('COMPANY_ASSETS_EDIT')">
-					<button type="button" class="btn btn-primary btn-sm" id="addCompanyAssetBtn">Add Company Asset</button>
-					</security:authorize>
-				</div>
 				<table id="companyAssetList" class="table table-bordered table-striped dataTable" style="width: 100%; font-size:13px">
 					 <thead>
 						<tr>
@@ -461,7 +454,8 @@ var canDeleteCompanyAssets = ${canDeleteCompanyAssets};
 				<div class="modal-body">
 					<div class="form-group">
 						<label for="assetTypeNameInput">Asset Type Name</label>
-						<input type="text" id="assetTypeNameInput" class="form-control"/>
+						<input type="text" id="assetTypeNameInput" class="form-control"
+							required minlength="2" maxlength="50" placeholder="Enter asset type name"/>
 					</div>
 				</div>
 				<div class="modal-footer">

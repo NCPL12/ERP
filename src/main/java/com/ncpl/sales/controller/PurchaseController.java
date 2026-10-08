@@ -1058,6 +1058,17 @@ public class PurchaseController {
 			redirectAttr.addFlashAttribute("grnObj",grn.get());
 			return "redirect:/new_grn";
 		}
+
+	 @GetMapping("/grn/{grnId:.+}")
+		public String viewGrn(@org.springframework.web.bind.annotation.PathVariable("grnId") String grnId, RedirectAttributes redirectAttr){
+			// JS does window.location = pageContext+"/grn/"+grnId (grnId like "GRN 8732-071026" → GRN%208732-071026)
+			Optional<Grn> grn = grnService.getGrnById(grnId);
+			if (grn.isPresent()) {
+				redirectAttr.addFlashAttribute("grnObj", grn.get());
+				return "redirect:/new_grn";
+			}
+			return "redirect:/grnLists";
+		}
 	 @GetMapping("/api/grn_items_by_grnId")
 	 public  ResponseEntity<?> getGrnItemListByGrnId(@RequestParam("grnId")  String  grnId,Model model) {
 		 List<GrnItems> grnItems=grnService.getGrnListById(grnId);
@@ -1141,12 +1152,14 @@ public class PurchaseController {
              @RequestParam(defaultValue = "") String soNumber,
              @RequestParam(defaultValue = "") String clientName,
              @RequestParam(defaultValue = "") String clientPo,
-             @RequestParam(defaultValue = "") String shipping) {
+             @RequestParam(defaultValue = "") String shipping,
+             @RequestParam(defaultValue = "") String comment,
+             @RequestParam(defaultValue = "") String date) {
 
          long t0 = System.currentTimeMillis();
          System.out.println("[DCLIST_DATA] request started page=" + page + " size=" + size + " archive=" + archive
                  + " keyword='" + keyword + "' dcId='" + dcId + "' soNumber='" + soNumber + "' clientName='" + clientName
-                 + "' clientPo='" + clientPo + "' shipping='" + shipping + "'");
+                 + "' clientPo='" + clientPo + "' shipping='" + shipping + "' comment='" + comment + "' date='" + date + "'");
 
          // Allow sorting only by known persistent fields
          String safeField;
@@ -1164,9 +1177,10 @@ public class PurchaseController {
          try {
              Page<DeliveryChallan> result;
              // If any column filter provided, use advanced search
-             if (!dcId.isEmpty() || !soNumber.isEmpty() || !clientName.isEmpty() || !clientPo.isEmpty() || !shipping.isEmpty()) {
+             if (!dcId.isEmpty() || !soNumber.isEmpty() || !clientName.isEmpty() || !clientPo.isEmpty()
+                     || !shipping.isEmpty() || !comment.isEmpty() || !date.isEmpty()) {
                  System.out.println("[DCLIST_DATA] using advanced search");
-                 result = deliveryChallanService.getDeliveryChallanPageAdvanced(pageable, archive, dcId, soNumber, clientName, clientPo, shipping);
+                 result = deliveryChallanService.getDeliveryChallanPageAdvanced(pageable, archive, dcId, soNumber, clientName, clientPo, shipping, comment, date);
              } else {
                  System.out.println("[DCLIST_DATA] using keyword search");
                  result = deliveryChallanService.getDeliveryChallanPage(pageable, keyword, archive);
@@ -2121,6 +2135,23 @@ public class PurchaseController {
 				model.addAttribute("companyAssetList", mapper.writeValueAsString(companyAssetList));
 				model.addAttribute("pageHeader", "Company Assets");
 				return "companyAssets";
+			}
+
+		 @GetMapping("/companyAssets/view/{id}")
+			public String viewCompanyAsset(@org.springframework.web.bind.annotation.PathVariable("id") int id, Model model) throws JsonProcessingException {
+				java.util.Optional<CompanyAssets> asset = companyAssetService.getCompanyAssetById(id);
+				if (!asset.isPresent()) {
+					return "redirect:/companyAssets";
+				}
+				User userObj = userService.getCurrentUser();
+				String role = userObj.getRole();
+				String user = userObj.getUsername();
+				ObjectMapper mapper = utilService.getObjectMapper();
+				model.addAttribute("companyAsset", mapper.writeValueAsString(asset.get()));
+				model.addAttribute("role", mapper.writeValueAsString(role));
+				model.addAttribute("user", mapper.writeValueAsString(user));
+				model.addAttribute("pageHeader", "Company Asset Details");
+				return "companyAssetDetails";
 			}
 }
 	

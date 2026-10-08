@@ -253,93 +253,123 @@ public class StockService {
 		Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(todaysDate);
 		
 		
+		// itemMasterService.getItemById / partyService.getPartyById are each several
+		// queries deep; the same item/party repeats heavily across stock rows and old/new
+		// pairs, so cache them per-request instead of re-querying every time.
+		Map<String, ItemMaster> itemCache = new HashMap<>();
+		Map<String, Party> partyCache = new HashMap<>();
+
+		// One audit query for ALL updated stock rows' full history (instead of one query
+		// per row) - this was the main remaining cost: with N updated stock rows the old
+		// code ran N separate DB round-trips here. "stockId" is queried as a plain audited
+		// property (not via AuditEntity.id()) so .in(...) is safe - Envers' id-expression
+		// helper only supports eq/ne, not in, in this version.
+		List<String> stockIds = new ArrayList<>();
+		for (Stock s : updatedStockList) {
+			stockIds.add(s.getStockId());
+		}
+		Map<String, List<Stock>> allTimeByStockId = new HashMap<>();
+		if (!stockIds.isEmpty()) {
+			AuditQuery bulkQuery = auditReader.createQuery().forRevisionsOfEntity(Stock.class, true, true);
+			bulkQuery.add(AuditEntity.property("stockId").in(stockIds)).addOrder(AuditEntity.revisionNumber().asc());
+			@SuppressWarnings("unchecked")
+			List<Stock> allRevisionsAllStocks = bulkQuery.getResultList();
+			for (Stock s : allRevisionsAllStocks) {
+				allTimeByStockId.computeIfAbsent(s.getStockId(), k -> new ArrayList<>()).add(s);
+			}
+		}
+
 		List<Map<Object, Object>> stockList = new ArrayList<>();
 		for (Stock stock : updatedStockList) {
-			
+
 			Map<Object, Object> resultStockMap = new HashMap<>();
-			
-			AuditQuery q = auditReader.createQuery().forRevisionsOfEntity(Stock.class, true, true);
-			q.add(AuditEntity.property("updated").ge(sqlFromDate)).
-			add(AuditEntity.property("updated").le(sqlToDate)).
-			add(AuditEntity.id().eq(stock.getStockId())).addOrder(AuditEntity.property("updated").desc());
-			
-			
-			@SuppressWarnings("unchecked")
-			List<Stock>  revisionNumbers = q.getResultList();
-			
-			
-			//Single revision will have same values in main table and audit table, 
+
+			// Already-fetched above in the single bulk query - no DB call here.
+			List<Stock> allTimeRevisions = allTimeByStockId.getOrDefault(stock.getStockId(), Collections.emptyList());
+
+			List<Stock> revisionNumbers = new ArrayList<>();
+			for (Stock s : allTimeRevisions) {
+				Date updatedAt = s.getUpdated();
+				if (updatedAt != null && !updatedAt.before(sqlFromDate) && !updatedAt.after(sqlToDate)) {
+					revisionNumbers.add(s);
+				}
+			}
+			Collections.reverse(revisionNumbers); // match the original query's "updated desc" order
+
+
+			//Single revision will have same values in main table and audit table,
 			//so old and new values will be same
 			if(revisionNumbers.size()!=0) {
 			if(revisionNumbers.size() == 1) {
 				//Getting 0th record because only one revision available
 				Stock recent_stock = revisionNumbers.get(0);
-				Optional<ItemMaster> item = itemMasterService.getItemById(recent_stock.getItemMaster().getId());
+				ItemMaster item = itemCache.computeIfAbsent(recent_stock.getItemMaster().getId(),
+						id -> itemMasterService.getItemById(id).orElse(null));
 				if(recent_stock.getParty() == null) {
 					recent_stock.setClientName("NA");
 				}else {
-					Party oldParty = partyService.getPartyById(recent_stock.getParty().getId());
+					Party oldParty = partyCache.computeIfAbsent(recent_stock.getParty().getId(), partyService::getPartyById);
 					String oldClient = oldParty.getPartyName();
 					recent_stock.setClientName(oldClient);
 				}
-				recent_stock.setItemMaster(item.get());
-				
+				recent_stock.setItemMaster(item);
+
 				resultStockMap.put("newStock", recent_stock);
-				
+
 				//get all the stocks from audit table when stock size is one and set old stock as the previous stock
 				//when there  is only one record in audit table for the updated date and stock has been imported on previous dates then old qty should be the previous stock qty which is not coming under the selected updated date
-				List<Number> stocks = auditReader.getRevisions(Stock.class, stock.getStockId());
-				if(stocks.size()>1) {
-					Number rev =stocks.get(stocks.size()-2);
-					Stock previousStock = auditReader.find(Stock.class,stock.getStockId(), rev);
-					previousStock.setItemMaster(item.get());
+				if(allTimeRevisions.size()>1) {
+					Stock previousStock = allTimeRevisions.get(allTimeRevisions.size()-2);
+					previousStock.setItemMaster(item);
 					resultStockMap.put("oldStock",previousStock);
-					
+
 				}else {
 					resultStockMap.put("oldStock", recent_stock);
 				}
-				resultStockMap.put("stockSize", revisionNumbers.size());				
+				resultStockMap.put("stockSize", revisionNumbers.size());
 				stockList.add(resultStockMap);
 			}
 			else {
-				
+
 					//updated stock
 					Stock newStock = revisionNumbers.get(0);
 					if(newStock.getParty() == null) {
 						newStock.setClientName("NA");
 					}else {
-						Party party = partyService.getPartyById(newStock.getParty().getId());
+						Party party = partyCache.computeIfAbsent(newStock.getParty().getId(), partyService::getPartyById);
 						String newClient = party.getPartyName();
 						newStock.setClientName(newClient);
-						
+
 					}
-					Optional<ItemMaster> item_new = itemMasterService.getItemById(newStock.getItemMaster().getId());
-					newStock.setItemMaster(item_new.get());
+					ItemMaster item_new = itemCache.computeIfAbsent(newStock.getItemMaster().getId(),
+							id -> itemMasterService.getItemById(id).orElse(null));
+					newStock.setItemMaster(item_new);
 					resultStockMap.put("newStock", newStock);
-					
+
 					//old stock
 					Stock oldStock = revisionNumbers.get(1);
-					Optional<ItemMaster> item = itemMasterService.getItemById(oldStock.getItemMaster().getId());
+					ItemMaster item = itemCache.computeIfAbsent(oldStock.getItemMaster().getId(),
+							id -> itemMasterService.getItemById(id).orElse(null));
 					if(oldStock.getParty() == null) {
 						oldStock.setClientName("NA");
 					}else {
-						Party oldParty = partyService.getPartyById(oldStock.getParty().getId());
+						Party oldParty = partyCache.computeIfAbsent(oldStock.getParty().getId(), partyService::getPartyById);
 						String oldClient = oldParty.getPartyName();
 						oldStock.setClientName(oldClient);
-						
+
 					}
-					oldStock.setItemMaster(item.get());
+					oldStock.setItemMaster(item);
 					resultStockMap.put("oldStock", oldStock);
-					resultStockMap.put("stockSize", revisionNumbers.size());	
-					
+					resultStockMap.put("stockSize", revisionNumbers.size());
+
 					stockList.add(resultStockMap);
-					
+
 				}
 			}
-			
-			
+
+
 		}
-		
+
 		return stockList;
 
 		

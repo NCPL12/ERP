@@ -51,11 +51,11 @@ public class RoleController {
 	/** Roles for the left pane, with how many users hold each and how many modules they can view. */
 	@GetMapping("/api/roles")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_VIEW')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
 	public List<Map<String, Object>> listRoles() {
 		Map<String, Long> userCountByRole = new HashMap<>();
 		for (User u : userRepo.findAll()) {
-			if (u.getRole() != null) {
+			if (u.getRole() != null && u.isEnabled()) {
 				userCountByRole.merge(u.getRole(), 1L, Long::sum);
 			}
 		}
@@ -79,7 +79,7 @@ public class RoleController {
 	/** The permission grid for one role — one row per module, in Module enum order. */
 	@GetMapping("/api/roles/{id}/permissions")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_VIEW')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
 	public ResponseEntity<?> getPermissions(@PathVariable Long id) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
@@ -109,12 +109,15 @@ public class RoleController {
 
 	@PostMapping("/api/roles")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_EDIT')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	@Transactional
 	public ResponseEntity<?> createRole(@RequestParam("name") String name) {
 		String trimmed = name == null ? "" : name.trim();
 		if (trimmed.isEmpty()) {
 			return ResponseEntity.badRequest().body("Role name cannot be empty");
+		}
+		if (trimmed.length() > 50) {
+			return ResponseEntity.badRequest().body("Role name cannot exceed 50 characters.");
 		}
 		if (roleRepo.findByName(trimmed) != null) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("Role '" + trimmed + "' already exists.");
@@ -139,23 +142,38 @@ public class RoleController {
 	/** Save the whole grid at once: delete-and-reinsert inside one transaction. */
 	@PutMapping("/api/roles/{id}/permissions")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_EDIT')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	@Transactional
 	public ResponseEntity<?> savePermissions(@PathVariable Long id, @RequestBody List<RolePermissionDto> rows) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
 		}
+		if (rows == null || rows.isEmpty()) {
+			// Empty grid would wipe every permission — treat as bad request.
+			return ResponseEntity.badRequest().body("Permission list cannot be empty.");
+		}
 
 		rolePermissionRepo.deleteByRole_RoleId(id);
 		rolePermissionRepo.flush(); // IDENTITY inserts below run immediately — make sure the deletes land first
 
+		java.util.Set<String> validModules = new java.util.HashSet<>();
+		for (Module module : Module.values()) {
+			validModules.add(module.name());
+		}
+		java.util.Set<String> seenModules = new java.util.HashSet<>();
 		List<RolePermission> entities = new ArrayList<>();
 		for (RolePermissionDto row : rows) {
+			if (row == null || row.getModule() == null) {
+				continue;
+			}
+			String mod = row.getModule().trim();
+			if (mod.isEmpty() || !validModules.contains(mod) || !seenModules.add(mod)) {
+				continue;
+			}
 			RolePermission p = new RolePermission();
 			p.setRole(role);
-			p.setModule(row.getModule());
-			// Ticking Edit or Delete implies View — enforced here too, not just in the checkbox handler.
+			p.setModule(mod);
 			boolean view = row.isCanView() || row.isCanEdit() || row.isCanDelete();
 			p.setCanView(view);
 			p.setCanEdit(row.isCanEdit());
@@ -167,10 +185,19 @@ public class RoleController {
 		return ResponseEntity.ok().build();
 	}
 
+	private boolean hasModuleView(Long roleId, String moduleName) {
+		for (RolePermission p : rolePermissionRepo.findByRole_RoleId(roleId)) {
+			if (moduleName.equals(p.getModule())) {
+				return p.isCanView() || p.isCanEdit() || p.isCanDelete();
+			}
+		}
+		return false;
+	}
+
 	/** Which of the 7 /dashboard tiles this role's users see. */
 	@GetMapping("/api/roles/{id}/dashboard-tiles")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_VIEW')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
 	public ResponseEntity<?> getDashboardTiles(@PathVariable Long id) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
@@ -191,30 +218,61 @@ public class RoleController {
 
 	@PutMapping("/api/roles/{id}/dashboard-tiles")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_EDIT')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	public ResponseEntity<?> saveDashboardTiles(@PathVariable Long id, @RequestBody List<String> tileKeys) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
 		}
-		role.setDashboardTiles(String.join(",", tileKeys));
+		java.util.Set<String> valid = new java.util.HashSet<>();
+		for (com.ncpl.sales.model.DashboardTile tile : com.ncpl.sales.model.DashboardTile.values()) {
+			valid.add(tile.name());
+		}
+		java.util.List<String> filtered = new java.util.ArrayList<>();
+		if (tileKeys != null) {
+			for (String k : tileKeys) {
+				if (k != null) {
+					String t = k.trim();
+					if (!t.isEmpty() && valid.contains(t)) {
+						filtered.add(t);
+					}
+				}
+			}
+		}
+		// A role with Dashboard view on must keep at least one tile visible,
+		// otherwise its /dashboard page renders completely empty.
+		if (filtered.isEmpty() && hasModuleView(id, Module.DASHBOARD.name())) {
+			return ResponseEntity.badRequest().body("At least one dashboard tile must be enabled.");
+		}
+		role.setDashboardTiles(String.join(",", filtered));
 		roleRepo.save(role);
 		return ResponseEntity.ok().build();
 	}
 
 	@DeleteMapping("/api/roles/{id}")
 	@ResponseBody
-	@PreAuthorize("hasAuthority('USER_MANAGEMENT_EDIT')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	@Transactional
 	public ResponseEntity<?> deleteRole(@PathVariable Long id) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
 		}
+		int assignedCount = 0;
+		for (User u : userRepo.findAll()) {
+			if (role.getName().equals(u.getRole()) && u.isEnabled()) {
+				assignedCount++;
+			}
+		}
+		if (assignedCount > 0) {
+			return ResponseEntity.status(HttpStatus.CONFLICT)
+					.body("Cannot delete role '" + role.getName() + "': still assigned to " + assignedCount + " active user" + (assignedCount == 1 ? "" : "s") + ".");
+		}
+		// Disabled users may still reference the role name — clear it so they don't dangle.
 		for (User u : userRepo.findAll()) {
 			if (role.getName().equals(u.getRole())) {
-				return ResponseEntity.status(HttpStatus.CONFLICT)
-						.body("Cannot delete role '" + role.getName() + "': still assigned to " + "existing users.");
+				u.setRole(null);
+				userRepo.save(u);
 			}
 		}
 		rolePermissionRepo.deleteByRole_RoleId(id);

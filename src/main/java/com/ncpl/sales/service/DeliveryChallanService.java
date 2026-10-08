@@ -241,6 +241,11 @@ public class DeliveryChallanService {
 		List<DeliveryChallan> dcList = dcRepo.findAllDc();
 		return dcList;
 	}
+
+	// ms picker for /returnable/create — single query, no items
+	public List<java.util.Map<String, Object>> getDcPickerList(){
+		return dcRepo.findPickerMaps();
+	}
 	
 	//code to get list of delivery challan
 	public List<DeliveryChallan> getDeliveryChallanLists() {
@@ -753,26 +758,22 @@ public class DeliveryChallanService {
 		for (DeliveryChallan dc : dcList) {
 			List<DeliveryChallanItems> dcItemList=dc.getItems();
 			for (DeliveryChallanItems deliveryChallanItems : dcItemList) {
-				System.out.println("not found"+deliveryChallanItems.getDescription());
 				Optional<SalesItem> salesItem=salesService.getSalesItemObjById(deliveryChallanItems.getDescription());
-				if(salesItem.isPresent()) {
-				System.out.println(salesItem.get().getId());
-					List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
-					for (DesignItems designItem : designItemsList) {
-						if(designItem.getDeliveredQty()!=0) {
-							if(designItem.getDeliveredQty()<designItem.getQuantity()) {
-								dcItemLists.add(deliveryChallanItems);
-							
-								break;
-							}
+				if(!salesItem.isPresent()) {
+					continue;
+				}
+				List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
+				for (DesignItems designItem : designItemsList) {
+					if(designItem.getDeliveredQty()!=0) {
+						if(designItem.getDeliveredQty()<designItem.getQuantity()) {
+							dcItemLists.add(deliveryChallanItems);
+							break;
 						}
 					}
 				}
 			}
 		}
-		System.out.println("size:" + dcItemLists.size());
 		return dcItemLists;
-		
 	}
 	
 	// Pagination methods for lazy loading
@@ -793,34 +794,73 @@ public class DeliveryChallanService {
 		return dcPage;
 	}
 	
-	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber, 
-			String clientName, String clientPo, String shipping) {
-		
-		Integer dcIdInt = null;
-		if (dcId != null && !dcId.trim().isEmpty()) {
-			try {
-				dcIdInt = Integer.parseInt(dcId);
-			} catch (NumberFormatException e) {
-				// Invalid dcId, will be ignored
-			}
-		}
-		
+	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber,
+			String clientName, String clientPo, String shipping, String comment, String date) {
+
 		Page<DeliveryChallan> dcPage = dcRepo.searchAdvanced(
-			archived, 
-			dcIdInt, 
-			soNumber, 
-			clientName, 
-			clientPo, 
-			shipping, 
+			archived,
+			emptyToNull(dcId),
+			emptyToNull(soNumber),
+			emptyToNull(clientName),
+			emptyToNull(clientPo),
+			emptyToNull(shipping),
+			emptyToNull(comment),
+			parseDateFrom(date),
+			parseDateTo(date),
 			pageable
 		);
-		
+
 		// Enrich the data with additional fields
 		for (DeliveryChallan dc : dcPage.getContent()) {
 			enrichDeliveryChallanData(dc);
 		}
-		
+
 		return dcPage;
+	}
+
+	private static String emptyToNull(String s) {
+		if (s == null) return null;
+		String t = s.trim();
+		return t.isEmpty() ? null : t;
+	}
+
+	/** Parse the Date column filter (e.g. "29-9-2026", "29-09-2026", "2026-09-29") to a day-start timestamp; null if unparseable. */
+	private static java.util.Date parseDateFrom(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[0];
+	}
+
+	/** Exclusive end of the filtered day (start of next day). */
+	private static java.util.Date parseDateTo(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[1];
+	}
+
+	private static java.util.Date[] parseDateRange(String dateStr) {
+		if (dateStr == null || dateStr.trim().isEmpty()) {
+			return null;
+		}
+		String s = dateStr.trim();
+		String[] patterns = { "d-M-yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "d/M/yyyy", "dd/MM/yyyy" };
+		for (String p : patterns) {
+			try {
+				java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(p);
+				sdf.setLenient(false);
+				java.util.Date d = sdf.parse(s);
+				java.util.Calendar cal = java.util.Calendar.getInstance();
+				cal.setTime(d);
+				cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+				cal.set(java.util.Calendar.MINUTE, 0);
+				cal.set(java.util.Calendar.SECOND, 0);
+				cal.set(java.util.Calendar.MILLISECOND, 0);
+				java.util.Date from = cal.getTime();
+				cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+				java.util.Date to = cal.getTime();
+				return new java.util.Date[] { from, to };
+			} catch (Exception ignored) {
+			}
+		}
+		return null;
 	}
 	
 	public List<DeliveryChallanItems> getDcItemListByDate(Timestamp fromDate, Timestamp toDate) {

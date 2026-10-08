@@ -346,6 +346,8 @@ public class SalesController {
 	@Autowired
 	ReturnableService returnableService;
 	@Autowired
+	com.ncpl.sales.repository.ReturnableRepo returnableRepo;
+	@Autowired
 	WorkOrderService workOrderService;
 	
 	@Autowired
@@ -501,7 +503,7 @@ public class SalesController {
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
 		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
-		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
 		User userObj  = userService.getCurrentUser();
 		String userName = userObj.getUsername();
 		ObjectMapper mapper = new ObjectMapper();
@@ -552,7 +554,7 @@ public class SalesController {
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
 		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
-		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
 		User userObj = userService.getCurrentUser();
 		String userName = userObj.getUsername();
 		ObjectMapper mapper = new ObjectMapper();
@@ -1701,13 +1703,21 @@ public class SalesController {
 			
 		 }
 	 
-	 @GetMapping("/returnable/{dcId}")
-		public String returnableItems(Model model,@PathVariable("dcId") int dcId) throws JsonProcessingException {
+	 @GetMapping("/returnable/create")
+		public String returnableCreate(Model model, @RequestParam(value="dcId", required=false) Integer preselectedDcId) throws JsonProcessingException {
 			ObjectMapper mapper = utilService.getObjectMapper();
-			List<DeliveryChallanItems> dcItemList= dcService.getDcItemList(dcId);
-			model.addAttribute("pageHeader", "Returnable Items");
-			model.addAttribute("dcItemList",mapper.writeValueAsString(dcItemList));
-			return "returnable";
+			// was getDeliveryChallanLists() — N+1 over dc+so+party+items = 2.2min; picker map is one SQL = ms
+			List<java.util.Map<String, Object>> dcLists = dcService.getDcPickerList();
+			model.addAttribute("pageHeader", "Create Returnable");
+			model.addAttribute("dcListJson", mapper.writeValueAsString(dcLists));
+			model.addAttribute("preselectedDcIdJson", preselectedDcId == null ? "null" : String.valueOf(preselectedDcId));
+			return "returnableCreate";
+		}
+
+	 @GetMapping("/returnable/{dcId}")
+		public String returnableItems(@PathVariable("dcId") int dcId) {
+			// Legacy per-DC entry from DC list — redirect to standalone create page (DC -> DC Items pattern)
+			return "redirect:/returnable/create?dcId=" + dcId;
 		}
 	 @PostMapping("/add/returned_items")
 		public String saveReturnableDc( Model model,Returnable returnable,HttpServletRequest req) {
@@ -1731,6 +1741,42 @@ public class SalesController {
 				@RequestParam(defaultValue = "10") int size,
 				@RequestParam(defaultValue = "") String keyword) {
 			return returnableService.getReturnableItemsListPage(page, size, keyword);
+		}
+
+	 @GetMapping("/api/returnable/items")
+		@ResponseBody
+		public List<ReturnableItems> getReturnableItemsByReturnableId(@RequestParam("returnableId") int returnableId) {
+			return returnableService.getReturnableItemsByReturnableId(returnableId);
+		}
+
+	 // View like /api/dc/view -> /deliveryChallan (flash): double-click on Returnables navigates here
+	 @GetMapping("/api/returnable/view")
+		public String displayReturnableView(@RequestParam("returnableId") int returnableId, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttr){
+			Optional<Returnable> rb = returnableRepo.findById(returnableId);
+			if(rb.isPresent()){
+				List<ReturnableItems> items = returnableService.getReturnableItemsByReturnableId(returnableId);
+				redirectAttr.addFlashAttribute("returnableObj", rb.get());
+				redirectAttr.addFlashAttribute("returnableItems", items);
+				return "redirect:/returnable/view";
+			}
+			return "redirect:/returnableList";
+		}
+
+	 @GetMapping("/returnable/view")
+		public String returnableViewPage(Model model, HttpServletRequest req) throws JsonProcessingException {
+			Map<String, ?> flashMap = org.springframework.web.servlet.support.RequestContextUtils.getInputFlashMap(req);
+			ObjectMapper mapper = utilService.getObjectMapper();
+			if(flashMap != null && flashMap.get("returnableObj") != null){
+				Returnable rb = (Returnable) flashMap.get("returnableObj");
+				Object items = flashMap.get("returnableItems");
+				model.addAttribute("returnableObjJson", mapper.writeValueAsString(rb));
+				model.addAttribute("returnableItemsJson", mapper.writeValueAsString(items));
+			} else {
+				model.addAttribute("returnableObjJson", "null");
+				model.addAttribute("returnableItemsJson", "[]");
+			}
+			model.addAttribute("pageHeader", "Returnable View");
+			return "returnableView";
 		}
 	 
 	 @GetMapping("/work_order")

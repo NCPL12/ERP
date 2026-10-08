@@ -50,14 +50,8 @@ table= $('#companyAssetList').DataTable({
 	]
 });
 
-/** Put "Add Company Asset" on the same line as DataTables' built-in Search box. */
-var addBtnDiv = $(".button-div-style").detach();
-addBtnDiv.css({ "padding-bottom": 0, margin: 0 });
-$("#companyAssetList_wrapper .dataTables_filter")
-	.css({ display: "flex", "align-items": "center", "justify-content": "flex-end", gap: "16px" })
-	.prepend(addBtnDiv);
-
-$(document).on("click","#addCompanyAssetBtn",function(){
+$(document).on("click","#addCompanyAssetIcon",function(e){
+	e.preventDefault();
 	$("#companyAssetForm")[0].reset();
 	$("#companyAssetId").val("0");
 	$("#assignmentRowsBody").empty();
@@ -200,9 +194,32 @@ $(document).on("click", "#addAssetTypeBtn", function(){
 });
 
 $(document).on("click", "#saveAssetTypeBtn", function(){
+	var input = $("#assetTypeNameInput")[0];
+	if(!input.checkValidity()){
+		input.reportValidity();
+		return;
+	}
 	var name = $.trim($("#assetTypeNameInput").val());
 	if(!name){
 		alert("Please enter an asset type name.");
+		return;
+	}
+	if(name.length < 2){
+		alert("Asset type name must be at least 2 characters long.");
+		return;
+	}
+	if(!/^[A-Za-z0-9][A-Za-z0-9 &\-\/().]*$/.test(name)){
+		alert("Asset type name can only contain letters, numbers and the characters space & - / ( ) .");
+		return;
+	}
+	var exists = false;
+	$("#assetType option").each(function(){
+		if($.trim($(this).val()).toLowerCase() === name.toLowerCase()){
+			exists = true;
+		}
+	});
+	if(exists){
+		alert("This asset type already exists.");
 		return;
 	}
 	$.ajax({
@@ -315,38 +332,108 @@ function reindexAssignmentRows(){
 	});
 }
 
+function todayISO(){
+	var d = new Date();
+	return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+/** "Model No." from the modal field label, or the assignment table's column header. */
+function requiredMessage(field){
+	var row = field.closest(".assignmentRow");
+	if(row.length){
+		var head = row.closest("table").find("thead th").eq(field.closest("td").index()).text();
+		return $.trim(head) + " is required";
+	}
+	var label = $.trim(field.closest(".ca-field").find("label").text());
+	return label ? label + " is required" : "This field is required";
+}
+
 $(document).on("click","#saveCompanyAssetBtn",function(e){
 
+	e.preventDefault();
 	reindexAssignmentRows();
 
-	let isValid = true;
+	$("#companyAssetForm .error").remove();
+	$("#companyAssetForm .ca-invalid").removeClass("ca-invalid").css("border", "");
 
-	$('.error').remove();
+	var isValid = true;
+	var firstInvalid = null;
 
-	$("#companyAssetForm").find('[required]').each(function() {
-		let field = $(this);
-		if ($.trim(field.val()) === '') {
-			field.css('border', '2px solid red');
-			field.after('<span class="error" style="color:red;font-size:12px;">This field is required</span>');
-			isValid = false;
-		} else {
-			field.css('border', '');
+	function fail(field, message){
+		isValid = false;
+		if(!firstInvalid){
+			firstInvalid = field;
+		}
+		if(field.hasClass("ca-invalid")){
+			return;
+		}
+		field.addClass("ca-invalid");
+		field.after("<span class='error' style='color:red;font-size:11px;display:block;'>"
+			+ message + "</span>");
+	}
+
+	$("#companyAssetForm").find("[required]").each(function(){
+		var field = $(this);
+		var value = field.val();
+		if(value == null || $.trim(String(value)) === ""){
+			fail(field, requiredMessage(field));
 		}
 	});
 
+	if($("#laptopDetailsSection").is(":visible")){
+		$.each([["#assetId", "Asset ID"], ["#serialNo", "Serial No"], ["#dateOfPurchase", "Date of Purchase"]],
+			function(i, pair){
+				var field = $(pair[0]);
+				if($.trim(field.val()) === ""){
+					fail(field, pair[1] + " is required");
+				}
+			});
+		if($("#dateOfPurchase").val() && $("#dateOfPurchase").val() > todayISO()){
+			fail($("#dateOfPurchase"), "Date of Purchase cannot be in the future");
+		}
+	}
+
+	var assignments = [];
 	$("#assignmentRowsBody .assignmentRow").each(function(){
-		let dateIssued = $(this).find(".assignDateIssuedInput").val();
-		let dateReturnedField = $(this).find(".assignDateReturnedInput");
-		let dateReturned = dateReturnedField.val();
-		if (dateIssued && dateReturned && dateReturned < dateIssued) {
-			dateReturnedField.css('border', '2px solid red');
-			dateReturnedField.after('<span class="error" style="color:red;font-size:11px;display:block;">Before issue date</span>');
-			isValid = false;
+		var row = $(this);
+		var employee = row.find(".assignEmployeeSelect");
+		var dateIssued = row.find(".assignDateIssuedInput");
+		var dateReturned = row.find(".assignDateReturnedInput");
+		var returnedTo = row.find(".assignReturnedToInput");
+
+		if(dateIssued.val() && dateIssued.val() > todayISO()){
+			fail(dateIssued, "Date Issued cannot be in the future");
+		}
+		if(dateIssued.val() && dateReturned.val() && dateReturned.val() < dateIssued.val()){
+			fail(dateReturned, "Cannot be before the issue date");
+		}
+		if(dateReturned.val() && $.trim(returnedTo.val()) === ""){
+			fail(returnedTo, "Returned To is required when a return date is entered");
+		}
+		assignments.push({ employee: employee, id: employee.val(), open: !dateReturned.val() });
+	});
+
+	// One employee can only hold one assignment at a time.
+	var byEmployee = {};
+	$.each(assignments, function(i, a){
+		if(!a.id){
+			return;
+		}
+		(byEmployee[a.id] = byEmployee[a.id] || []).push(a);
+	});
+	$.each(byEmployee, function(id, group){
+		if(group.length > 1 && $.grep(group, function(a){ return a.open; }).length > 0){
+			$.each(group, function(i, a){
+				fail(a.employee, "This employee already has an assignment in another row");
+			});
 		}
 	});
 
-	if (!isValid) {
-		e.preventDefault();
+	if(!isValid){
+		if(firstInvalid && firstInvalid.length){
+			firstInvalid[0].scrollIntoView({ block: "center" });
+			firstInvalid.trigger("focus");
+		}
 	}else{
 		$('#companyAssetForm').submit();
 	}
