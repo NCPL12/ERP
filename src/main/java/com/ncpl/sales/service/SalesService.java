@@ -1346,7 +1346,7 @@ public class SalesService {
 	
 	public List<SalesOrder> getAllSalesOrderQithDesignAndPoNotDoneForDashboard(){
 		List<SalesOrder> salesOrderList = salesrepo.getSalesOrderWithDesign();
-		System.out.println("so with design and PO not done : "+salesOrderList.size());
+		log.debug("so with design and PO not done : {}", salesOrderList.size());
 		return salesOrderList;
 	}
 	

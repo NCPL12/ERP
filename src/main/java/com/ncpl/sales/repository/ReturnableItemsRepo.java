@@ -23,4 +23,6 @@ public interface ReturnableItemsRepo extends JpaRepository<ReturnableItems, Inte
 			+ "AND (:orderNo = '' OR CAST(r.dcId AS string) LIKE CONCAT('%', :orderNo, '%'))")
 	Page<ReturnableItems> findAllNonZeroReturnedPaged(@Param("orderNo") String orderNo, Pageable pageable);
 
+	List<ReturnableItems> findByReturnableId(int returnableId);
+
 }

@@ -47,6 +47,7 @@ public class UserController {
     }
 
     /** User Management admin page: list of all users. */
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW','USER_MANAGEMENT_EDIT')")
     @GetMapping("/api/users/all")
     @ResponseBody
     public ResponseEntity<?> getAllUsersForManagement() {
@@ -87,6 +88,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + userId);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
     @PostMapping("/api/users")
     @ResponseBody
     public ResponseEntity<?> createUser(
@@ -131,6 +133,7 @@ public class UserController {
         }
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
     @PutMapping("/api/users/{id}")
     @ResponseBody
     public ResponseEntity<?> updateUser(
@@ -195,6 +198,7 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
     @PutMapping("/api/users/{id}/password")
     @ResponseBody
     public ResponseEntity<?> changePassword(@PathVariable("id") Long id, @RequestParam("password") String password) {
@@ -208,6 +212,7 @@ public class UserController {
         return ResponseEntity.ok("Password updated successfully");
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
     @DeleteMapping("/api/users/{id}")
     @ResponseBody
     public ResponseEntity<?> deleteUser(@PathVariable("id") Long id) {

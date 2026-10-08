@@ -388,6 +388,14 @@
 								<li class="nav-item d-none d-sm-inline-block pageHeader">${pageHeader}
 
 								</li>
+								<c:if test="${pageHeader == 'Company Assets'}">
+									<security:authorize access="hasAuthority('COMPANY_ASSETS_EDIT')">
+									<li class="nav-item d-none d-sm-inline-block">
+										<a href="#" class="nav-link" id="addCompanyAssetIcon"><i
+												class="fa fa-plus-square headerIconFont"></i></a>
+									</li>
+									</security:authorize>
+								</c:if>
 								<c:if test="${pageHeader == 'Party List'}">
 									<security:authorize access="hasAuthority('PARTY_EDIT')">
 									<li class="nav-item d-none d-sm-inline-block">

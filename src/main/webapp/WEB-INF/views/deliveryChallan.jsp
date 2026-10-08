@@ -189,7 +189,7 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 							<span class="dc-field-colon">:</span>
 							<div class="dc-field-value">
 								<select class="form-control select2 select2-hidden-accessible dropdownwidth150"
-									name="soNumber" id="clientPoDropdown">
+									id="clientPoDropdown">
 									<option value="">Select Client PO No.</option>
 								</select>
 							</div>

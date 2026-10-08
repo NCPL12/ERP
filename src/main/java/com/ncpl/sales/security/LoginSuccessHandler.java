@@ -26,19 +26,24 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler i
 	static {
 		LANDING_PAGES.put("DASHBOARD_VIEW", "/dashboard");
 		LANDING_PAGES.put("SALES_ORDER_VIEW", "/salesList");
+		LANDING_PAGES.put("PARTY_VIEW", "/partyList");
+		LANDING_PAGES.put("ITEM_MASTER_VIEW", "/itemMaster");
+		LANDING_PAGES.put("COMPANY_ASSETS_VIEW", "/companyAssets");
+		LANDING_PAGES.put("DELIVERY_CHALLAN_VIEW", "/dcList");
+		LANDING_PAGES.put("RETURNABLE_VIEW", "/returnableList");
+		LANDING_PAGES.put("INVOICE_VIEW", "/invoiceList");
+		LANDING_PAGES.put("WORK_ORDER_VIEW", "/workOrderList");
+		LANDING_PAGES.put("PURCHASE_VIEW", "/purchase");
+		LANDING_PAGES.put("GRN_VIEW", "/grnLists");
+		LANDING_PAGES.put("NON_BILLABLE_VIEW", "/nonBillableList");
+		LANDING_PAGES.put("REPORTS_VIEW", "/sales_report");
+		LANDING_PAGES.put("ARCHIVES_VIEW", "/salesList_archived");
+		LANDING_PAGES.put("USER_MANAGEMENT_VIEW", "/user-management");
 	}
 
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
 			Authentication authentication) throws IOException, ServletException {
-		boolean isItemMasterOrStore = authentication.getAuthorities().stream()
-				.map(GrantedAuthority::getAuthority)
-				.anyMatch(role -> role.equalsIgnoreCase("ITEMMASTER") || role.equalsIgnoreCase("STORE"));
-		if (isItemMasterOrStore) {
-			response.sendRedirect(request.getContextPath()+"/itemMaster");
-			return;
-		}
-
 		Set<String> authorities = authentication.getAuthorities().stream()
 				.map(GrantedAuthority::getAuthority)
 				.collect(Collectors.toSet());

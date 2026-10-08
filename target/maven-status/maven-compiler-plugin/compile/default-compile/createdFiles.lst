@@ -40,6 +40,7 @@ com\ncpl\sales\service\SalesOrderWithNoDesignByCostomerExcel.class
 com\ncpl\sales\service\StockListByCustomerExcel.class
 com\ncpl\sales\aspect\LoggingAspect.class
 com\ncpl\sales\service\PurchaseOrderCustomProperty.class
+com\ncpl\sales\model\MonthlyStockMovement.class
 com\ncpl\sales\repository\LotRepo.class
 com\ncpl\sales\service\SalesOrderWithNoDesignExcel.class
 com\ncpl\sales\repository\RoleRepo.class
@@ -52,6 +53,7 @@ com\ncpl\sales\service\MakeService.class
 com\ncpl\sales\service\DeliveryChallanService.class
 com\ncpl\sales\model\AppConfig.class
 com\ncpl\sales\repository\CountryRepo.class
+com\ncpl\sales\service\MonthlyStockMovementService$GrnSummary.class
 com\ncpl\sales\service\PartyContactService.class
 com\ncpl\sales\service\SalesOrderDownloadExcel.class
 com\ncpl\sales\service\PartyAddressService.class
@@ -89,6 +91,7 @@ com\ncpl\sales\repository\AssetTypeRepo.class
 com\ncpl\sales\repository\CityRepo.class
 com\ncpl\sales\service\SalesItemWithoutDesignExcel.class
 com\ncpl\sales\config\RolePermissionSeeder.class
+com\ncpl\sales\service\MonthlyStockMovementService.class
 com\ncpl\sales\service\StockService.class
 com\ncpl\sales\model\Party.class
 com\ncpl\sales\repository\SalesRepo.class
@@ -105,11 +108,13 @@ com\ncpl\sales\repository\InvoiceCopyRepo.class
 com\ncpl\sales\model\Type.class
 com\ncpl\sales\service\ActiveSOWithItremsExcel.class
 com\ncpl\sales\service\LrNumberEmailSchedular.class
+com\ncpl\sales\service\MonthlyStockBaselineImportService.class
 com\ncpl\sales\model\PurchaseOrder.class
 com\ncpl\sales\service\PedningSalesItemsExcel.class
 com\ncpl\sales\security\UserService.class
 com\ncpl\sales\model\State.class
 com\ncpl\sales\model\Grn.class
+com\ncpl\sales\repository\MonthlyStockMovementRepo.class
 com\ncpl\sales\service\DashboardCountsRefreshScheduler.class
 com\ncpl\sales\generator\SalesItemIdGenerator.class
 com\ncpl\sales\repository\ReturnableRepo.class
@@ -240,6 +245,7 @@ com\ncpl\sales\model\EmployeeMaster.class
 com\ncpl\sales\service\SalesExcel.class
 com\ncpl\sales\model\WorkOrder.class
 com\ncpl\sales\repository\PhotoIdRepo.class
+com\ncpl\sales\api\AssetTypeRestController.class
 com\ncpl\sales\generator\SupplierIdGenerator.class
 com\ncpl\sales\service\GrnExcel.class
 com\ncpl\sales\model\LaptopAssignment.class

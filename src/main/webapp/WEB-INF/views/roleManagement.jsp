@@ -7,8 +7,11 @@
 <meta charset="UTF-8">
 <title>Role &amp; Access</title>
 <tiles:insertAttribute name="header-resources" />
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')" var="canEditUserMgmt" />
 <script>
 var pageContext = '${pageContext.request.contextPath}';
+window.hasUserManagementEdit = ${canEditUserMgmt};
 </script>
 <style>
 .ra-page {
@@ -225,27 +228,32 @@ var pageContext = '${pageContext.request.contextPath}';
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
 }
-.ra-tiles-checks {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	column-gap: 18px;
-	row-gap: 10px;
-	max-width: 640px;
-}
-.ra-tile-check {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-weight: 400;
-	font-size: 0.82rem;
-	color: #374151;
-	margin: 0;
-	white-space: nowrap;
-}
-.ra-tile-check input {
-	accent-color: #2563eb;
-	margin: 0;
-}
+  .ra-tiles-checks {
+  	display: flex;
+  	flex-wrap: wrap;
+  	column-gap: 18px;
+  	row-gap: 10px;
+  	max-width: 100%;
+  	align-items: center;
+  }
+  .ra-tile-check {
+  	display: inline-flex;
+  	align-items: center;
+  	gap: 6px;
+  	font-weight: 400;
+  	font-size: 0.82rem;
+  	color: #374151;
+  	margin: 0;
+  	white-space: nowrap;
+  	line-height: 1;
+  }
+  .ra-tile-check input {
+  	accent-color: #2563eb;
+  	margin: 0;
+  	vertical-align: middle;
+  	position: relative;
+  	top: 0;
+  }
 .ra-legend {
 	display: flex;
 	align-items: center;
@@ -296,7 +304,7 @@ var pageContext = '${pageContext.request.contextPath}';
 							<div class="ra-subtitle" id="roleSummary">Select a role</div>
 						</div>
 						<div class="ra-actions">
-							<button type="button" class="ra-btn-outline" id="newRoleBtn">New Role</button>
+							<button type="button" class="ra-btn-outline" id="newRoleBtn" ${canEditUserMgmt ? '' : 'disabled'}>New Role</button>
 							<button type="button" class="ra-btn-primary" id="savePermissionsBtn" disabled>Save Permissions</button>
 						</div>
 					</div>

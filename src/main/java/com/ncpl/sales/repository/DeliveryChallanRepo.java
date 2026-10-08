@@ -84,18 +84,24 @@ public interface DeliveryChallanRepo extends
 	       "LEFT JOIN so.party p " +
 	       "LEFT JOIN PartyAddress pa ON pa.id = so.shippingAddress " +
 	       "WHERE dc.archive = :archive " +
-	       "AND (:dcId IS NULL OR dc.dcId = :dcId) " +
+	       "AND (:dcId IS NULL OR CAST(dc.dcId AS string) LIKE CONCAT('%', :dcId, '%')) " +
 	       "AND (:soNumber IS NULL OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:soNumber), '%')) " +
 	       "AND (:clientName IS NULL OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:clientName), '%')) " +
 	       "AND (:clientPo IS NULL OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:clientPo), '%')) " +
-	       "AND (:shipping IS NULL OR LOWER(pa.addr1) LIKE CONCAT('%', LOWER(:shipping), '%') OR LOWER(p.addr1) LIKE CONCAT('%', LOWER(:shipping), '%'))")
+	       "AND (:shipping IS NULL OR LOWER(pa.addr1) LIKE CONCAT('%', LOWER(:shipping), '%') OR LOWER(p.addr1) LIKE CONCAT('%', LOWER(:shipping), '%')) " +
+	       "AND (:comment IS NULL OR LOWER(dc.dcComment) LIKE CONCAT('%', LOWER(:comment), '%')) " +
+	       "AND (:dateFrom IS NULL OR EXISTS (SELECT 1 FROM DeliveryChallanItems i " +
+	       "     WHERE i.deliveryChallan = dc AND i.created >= :dateFrom AND i.created < :dateTo))")
 	Page<DeliveryChallan> searchAdvanced(
 	        @Param("archive") boolean archive,
-	        @Param("dcId") Integer dcId,
+	        @Param("dcId") String dcId,
 	        @Param("soNumber") String soNumber,
 	        @Param("clientName") String clientName,
 	        @Param("clientPo") String clientPo,
 	        @Param("shipping") String shipping,
+	        @Param("comment") String comment,
+	        @Param("dateFrom") java.util.Date dateFrom,
+	        @Param("dateTo") java.util.Date dateTo,
 	        Pageable pageable);
 	
 	@Query("SELECT dc FROM DeliveryChallan dc WHERE dc.dcId IN :dcIds")
@@ -103,5 +109,11 @@ public interface DeliveryChallanRepo extends
 
 	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc LEFT JOIN FETCH dc.items WHERE dc.dcId IN :dcIds")
 	List<DeliveryChallan> findByDcIdInWithItems(@Param("dcIds") List<Integer> dcIds);
+
+	// Lightweight picker for Returnable create — single SQL, no N+1, no items
+	@Query("SELECT new map(dc.dcId as dcId, dc.soNumber as soNumber, p.partyName as clientName, so.clientPoNumber as clientPo) "
+			+ "FROM DeliveryChallan dc LEFT JOIN SalesOrder so ON so.id = dc.soNumber LEFT JOIN so.party p "
+			+ "WHERE dc.archive = false ORDER BY dc.dcId DESC")
+	List<java.util.Map<String, Object>> findPickerMaps();
 
 }

@@ -171,14 +171,14 @@ $(document).ready(function(){
 	    		});
 	    	},
 	    });
-	    //on double click of list navigate to view page
+	    //on double click of list navigate to view page — use ?grnId= to handle "GRN 8732..." space correctly
 	    $('#grnList tbody').on('dblclick', 'tr', function () {
 	 	   if (!canEditGrn) {
 	 		   return;
 	 	   }
 	 	   var data = grnDataTable.row(this).data();
 	 	   var grnId = data.grnId;
-	 	   window.location = pageContext+"/grn/"+grnId;
+	 	   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
 	 	});
 })
 
@@ -317,7 +317,7 @@ $(document).on("click",".grnView",function(){
 					if (!canEditGrn) {
 						return;
 					}
-				 	   window.location = pageContext+"/grn/"+grnId;
+				 	   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
 				})
 	    },
 		complete:function(resp){
