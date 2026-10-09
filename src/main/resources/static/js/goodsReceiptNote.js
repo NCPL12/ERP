@@ -73,15 +73,21 @@ $(document).ready(function(){
 	    		});
 	    	},
 	    	"columns": [ {
-				"data" : "grnId",
-				"defaultContent":"",
-			}, {
-				"data" : "poNumber",
-				"defaultContent":"",
-
-			}, {
-				"data" : "created",
-				"defaultContent":"",
+		"data" : "grnId",
+		"defaultContent":"",
+		render : function(data, type, row) {
+			if (type === 'display') {
+				return "<a href='#' class='grnLink'>" + data + "</a>";
+			}
+			return data;
+		}
+	}, {
+		"data" : "poNumber",
+		"defaultContent":"",
+		
+	}, {
+		"data" : "created",
+		"defaultContent":"",
 				"class":"hideTd",
 				"type": "date"
 			}, {
@@ -166,11 +172,12 @@ $(document).ready(function(){
 			]
 	    });
 	    //on double click of list navigate to view page
-	    $('#grnList tbody').on('dblclick', 'tr', function () {
-	 	   var data = grnDataTable.row(this).data();
-	 	   var grnId = data.grnId;
-	 	   window.location = pageContext+"/api/grn/view?grnId="+grnId;
-	 	});
+	  $('#grnList tbody').on('click', 'a.grnLink', function (e) {
+   e.preventDefault();
+   var data = grnDataTable.row($(this).closest('tr')).data();
+   var grnId = data.grnId;
+   window.location = pageContext+"/api/grn/view?grnId="+grnId;
+});
 })
 
  $(document).on('click',".archiveCheckbox",function(){
