@@ -148,6 +148,7 @@ import com.ncpl.sales.service.PurchaseExcel;
 import com.ncpl.sales.service.PurchaseItemService;
 import com.ncpl.sales.service.PurchaseOrderCustomProperty;
 import com.ncpl.sales.service.PurchaseOrderService;
+import com.ncpl.sales.service.TallyPurchaseOrderService;
 import com.ncpl.sales.service.ReturnableService;
 import com.ncpl.sales.service.SOUploadService;
 import com.ncpl.sales.service.SalesOrderDesignService;
@@ -304,6 +305,8 @@ public class SalesController {
 	PurchaseOrderCustomProperty customProperty;
 	@Autowired
 	PurchaseOrderService purchaseOrderService;
+	@Autowired
+	TallyPurchaseOrderService tallyPurchaseOrderService;
 	@Autowired
 	PurchaseItemService purchaseItemService;
 	@Autowired
@@ -1626,6 +1629,90 @@ public class SalesController {
 		return "pendingPOReportbyPoNum";
 
 	}
+@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+	@GetMapping("/po_list/tally/options")
+	@ResponseBody
+	public ResponseEntity<?> tallyPurchaseOrderOptions() {
+		try {
+			return ResponseEntity.ok(tallyPurchaseOrderService.loadOptions());
+		} catch (Exception error) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", "Unable to load Tally purchase ledgers: " + error.getMessage());
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+		}
+	}
+
+	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+	@PostMapping("/po_list/tally")
+	@ResponseBody
+	public ResponseEntity<?> sendPurchaseOrdersToTally(
+			@RequestParam("poListByFromDate") String fromDateString,
+			@RequestParam("poListByToDate") String toDateString) {
+		try {
+			List<PurchaseOrder> purchaseOrders = purchaseOrdersForDateRange(fromDateString, toDateString);
+			return ResponseEntity.ok(tallyPurchaseOrderService.exportAllPending(purchaseOrders));
+		} catch (IllegalArgumentException | ParseException error) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", error.getMessage());
+			return ResponseEntity.badRequest().body(response);
+		} catch (Exception error) {
+			log.error("Unable to export ERP purchase orders to Tally", error);
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", "Unable to communicate with Tally: " + error.getMessage());
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+		}
+	}
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ncpl.sales.service.TallyPurchaseOrderAutoSync tallyPoAutoSync;
+
+    @GetMapping("/po_list/tally/sync-status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+    public com.ncpl.sales.service.TallyPurchaseOrderAutoSync tallyPoSyncStatus() { return tallyPoAutoSync; }
+
+	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+	@GetMapping("/po_list/tally/progress")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public java.util.Map<String,Object> tallyPoProgress() { return tallyPurchaseOrderService.getProgress(); }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+    @PostMapping("/po_list/tally/import")
+	public String importPurchaseOrdersToTally(
+			@RequestParam("poListByFromDate") String fromDateString,
+			@RequestParam("poListByToDate") String toDateString,
+			RedirectAttributes redirectAttributes) {
+		try {
+			redirectAttributes.addFlashAttribute("tallyPoImportResult",
+					tallyPurchaseOrderService.exportAllPending(
+							purchaseOrdersForDateRange(fromDateString, toDateString)));
+		} catch (Exception error) {
+			log.error("Unable to export ERP purchase orders to Tally", error);
+			redirectAttributes.addFlashAttribute("tallyPoImportError", error.getMessage());
+		}
+		return "redirect:/sales_report";
+	}
+
+	private List<PurchaseOrder> purchaseOrdersForDateRange(String fromDateString, String toDateString)
+			throws ParseException {
+		SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+		format.setLenient(false);
+		Date fromDate = format.parse(fromDateString.replace('/', '-'));
+		Date toDate = format.parse(toDateString.replace('/', '-'));
+		if (fromDate.after(toDate)) {
+			throw new IllegalArgumentException("From date cannot be after To date.");
+		}
+		Calendar end = Calendar.getInstance();
+		end.setTime(toDate);
+		end.set(Calendar.HOUR_OF_DAY, 23);
+		end.set(Calendar.MINUTE, 59);
+		end.set(Calendar.SECOND, 59);
+		return purchaseOrderService.getPurchaseOrderListByDate(
+				convertDate.convertJavaDateToSqlDate(fromDate),
+				convertDate.convertJavaDateToSqlDate(end.getTime()));
+	}
+
+	 
 	 @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
 		@GetMapping("/sales/details/{salesOrderNo}")
 		 public ModelAndView salesDetails(HttpServletRequest request,Model model
