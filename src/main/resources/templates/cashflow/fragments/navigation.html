@@ -1,0 +1,95 @@
+<style>
+    .navbar-custom {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e8ba3 100%);
+        padding: 1rem 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .navbar-custom .navbar-brand,
+    .navbar-custom.navbar-dark .navbar-brand,
+    .navbar.navbar-custom .navbar-brand,
+    .navbar.navbar-custom.navbar-dark .navbar-brand {
+        color: #111827 !important;
+        font-weight: 700 !important;
+        text-shadow: none !important;
+    }
+
+    .navbar-custom .navbar-brand *,
+    .navbar-custom.navbar-dark .navbar-brand * {
+        color: #111827 !important;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        font-weight: 500;
+        border: none;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+        background: transparent;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: #1e3c72;
+        border-color: transparent;
+        background: rgba(30, 60, 114, 0.05);
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #1e3c72;
+        font-weight: 600;
+        background: white;
+        border-bottom: 3px solid #1e3c72;
+    }
+</style>
+
+<nav class="navbar navbar-custom navbar-dark" xmlns:th="http://www.thymeleaf.org"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" th:fragment="navbar(activeTab)">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" th:href="@{/cashflow-analyzer/overview}"
+            style="color: #111827 !important; font-weight: 700 !important; text-shadow: none !important; gap: 10px;">
+            <img th:src="@{/cashflow-analyzer/images/neptune-logo.ico}" alt="Neptune"
+                style="height: 32px; width: 32px; border-radius: 6px; background: #fff; padding: 2px;" />
+            <span>Neptune Cash Flow Analyzer</span>
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-weight:600;color:#0f172a;">Logged in as: <strong
+                    th:text="${#httpServletRequest.remoteUser}">user</strong></span>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <button type="submit" class="btn btn-light btn-sm fw-semibold">Logout</button>
+            </form>
+            <a th:if="${!cashflowStandalone}" th:href="@{/dashboard}" class="btn btn-outline-light btn-sm">ERP Dashboard</a>
+            <div id="fileNameDisplay" class="d-none"
+                style="background: #d4edda; padding: 8px 15px; border-radius: 5px; border: 1px solid #28a745;">
+                <i class="fas fa-file-excel" style="color: #28a745;"></i>
+                <span id="fileNameText" style="margin-left: 8px; font-weight: 600; color: #155724;"></span>
+                <button class="btn btn-sm btn-danger ms-2" id="deleteFileBtn" style="padding: 2px 8px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <!-- Upload button only shown in Excel mode on Overview tab -->
+            <button class="btn btn-light" id="selectExcelBtn"
+                th:if="${activeTab == 'overview'}"
+                th:style="'display: ' + (${selectedMode == 'EXCEL' or session.selectedMode == 'EXCEL'} ? 'inline-block' : 'none')"
+                type="button">
+                <i class="fas fa-upload"></i> Select Excel File
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            </button>
+            <input id="excelFileInput" type="file" accept=".xlsx,.xls" style="display:none" />
+        </div>
+    </div>
+</nav>
+<script th:src="@{/cashflow-analyzer/js/auth.js}"></script>
+
+<ul class="nav nav-tabs mb-4" xmlns:th="http://www.thymeleaf.org" th:fragment="tabbar(activeTab)">
+    <li class="nav-item">
+        <a class="nav-link" th:classappend="${activeTab == 'overview'} ? ' active' : ''"
+            th:href="@{/cashflow-analyzer/overview}">Overview</a>
+    </li>
+    <!-- Removed Analytics, Due Date Tracker, Overdue Payments, Aging Analysis tabs as requested -->
+
+</ul>
