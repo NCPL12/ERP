@@ -21,6 +21,12 @@
 			} );
 		var purchaseListColumns = [ {
 				"mData" : "poNumber",
+				render : function(data, type, row) {
+					if (type === 'display') {
+						return "<a href='#' class='poLink'>" + data + "</a>";
+					}
+					return data;
+				}
 			}, {
 				"mData" : "party",
 
@@ -127,11 +133,12 @@
 		var purchaseOrderId;
 		var  version;
 		//On double click of row navigate to edit page
-	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
 		if (!canEditPurchase) {
 			return;
 		}
-		var data1 = table.row(this).data();
+		var data1 = table.row($(this).closest('tr')).data();
 		var poNumber = data1.poNumber;
 			purchaseOrderId = data1.poNumber;
 		getPurchasecopy(poNumber,purchaseOrderId);
