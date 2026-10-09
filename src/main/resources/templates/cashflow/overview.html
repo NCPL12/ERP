@@ -1368,7 +1368,7 @@
             #outstandingDrilldown .analysis-box:first-child { display: flex; flex-direction: column; justify-content: center; }
             #outstandingDrilldown .analysis-box h6 { margin-bottom: 5px; font-size: 12px; }
             #outstandingDrilldown .aging-bar { height: 12px; }
-            #outstandingDrilldown #outstandingConcentration { display: grid; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 4px; }
+            #outstandingDrilldown #outstandingConcentration { display: grid; grid-auto-rows: minmax(22px, auto); gap: 4px; max-height: 74px; overflow-y: auto; }
             #outstandingDrilldown .concentration-row { min-height: 0; margin: 0; }
             #outstandingDrilldown .concentration-label { margin-bottom: 1px; font-size: 10px; line-height: 1.15; }
             #outstandingDrilldown .concentration-label span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1399,6 +1399,26 @@
         @media (max-height: 719px) {
             body { overflow-y: auto; }
         }
+        .outstanding-summary-details { flex: 0 0 auto; }
+        .outstanding-summary-details > summary { cursor: pointer; color: var(--theme-text, #334155); font-size: 12px; font-weight: 600; margin-bottom: 8px; width: fit-content; }
+        .outstanding-summary-details .summary-expanded-label { display: none; }
+        .outstanding-summary-details[open] .summary-expanded-label { display: inline; }
+        .outstanding-summary-details[open] .summary-collapsed-label { display: none; }
+        #outstandingConcentration { max-height: 90px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding-right: 5px; }
+        #outstandingConcentration:focus-visible, .outstanding-summary-details > summary:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+        #outstandingDrilldown .outstanding-summary-details:not([open]) ~ .outstanding-table-wrap { max-height: 55vh; }
+        .outstanding-sort { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: inherit; font: inherit; text-transform: inherit; padding: 0; cursor: pointer; }
+        .sort-arrow { color: #64748b; }
+        th[aria-sort="ascending"] .sort-arrow, th[aria-sort="descending"] .sort-arrow { color: #2563eb; }
+        .outstanding-sort:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+        .outstanding-table tfoot { position: sticky; bottom: 0; z-index: 2; }
+        .outstanding-table tfoot th, .outstanding-table tfoot td { background: var(--theme-surface, #fff) !important; color: var(--theme-text, #0f172a) !important; border-top: 2px solid var(--theme-border, #dbe4f0); }
+        #outstandingFilteredTotal { font-weight: 800; color: var(--theme-text, #0f172a); }
+        .outstanding-table .col-amount { width: 230px; }
+        .outstanding-table { min-width: 1500px; }
+        .outstanding-table .col-retention { width: 230px; }
+        #outstandingRetentionOnly { white-space: nowrap; }
+        #outstandingRetentionTotal { font-weight: 800; }
     </style>
     <script>
         if (localStorage.getItem('neptuneWelcomeShown') === 'true') {
@@ -1695,6 +1715,8 @@
                     </button>
                 </div>
                 <div class="outstanding-body">
+                    <details class="outstanding-summary-details" open>
+                        <summary><span class="summary-expanded-label">Collapse summary</span><span class="summary-collapsed-label">Show summary</span></summary>
                     <div class="outstanding-summary" id="outstandingAgingCards"></div>
                     <div class="outstanding-analysis-grid">
                         <div class="analysis-box">
@@ -1703,10 +1725,11 @@
                             <div class="small text-muted mt-3" id="outstandingAgingNote"></div>
                         </div>
                         <div class="analysis-box">
-                            <h6>Top party concentration</h6>
-                            <div id="outstandingConcentration"></div>
+                            <h6>Top 10 party concentration</h6>
+                            <div id="outstandingConcentration" tabindex="0" role="region" aria-label="Top 10 parties by outstanding amount"></div>
                         </div>
                     </div>
+                    </details>
                     <div class="outstanding-toolbar">
                         <span class="outstanding-result-count" id="outstandingResultCount">0 bills</span>
                         <select class="form-select" id="outstandingAgingFilter" aria-label="Filter by aging">
@@ -1725,6 +1748,7 @@
                         <select class="form-select" id="outstandingPartyFilter" aria-label="Filter by party">
                             <option value="all">All parties</option>
                         </select>
+                        <button type="button" class="btn btn-outline-primary" id="outstandingRetentionOnly" aria-pressed="false">Retention only</button>
                         <input class="form-control" id="outstandingSearch" placeholder="Search party or bill no." aria-label="Search party or bill number">
                         <button class="btn btn-primary" id="exportOutstandingBtn">
                             <i class="fas fa-file-excel me-2"></i>Export Excel
@@ -1734,14 +1758,18 @@
                         <table class="table table-hover outstanding-table">
                             <colgroup>
                                 <col class="col-party"><col class="col-bill"><col class="col-date"><col class="col-date"><col class="col-age">
-                                <col class="col-amount"><col class="col-days"><col class="col-status">
+                                <col class="col-amount"><col class="col-retention"><col class="col-days"><col class="col-status">
                             </colgroup>
                             <thead><tr>
-                                <th class="col-party">Party</th><th class="col-bill">Bill No.</th>
-                                <th class="col-date">Bill Date</th><th class="col-date">Due Date</th>
-                                <th class="col-age">Bill Age</th>
-                                <th class="col-amount">Outstanding</th><th class="col-days">Days</th>
-                                <th class="col-status">Status</th>
+                                <th class="col-party" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="partyName">Party <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-bill" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="invoiceNumber">Bill No. <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-date" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="invoiceDate">Bill Date <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-date" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="dueDate">Due Date <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-age" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="billAgeDays">Bill Age <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-amount" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="amount">Outstanding <span id="outstandingFilteredTotal" aria-live="polite">—</span> <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-retention" aria-sort="none" title="Retention is included in Outstanding; do not add it again"><button type="button" class="outstanding-sort" data-sort="retentionAmount">Retention <span id="outstandingRetentionTotal" aria-live="polite">—</span> <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-days" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="days">Days <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
+                                <th class="col-status" aria-sort="none"><button type="button" class="outstanding-sort" data-sort="status">Status <span class="sort-arrow" aria-hidden="true">↕</span></button></th>
                             </tr></thead>
                             <tbody id="outstandingTableBody"></tbody>
                         </table>
@@ -2324,7 +2352,7 @@
     <script th:src="@{/cashflow-analyzer/js/auth.js?v=20260825-csrf-fix}"></script>
     <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
     <script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
-<script th:src="@{/cashflow-analyzer/js/overview-dashboard.js?v=20260925-upcoming-clickable}"></script>
+<script th:src="@{/cashflow-analyzer/js/overview-dashboard.js?v=20261009-retention}"></script>
     <script th:src="@{/cashflow-analyzer/js/reconciliation.js?v=20260824-dark-contrast}"></script>
     <script th:inline="javascript">
         // Small bridge for any remaining inline needs

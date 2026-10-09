@@ -917,7 +917,7 @@ function renderOutstandingAnalysis() {
 
     const parties = {};
     state.rows.forEach(row => { parties[row.partyName || 'Unknown'] = (parties[row.partyName || 'Unknown'] || 0) + (Number(row.amount) || 0); });
-    const top = Object.entries(parties).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const top = Object.entries(parties).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const partyFilter = document.getElementById('outstandingPartyFilter');
     if (partyFilter) {
         const selected = partyFilter.value;
@@ -945,6 +945,7 @@ function getFilteredOutstandingRows() {
     const party = document.getElementById('outstandingPartyFilter')?.value || 'all';
     const search = (document.getElementById('outstandingSearch')?.value || '').trim().toLowerCase();
     return window.outstandingState.rows.filter(row =>
+        (!window.outstandingRetentionOnly || row.retention === true) &&
         (aging === 'all' || row.agingBucket === aging) &&
         (status === 'all' || String(row.status || '').toLowerCase() === status) &&
         (party === 'all' || row.partyName === party) &&
@@ -952,15 +953,45 @@ function getFilteredOutstandingRows() {
             || String(row.invoiceNumber || '').toLowerCase().includes(search)));
 }
 
+function sortOutstandingRows(rows) {
+    const sort = window.outstandingSort;
+    if (!sort) return rows;
+    const value = row => {
+        if (sort.key === 'invoiceDate' || sort.key === 'dueDate') {
+            return row[sort.key] ? Date.parse(row[sort.key]) : null;
+        }
+        if (sort.key === 'days') return row.status === 'Overdue'
+            ? -(Number(row.daysOverdue) || 0) : (row.daysUntilDue == null ? null : Number(row.daysUntilDue));
+        if (sort.key === 'amount' || sort.key === 'retentionAmount' || sort.key === 'billAgeDays') return row[sort.key] == null ? null : Number(row[sort.key]);
+        return String(row[sort.key] || '');
+    };
+    return rows.slice().sort((a, b) => {
+        const av = value(a), bv = value(b);
+        const missing = v => v == null || (typeof v === 'number' && !Number.isFinite(v));
+        if (missing(av)) return missing(bv) ? 0 : 1;
+        if (missing(bv)) return -1;
+        const comparison = typeof av === 'number' ? av - bv : av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+        return sort.direction === 'asc' ? comparison : -comparison;
+    });
+}
+
 function renderOutstandingTable() {
-    const rows = getFilteredOutstandingRows();
+    const rows = sortOutstandingRows(getFilteredOutstandingRows());
+    const total = rows.reduce((sum, row) => sum + Math.round((Number(row.amount) || 0) * 100), 0) / 100;
+    document.getElementById("outstandingFilteredTotal").textContent = formatCurrency(total);
+    document.getElementById("outstandingRetentionTotal").textContent = formatCurrency(rows.reduce((sum, row) => sum + Math.round((Number(row.retentionAmount) || 0) * 100), 0) / 100);
+    document.querySelectorAll('.outstanding-sort').forEach(button => {
+        const active = window.outstandingSort?.key === button.dataset.sort;
+        button.closest('th').setAttribute('aria-sort', active ? (window.outstandingSort.direction === 'asc' ? 'ascending' : 'descending') : 'none');
+        button.querySelector('.sort-arrow').textContent = active ? (window.outstandingSort.direction === 'asc' ? '↑' : '↓') : '↕';
+    });
     window.outstandingRenderedRows = rows;
     const tbody = document.getElementById('outstandingTableBody');
     const resultCount = document.getElementById('outstandingResultCount');
     if (resultCount) resultCount.textContent = `${rows.length} of ${window.outstandingState.rows.length} bills`;
     if (!tbody) return;
     if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No matching bills found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No matching bills found</td></tr>';
         return;
     }
     tbody.innerHTML = rows.map((row, index) => {
@@ -974,6 +1005,7 @@ function renderOutstandingTable() {
             <td class="col-date">${escapeHtml(formatDate(row.dueDate))}</td>
             <td class="col-age">${row.billAgeDays == null ? '—' : `${Number(row.billAgeDays) || 0} days`}</td>
             <td class="col-amount fw-semibold">${formatCurrency(row.amount)}</td>
+            <td class="col-retention fw-semibold">${row.retention ? formatCurrency(row.retentionAmount) : '—'}</td>
             <td class="col-days ${isOverdue ? 'text-danger' : ''}">${escapeHtml(days)}</td>
             <td class="col-status"><span class="badge ${isOverdue ? 'bg-danger' : 'bg-success'}">${escapeHtml(row.status)}</span></td>
         </tr>`;
@@ -1087,6 +1119,11 @@ async function openOutstandingPanel(type, scrollIntoView = true, resetFilters = 
     const panel = document.getElementById('outstandingDrilldown');
     if (!panel) return;
     if (resetFilters) {
+        window.outstandingSort = null;
+        window.outstandingRetentionOnly = false;
+        const retentionButton = document.getElementById("outstandingRetentionOnly");
+        retentionButton?.setAttribute("aria-pressed", "false");
+        retentionButton?.classList.remove("active");
         const agingFilter = document.getElementById('outstandingAgingFilter');
         const statusFilter = document.getElementById('outstandingStatusFilter');
         const partyFilter = document.getElementById('outstandingPartyFilter');
@@ -1103,19 +1140,27 @@ async function openOutstandingPanel(type, scrollIntoView = true, resetFilters = 
     const title = type === 'receivables' ? 'Outstanding Receivables' : 'Outstanding Payables';
     document.getElementById('outstandingPanelTitle').textContent = title;
     document.getElementById('outstandingPanelSubtitle').textContent = 'Loading current Tally outstanding bills…';
-    document.getElementById('outstandingTableBody').innerHTML = '<tr><td colspan="8" class="text-center py-4">Loading…</td></tr>';
+    document.getElementById('outstandingFilteredTotal').textContent = '—';
+    document.getElementById('outstandingRetentionTotal').textContent = '—';
+    document.getElementById('outstandingResultCount').textContent = 'Loading bills…';
+    document.getElementById('outstandingTableBody').innerHTML = '<tr><td colspan="9" class="text-center py-4">Loading…</td></tr>';
     if (scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     try {
         const data = await fetchOutstanding(type);
         window.outstandingState = { type, rows: data.rows || [], total: Number(data.total) || 0 };
-        document.getElementById('outstandingPanelSubtitle').textContent = `${formatCurrency(data.total)} across ${data.count || 0} outstanding bills`;
+        document.getElementById('outstandingPanelSubtitle').textContent = `${data.count || 0} outstanding bills`;
         const countEl = document.getElementById(type === 'receivables' ? 'outstandingReceivablesCount' : 'outstandingPayablesCount');
         if (countEl) countEl.textContent = `${data.count || 0} bills`;
         renderOutstandingAnalysis();
         renderOutstandingTable();
     } catch (error) {
+        window.outstandingState = { type, rows: [], total: 0 };
+        window.outstandingRenderedRows = [];
+        document.getElementById('outstandingResultCount').textContent = 'Bills unavailable';
+        document.getElementById('outstandingFilteredTotal').textContent = '—';
+    document.getElementById('outstandingRetentionTotal').textContent = '—';
         document.getElementById('outstandingPanelSubtitle').textContent = 'Unable to load outstanding bills';
-        document.getElementById('outstandingTableBody').innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4">${escapeHtml(error.message)}</td></tr>`;
+        document.getElementById('outstandingTableBody').innerHTML = `<tr><td colspan="9" class="text-center text-danger py-4">${escapeHtml(error.message)}</td></tr>`;
     }
 }
 
@@ -1129,7 +1174,7 @@ async function exportOutstandingExcel() {
     const search = document.getElementById('outstandingSearch')?.value || '';
     button.disabled = true;
     try {
-        const query = new URLSearchParams({ type, aging, status, party, search });
+        const query = new URLSearchParams({ type, aging, status, party, search, retentionOnly: Boolean(window.outstandingRetentionOnly) });
         const filename = type === 'receivables' ? 'Outstanding-Receivables.xlsx' : 'Outstanding-Payables.xlsx';
         await downloadExcel(`/api/cashflow/tally/outstanding/export?${query}`, filename);
     } catch (error) {
@@ -1705,6 +1750,17 @@ function wireEvents() {
     document.getElementById('outstandingAgingFilter')?.addEventListener('change', renderOutstandingTable);
     document.getElementById('outstandingStatusFilter')?.addEventListener('change', renderOutstandingTable);
     document.getElementById('outstandingPartyFilter')?.addEventListener('change', renderOutstandingTable);
+    document.getElementById('outstandingRetentionOnly')?.addEventListener('click', event => {
+        window.outstandingRetentionOnly = !window.outstandingRetentionOnly;
+        event.currentTarget.setAttribute('aria-pressed', String(window.outstandingRetentionOnly));
+        event.currentTarget.classList.toggle('active', window.outstandingRetentionOnly);
+        renderOutstandingTable();
+    });
+    document.querySelectorAll('.outstanding-sort').forEach(button => button.addEventListener('click', () => {
+        const current = window.outstandingSort;
+        window.outstandingSort = { key: button.dataset.sort, direction: current?.key === button.dataset.sort && current.direction === 'asc' ? 'desc' : 'asc' };
+        renderOutstandingTable();
+    }));
     document.getElementById('outstandingSearch')?.addEventListener('input', renderOutstandingTable);
     document.getElementById('exportOutstandingBtn')?.addEventListener('click', exportOutstandingExcel);
     document.getElementById('outstandingTableBody')?.addEventListener('click', event => {

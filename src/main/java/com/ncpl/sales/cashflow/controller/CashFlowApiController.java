@@ -1948,12 +1948,14 @@ public class CashFlowApiController {
             @RequestParam(value = "aging", required = false, defaultValue = "all") String aging,
             @RequestParam(value = "status", required = false, defaultValue = "all") String status,
             @RequestParam(value = "party", required = false, defaultValue = "all") String party,
-            @RequestParam(value = "search", required = false, defaultValue = "") String search) {
+            @RequestParam(value = "search", required = false, defaultValue = "") String search,
+            @RequestParam(defaultValue = "false") boolean retentionOnly) {
         try {
             Invoice.InvoiceType invoiceType = parseOutstandingType(type);
             String normalizedSearch = search.trim().toLowerCase(Locale.ROOT);
             List<Invoice> invoices = convertEntitiesToInvoices(invoiceRepository.findBySource("TALLY")).stream()
                     .filter(invoice -> invoice.getType() == invoiceType)
+                    .filter(invoice -> !retentionOnly || com.ncpl.sales.cashflow.service.RetentionLedgerClassifier.isRetention(invoice.getCustomerName()))
                     .filter(invoice -> matchesOutstandingAging(invoice, aging))
                     .filter(invoice -> "all".equalsIgnoreCase(status)
                             || ("overdue".equalsIgnoreCase(status) && invoice.isOverdue())
@@ -2039,6 +2041,9 @@ public class CashFlowApiController {
         row.put("dueDate", invoice.getDueDate());
         row.put("billAgeDays", invoice.getBillAgeDays());
         row.put("amount", invoice.getInvoiceValue());
+        boolean retention = com.ncpl.sales.cashflow.service.RetentionLedgerClassifier.isRetention(invoice.getCustomerName());
+        row.put("retention", retention);
+        row.put("retentionAmount", retention ? invoice.getInvoiceValue() : 0d);
         row.put("status", invoice.isOverdue() ? "Overdue" : "Current");
         row.put("daysOverdue", invoice.getDaysOverdue());
         row.put("daysUntilDue", invoice.getDaysUntilDue() == Long.MAX_VALUE ? null : invoice.getDaysUntilDue());

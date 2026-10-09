@@ -174,13 +174,19 @@
                 <button id="resetForecast" class="clear-filter" type="button">Show all backlog</button>
                 <button id="backToWeekly" class="clear-filter" type="button" hidden><i class="fas fa-arrow-left me-1"></i> Back to weekly forecast</button>
             </div>
+            <div id="forecastOpeningControls" class="filter-row">
+                <label>Opening cash/bank balance (₹)<input id="forecastOpeningInput" type="number" step="0.01" placeholder="Enter confirmed balance"></label>
+                <label>Balance at start of date<input id="forecastOpeningDate" type="date"></label>
+                <button id="saveForecastOpening" type="button">Save opening balance</button>
+                <small>Invoice projection: future due dates are assumptions; overdue bills require an expected date. Enter a confirmed balance; historical bank movements are not reconstructed.</small>
+            </div>
             <div class="forecast-summary" id="cashflowSummary" aria-live="polite">
                 <button class="forecast-stat backlog" id="forecastBacklogCard" type="button" title="Show every overdue invoice directly">
                     <label>Overdue backlog</label><strong id="forecastBacklog">—</strong><small id="forecastBacklogCount">Click to view overdue invoices</small>
                 </button>
-                <button class="forecast-stat inflows" id="forecastReceivablesCard" type="button" title="Show all receivable invoices in this forecast"><label>Receivables due</label><strong id="forecastReceivables">—</strong><small>Click to view invoices</small></button>
-                <button class="forecast-stat outflows" id="forecastPayablesCard" type="button" title="Show all payable invoices in this forecast"><label>Payables due</label><strong id="forecastPayables">—</strong><small>Click to view invoices</small></button>
-                <div class="forecast-stat net"><label>Final cumulative net</label><strong id="forecastNet">—</strong></div>
+                <button class="forecast-stat inflows" id="forecastReceivablesCard" type="button" title="Show all receivable invoices in this forecast"><label>Expected collections</label><strong id="forecastReceivables">—</strong><small>Click to view invoices</small></button>
+                <button class="forecast-stat outflows" id="forecastPayablesCard" type="button" title="Show all payable invoices in this forecast"><label>Planned invoice payments</label><strong id="forecastPayables">—</strong><small>Click to view invoices</small></button>
+                <div class="forecast-stat"><label>Opening balance for range</label><strong id="forecastOpening">Not set</strong></div><div class="forecast-stat net"><label>Projected closing balance</label><strong id="forecastNet">Not set</strong></div>
             </div>
             <div class="forecast-summary" id="pipelineSummary" aria-live="polite" hidden>
                 <button class="forecast-stat pipeline-stat erp-missing" type="button" data-pipeline-status="ERP_VENDOR_INVOICE_MISSING"><label>Invoice no. missing in ERP</label><strong id="pipelineErpInvoiceMissing">—</strong><small>GRN has no vendor invoice number</small></button>
@@ -213,7 +219,7 @@
             </div>
             <div class="invoice-table-wrap">
                 <table class="invoice-table">
-                    <thead><tr><th>Direction</th><th>Name of Customer / Vendor</th><th>Invoice No</th><th>Date</th><th>Due Date</th><th class="amount-cell">Invoice Value</th><th class="amount-cell">Due</th><th class="amount-cell">Over Due</th><th>Ageing Days</th></tr></thead>
+                    <thead><tr><th>Direction</th><th>Name of Customer / Vendor</th><th>Invoice No</th><th>Date</th><th>Due Date</th><th class="amount-cell">Invoice Value</th><th class="amount-cell">Due</th><th class="amount-cell">Over Due</th><th>Ageing Days</th><th>Expected cash date</th></tr></thead>
                     <tbody id="forecastInvoiceBody"></tbody>
                 </table>
             </div>
@@ -229,7 +235,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script th:src="@{/cashflow-analyzer/js/auth.js?v=20260825-csrf-fix}"></script>
     <script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
-    <script th:src="@{/cashflow-analyzer/js/cashflow-forecast.js?v=20261005-so-client-links}"></script>
+    <script th:src="@{/cashflow-analyzer/js/cashflow-forecast.js?v=20261009-projected-balance}"></script>
 </body>
 </html>
 

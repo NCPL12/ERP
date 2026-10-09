@@ -100,7 +100,7 @@ public class ExcelExportService {
 
             Row header = sheet.createRow(2);
             String[] headers = {"Party Name", "Bill Number", "Bill Date", "Due Date", "Outstanding Amount",
-                    "Status", "Days Overdue", "Days Until Due", "Aging Bucket"};
+                    "Status", "Days Overdue", "Days Until Due", "Aging Bucket", "Retention Amount (included in Outstanding)"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -123,6 +123,9 @@ public class ExcelExportService {
                 if (daysUntilDue != Long.MAX_VALUE) row.createCell(7).setCellValue(daysUntilDue);
                 else row.createCell(7).setCellValue("");
                 row.createCell(8).setCellValue(invoice.getAgingBucket());
+                Cell retentionCell = row.createCell(9);
+                retentionCell.setCellValue(RetentionLedgerClassifier.isRetention(invoice.getCustomerName()) ? invoice.getInvoiceValue() : 0d);
+                retentionCell.setCellStyle(numberStyle);
             }
 
             for (int i = 0; i < headers.length; i++) {

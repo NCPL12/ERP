@@ -143,3 +143,17 @@ node src/test/js/cashflow-paths.test.js
 ```
 
 Build a clean WAR with `mvn clean package`. Automated tests are not live Finance acceptance. Validate the target database/company/date scope before enabling scheduled jobs. Back up application/configuration and data before deployment. Restore the prior application through the team process for rollback; restoring ERP does not undo Tally imports.
+
+## Projected cash balance graph
+
+The graph uses a dated Finance opening cash/bank balance, expected invoice collections, and planned invoice payments. Opening and closing balances carry forward across empty days and into daily drill-down. A missing dated balance displays Not set; zero is accepted only as an explicit balance. Future invoice due dates are fallback assumptions. Past-due bills or expired expected dates remain excluded until Finance schedules a future expected cash date. Backlog remains separately accessible and is not treated as money already received/paid.
+
+Use Save opening balance on the graph page to persist the amount/date in the existing Finance Plan settings table. Expected dates can be saved from the invoice detail table and are preserved for retained invoices during Tally sync. These settings are shared with Finance Plan. No new database migration is needed beyond the existing Cashflow settings/invoice schema.
+
+This graph models outstanding invoice movements; manual expense/plan entries and historical bank transactions are not included. Enter a confirmed opening balance appropriate to the date. Invoice detail export exports the selected invoice IDs, including expected dates, rather than applying the old due-date-only filter. Test the dated opening, collection/payment assumptions and backlog with Finance before relying on projected balances.
+
+## Retention in outstanding tables
+
+Retention only filters bills whose Tally ledger/party name explicitly contains the word Retention or Retainage, including labels such as Retention-JSS and Retention - Manipal Udupi found in the local snapshot. The separate Retention column is a component of Outstanding, not an additional amount. Both header totals follow all filters/search; Excel applies the same retention filter and includes that column. The classification works for either receivables or payables and does not estimate a percentage of ordinary invoices. Unlabelled or partially retained ordinary invoices cannot be identified by this rule.
+
+Retention is excluded from the projected balance until a future expected release date is explicitly recorded. Standard future due-date fallback applies to ordinary invoices, not retention. No new database columns are needed.

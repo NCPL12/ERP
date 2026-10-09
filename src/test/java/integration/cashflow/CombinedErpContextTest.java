@@ -115,5 +115,21 @@ class CombinedErpContextTest {
             .andExpect(jsonPath("$.periods[1].totalCashOut").value(250))
             .andExpect(jsonPath("$.periods[1].netFlow").value(-250));
     }
+    @Test void projectedForecastRequiresDatedBalanceAndKeepsSecurity() throws Exception {
+        org.springframework.test.web.servlet.MockMvc mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        String route="/ncpl-sales/cashflow-analyzer/api/cashflow/tally/projected-forecast";
+        mvc.perform(get(route).contextPath("/ncpl-sales").param("from","2027-01-01").param("to","2027-01-02")
+            .param("openingBalance","1000").param("openingDate","2027-01-01").param("granularity","daily")
+            .with(user("admin").authorities(() -> "ADMIN"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.openingBalance").value(1000)).andExpect(jsonPath("$.closingBalance").value(1000))
+            .andExpect(jsonPath("$.periods[1].openingBalance").value(1000));
+        mvc.perform(get(route).contextPath("/ncpl-sales").param("openingBalance","1000")
+            .with(user("admin").authorities(() -> "ADMIN"))).andExpect(status().isBadRequest());
+        mvc.perform(get(route).contextPath("/ncpl-sales")).andExpect(status().is3xxRedirection());
+        mvc.perform(post(route+"/export").contextPath("/ncpl-sales").contentType("application/json").content("[]")
+            .with(user("admin").authorities(() -> "ADMIN"))).andExpect(status().isForbidden());
+        mvc.perform(post(route+"/export").contextPath("/ncpl-sales").contentType("application/json").content("[]")
+            .with(csrf()).with(user("admin").authorities(() -> "ADMIN"))).andExpect(status().isOk());
+    }
 }
 

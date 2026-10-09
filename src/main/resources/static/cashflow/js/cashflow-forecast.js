@@ -13,15 +13,17 @@
  const hideDetail=()=>{$('forecastInvoicePanel').hidden=true;selectedPeriod=undefined};
  const hidePipelineDetail=()=>{$('pipelineDetailPanel').hidden=true};
  function summary(d){
- $('forecastReceivables').textContent=money(d.totalReceivables);$('forecastPayables').textContent=money(d.totalPayables);$('forecastNet').textContent=money(d.finalCumulative);
-  const backlogBills=(d.periods||[]).flatMap(p=>p.bills||[]).filter(isOverdue),backlogTotal=backlogBills.reduce((sum,b)=>sum+Number(b.amount||0),0);
-  $('forecastBacklog').textContent=money(backlogTotal);$('forecastBacklogCount').textContent=backlogBills.length+' overdue invoice'+(backlogBills.length===1?'':'s')+' · Click to view';
-  $('forecastBacklogCard').disabled=backlogBills.length===0;
-  $('forecastReconciliation').innerHTML='<strong><i class="fas fa-circle-check me-1"></i>Reconciled</strong> Final cumulative net '+money(d.finalCumulative)+' = '+money(d.totalReceivables)+' receivables − '+money(d.totalPayables)+' payables for the selected due-date range.';
-  const n=Number(d.missingDueDateCount||0);$('forecastWarning').hidden=!n;$('forecastWarning').textContent=n?n+' outstanding bill'+(n===1?'':'s')+' without a due date are excluded from this forecast.':'';
+  $('forecastReceivables').textContent=money(d.totalReceivables);$('forecastPayables').textContent=money(d.totalPayables);
+  $('forecastOpening').textContent=d.openingBalance==null?'Not set':money(d.openingBalance);$('forecastNet').textContent=d.closingBalance==null?'Not set':money(d.closingBalance);
+  const backlogBills=d.backlogBills||[];
+  $('forecastBacklog').textContent=money(Number(d.backlogReceivables||0)+Number(d.backlogPayables||0));
+  $('forecastBacklogCount').textContent=backlogBills.length+' overdue invoices · Receivable '+money(d.backlogReceivables)+' / Payable '+money(d.backlogPayables);
+  $('forecastBacklogCard').disabled=!backlogBills.length;
+  $('forecastReconciliation').textContent=d.openingBalance==null?'Set a dated opening cash/bank balance to show projected balances. Net invoice movement: '+money(d.finalCumulative):'Projected closing '+money(d.closingBalance)+' = opening '+money(d.openingBalance)+' + expected collections '+money(d.totalReceivables)+' − planned invoice payments '+money(d.totalPayables)+'. These are assumptions, not actual receipts/payments.';
+  const n=Number(d.unscheduledCount||0);$('forecastWarning').hidden=!n;$('forecastWarning').textContent=n+' bills without a future expected/due date are excluded. Open overdue backlog to schedule them, or use Finance Plan for undated bills.';
  }
  function partyLines(period,datasetIndex){
-  if(datasetIndex===2)return[];
+  if(datasetIndex===2||period.openingOnly)return[];
   const parties=datasetIndex===0?period.receivableParties:period.payableParties;
   if(!parties?.length)return['No parties'];
   const lines=parties.slice(0,15).map(p=>p.name+' ('+p.billCount+') · '+money(p.amount));
@@ -31,16 +33,16 @@
   const canvas=$('weeklyCashflowChart'),empty=$('forecastEmpty');if(chart)chart.destroy();
   if(!d.periods?.length){canvas.hidden=true;empty.hidden=false;empty.textContent='No outstanding Tally bills with due dates are available for this period.';return}
  canvas.hidden=false;empty.hidden=true;const label=granularity==='daily'?dayLabel:weekLabel;
-  const backlogZone={id:'backlogZone',beforeDatasetsDraw(c){if(granularity!=='weekly')return;const last=d.periods.map(isBacklogPeriod).lastIndexOf(true);if(last<0)return;const x=c.scales.x,area=c.chartArea,next=x.getPixelForValue(last+1),at=x.getPixelForValue(last);const right=last<d.periods.length-1?(at+next)/2:area.right;c.ctx.save();c.ctx.fillStyle='rgba(220,38,38,.08)';c.ctx.fillRect(area.left,area.top,right-area.left,area.bottom-area.top);c.ctx.restore()},afterDraw(c){if(granularity!=='weekly'||!d.periods.some(isBacklogPeriod))return;c.ctx.save();c.ctx.fillStyle='#b91c1c';c.ctx.font='700 11px Segoe UI';c.ctx.fillText('OVERDUE BACKLOG',c.chartArea.left+8,c.chartArea.top+16);c.ctx.restore()}};
-  chart=new Chart(canvas,{plugins:[backlogZone],data:{labels:d.periods.map(label),datasets:[
-   {type:'bar',label:'Receivables due',data:d.periods.map(r=>r.receivables),backgroundColor:'#2563eb',borderRadius:5,order:2},
-   {type:'bar',label:'Payables due',data:d.periods.map(r=>r.payables),backgroundColor:'#f59e0b',borderRadius:5,order:2},
-   {type:'line',label:'Cumulative net cash flow',data:d.periods.map(r=>r.cumulative),borderColor:'#7c3aed',backgroundColor:'#7c3aed',borderWidth:3,tension:.25,pointRadius:3,pointHoverRadius:6,order:1}
+  const plotted=[{weekStart:d.from,weekEnd:d.from,openingOnly:true,receivables:null,payables:null,closingBalance:d.openingBalance},...d.periods];
+  chart=new Chart(canvas,{data:{labels:plotted.map(p=>p.openingOnly?'Opening':label(p)),datasets:[
+   {type:'bar',label:'Expected collections',data:plotted.map(r=>r.receivables),backgroundColor:'#2563eb',borderRadius:5,order:2},
+   {type:'bar',label:'Planned invoice payments',data:plotted.map(r=>r.payables),backgroundColor:'#f59e0b',borderRadius:5,order:2},
+   {type:'line',label:'Projected closing balance',data:plotted.map(r=>r.closingBalance),borderColor:'#7c3aed',backgroundColor:'#7c3aed',borderWidth:3,tension:0,pointRadius:3,pointHoverRadius:6,order:1}
   ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-   onClick:(_e,els)=>{if(!els.length)return;const p=d.periods[els[0].index];if(!p)return;if(granularity==='daily')openInvoices(p);else if(isBacklogPeriod(p))openInvoices({...p,backlog:true});else openDaily(p)},
+   onClick:(_e,els)=>{if(!els.length)return;const p=plotted[els[0].index];if(!p||p.openingOnly)return;if(granularity==='daily')openInvoices(p);else if(isBacklogPeriod(p))openInvoices({...p,backlog:true});else openDaily(p)},
    onHover:(e,els)=>e.native.target.style.cursor=els.length?'pointer':'default',
-   plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.raw),afterLabel:c=>partyLines(d.periods[c.dataIndex],c.datasetIndex)}}},
-   scales:{y:{ticks:{callback:money},title:{display:true,text:'Amount (₹)'}},x:{ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:14},title:{display:true,text:granularity==='daily'?'Invoice due date':'Week of invoice due date'}}}}});
+   plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+money(c.raw),afterLabel:c=>partyLines(plotted[c.dataIndex],c.datasetIndex)}}},
+   scales:{y:{ticks:{callback:money},title:{display:true,text:'Amount (₹)'}},x:{ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:14},title:{display:true,text:granularity==='daily'?'Expected cash date':'Week of expected cash date'}}}}});
  }
  const pipelineStatusClass=s=>s==='COMPLETE'?'status-complete':s==='CLIENT_INVOICE_MISSING'?'status-client':s==='REVIEW_REQUIRED'?'status-review':'status-vendor';
  const pipelineWeekLabel=p=>weekLabel(p);
@@ -113,20 +115,20 @@ function pipelineSummary(d){
  }
  function switchView(mode){
   if(mode===viewMode)return;hideDetail();hidePipelineDetail();$('pipelineHoverCard').hidden=true;
-  if(mode==='pipeline'){cashflowRange={from:$('forecastFrom').value,to:$('forecastTo').value};viewMode='pipeline';granularity='weekly';$('cashflowViewBtn').classList.remove('active');$('pipelineViewBtn').classList.add('active');$('cashflowSummary').hidden=true;$('pipelineSummary').hidden=false;$('backToWeekly').hidden=true;$('resetForecast').hidden=false;$('resetForecast').textContent='Last 90 days';$('forecastTitle').textContent='Loading invoice pipeline…';$('forecastSubtitle').textContent='Reading the latest prepared ERP and Tally snapshot.';loadPipeline(true).catch(pipelineLoadFailed)}
-  else{viewMode='cashflow';$('pipelineViewBtn').classList.remove('active');$('cashflowViewBtn').classList.add('active');$('pipelineSummary').hidden=true;$('cashflowSummary').hidden=false;$('pipelineExplanation').hidden=true;$('resetForecast').textContent='Show all backlog';$('forecastFrom').value=cashflowRange?.from||'';$('forecastTo').value=cashflowRange?.to||'';loadForecast().catch(e=>alert(e.message))}
+  if(mode==='pipeline'){cashflowRange={from:$('forecastFrom').value,to:$('forecastTo').value};viewMode='pipeline';granularity='weekly';$('cashflowViewBtn').classList.remove('active');$('pipelineViewBtn').classList.add('active');$('cashflowSummary').hidden=true;$('pipelineSummary').hidden=false;$('forecastOpeningControls').hidden=true;$('backToWeekly').hidden=true;$('resetForecast').hidden=false;$('resetForecast').textContent='Last 90 days';$('forecastTitle').textContent='Loading invoice pipeline…';$('forecastSubtitle').textContent='Reading the latest prepared ERP and Tally snapshot.';loadPipeline(true).catch(pipelineLoadFailed)}
+  else{viewMode='cashflow';$('pipelineViewBtn').classList.remove('active');$('cashflowViewBtn').classList.add('active');$('pipelineSummary').hidden=true;$('cashflowSummary').hidden=false;$('forecastOpeningControls').hidden=false;$('pipelineExplanation').hidden=true;$('resetForecast').textContent='Next 90 days';$('forecastFrom').value=cashflowRange?.from||'';$('forecastTo').value=cashflowRange?.to||'';loadForecast().catch(e=>alert(e.message))}
  }
  function heading(){
   const daily=granularity==='daily';$('forecastTitle').textContent=daily?'Daily Cash Flow Detail':'Weekly Cash Flow Forecast';
-  $('forecastSubtitle').textContent=daily?'Daily inflows and outflows for the selected week. Click a day to view its invoices.':'All outstanding Tally bills, including overdue backlog, grouped Monday–Sunday by due date.';
+  $('forecastSubtitle').textContent='Opening balance carries forward. Scheduled invoices use expected dates; future due dates are fallback assumptions. Click a period to inspect invoices.';
   $('backToWeekly').hidden=!daily;$('resetForecast').hidden=daily;
  }
  async function loadForecast(reset=false){
   const from=$('forecastFrom'),to=$('forecastTo');hideDetail();
   if(reset){from.value='';to.value='';granularity='weekly';savedRange=undefined}
-  const q=new URLSearchParams();if(from.value)q.set('from',from.value);if(to.value)q.set('to',to.value);q.set('granularity',granularity);
-  const response=await fetch('/api/cashflow/tally/weekly-cashflow-forecast?'+q,{credentials:'same-origin'}),d=await response.json();
-  if(!response.ok)throw new Error(d.error||'Unable to load cash flow forecast.');if(viewMode!=='cashflow')return;if(!from.value)from.value=d.from;if(!to.value)to.value=d.to;currentData=d;summary(d);renderChart(d);heading();
+  const q=new URLSearchParams();if(from.value)q.set('from',from.value);if(to.value)q.set('to',to.value);q.set('granularity',granularity);if($('forecastOpeningInput').value!==''){q.set('openingBalance',$('forecastOpeningInput').value);q.set('openingDate',$('forecastOpeningDate').value);}
+  const response=await fetch('/api/cashflow/tally/projected-forecast?'+q,{credentials:'same-origin'}),d=await response.json();
+  if(!response.ok)throw new Error(d.error||'Unable to load cash flow forecast.');if(viewMode!=='cashflow')return;if(!from.value)from.value=d.from;if(!to.value)to.value=d.to;if($('forecastOpeningInput').value===''&&d.enteredOpeningBalance!=null){$('forecastOpeningInput').value=d.enteredOpeningBalance;$('forecastOpeningDate').value=d.balanceAsOf;}currentData=d;summary(d);renderChart(d);heading();
  }
  function openDaily(p){
   savedRange={from:$('forecastFrom').value,to:$('forecastTo').value};granularity='daily';
@@ -135,7 +137,7 @@ function pipelineSummary(d){
  }
  function backWeekly(){granularity='weekly';$('forecastFrom').value=savedRange?.from||'';$('forecastTo').value=savedRange?.to||'';loadForecast().catch(e=>alert(e.message))}
  function openAllBacklog(){
-  const bills=(currentData?.periods||[]).flatMap(p=>p.bills||[]).filter(isOverdue);if(!bills.length)return;
+  const bills=(currentData?.backlogBills||[]);if(!bills.length)return;
   const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);const end=yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
   openInvoices({weekStart:currentData.availableFrom||bills.map(b=>b.dueDate).sort()[0],weekEnd:end,bills,backlog:true,allBacklog:true});
  }
@@ -146,7 +148,7 @@ function pipelineSummary(d){
  function openInvoices(p){
   selectedPeriod=p;const bills=p.bills||[];$('forecastInvoiceTitle').textContent=p.direction==='RECEIVABLE'?'All receivable invoices':p.direction==='PAYABLE'?'All payable invoices':p.allBacklog?'All overdue backlog':p.backlog?'Backlog invoices · '+date(p.weekStart)+' – '+date(p.weekEnd):'Invoices due '+date(p.weekStart);
   $('forecastInvoiceSubtitle').textContent=bills.length+' outstanding invoice'+(bills.length===1?'':'s')+' · Click an invoice to load its live voucher from Tally.';
-  $('forecastInvoiceBody').innerHTML=bills.length?bills.map((b,i)=>'<tr data-invoice-index="'+i+'" tabindex="0"><td><span class="direction-pill '+(b.direction==='PAYABLE'?'payable':'')+'">'+esc(b.direction)+'</span></td><td>'+esc(b.partyName||'—')+'</td><td><button type="button" class="invoice-link">'+esc(b.invoiceNumber||'—')+'</button></td><td>'+date(b.invoiceDate)+'</td><td>'+date(b.dueDate)+'</td><td class="amount-cell">'+money(b.amount)+'</td><td class="amount-cell">'+money(b.dueAmount)+'</td><td class="amount-cell">'+money(b.overdueAmount)+'</td><td>'+Number(b.ageingDays||0)+'</td></tr>').join(''):'<tr><td colspan="9" class="text-center py-4">No invoices found for this day.</td></tr>';
+  $('forecastInvoiceBody').innerHTML=bills.length?bills.map((b,i)=>'<tr data-invoice-index="'+i+'" tabindex="0"><td><span class="direction-pill '+(b.direction==='PAYABLE'?'payable':'')+'">'+esc(b.direction)+'</span></td><td>'+esc(b.partyName||'—')+'</td><td><button type="button" class="invoice-link">'+esc(b.invoiceNumber||'—')+'</button></td><td>'+date(b.invoiceDate)+'</td><td>'+date(b.dueDate)+'</td><td class="amount-cell">'+money(b.amount)+'</td><td class="amount-cell">'+money(b.dueAmount)+'</td><td class="amount-cell">'+money(b.overdueAmount)+'</td><td>'+Number(b.ageingDays||0)+'</td><td><input type="date" data-schedule-date="'+i+'" value="'+esc(b.expectedCashDate||'')+'" min="'+todayIso()+'" aria-label="Expected date for '+esc(b.invoiceNumber)+'"><button type="button" data-save-schedule="'+i+'">Save</button></td></tr>').join(''):'<tr><td colspan="10" class="text-center py-4">No invoices found for this day.</td></tr>';
   $('forecastInvoicePanel').hidden=false;$('forecastInvoicePanel').scrollIntoView({behavior:'smooth',block:'start'});
  }
  const grid=rows=>'<div class="voucher-grid">'+rows.map(r=>'<div class="voucher-field"><label>'+esc(r[0])+'</label><strong>'+esc(r[1]||'—')+'</strong></div>').join('')+'</div>';
@@ -180,6 +182,13 @@ function pipelineSummary(d){
   $('sidebarCollapseBtn')?.addEventListener('click',e=>{const c=root.classList.toggle('sidebar-precollapsed');localStorage.setItem('financeSidebarCollapsed',String(c));e.currentTarget.title=c?'Expand sidebar':'Collapse sidebar'});
   const nav=document.querySelector('.forecast-nav'),toggle=document.querySelector('[data-graphs-toggle]');if(nav&&toggle){const open=localStorage.getItem('neptuneGraphsExpanded')!=='false';nav.classList.toggle('graphs-expanded',open);toggle.setAttribute('aria-expanded',String(open));toggle.addEventListener('click',()=>{const x=nav.classList.toggle('graphs-expanded');toggle.setAttribute('aria-expanded',String(x));localStorage.setItem('neptuneGraphsExpanded',String(x))})}
   $('cashflowViewBtn').addEventListener('click',()=>switchView('cashflow'));$('pipelineViewBtn').addEventListener('click',()=>switchView('pipeline'));
+  $('saveForecastOpening').addEventListener('click',async()=>{
+   if($('forecastOpeningInput').value===''||!$('forecastOpeningDate').value||($('forecastFrom').value&&$('forecastOpeningDate').value>$('forecastFrom').value)){alert('Enter an opening balance and a date on or before the forecast From date.');return}
+   const button=$('saveForecastOpening');button.disabled=true;
+   try{const response=await fetch('/api/cashflow/finance-plan/settings');if(!response.ok)throw new Error('Could not read balance settings.');const settings=await response.json();settings.openingBalance=Number($('forecastOpeningInput').value);settings.balanceAsOf=$('forecastOpeningDate').value;
+    const saved=await fetch('/api/cashflow/finance-plan/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(settings)});if(!saved.ok)throw new Error('Could not save opening balance.');await loadForecast();
+   }catch(e){alert(e.message)}finally{button.disabled=false}
+  });
   $('applyForecast').addEventListener('click',()=>{(viewMode==='pipeline'?loadPipeline():loadForecast()).catch(e=>viewMode==='pipeline'?pipelineLoadFailed(e):alert(e.message))});$('resetForecast').addEventListener('click',()=>{(viewMode==='pipeline'?loadPipeline(true):loadForecast(true)).catch(e=>viewMode==='pipeline'?pipelineLoadFailed(e):alert(e.message))});$('backToWeekly').addEventListener('click',backWeekly);
   document.querySelectorAll('[data-pipeline-status]').forEach(button=>button.addEventListener('click',()=>filterPipeline(button.dataset.pipelineStatus)));
   $('forecastBacklogCard').addEventListener('click',openAllBacklog);
@@ -187,7 +196,7 @@ function pipelineSummary(d){
   $('forecastPayablesCard').addEventListener('click',()=>openAllDirection('PAYABLE'));
   $('exportForecastInvoices').addEventListener('click',async()=>{
    if(!selectedPeriod)return;const btn=$('exportForecastInvoices'),q=new URLSearchParams({from:selectedPeriod.weekStart,to:selectedPeriod.weekEnd});btn.disabled=true;
-   try{const response=await fetch('/api/cashflow/tally/weekly-cashflow-forecast/export?'+q,{credentials:'same-origin'});if(!response.ok){let message='Unable to export invoice detail.';try{message=(await response.json()).error||message}catch(_ignored){}throw new Error(message)}
+   try{const response=await fetch('/api/cashflow/tally/projected-forecast/export',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(selectedPeriod.bills.map(b=>b.id))});if(!response.ok){let message='Unable to export invoice detail.';try{message=(await response.json()).error||message}catch(_ignored){}throw new Error(message)}
     const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='Cash-Flow-Invoice-Detail-'+selectedPeriod.weekStart+'-to-'+selectedPeriod.weekEnd+'.xlsx';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(e){alert(e.message)}finally{btn.disabled=false}
   });
@@ -197,9 +206,9 @@ function pipelineSummary(d){
     const blob=await response.blob(),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='PO-SO-Invoice-Pipeline-'+from+'-to-'+to+'.xlsx';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(e){alert(e.message)}finally{btn.disabled=false}
   });
-  $('forecastInvoiceBody').addEventListener('click',e=>{const row=e.target.closest('tr[data-invoice-index]');if(row&&selectedPeriod)liveVoucher(selectedPeriod.bills[Number(row.dataset.invoiceIndex)])});
+  $('forecastInvoiceBody').addEventListener('click',async e=>{const save=e.target.closest('[data-save-schedule]');if(save){const b=selectedPeriod.bills[Number(save.dataset.saveSchedule)],input=$('forecastInvoiceBody').querySelector('[data-schedule-date="'+save.dataset.saveSchedule+'"]');if(!input.value||input.value<todayIso()){alert('Choose a date today or later.');return}save.disabled=true;try{const r=await fetch('/api/cashflow/finance-plan/invoice-schedule/'+b.id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({expectedCashDate:input.value,remarks:b.cashflowRemarks||null})});if(!r.ok)throw new Error('Could not save expected date.');await loadForecast();}catch(err){alert(err.message);save.disabled=false}return}if(e.target.closest('input'))return;const row=e.target.closest('tr[data-invoice-index]');if(row&&selectedPeriod)liveVoucher(selectedPeriod.bills[Number(row.dataset.invoiceIndex)])});
   $('pipelineDetailBody').addEventListener('click',e=>{const client=e.target.closest('[data-pipeline-client]');if(client){const r=$('pipelineDetailBody')._records?.[Number(client.dataset.pipelineClient)],v=r?.tallyClientVouchers?.[Number(client.dataset.clientVoucher)];if(v)liveVoucher({invoiceNumber:v.voucherNumber,partyName:v.partyName,invoiceDate:v.voucherDate,directTallyVoucher:true});return}const button=e.target.closest('[data-pipeline-voucher]'),rows=$('pipelineDetailBody')._records;if(button&&rows){const r=rows[Number(button.dataset.pipelineVoucher)];liveVoucher({invoiceNumber:r.tallyVoucherNumber,partyName:r.vendorName,invoiceDate:r.tallyVoucherDate||r.vendorInvoiceDate,directTallyVoucher:true})}});
-  $('forecastInvoiceBody').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.closest('tr[data-invoice-index]')?.click()});$('syncNowBtn')?.addEventListener('click',syncNow);
+  $('forecastInvoiceBody').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.target.closest('input,button'))e.target.closest('tr[data-invoice-index]')?.click()});$('syncNowBtn')?.addEventListener('click',syncNow);
   const pipelineCanvas=$('weeklyCashflowChart'),pipelineHover=$('pipelineHoverCard');
   pipelineCanvas.addEventListener('mouseleave',hidePipelineHoverSoon);
   pipelineHover.addEventListener('mouseleave',()=>{pipelineHover.hidden=true});
