@@ -114,9 +114,9 @@ public class GrnReportByDateExcel extends AbstractXlsxView{
 		XSSFDataFormat lastTaxstyleformat = (XSSFDataFormat) workbook.createDataFormat();
 		declimalStyle.setDataFormat(lastTaxstyleformat.getFormat("#,###.00"));
 
-		// Rate: avg of all PO unit prices per item — same methodology as the
+		// Rate: avg of all PO unit prices per item â€” same methodology as the
 		// monthly stock movement report, so this report tallies with its inward column.
-		Map<String, Float> avgPriceByItemId = new java.util.HashMap<>();
+		Map<String, java.math.BigDecimal> avgPriceByItemId = new java.util.HashMap<>();
 
 		for (GrnItems grnItem : grnlist) {
 			String description=grnItem.getDescription();
@@ -130,14 +130,10 @@ public class GrnReportByDateExcel extends AbstractXlsxView{
 					continue;
 				}
 				String itemId = itemObj.get().getId();
-				Float avgPrice = avgPriceByItemId.get(itemId);
+				java.math.BigDecimal avgPrice = avgPriceByItemId.get(itemId);
 				if (avgPrice == null) {
 					List<PurchaseItem> poHistory = poItemService.findByModelNumberWithRecentPoItem(itemId);
-					float priceSum = 0;
-					for (PurchaseItem pi : poHistory) {
-						priceSum += pi.getUnitPrice();
-					}
-					avgPrice = poHistory.isEmpty() ? 0f : priceSum / poHistory.size();
+					avgPrice = StockReportMoney.average(poHistory);
 					avgPriceByItemId.put(itemId, avgPrice);
 				}
 
@@ -149,11 +145,11 @@ public class GrnReportByDateExcel extends AbstractXlsxView{
 
 				Cell newQtyCell = row.createCell(4);
 				newQtyCell.setCellStyle(declimalStyle);
-				newQtyCell.setCellValue(avgPrice);
+				newQtyCell.setCellValue(avgPrice.doubleValue());
 
 				Cell amountCell = row.createCell(5);
 				amountCell.setCellStyle(declimalStyle);
-				amountCell.setCellValue(grnItem.getReceivedQuantity() * avgPrice);
+				amountCell.setCellValue(StockReportMoney.amount(grnItem.getReceivedQuantity(), avgPrice).doubleValue());
 
 				row.createCell(0).setCellValue(itemObj.get().getModel());
 				row.createCell(1).setCellValue(poItem.get().getPoDescription());

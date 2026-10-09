@@ -91,9 +91,9 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 
 			if (modelNo == null || modelNo.isEmpty()) continue;
 
-			float salesPrice = salesPriceObj instanceof Number ? ((Number) salesPriceObj).floatValue() : 0;
+			Number salesPrice = salesPriceObj instanceof Number ? (Number) salesPriceObj : java.math.BigDecimal.ZERO;
 			float qty = dcItem.getTodaysQty();
-			float amount = qty * salesPrice;
+			java.math.BigDecimal amount = StockReportMoney.amount(qty, salesPrice);
 
 			Row row = itemsReportSheet.createRow(rowCount++);
 
@@ -108,11 +108,11 @@ public class DcReportByDateExcel extends AbstractXlsxView {
 
 			Cell priceCell = row.createCell(5);
 			priceCell.setCellStyle(decimalStyle);
-			priceCell.setCellValue(salesPrice);
+			priceCell.setCellValue(salesPrice.doubleValue());
 
 			Cell amountCell = row.createCell(6);
 			amountCell.setCellStyle(decimalStyle);
-			amountCell.setCellValue(amount);
+			amountCell.setCellValue(amount.doubleValue());
 		}
 	}
 }
