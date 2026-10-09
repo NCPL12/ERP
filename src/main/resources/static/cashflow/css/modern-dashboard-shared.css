@@ -1,0 +1,256 @@
+/* ============================================
+   SHARED MODERN DASHBOARD STYLES
+   Professional, Clean, Consistent Design
+   ============================================ */
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* Page Header - Consistent across all pages */
+.page-header {
+    background: white;
+    padding: 24px 28px;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    animation: fadeIn 0.5s ease-out;
+    border-left: 4px solid #1e3c72;
+}
+
+.page-header h4 {
+    color: #1e3c72;
+    font-weight: 700;
+    margin: 0 0 6px 0;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-header p {
+    color: #6c757d;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Filter Toolbar - Consistent styling */
+.filter-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    background: white;
+    padding: 18px 24px;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    animation: slideUp 0.5s ease-out;
+}
+
+.filter-toolbar label {
+    font-weight: 600;
+    color: #1e3c72;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-toolbar input,
+.filter-toolbar select {
+    margin-top: 8px;
+    min-width: 180px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.filter-toolbar input:focus,
+.filter-toolbar select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.filter-toolbar .filters-info {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* Card Styles - Reusable card components */
+.card-modern {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.card-modern.with-border {
+    border-left: 4px solid #1e3c72;
+}
+
+/* Chart Containers */
+.chart-container-modern {
+    background: white;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+
+.chart-title-modern {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Section Titles */
+.section-title-modern {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Divider */
+.divider-modern {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
+    margin: 20px 0;
+}
+
+/* Loading States */
+.loading-overlay {
+    position: relative;
+    opacity: 0.6;
+}
+
+.loading-overlay::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: rotate 1s linear infinite;
+    z-index: 10;
+}
+
+/* Color Utilities */
+.color-primary { color: #1e3c72; }
+.color-success { color: #10b981; }
+.color-warning { color: #f59e0b; }
+.color-danger { color: #ef4444; }
+.color-info { color: #3b82f6; }
+
+.bg-primary-light { background-color: rgba(30, 60, 114, 0.1); }
+.bg-success-light { background-color: rgba(16, 185, 129, 0.1); }
+.bg-warning-light { background-color: rgba(245, 158, 11, 0.1); }
+.bg-danger-light { background-color: rgba(239, 68, 68, 0.1); }
+
+/* Border Top Colors for Cards */
+.border-top-blue { border-top: 3px solid #3b82f6; }
+.border-top-green { border-top: 3px solid #10b981; }
+.border-top-orange { border-top: 3px solid #f59e0b; }
+.border-top-red { border-top: 3px solid #ef4444; }
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .page-header {
+        padding: 20px 24px;
+    }
+    
+    .filter-toolbar {
+        padding: 16px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding: 18px 20px;
+    }
+    
+    .page-header h4 {
+        font-size: 20px;
+    }
+    
+    .filter-toolbar {
+        flex-direction: column;
+    }
+    
+    .filter-toolbar .filters-info {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+
+
+
+
+

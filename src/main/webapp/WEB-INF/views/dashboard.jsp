@@ -4,6 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -115,6 +116,13 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
     <section class="content">
       <div class="container-fluid">
         <!-- Small boxes (Stat box) -->
+<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+          <div class="col-lg-2 col-6"><div class="small-box bg-teal">
+            <div class="inner"><h3 aria-hidden="true">&nbsp;</h3><p>Cashflow Analyzer</p></div>
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+            <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" class="small-box-footer">Open analysis <i class="fas fa-arrow-circle-right"></i></a>
+          </div></div>
+          </security:authorize>
         <div class="dash-tiles-grid">
           <c:if test="${tileVisible.contains('SALES_ORDER')}">
           <div>
@@ -366,7 +374,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -384,7 +392,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
@@ -417,7 +425,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -435,11 +443,11 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- project view modal ends -->	
+<!-- project view modal ends -->
 <!-- sales item without design modal starts -->
 <div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="salesItemwithoutDesignModal">
 		<div class="modal-dialog modal-lg"
@@ -468,7 +476,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -486,11 +494,11 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- sales item without design modal ends -->	
+<!-- sales item without design modal ends -->
 <!-- purchase modal starts -->
 <div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="pendingPurchaseModal">
 		<div class="modal-dialog modal-lg"
@@ -515,10 +523,10 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="7%" rowspan="2" class="thStyle">Unit</th>
 										<th width="12%" rowspan="2" class="thStyle">Unit Price</th>
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
-										
+
 									</tr>
 
-							</thead> 
+							</thead>
 							<tbody id="table-body">
 							</tbody>
 					</table>
@@ -528,7 +536,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
@@ -561,7 +569,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -579,12 +587,12 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- sales item with design modal ends -->	
-	
+<!-- sales item with design modal ends -->
+
 </body>
 </body>
 </html>
