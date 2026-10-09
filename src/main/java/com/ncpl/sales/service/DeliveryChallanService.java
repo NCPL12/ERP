@@ -897,17 +897,13 @@ public class DeliveryChallanService {
 		// Price: avg of all PO unit prices per item — same methodology as the
 		// monthly stock movement report, so DC-by-date values tally with its
 		// outward column. Items with no PO history are excluded there too.
-		Map<String, Double> avgPoPriceMap = new HashMap<>();
+		Map<String, java.math.BigDecimal> avgPoPriceMap = new HashMap<>();
 		for (String itemMasterId : itemMasterMap.keySet()) {
 			List<com.ncpl.sales.model.PurchaseItem> poItems = purchaseItemService.findByModelNumberWithRecentPoItem(itemMasterId);
 			if (poItems.isEmpty()) {
 				continue;
 			}
-			double priceSum = 0;
-			for (com.ncpl.sales.model.PurchaseItem pi : poItems) {
-				priceSum += pi.getUnitPrice();
-			}
-			avgPoPriceMap.put(itemMasterId, priceSum / poItems.size());
+			avgPoPriceMap.put(itemMasterId, StockReportMoney.average(poItems));
 		}
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
 		for (DeliveryChallanItems dcItem : dcItemList) {

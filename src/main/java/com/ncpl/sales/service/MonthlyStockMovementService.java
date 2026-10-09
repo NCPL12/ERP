@@ -53,7 +53,7 @@ public class MonthlyStockMovementService {
         Map<String, BigDecimal> closingQty = reportEndDate.equals(java.time.LocalDate.now())
                 ? loadCurrentStock() : loadStockSnapshot(toInclusive.getTime());
         Map<String, GrnSummary> grn = loadGrnSummary(fromInclusive, toInclusive);
-        Map<String, BigDecimal> dcQuantities = loadDcSummary(fromInclusive, toInclusive);
+        Map<String, DcSummary> dcMovements = loadDcSummary(fromInclusive, toInclusive);
         Map<String, BigDecimal> averagePoPrices = loadAveragePoPrices();
         Map<String, BigDecimal> latestSupplyPrices = loadLatestSupplyPrices();
         Map<String, BigDecimal> latestGrnPrices = loadLastGrnRateBefore(
@@ -143,12 +143,16 @@ public class MonthlyStockMovementService {
 
             // Net outward deliberately includes every stock-affecting event.
             BigDecimal outwardQty = openQty.add(inwardQty).subtract(closeQty);
-            BigDecimal dcQty = quantity(value(dcQuantities.get(itemId)));
+            DcSummary dcMovement = dcMovements.get(itemId);
+            BigDecimal dcQty = quantity(dcMovement == null ? ZERO : dcMovement.quantity);
             // Finance validates DC activity independently. The difference is the
             // net of returns, assignments, corrections and DCs that did not post
             // to stock. Keeping it explicit makes the stock roll-forward auditable.
             BigDecimal adjustmentQty = quantity(outwardQty.subtract(dcQty));
-            BigDecimal reportedDcValue = dcQty.multiply(valuationRate).setScale(2, RoundingMode.HALF_UP);
+            // Keep the DC value at the same transaction-level rounding used by
+            // DC Report By Date.  Multiplying an already-aggregated quantity by
+            // the rate can otherwise introduce a small value difference.
+            BigDecimal reportedDcValue = dcMovement == null ? ZERO : dcMovement.amount;
             boolean hasApprovedClosing = hasApprovedClosingRate && approvedClosingValues.containsKey(itemId);
             // Once Finance has approved/imported a closing snapshot, its rate is
             // authoritative even when it is zero.
@@ -167,6 +171,8 @@ public class MonthlyStockMovementService {
             row.put("itemMasterId", itemId);
             boolean priceMissingForActiveItem = valuationRate.signum() == 0
                     && (openQty.signum() != 0 || inwardQty.signum() != 0 || closeQty.signum() != 0);
+            priceMissingForActiveItem = priceMissingForActiveItem
+                    || (hasApprovedClosing && closeQty.signum() != 0 && closingRate.signum() == 0);
             row.put("particulars", itemId + " / " + model + " / " + description
                     + (priceMissingForActiveItem ? " / PRICE MISSING" : ""));
             row.put("openQ1", openQty);
@@ -256,42 +262,45 @@ public class MonthlyStockMovementService {
 
     @SuppressWarnings("unchecked")
     private Map<String, GrnSummary> loadGrnSummary(Timestamp fromInclusive, Timestamp toInclusive) {
-		String sql = "SELECT pi.model_no, COALESCE(SUM(gi.received_quantity), 0), COUNT(*), "
-				+ "COALESCE(SUM(ROUND(gi.received_quantity * poavg.avg_price, 2)), 0) "
-                + "FROM tbl_grn_items gi "
+        Map<String, BigDecimal> rates = loadAveragePoPrices();
+        List<Object[]> values = entityManager.createNativeQuery(
+                "SELECT pi.model_no, gi.received_quantity FROM tbl_grn_items gi "
                 + "JOIN tbl_purchase_items pi ON pi.purchase_item_id = CAST(gi.po_item_id AS UNSIGNED) "
-				+ "JOIN (SELECT model_no, ROUND(AVG(unit_price), 2) avg_price "
-				+ "      FROM tbl_purchase_items GROUP BY model_no) poavg ON poavg.model_no = pi.model_no "
+                + "JOIN tbl_item_master im ON im.id=pi.model_no "
                 + "WHERE gi.updated >= :fromDate AND gi.updated <= :toDate "
-                + "AND gi.received_quantity > 0 AND pi.model_no IS NOT NULL "
-                + "GROUP BY pi.model_no";
-        List<Object[]> values = entityManager.createNativeQuery(sql)
-                .setParameter("fromDate", fromInclusive)
-                .setParameter("toDate", toInclusive).getResultList();
+                + "AND gi.po_item_id REGEXP '^[0-9]+$'")
+                .setParameter("fromDate", fromInclusive).setParameter("toDate", toInclusive).getResultList();
         Map<String, GrnSummary> result = new LinkedHashMap<String, GrnSummary>();
         for (Object[] row : values) {
-            result.put(stringValue(row[0]),
-					new GrnSummary(decimal(row[1]), ((Number) row[2]).longValue(), decimal(row[3])));
+            String id=stringValue(row[0]); float qty=((Number)row[1]).floatValue();
+            BigDecimal amount=StockReportMoney.amount(qty, rates.get(id));
+            GrnSummary previous=result.get(id);
+            result.put(id,new GrnSummary(StockReportMoney.source(qty).add(previous==null?ZERO:previous.quantity),
+                    previous==null?1L:previous.occurrences+1L, amount.add(previous==null?ZERO:previous.amount)));
         }
         return result;
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, BigDecimal> loadDcSummary(Timestamp fromInclusive, Timestamp toInclusive) {
-        // Mirrors the existing "DC Report By Date" scope and maps each sales
-        // design component to its stable item-master id.
-        String sql = "SELECT di.item_id, COALESCE(SUM(dci.todays_qty), 0) "
-                + "FROM tbl_dc_items dci "
-                + "JOIN sales_order_design sd ON sd.sales_item_id = dci.description "
-                + "JOIN sales_order_design_items di ON di.design_id = sd.design_id "
+    private Map<String, DcSummary> loadDcSummary(Timestamp fromInclusive, Timestamp toInclusive) {
+        Map<String, BigDecimal> rates = loadAveragePoPrices();
+        List<Object[]> values=entityManager.createNativeQuery(
+                "SELECT di.item_id, dci.todays_qty FROM tbl_dc_items dci "
+                + "JOIN sales_order_design sd ON sd.sales_item_id=dci.description "
+                + "JOIN sales_order_design_items di ON di.design_id=sd.design_id "
+                + "JOIN tbl_sales_item si ON si.id=dci.description "
+                + "JOIN tbl_item_master im ON im.id=di.item_id "
                 + "WHERE dci.created >= :fromDate AND dci.created <= :toDate "
-                + "AND dci.todays_qty <> 0 AND di.item_id IS NOT NULL "
-                + "GROUP BY di.item_id";
-        List<Object[]> values = entityManager.createNativeQuery(sql)
-                .setParameter("fromDate", fromInclusive)
-                .setParameter("toDate", toInclusive).getResultList();
-        Map<String, BigDecimal> result = new LinkedHashMap<String, BigDecimal>();
-        for (Object[] row : values) result.put(stringValue(row[0]), decimal(row[1]));
+                + "AND dci.todays_qty<>0 AND im.model IS NOT NULL AND im.model<>''")
+                .setParameter("fromDate",fromInclusive).setParameter("toDate",toInclusive).getResultList();
+        Map<String, DcSummary> result=new LinkedHashMap<String, DcSummary>();
+        for(Object[] row:values){
+            String id=stringValue(row[0]); if(!rates.containsKey(id))continue;
+            float qty=((Number)row[1]).floatValue(); BigDecimal amount=StockReportMoney.amount(qty,rates.get(id));
+            DcSummary previous=result.get(id);
+            result.put(id,new DcSummary(StockReportMoney.source(qty).add(previous==null?ZERO:previous.quantity),
+                    amount.add(previous==null?ZERO:previous.amount)));
+        }
         return result;
     }
 
@@ -310,11 +319,17 @@ public class MonthlyStockMovementService {
 
     @SuppressWarnings("unchecked")
     private Map<String, BigDecimal> loadAveragePoPrices() {
-        String sql = "SELECT model_no, ROUND(AVG(unit_price), 2) FROM tbl_purchase_items "
-                + "WHERE model_no IS NOT NULL GROUP BY model_no";
-        List<Object[]> values = entityManager.createNativeQuery(sql).getResultList();
-        Map<String, BigDecimal> result = new LinkedHashMap<String, BigDecimal>();
-        for (Object[] row : values) result.put(stringValue(row[0]), decimal(row[1]));
+        List<Object[]> values=entityManager.createNativeQuery(
+                "SELECT model_no,unit_price FROM tbl_purchase_items WHERE model_no IS NOT NULL").getResultList();
+        Map<String,BigDecimal> sums=new LinkedHashMap<String,BigDecimal>();
+        Map<String,Integer> counts=new LinkedHashMap<String,Integer>();
+        for(Object[] row:values){String id=stringValue(row[0]);
+            BigDecimal value=StockReportMoney.source(((Number)row[1]).floatValue());
+            sums.put(id,value.add(sums.containsKey(id)?sums.get(id):ZERO));
+            counts.put(id,counts.containsKey(id)?counts.get(id)+1:1);
+        }
+        Map<String,BigDecimal> result=new LinkedHashMap<String,BigDecimal>();
+        for(String id:sums.keySet())result.put(id,sums.get(id).divide(BigDecimal.valueOf(counts.get(id)),2,RoundingMode.HALF_UP));
         return result;
     }
 
@@ -371,6 +386,16 @@ public class MonthlyStockMovementService {
             this.quantity = quantity;
             this.occurrences = occurrences;
 			this.amount = amount;
+        }
+    }
+
+    private static final class DcSummary {
+        private final BigDecimal quantity;
+        private final BigDecimal amount;
+
+        private DcSummary(BigDecimal quantity, BigDecimal amount) {
+            this.quantity = quantity;
+            this.amount = amount;
         }
     }
 }
