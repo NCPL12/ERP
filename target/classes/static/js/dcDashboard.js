@@ -77,10 +77,16 @@ $(document).ready(function(){
 	    		});
 	    	},
 	    	"columns": [ {
-				"data" : "dcId",
-				"defaultContent":"",
-			}, {
-				"data" : "soNumber",
+			"data" : "dcId",
+			"defaultContent":"",
+			render : function(data, type, row) {
+				if (type === 'display') {
+					return "<a href='#' class='dcLink'>" + data + "</a>";
+				}
+				return data;
+			}
+		}, {
+			"data" : "soNumber",
 				"defaultContent":"",
 
 			},{
@@ -188,12 +194,14 @@ $(document).ready(function(){
 			]
 	    });
 	    
-	    //on double click of list navigate to view page
-	    $('#dcList tbody').on('dblclick', 'tr', function () {
-	 	   var data = dcTable.row(this).data();
-	 	   var dcId = data.dcId;
-	 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
-	 	});
+	   
+	  //on single click of Dc No. link navigate to view page
+$('#dcList tbody').on('click', 'a.dcLink', function (e) {
+   e.preventDefault();
+   var data = dcTable.row($(this).closest('tr')).data();
+   var dcId = data.dcId;
+   window.location = pageContext+"/api/dc/view?dcId="+dcId;
+});
 	    $('#dcList tbody').on('click', ".generateDc",function () {
 	    	$("#dcExcelDropdown").val("").trigger("change");
 	    	 var dcId = $(this).closest("tr").find("td:eq(0)").text();

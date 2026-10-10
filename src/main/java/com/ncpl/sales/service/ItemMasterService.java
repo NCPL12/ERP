@@ -366,6 +366,7 @@ public class ItemMasterService {
 			Optional<ItemMaster> persistedItem = getItemById(itemMaster.getId());
 			Date createdDate = persistedItem.get().getCreated();
 			itemMaster.setCreated(createdDate);
+			itemMaster.setCreatedBy(persistedItem.get().getCreatedBy());
 			ItemMaster updatedItem= itemMasterRepo.save(itemMaster);
 			return updatedItem;
 		}	
@@ -515,6 +516,7 @@ public class ItemMasterService {
 			Optional<Supplier> persistedStock = getSupplierById(supplierId);
 			Date createdDate = persistedStock.get().getCreated();
 			supplier.setCreated(createdDate);
+			supplier.setCreatedBy(persistedStock.get().getCreatedBy());
 			supplier.setItemMaster(itemMasterObject.get());
 			Supplier updatedSupplier=supplierRepo.save(supplier);
 			return updatedSupplier;
