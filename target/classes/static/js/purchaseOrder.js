@@ -1966,7 +1966,11 @@ function loadTable(response){
 				"data": "Date",
 				"width":"10%",
 				render : function(data, type, row) {
+<<<<<<< HEAD
 					var newdate = moment(new Date(row.purchaseOrder.created)).format("YYYY-MM-DD HH:mm:ss") ;
+=======
+					var newdate = moment(new Date(row.purchaseOrder.created)).format("DD-MM-YYYY HH:mm:ss") ;
+>>>>>>> origin/features/timestamp-issue
 						return  newdate; 
 				}
 

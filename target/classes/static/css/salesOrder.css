@@ -1,8 +1,26 @@
 @charset "ISO-8859-1";
 #table-header {
+<<<<<<< HEAD
   font-size:12px;
 }
 
+=======
+  display: table; /* to take the same width as tr */
+  width: calc(100% - 17px); /* - 17px because of the scrollbar width */
+  font-size:12px;
+}
+
+#table-body {
+  display: block; /* to enable vertical scrolling */
+  max-height: 449px; /* e.g. */
+  overflow-y: scroll; /* keeps the scrollbar even if it doesn't need it; display purpose */
+}
+
+#table-footer {
+  display: table; /* to take the same width as tr */
+  width: calc(100% - 17px); /* - 17px because of the scrollbar width */
+}
+>>>>>>> origin/features/timestamp-issue
 .button-div-style{
 	    margin: 1%!important;
 }
@@ -24,6 +42,7 @@ text-align: center;
  #salesTable td{
  	padding: .15em !important;
  }
+<<<<<<< HEAD
 
  #salesTable .add-lot-btn {
  	height: 24px;
@@ -32,6 +51,8 @@ text-align: center;
  	display: inline-flex;
  	align-items: center;
  }
+=======
+>>>>>>> origin/features/timestamp-issue
  
  #itemMasterList tr td {
     height: 10px;
@@ -43,9 +64,13 @@ text-align: center;
 	border-color: red;
 }
 #salesTable{
+<<<<<<< HEAD
   table-layout: fixed;
   width: 100%;
   font-size: 12px;
+=======
+  display:block;
+>>>>>>> origin/features/timestamp-issue
 }
 .thStyle{
    padding-left: 0px!important;
@@ -56,6 +81,7 @@ text-align: center;
 .hideTd{
 	display:none;
 }
+<<<<<<< HEAD
 
 .task-label {
 	padding-right: 10px !important;
@@ -92,3 +118,5 @@ text-align: center;
 	width: 34px;
 	text-align: center;
 }
+=======
+>>>>>>> origin/features/timestamp-issue

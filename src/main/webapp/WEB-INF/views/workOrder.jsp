@@ -40,7 +40,7 @@ obj = obj.replace(/\&/g, "\"");
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 			
 		 <tiles:insertAttribute name="header" />

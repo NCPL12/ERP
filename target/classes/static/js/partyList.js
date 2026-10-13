@@ -1,4 +1,5 @@
 /**
+<<<<<<< HEAD
  *
  */
 // @D0015 lazy-loaded, paginated Party list (see README.md)
@@ -34,6 +35,18 @@ $(document).ready( function () {
 				}
 			});
 		},
+=======
+ * 
+ */
+var partyTable;
+
+$(document).ready( function () {
+	console.log(data[173]);
+	partyTable=$('#partyList').DataTable({
+    	"aaData": data,
+    	//"autoWidth": true,
+    	//"pageLength": 15,
+>>>>>>> origin/features/timestamp-issue
     	"aoColumns": [
     	{ "title":"Type",
 			"data": "type",
@@ -78,7 +91,11 @@ $(document).ready( function () {
 		{   "title":"Country",
 		    "width":"10%",
 			"data": "country",
+<<<<<<< HEAD
 
+=======
+    	
+>>>>>>> origin/features/timestamp-issue
     		 "defaultContent":"NA",
   			render : function(aaData, type, row) {
   				var country=row.party_city.state.country.name;
@@ -86,6 +103,7 @@ $(document).ready( function () {
 				country.substr( 0, 10 ) +'...' :
 				country;
   			}
+<<<<<<< HEAD
 
     	},
 
@@ -93,6 +111,15 @@ $(document).ready( function () {
 		   "width":"10%",
 			"data": "phone1"},
     	{
+=======
+    	
+    	},
+    	
+		{ "title":"Phone",
+		   "width":"10%",
+			"data": "phone1"},
+    	{ 
+>>>>>>> origin/features/timestamp-issue
 			"title":"Website",
 			"width":"18%",
 			"data": "website",
@@ -103,7 +130,11 @@ $(document).ready( function () {
   					{aaData="";}
 				  return aaData.length > 15 ? '<a href='+aaData+' target="_blank">'+ aaData.substr( 0, 15 )+'...' +'</a>' :'<a href='+aaData+' target="_blank">'+aaData+'</a>';
   			}
+<<<<<<< HEAD
 
+=======
+    			
+>>>>>>> origin/features/timestamp-issue
     	},
 		{   "title":"Category",
 		    "width":"10%",
@@ -111,7 +142,11 @@ $(document).ready( function () {
         	  "defaultContent":"NA",
     			render : function(aaData, type, row) {
     				var categoryName = row.category;
+<<<<<<< HEAD
 
+=======
+    				  
+>>>>>>> origin/features/timestamp-issue
                     return categoryName;
     			}
         	},{
@@ -120,6 +155,7 @@ $(document).ready( function () {
             	  "class":"hideTd",
         			render : function(aaData, type, row) {
         				var remarks = row.remarks;
+<<<<<<< HEAD
 
                         return remarks;
         			}
@@ -133,9 +169,27 @@ $(document).ready( function () {
     	if (!canEditParty) {
     		return;
     	}
+=======
+        				  
+                        return remarks;
+        			}
+            	},
+    	
+    	]
+    });
+	
+	//redirect to the party page on double click of row.
+    $('#partyList tbody').on('dblclick', 'tr', function () {
+>>>>>>> origin/features/timestamp-issue
     	var data1 = partyTable.row(this).data();
     	var partyId = data1.id;
     	window.location = pageContext+"/api/party/view?partyId="+partyId;
  	});
+<<<<<<< HEAD
 
 } );
+=======
+    
+} );
+
+>>>>>>> origin/features/timestamp-issue

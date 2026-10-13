@@ -176,7 +176,7 @@ div[aria-label*="Chart created using amCharts"] {
 }
 </style>
 </head>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 <div class="wrapper">
 
  <tiles:insertAttribute name="header" />

@@ -1,497 +1,876 @@
 var userTable;
 var selectedUserId = null;
-var employeeOptionsCache = [];
+var selectedUserData = null;
 
-function escapeHtml(text) {
-	if (text === null || text === undefined) {
-		return "";
-	}
-	var div = document.createElement("div");
-	div.textContent = String(text);
-	return div.innerHTML;
-}
 
 $(document).ready(function () {
-	loadUsers();
-	loadEmployeesForNameDropdown();
-	loadRolesForDropdown();
+
+    loadUsers();
+
 });
 
-/** Role dropdown in Add/Edit User - sourced from the same roles Role Management manages,
- *  instead of a hardcoded list that drifts from whatever roles actually exist. */
-function loadRolesForDropdown() {
-	$.ajax({
-		url: api.ROLE_API,
-		type: "GET",
-		success: function (roles) {
-			var options = '<option value="">Select Role</option>';
-			$.each(roles, function (i, role) {
-				var rn = role && role.name ? String(role.name) : '';
-				if (rn === '') return;
-				options += '<option value="' + escapeHtml(rn) + '">' + escapeHtml(rn) + '</option>';
-			});
-			$("#editRole").html(options);
-		},
-		error: function (xhr) {
-			console.log("Unable to load roles for dropdown.", xhr);
-		}
-	});
+
+function getCookie(name) {
+    var nameEQ = name + "=";
+    var cookies = document.cookie.split(';');
+
+    for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        if (cookie.indexOf(nameEQ) === 0) {
+            return decodeURIComponent(cookie.substring(nameEQ.length));
+        }
+    }
+    return null;
 }
 
-/** Employee dropdown for the Name field - picking one auto-fills Mobile from the Employee table. */
-function loadEmployeesForNameDropdown() {
-	$.ajax({
-		url: api.EMPLOYEE_MANAGEMENT_LIST,
-		type: 'GET',
-		success: function (employees) {
-			employeeOptionsCache = employees || [];
-			var options = '<option value="">Select Employee</option>';
-			$.each(employeeOptionsCache, function (i, emp) {
-				options += '<option value="' + emp.name + '">' + emp.name + ' (' + (emp.empId || '') + ')</option>';
-			});
-			$("#editName").html(options);
-			$("#editName").select2({
-				theme: "bootstrap4",
-				tags: true,
-				allowClear: true,
-				placeholder: "Select Employee",
-				dropdownParent: $("#editUserModal")
-			});
-		},
-		error: function (xhr) {
-			console.log("Unable to load employee list for Name dropdown.", xhr);
-		}
-	});
+
+function deleteCookie(name) {
+    console.log("🔴 Deleting cookie: " + name);
+
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
+
+    console.log("✅ Cookie deleted: " + name);
 }
 
-$(document).on("change", "#editName", function () {
-	var selectedName = $(this).val();
-	var match = null;
-	$.each(employeeOptionsCache, function (i, emp) {
-		if (emp.name === selectedName) {
-			match = emp;
-			return false;
-		}
-	});
-	if (match) {
-		$("#editNumber").val(match.contactNo || "");
-	}
-});
 
 function updateUserStatusInDatabase(userId, username, newStatus, enabled) {
-	$.ajax({
-		url: api.USER_MANAGEMENT_UPDATE + "/" + encodeURIComponent(userId) +
-			"?username=" + encodeURIComponent(username) +
-			"&enabled=" + enabled,
-		type: 'PUT',
-		success: function (response) {
-			checkAndLogoutIfSameUser(userId, username);
-		},
-		error: function (xhr) {
-			alert("Unable to update user status.");
-			loadUsers();
-		}
-	});
+
+    console.log("🔄 Updating user status in database...");
+
+    $.ajax({
+
+        url: api.USER_MANAGEMENT_UPDATE + "/" + encodeURIComponent(userId) +
+             "?username=" + encodeURIComponent(username) +
+             "&enabled=" + enabled,
+
+        type: 'PUT',
+
+        success: function (response) {
+
+            console.log("✅ Status updated in database");
+            checkAndLogoutIfSameUser(userId, username);
+
+        },
+
+        error: function (xhr) {
+
+            console.log("❌ Error updating status");
+            alert("Unable to update user status.");
+            loadUsers();
+
+        }
+
+    });
+
 }
+
 
 function checkAndLogoutIfSameUser(userId, username) {
-	$.ajax({
-		url: api.USER_CURRENT,
-		type: 'GET',
-		success: function (currentUser) {
-			if (!currentUser) {
-				loadUsers();
-				return;
-			}
-			var currentUserId = currentUser.id;
-			if (String(currentUserId) === String(userId)) {
-				window.location.replace(pageContext + "/login");
-			} else {
-				alert(username + " status changed successfully.");
-				loadUsers();
-			}
-		},
-		error: function (xhr) {
-			if (xhr && xhr.status === 401) {
-				window.location.replace(pageContext + "/login");
-				return;
-			}
-			loadUsers();
-		}
-	});
+
+    console.log("🔍 Comparing user IDs...");
+
+    var currentUserUrl = (api && api.USER_CURRENT) || (typeof contextRoot !== 'undefined' ? contextRoot + "/api/users/current" : "/api/users/current");
+
+    $.ajax({
+
+        url: currentUserUrl,
+
+        type: 'GET',
+
+        success: function (currentUser) {
+
+            if (!currentUser) {
+                loadUsers();
+                return;
+            }
+
+            var currentUserId = currentUser.id != null ? currentUser.id : currentUser.userId;
+            var targetUserId = userId != null ? userId : null;
+
+            console.log("📌 Current logged-in user: " + (currentUser.username || "unknown") + " (ID: " + currentUserId + ")");
+            console.log("📌 Just marked user: " + username + " (ID: " + targetUserId + ")");
+
+            var currentUserIdValue = currentUser.id != null ? currentUser.id : (currentUser.userId != null ? currentUser.userId : currentUser.user_id);
+            var targetUserIdValue = userId != null ? userId : null;
+
+            console.log("📌 Current logged-in user: " + (currentUser.username || "unknown") + " (ID: " + currentUserIdValue + ")");
+            console.log("📌 Just marked user: " + username + " (ID: " + targetUserIdValue + ")");
+
+            if (String(currentUserIdValue) === String(targetUserIdValue)) {
+
+                console.log("🔴 MATCH! Logging out user...");
+
+                deleteCookie('jsessionid');
+                deleteCookie('JSESSIONID');
+
+                var loginUrl = (typeof contextRoot !== 'undefined' && contextRoot) ? (contextRoot + 'login') : '/login';
+                console.log("🔄 Redirecting to login page..." + loginUrl);
+                window.location.replace(loginUrl);
+
+            } else {
+
+                console.log("✅ Different user. No action needed.");
+                alert(username + " status changed successfully.");
+                loadUsers();
+
+            }
+
+        },
+
+        error: function (xhr) {
+
+            console.log("❌ Error getting current user");
+            console.log("   Status:", xhr && xhr.status);
+
+            if (xhr && xhr.status === 401) {
+                deleteCookie('jsessionid');
+                deleteCookie('JSESSIONID');
+
+                var loginUrl = (typeof contextRoot !== 'undefined' && contextRoot) ? (contextRoot + 'login') : '/login';
+                console.log("🔄 Session already invalid. Redirecting to login..." + loginUrl);
+                window.location.replace(loginUrl);
+                return;
+            }
+
+            loadUsers();
+
+        }
+
+    });
+
 }
+
 
 function loadUsers() {
-	$.ajax({
-		url: api.USER_MANAGEMENT_LIST,
-		type: 'GET',
-		success: function (users) {
-			userTable = $('#userManagementTable').DataTable({
-				destroy: true,
-				data: users,
-				autoWidth: false,
-				columns: [
-					{
-						data: null,
-						orderable: false,
-						searchable: false,
-						render: function (data, type, row, meta) {
-							return meta.row + 1;
-						}
-					},
-					{ data: 'username', orderable: false, defaultContent: '' },
-					{ data: 'emailId', orderable: false, defaultContent: '' },
-					{ data: 'number', orderable: false, defaultContent: '' },
-					{ data: 'role', orderable: false, defaultContent: '' },
-					{
-						data: 'enabled',
-						orderable: false,
-						defaultContent: true,
-						render: function (data, type, row, meta) {
-							return (data === true || data === 1 || data === 'true') ? "ACTIVE" : "INACTIVE";
-						}
-					},
-					{
-						data: null,
-						orderable: false,
-						searchable: false,
-						className: 'text-center',
-						render: function (data, type, row, meta) {
-							var userId = row.id;
-							if (!userId) {
-								return '<span class="text-danger">ID Missing</span>';
-							}
-							return (
-								'<button type="button" class="btn btn-info btn-sm mr-1" onclick="editUser(\'' + userId + '\')">' +
-									'<i class="fas fa-edit"></i></button>' +
-								'<button type="button" class="btn btn-light border btn-sm mr-1" style="color:#000;background-color:#fff;" onclick="changePassword(\'' + userId + '\')">' +
-									'<i class="fas fa-key"></i></button>' +
-								'<button type="button" class="btn btn-danger btn-sm" onclick="deleteUser(\'' + userId + '\')">' +
-									'<i class="fas fa-trash"></i></button>'
-							);
-						}
-					}
-				]
-			});
-		},
-		error: function (xhr) {
-			alert("Unable to load users.");
-		}
-	});
+
+    $.ajax({
+
+        url: api.USER_MANAGEMENT_LIST,
+
+        type: 'GET',
+
+        success: function (users) {
+
+            console.log("Users:", users);
+
+            userTable = $('#userManagementTable').DataTable({
+
+                destroy: true,
+
+                data: users,
+
+                autoWidth: false,
+
+                columns: [
+
+                    // =========================
+                    // S.NO.
+                    // =========================
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+
+                        render: function (data, type, row, meta) {
+
+                            return meta.row + 1;
+
+                        }
+                    },
+
+
+                    // =========================
+                    // USERNAME
+                    // =========================
+                    {
+                        data: 'username',
+                        orderable: false,
+                        defaultContent: ''
+                    },
+
+
+                    // =========================
+                    // EMAIL
+                    // =========================
+                    {
+                        data: 'emailId',
+                        orderable: false,
+                        defaultContent: ''
+                    },
+
+
+                    // =========================
+                    // MOBILE
+                    // =========================
+                    {
+                        data: 'number',
+                        orderable: false,
+                        defaultContent: ''
+                    },
+
+
+                    // =========================
+                    // ROLE
+                    // =========================
+                    {
+                        data: 'role',
+                        orderable: false,
+                        defaultContent: ''
+                    },
+
+
+                    // =========================
+                    // STATUS
+                    // =========================
+             // =========================
+// STATUS
+// =========================
+{
+    data: 'enabled',
+    orderable: false,
+    defaultContent: true,
+    render: function (data, type, row, meta) {
+        if (data === true || data === 1 || data === 'true') {
+            return "ACTIVE";
+        }
+        return "INACTIVE";
+    }
+},
+
+                    // =========================
+                    // ACTION
+                    // =========================
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+
+                        render: function (data, type, row, meta) {
+
+                            console.log("FULL ROW:", row);
+
+                            /*
+                             * IMPORTANT:
+                             * Your API MUST return one of these:
+                             *
+                             * user_id
+                             * userId
+                             * id
+                             */
+
+                            var userId =
+                                row.user_id ||
+                                row.userId ||
+                                row.id;
+
+
+                            console.log("USER ID:", userId);
+
+
+                            if (!userId) {
+
+                                return '<span class="text-danger">ID Missing</span>';
+
+                            }
+
+
+                            return (
+
+                                '<button type="button" ' +
+
+                                'class="btn btn-info btn-sm mr-1" ' +
+
+                                'onclick="editUser(\'' +
+                                userId +
+                                '\')">' +
+
+                                '<i class="fas fa-edit"></i>' +
+
+                                '</button>' +
+
+
+                                '<button type="button" ' +
+
+                                'class="btn btn-light border btn-sm mr-1" ' +
+
+                                'style="color:#000;background-color:#fff;" ' +
+
+                                'onclick="changePassword(\'' +
+                                userId +
+                                '\')">' +
+
+                                '<i class="fas fa-key"></i>' +
+
+                                '</button>' +
+
+
+                                '<button type="button" ' +
+
+                                'class="btn btn-danger btn-sm" ' +
+
+                                'onclick="deleteUser(\'' +
+                                userId +
+                                '\')">' +
+
+                                '<i class="fas fa-trash"></i>' +
+
+                                '</button>'
+
+                            );
+
+                        }
+
+                    }
+
+                ]
+
+            });
+
+        },
+
+
+        error: function (xhr) {
+
+            console.log(
+                "Error loading users:",
+                xhr.responseText
+            );
+
+            alert("Unable to load users.");
+
+        }
+
+    });
+
 }
 
+
+/* =====================================================
+   VALIDATION FUNCTIONS - ADDED FOR VALIDATION
+   ===================================================== */
+
 function isValidMobileNumber(mobile) {
-	if (!mobile) {
-		return true;
-	}
-	return /^[0-9]{10}$/.test(mobile);
+    if (!mobile) {
+        return true;
+    }
+    var mobileRegex = /^[0-9]{10}$/;
+    return mobileRegex.test(mobile);
 }
 
 function isValidPassword(password) {
-	return password.length >= 6;
+    return password.length >= 6;
 }
 
 function isValidEmail(email) {
-	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 }
 
 function isValidUsername(username) {
-	return /^[a-zA-Z0-9_]{3,}$/.test(username);
+    var usernameRegex = /^[a-zA-Z0-9_]{3,}$/;
+    return usernameRegex.test(username);
 }
 
 function isValidName(name) {
-	if (!name) {
-		return true;
-	}
-	return /^[a-zA-Z\s]{3,}$/.test(name);
+    if (!name) {
+        return true;
+    }
+    var nameRegex = /^[a-zA-Z\s]{3,}$/;
+    return nameRegex.test(name);
 }
+
+
+/* =====================================================
+   EDIT USER - NO API CALL NEEDED
+   ===================================================== */
 
 function editUser(userId) {
-	if (!userId || userId === "undefined" || userId === "null") {
-		alert("User ID is missing.");
-		return;
-	}
 
-	selectedUserId = userId;
+    console.log("EDIT USER ID:", userId);
 
-	var rowData = userTable.rows().data();
-	var userData = null;
-	for (var i = 0; i < rowData.length; i++) {
-		if (rowData[i].id == userId) {
-			userData = rowData[i];
-			break;
-		}
-	}
+    if (!userId ||
+        userId === "undefined" ||
+        userId === "null") {
 
-	if (userData) {
-		$("#editUsername").val(userData.username || "");
-		setEditNameValue(userData.name || "");
-		$("#editEmailId").val(userData.emailId || "");
-		$("#editNumber").val(userData.number || "");
-		$("#editRole").val(userData.role || "");
-		$("#editStatus").val(userData.enabled === true || userData.enabled === 1 ? "ACTIVE" : "INACTIVE");
+        alert("User ID is missing.");
+        return;
 
-		$("#editPasswordGroup").hide();
-		$("#editPassword").val("");
+    }
 
-		$("#editUserModalLabel").text("Edit User");
-		$(".modal-footer .btn-primary").html('<i class="fas fa-save"></i> Update User');
+    selectedUserId = userId;
 
-		$("#editUserModal").modal("show");
-	} else {
-		alert("Unable to find user data. Please refresh and try again.");
-	}
+    // Get the row data from DataTable without making API call
+    var rowData = userTable.rows().data();
+    var userData = null;
+
+    for (var i = 0; i < rowData.length; i++) {
+        var row = rowData[i];
+        var rowUserId = row.user_id || row.userId || row.id;
+        
+        if (rowUserId == userId) {
+            userData = row;
+            break;
+        }
+    }
+
+    if (userData) {
+        // Populate modal with existing data from table
+        $("#editUsername").val(userData.username || "");
+        $("#editName").val(userData.name || "");
+        $("#editEmailId").val(userData.emailId || "");
+        $("#editNumber").val(userData.number || "");
+        $("#editRole").val(userData.role || "");
+        // Handle boolean enabled value
+        $("#editStatus").val(userData.enabled === true || userData.enabled === 1 ? "ACTIVE" : "INACTIVE");
+
+        // editing an existing user: password isn't set here, hide the field
+        $("#editPasswordGroup").hide();
+        $("#editPassword").val("");
+
+        // Change modal title
+        $("#editUserModalLabel").text("Edit User");
+
+        // Change button text
+        $(".modal-footer .btn-primary").html('<i class="fas fa-save"></i> Update User');
+
+        // Open modal
+        $("#editUserModal").modal("show");
+
+    } else {
+
+        alert("Unable to find user data. Please refresh and try again.");
+
+    }
+
 }
 
-/** Sets the Name select2's value, adding it as an ad-hoc option first if it's not one of the
- *  known employees (e.g. an existing user's name typed in before this dropdown existed). */
-function setEditNameValue(name) {
-	var $select = $("#editName");
-	if (name && $select.find("option[value='" + name.replace(/'/g, "\\'") + "']").length === 0) {
-		$select.append('<option value="' + name + '">' + name + '</option>');
-	}
-	$select.val(name || "").trigger("change");
-}
+
+/* =====================================================
+   ADD NEW USER
+   ===================================================== */
 
 function addNewUser() {
-	selectedUserId = null;
 
-	$("#editUsername").val("");
-	setEditNameValue("");
-	$("#editEmailId").val("");
-	$("#editNumber").val("");
-	$("#editRole").val("");
-	$("#editStatus").val("ACTIVE");
+    selectedUserId = null;
 
-	$("#editPasswordGroup").show();
-	$("#editPassword").val("");
+    // Clear modal fields
+    $("#editUsername").val("");
+    $("#editName").val("");
+    $("#editEmailId").val("");
+    $("#editNumber").val("");
+    $("#editRole").val("");
+    $("#editStatus").val("ACTIVE");
 
-	$("#editUserModalLabel").text("Add New User");
-	$(".modal-footer .btn-primary").html('<i class="fas fa-plus"></i> Add User');
+    // creating a new user: password is required
+    $("#editPasswordGroup").show();
+    $("#editPassword").val("");
 
-	$("#editUserModal").modal("show");
+    // Change modal title
+    $("#editUserModalLabel").text("Add New User");
+
+    // Change button text
+    $(".modal-footer .btn-primary").html('<i class="fas fa-plus"></i> Add User');
+
+    // Open modal
+    $("#editUserModal").modal("show");
+
 }
+
+
+/* =====================================================
+   UPDATE OR ADD USER - HANDLES BOTH OPERATIONS
+   ===================================================== */
 
 function updateUser() {
-	var username = $("#editUsername").val();
-	var emailId = $("#editEmailId").val();
-	var role = $("#editRole").val();
-	var statusValue = $("#editStatus").val();
-	var number = $("#editNumber").val();
 
-	if (!username) {
-		alert("Username is required.");
-		return;
-	}
-	username = username.trim();
-	if (!isValidUsername(username)) {
-		alert("Username must be at least 3 characters long and contain only letters, numbers, and underscores.");
-		return;
-	}
+    var username = $("#editUsername").val();
+    var emailId = $("#editEmailId").val();
+    var role = $("#editRole").val();
+    var statusValue = $("#editStatus").val();
+    var number = $("#editNumber").val();
 
-	var name = $("#editName").val();
-	if (name) {
-		name = name.trim();
-	}
-	if (!isValidName(name)) {
-		alert("Name must be at least 3 characters long and contain only letters and spaces.");
-		return;
-	}
+    if (!username || username === null) {
+        alert("Username is required.");
+        return;
+    }
 
-	if (!emailId) {
-		alert("Email is required.");
-		return;
-	}
-	emailId = emailId.trim();
-	if (!isValidEmail(emailId)) {
-		alert("Please enter a valid email address.");
-		return;
-	}
+    username = username.trim();
 
-	if (number) {
-		number = number.trim();
-	}
-	if (number && !isValidMobileNumber(number)) {
-		alert("Mobile number must be exactly 10 digits.");
-		return;
-	}
+    // Validate username format
+    if (!isValidUsername(username)) {
+        alert("Username must be at least 3 characters long and contain only letters, numbers, and underscores.");
+        return;
+    }
 
-	if (!role) {
-		alert("Role is required.");
-		return;
-	}
-	role = role.trim();
+    var name = $("#editName").val();
+    if (name) {
+        name = name.trim();
+    }
 
-	if (!statusValue) {
-		alert("Status is required.");
-		return;
-	}
-	statusValue = statusValue.trim();
-	var enabled = statusValue === "ACTIVE" ? 1 : 0;
+    // Validate name format
+    if (!isValidName(name)) {
+        alert("Name must be at least 3 characters long and contain only letters and spaces.");
+        return;
+    }
 
-	if (selectedUserId) {
-		var updateParams = $.param({
-			username: username,
-			name: name || "",
-			emailId: emailId,
-			number: number || "",
-			role: role,
-			enabled: enabled
-		});
+    if (!emailId || emailId === null) {
+        alert("Email is required.");
+        return;
+    }
 
-		$.ajax({
-			url: api.USER_MANAGEMENT_UPDATE + "/" + encodeURIComponent(selectedUserId) + "?" + updateParams,
-			type: "PUT",
-			success: function (response) {
-				$("#editUserModal").modal("hide");
-				var currentTargetUserId = selectedUserId;
-				selectedUserId = null;
+    emailId = emailId.trim();
 
-				if (enabled === 0) {
-					checkAndLogoutIfSameUser(currentTargetUserId, username);
-					return;
-				}
+    // Validate email format
+    if (!isValidEmail(emailId)) {
+        alert("Please enter a valid email address.");
+        return;
+    }
 
-				alert("User updated successfully.");
-				loadUsers();
-			},
-			error: function (xhr) {
-				if (xhr.status === 409) {
-					alert(xhr.responseText);
-				} else {
-					alert("Unable to update user. Status: " + xhr.status);
-				}
-			}
-		});
-	} else {
-		var password = $("#editPassword").val().trim();
-		if (!password) {
-			alert("Password is required.");
-			return;
-		}
-		if (!isValidPassword(password)) {
-			alert("Password must be at least 6 characters long.");
-			return;
-		}
+    if (number) {
+        number = number.trim();
+    }
 
-		var createParams = $.param({
-			user_name: username,
-			password: password,
-			role: role,
-			number: number || "",
-			emailId: emailId,
-			name: name || "",
-			enabled: enabled
-		});
+    // Validate mobile number - must be 10 digits
+    if (number && !isValidMobileNumber(number)) {
+        alert("Mobile number must be exactly 10 digits.");
+        return;
+    }
 
-		$.ajax({
-			url: api.USER_MANAGEMENT_UPDATE + "?" + createParams,
-			type: "POST",
-			success: function (response) {
-				alert("User added successfully.");
-				$("#editUserModal").modal("hide");
-				selectedUserId = null;
-				loadUsers();
-			},
-			error: function (xhr) {
-				if (xhr.status === 409) {
-					alert(xhr.responseText);
-				} else {
-					alert("Unable to add user. Status: " + xhr.status);
-				}
-			}
-		});
-	}
+    if (!role || role === null) {
+        alert("Role is required.");
+        return;
+    }
+
+    role = role.trim();
+
+    if (!statusValue || statusValue === null) {
+        alert("Status is required.");
+        return;
+    }
+
+    statusValue = statusValue.trim();
+    var enabled = statusValue === "ACTIVE" ? 1 : 0;
+
+    var userData = {
+        username: username,
+        name: name || "",
+        emailId: emailId,
+        number: number || "",
+        role: role,
+        enabled: enabled
+    };
+
+    console.log("USER DATA:", userData);
+
+    // If selectedUserId is null, it's a new user (POST), otherwise update (PUT)
+    if (selectedUserId) {
+
+        // UPDATE existing user — sent as query string params (matches tested working URL)
+        var updateParams = $.param({
+            username: username,
+            name: userData.name,
+            emailId: emailId,
+            number: userData.number,
+            role: role,
+            enabled: enabled
+        });
+
+        $.ajax({
+
+            url: api.USER_MANAGEMENT_UPDATE +
+                 "/" +
+                 encodeURIComponent(selectedUserId) +
+                 "?" + updateParams,
+
+            type: "PUT",
+
+            success: function (response) {
+
+                console.log("UPDATE RESPONSE:", response);
+
+                $("#editUserModal").modal("hide");
+
+                var currentTargetUserId = selectedUserId;
+                selectedUserId = null;
+
+                if (enabled === 0) {
+                    checkAndLogoutIfSameUser(currentTargetUserId, username);
+                    return;
+                }
+
+                alert("User updated successfully.");
+                loadUsers();
+
+            },
+
+            error: function (xhr) {
+
+                console.log("UPDATE ERROR:", xhr.status);
+                console.log("UPDATE RESPONSE:", xhr.responseText);
+
+                if (xhr.status === 409) {
+
+                    alert(xhr.responseText);
+
+                } else {
+
+                    alert("Unable to update user. Status: " + xhr.status);
+
+                }
+
+            }
+
+        });
+
+    } else {
+
+        var password = $("#editPassword").val().trim();
+
+        if (!password) {
+            alert("Password is required.");
+            return;
+        }
+
+        // Validate password length - minimum 6 characters
+        if (!isValidPassword(password)) {
+            alert("Password must be at least 6 characters long.");
+            return;
+        }
+
+        // ADD new user — sent as query string params (matches tested working URL)
+        var createParams = $.param({
+            user_name: username,
+            password: password,
+            role: role,
+            number: userData.number,
+            emailId: emailId,
+            name: userData.name,
+            enabled: enabled
+        });
+
+        $.ajax({
+
+            url: api.USER_MANAGEMENT_UPDATE + "?" + createParams,
+
+            type: "POST",
+
+            success: function (response) {
+
+                console.log("ADD RESPONSE:", response);
+
+                alert("User added successfully.");
+
+                $("#editUserModal").modal("hide");
+
+                selectedUserId = null;
+
+                loadUsers();
+
+            },
+
+            error: function (xhr) {
+
+                console.log("ADD ERROR:", xhr.status);
+                console.log("ADD RESPONSE:", xhr.responseText);
+
+                if (xhr.status === 409) {
+
+                    alert(xhr.responseText);
+
+                } else {
+
+                    alert("Unable to add user. Status: " + xhr.status);
+
+                }
+
+            }
+
+        });
+
+    }
+
 }
+
+
+/* =====================================================
+   CHANGE PASSWORD
+   ===================================================== */
 
 function changePassword(userId) {
-	if (!userId || userId === "undefined" || userId === "null") {
-		alert("User ID is missing.");
-		return;
-	}
 
-	selectedUserId = userId;
+    console.log("CHANGE PASSWORD USER ID:", userId);
 
-	var rowData = userTable.rows().data();
-	var userData = null;
-	for (var i = 0; i < rowData.length; i++) {
-		if (rowData[i].id == userId) {
-			userData = rowData[i];
-			break;
-		}
-	}
+    if (!userId ||
+        userId === "undefined" ||
+        userId === "null") {
 
-	if (userData) {
-		$("#changePassUsername").val(userData.username || "");
-		$("#changePassNewPassword").val("");
-		$("#changePassConfirmPassword").val("");
-		$("#changePasswordModal").modal("show");
-	} else {
-		alert("Unable to find user data. Please refresh and try again.");
-	}
+        alert("User ID is missing.");
+        return;
+
+    }
+
+    selectedUserId = userId;
+
+    // Get the row data from DataTable
+    var rowData = userTable.rows().data();
+    var userData = null;
+
+    for (var i = 0; i < rowData.length; i++) {
+        var row = rowData[i];
+        var rowUserId = row.user_id || row.userId || row.id;
+        
+        if (rowUserId == userId) {
+            userData = row;
+            break;
+        }
+    }
+
+    if (userData) {
+        // Set username in password change modal
+        $("#changePassUsername").val(userData.username || "");
+        
+        // Clear password fields
+        $("#changePassNewPassword").val("");
+        $("#changePassConfirmPassword").val("");
+
+        // Open password change modal
+        $("#changePasswordModal").modal("show");
+
+    } else {
+
+        alert("Unable to find user data. Please refresh and try again.");
+
+    }
+
 }
+
+
+/* =====================================================
+   UPDATE PASSWORD
+   ===================================================== */
 
 function updatePassword() {
-	if (!selectedUserId) {
-		alert("User ID is missing.");
-		return;
-	}
 
-	var newPassword = $("#changePassNewPassword").val().trim();
-	var confirmPassword = $("#changePassConfirmPassword").val().trim();
+    if (!selectedUserId) {
 
-	if (!newPassword) {
-		alert("New password is required.");
-		return;
-	}
-	if (newPassword.length < 6) {
-		alert("Password must be at least 6 characters long.");
-		return;
-	}
-	if (!confirmPassword) {
-		alert("Confirm password is required.");
-		return;
-	}
-	if (newPassword !== confirmPassword) {
-		alert("Passwords do not match.");
-		return;
-	}
+        alert("User ID is missing.");
+        return;
 
-	$.ajax({
-		url: api.USER_MANAGEMENT_CHANGE_PASSWORD + "/" + encodeURIComponent(selectedUserId) +
-			"/password?password=" + encodeURIComponent(newPassword),
-		type: "PUT",
-		success: function (response) {
-			alert("Password changed successfully.");
-			$("#changePasswordModal").modal("hide");
-			selectedUserId = null;
-			loadUsers();
-		},
-		error: function (xhr) {
-			alert("Unable to change password. Status: " + xhr.status);
-		}
-	});
+    }
+
+    var newPassword = $("#changePassNewPassword").val().trim();
+    var confirmPassword = $("#changePassConfirmPassword").val().trim();
+
+    if (!newPassword) {
+        alert("New password is required.");
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return;
+    }
+
+    if (!confirmPassword) {
+        alert("Confirm password is required.");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
+
+    console.log("CHANGE PASSWORD FOR USER:", selectedUserId);
+
+    // Password is sent as a query param (matches tested working URL), not a JSON body
+    $.ajax({
+
+        url: api.USER_MANAGEMENT_CHANGE_PASSWORD +
+             "/" +
+             encodeURIComponent(selectedUserId) +
+             "/password?password=" +
+             encodeURIComponent(newPassword),
+
+        type: "PUT",
+
+        success: function (response) {
+
+            console.log("PASSWORD CHANGE RESPONSE:", response);
+
+            alert("Password changed successfully.");
+
+            $("#changePasswordModal").modal("hide");
+
+            selectedUserId = null;
+
+            loadUsers();
+
+        },
+
+        error: function (xhr) {
+
+            console.log("PASSWORD CHANGE ERROR:", xhr.status);
+            console.log("PASSWORD CHANGE RESPONSE:", xhr.responseText);
+
+            alert("Unable to change password. Status: " + xhr.status);
+
+        }
+
+    });
+
 }
 
+
+/* =====================================================
+   DELETE USER
+   ===================================================== */
+
 function deleteUser(userId) {
-	if (!userId || userId === "undefined" || userId === "null") {
-		alert("User ID is missing.");
-		return;
-	}
 
-	if (!confirm("Are you sure you want to delete this user?")) {
-		return;
-	}
+    if (!userId ||
+        userId === "undefined" ||
+        userId === "null") {
 
-	$.ajax({
-		url: api.USER_MANAGEMENT_DELETE + "/" + encodeURIComponent(userId),
-		type: 'DELETE',
-		success: function () {
-			alert("User deleted successfully.");
-			loadUsers();
-		},
-		error: function (xhr) {
-			alert("Unable to delete user. Status: " + xhr.status);
-		}
-	});
+        alert("User ID is missing.");
+        return;
+
+    }
+
+    if (!confirm(
+        "Are you sure you want to delete this user?"
+    )) {
+
+        return;
+
+    }
+
+    $.ajax({
+
+        url: api.USER_MANAGEMENT_DELETE +
+             "/" +
+             encodeURIComponent(userId),
+
+        type: 'DELETE',
+
+        success: function () {
+
+            alert("User deleted successfully.");
+
+            loadUsers();
+
+        },
+
+        error: function (xhr) {
+
+            console.log("Delete error:", xhr.responseText);
+
+            alert("Unable to delete user. Status: " + xhr.status);
+
+        }
+
+    });
+
 }

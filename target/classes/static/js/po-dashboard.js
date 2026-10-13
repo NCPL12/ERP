@@ -4,7 +4,10 @@
 	$(document).ready( function () {
 		
 		var id ="sunil";
+<<<<<<< HEAD
 		var hasArchiveColumn = $('#purchaseList thead tr:eq(0) th').length > 8;
+=======
+>>>>>>> origin/features/timestamp-issue
 			// Setup - add a text input to each footer cell
 			$('#purchaseList thead tr').clone(true).appendTo( '#purchaseList thead' );
 			$('#purchaseList thead tr:eq(1) th').each( function (i) {
@@ -19,9 +22,39 @@
 					}
 				} );
 			} );
+<<<<<<< HEAD
 		var purchaseListColumns = [ {
 				"mData" : "poNumber",
+				render : function(data, type, row) {
+					if (type === 'display') {
+						return "<a href='#' class='poLink'>" + data + "</a>";
+					}
+					return data;
+				}
 			}, {
+=======
+		table= $('#purchaseList').DataTable({
+			//"iDisplayLength": -1,
+			'columnDefs': [ {
+				'targets': [0,1,2,3,4,5,6,7], /* table column index */
+				'orderable': false, /* here set the true or false */
+			}],
+				"aaSorting": [[ 4, "desc" ]],
+			orderCellsTop: true,
+			fixedHeader: true,
+			
+			"aaData": dataObj,
+			
+			"aoColumns": [ {
+    "mData" : "poNumber",
+    render : function(data, type, row) {
+        if (type === 'display') {
+            return "<a href='#' class='poLink'>" + data + "</a>";
+        }
+        return data;
+    }
+}, {
+>>>>>>> origin/features/timestamp-issue
 				"mData" : "party",
 
 				render : function(aaData, type, row) {
@@ -65,17 +98,33 @@
 				render : function(datam, type, row) {
 					var date=datam.split("-");
 					var formattedDate = date[1]+"-"+date[0]+"-"+date[2];
+<<<<<<< HEAD
 					var newdate = moment(new Date(formattedDate)).format("YYYY-MM-DD HH:mm:ss") ;
+=======
+					var newdate = moment(new Date(formattedDate)).format("DD-MM-YYYY HH:mm:ss") ;
+>>>>>>> origin/features/timestamp-issue
 						return  newdate; 
 				}
 			},
 			{
+<<<<<<< HEAD
 				"mData" : "created",
 				
 			},{
 				"mData" : "version",
 				"visible": false,
 			},
+=======
+	"mData" : "created",
+	render : function(data, type, row) {
+		if (!data) return "";
+		return moment(data, "YYYY-MM-DD").format("DD/MM/YYYY");
+	}
+},{
+	"mData" : "version",
+	"visible": false,
+},
+>>>>>>> origin/features/timestamp-issue
 			
 			
 			{
@@ -83,17 +132,25 @@
 				render : function(datam, type, row) {
 					var url = null;
 						url ="/ncpl-sales/purchaseOrder/details/"+row.poNumber;
+<<<<<<< HEAD
 					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";
 				}
 			}
 			];
 		if (hasArchiveColumn) {
 			purchaseListColumns.push({
+=======
+					return "<button type='button' id='"+row.poNumber+"' class='btn btn-default btn-flat btn-xs btnGeneratePo'><i class='fa fa-folder'></i> Generate PO</button>";				
+				}
+			},
+			{
+>>>>>>> origin/features/timestamp-issue
 				"mData" : "archive"	,
 				render : function(datam, type, row) {
 					var archive;
 					if(role=="SUPER ADMIN"){
 						if(row.archive==true){
+<<<<<<< HEAD
 							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
 						}else{
 							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
@@ -127,11 +184,40 @@
 		var purchaseOrderId;
 		var  version;
 		//On double click of row navigate to edit page
-	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
 		if (!canEditPurchase) {
 			return;
 		}
+<<<<<<< HEAD
 		var data1 = table.row(this).data();
+=======
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
+						}else{
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
+						}
+					}else{
+						if(row.archive==true){
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
+						}else{
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
+						}
+					}
+									
+				}
+			}
+			]
+		});
+		var purchaseOrderId;
+		var  version;
+		//On double click of row navigate to edit page
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+    e.preventDefault();
+    var data1 = table.row($(this).closest('tr')).data();
+>>>>>>> origin/features/timestamp-issue
+=======
+		var data1 = table.row($(this).closest('tr')).data();
+>>>>>>> origin/features/trailing-spaces
 		var poNumber = data1.poNumber;
 			purchaseOrderId = data1.poNumber;
 		getPurchasecopy(poNumber,purchaseOrderId);

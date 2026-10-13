@@ -126,7 +126,11 @@ function searchGrnAndPoByModel(modelNo) {
 
 	$.ajax({
 		type: 'GET',
+<<<<<<< HEAD
 		url: parentApi + '/grn_po_by_model',
+=======
+		url: contextRoot + parentApi + '/grn_po_by_model',
+>>>>>>> origin/features/timestamp-issue
 		data: { modelNo: modelNo },
 		dataType: 'json',
 		success: function(response) {

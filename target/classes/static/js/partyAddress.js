@@ -125,7 +125,11 @@ $(document).ready(function () {
     	{
 			"class":"styleOfSlNo",
 			render : function () {
+<<<<<<< HEAD
 				return canDeleteParty ? '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+				return '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 			}
 		}
     	

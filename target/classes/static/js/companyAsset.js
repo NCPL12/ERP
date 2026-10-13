@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 var employeeListCache = null;
 
 /** Displays yyyy-MM-dd (the server's JSON date format) as dd-mm-yyyy. Leaves everything else untouched. */
@@ -12,6 +13,8 @@ function toDDMMYYYY(value){
 	return parts[2] + "-" + parts[1] + "-" + parts[0];
 }
 
+=======
+>>>>>>> origin/features/timestamp-issue
 $(document).ready( function () {
 	$('#companyAssetList thead tr').clone(true).appendTo( '#companyAssetList thead' );
     $('#companyAssetList thead tr:eq(1) th').each( function (i) {
@@ -31,6 +34,7 @@ table= $('#companyAssetList').DataTable({
     fixedHeader: true,
 	"aaData": companyAssetList,
 	"aoColumns": [ {
+<<<<<<< HEAD
 		"mData" : "slNo",
 	},{
 		"mData" : "modelName",
@@ -439,4 +443,41 @@ $(document).on("click","#saveCompanyAssetBtn",function(e){
 	}
 });
 
+=======
+		"mData" : "modelName",
+	},{
+		"mData" : "slNo",
+
+	}, {
+		"mData" : "employee",
+
+	}, {
+		"mData" : "features",
+	},{
+		"mData" : "brand",
+	},{
+		"mData" : "site",
+	},
+	{
+		"mData" : "returnDate",
+		
+	},
+	{
+		"mData" : "warranty",
+		
+	},
+	{
+		"mData" : "value",
+		
+	},
+	{
+		"mData" : "date",
+		
+	}
+	
+	
+	]
+});
+
+>>>>>>> origin/features/timestamp-issue
 } );

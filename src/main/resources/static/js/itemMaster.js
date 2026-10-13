@@ -9,12 +9,6 @@ var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
 
-// @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
-function hasItemMasterAccess() {
-	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
-		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
-}
-
 function precomputeItemMasterAggregations() {
 	if(window.itemMasterLazyConfig && window.itemMasterLazyConfig.enabled){
 		stockSummaryByItem = window.itemMasterLazyConfig.stockSummaryMap || {};
@@ -99,7 +93,7 @@ $(document).ready(function () {
     
 	precomputeItemMasterAggregations();
 	loadItemTable();
-	if(hasItemMasterAccess()){
+	if(role == "ITEMMASTER" || user=="praveen" || role=="STORE"||user=="admin" || user=="nalini"|| user=="rakesh"|| user=="sushma"||user=="savitha"||user=="santosh"){
 		$("#saveItemMaster").attr("disabled",false);
 		$("#saveMake").attr("disabled",false);
 		$("#addMake").show();
@@ -241,15 +235,15 @@ $(document).ready(function () {
 		});
 		
 			$('input:not(:button,:submit),textarea,select').on("focusout input",function () {
-					if(hasItemMasterAccess()){
+					if(role == "ITEMMASTER" || user=="praveen" ||role=="STORE"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
 						$("#saveItemMaster").attr('disabled', false);
 						$("#saveMake").attr("disabled",false);
 						$("#addMake").show();
-
+						
 					}else{
 						$("#saveItemMaster").attr('disabled', true);
 						$("#saveMake").attr("disabled",true);
-						$("#addMake").hide();
+						$("#addMake").hdie();
 					}
 				});
 		
@@ -666,6 +660,7 @@ function loadItemTable() {
 			}
 		});
 		datatable = $('#itemMasterList').DataTable(serverConfig);
+		datatable = $('#itemMasterList').DataTable(serverConfig);
 	}else{
 		var clientConfig = $.extend(true, {}, baseConfig, {
 			"data": itemList
@@ -675,9 +670,6 @@ function loadItemTable() {
 	datatable.buttons().container().appendTo($('#itemMasterList_length'));
 
 	$('#itemMasterList tbody').on('dblclick', 'tr', function () {
-		if (!canEditItemMaster) {
-			return;
-		}
 		var row = datatable.row($(this).closest("tr").get(0));
 		var rowData = row.data();
 
@@ -709,7 +701,7 @@ function loadItemTable() {
 			$("#saveItemMaster").html("Update");
 			$("#boxHeader").html("Update Item");
 		}
-		if(hasItemMasterAccess()){
+		if(role=="STORE" || user=="praveen"||user=="admin" || user=="jagadish"|| user=="rakesh"||user=="sushma"||user=="savitha"||user=="santosh"){
 			$("#saveItemMaster").attr("disabled",false);
 		}
 	});
@@ -1394,11 +1386,12 @@ function loadSupplierTable(response) {
 					"data": "updated",
 					"defaultContent": "",
 					render : function(datam, type, row) {
-						var newdate = moment(new Date(row.created)).format("YYYY-MM-DD HH:mm:ss") ;
-						var format= newdate.split(" ");
-						var dateFormat = format[0].split("-");
-						dateFormat = dateFormat[2]+"-"+dateFormat[1]+"-"+dateFormat[0]+" "+format[1];
-						return dateFormat;
+						var value = row.updated || row.created;
+						if (!value) { return ""; }
+						var m = (typeof value === "string")
+							? moment(value, ["DD-MM-YYYY HH:mm:ss", "YYYY-MM-DD HH:mm:ss", moment.ISO_8601])
+							: moment(value);
+						return m.isValid() ? m.format("DD-MM-YYYY HH:mm:ss") : "";
 
 					}
 
@@ -1419,9 +1412,6 @@ function loadSupplierTable(response) {
 
 		//On dbclick goto edit mode
 		$('#supplierList tbody').on('dblclick', 'tr', function () {
-			if (!canEditItemMaster) {
-				return;
-			}
 			var row = supplierTable.row($(this).closest("tr").get(0));
 			var rowData = row.data();
 			$.each(rowData, function (key, value) {
@@ -1591,7 +1581,7 @@ function makeListTable(makeList){
 		    	"title":'Delete',
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
-		                    return canDeleteItemMaster ? '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>' : '';
+		                    return '<i class="deleteMake fa fa-trash " aria-hidden="true"></i>';
 		                }
 		    }
 		    ]
