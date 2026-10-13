@@ -34,6 +34,12 @@ $(document).ready(function(){
 	    		var cols = [ {
 					"data" : "grnId",
 					"defaultContent":"",
+					render : function(data, type, row) {
+						if (type === 'display') {
+							return "<a href='#' class='grnLink'>" + data + "</a>";
+						}
+						return data;
+					}
 				}, {
 					"data" : "poNumber",
 					"defaultContent":"",
@@ -189,12 +195,13 @@ $(document).ready(function(){
 	    	},
 <<<<<<< HEAD
 	    });
-	    //on double click of list navigate to view page — use ?grnId= to handle "GRN 8732..." space correctly
-	    $('#grnList tbody').on('dblclick', 'tr', function () {
+	    //on single click of Grn No. link navigate to view page — use ?grnId= to handle "GRN 8732..." space correctly
+	    $('#grnList tbody').on('click', 'a.grnLink', function (e) {
+	 	   e.preventDefault();
 	 	   if (!canEditGrn) {
 	 		   return;
 	 	   }
-	 	   var data = grnDataTable.row(this).data();
+	 	   var data = grnDataTable.row($(this).closest('tr')).data();
 	 	   var grnId = data.grnId;
 	 	   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
 	 	});

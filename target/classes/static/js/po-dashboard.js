@@ -25,6 +25,12 @@
 <<<<<<< HEAD
 		var purchaseListColumns = [ {
 				"mData" : "poNumber",
+				render : function(data, type, row) {
+					if (type === 'display') {
+						return "<a href='#' class='poLink'>" + data + "</a>";
+					}
+					return data;
+				}
 			}, {
 =======
 		table= $('#purchaseList').DataTable({
@@ -178,10 +184,12 @@
 		var purchaseOrderId;
 		var  version;
 		//On double click of row navigate to edit page
-	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
 		if (!canEditPurchase) {
 			return;
 		}
+<<<<<<< HEAD
 		var data1 = table.row(this).data();
 =======
 							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
@@ -207,6 +215,9 @@
     e.preventDefault();
     var data1 = table.row($(this).closest('tr')).data();
 >>>>>>> origin/features/timestamp-issue
+=======
+		var data1 = table.row($(this).closest('tr')).data();
+>>>>>>> origin/features/trailing-spaces
 		var poNumber = data1.poNumber;
 			purchaseOrderId = data1.poNumber;
 		getPurchasecopy(poNumber,purchaseOrderId);

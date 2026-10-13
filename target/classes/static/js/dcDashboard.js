@@ -102,11 +102,14 @@ $(document).ready(function(){
 	    	},
 	    	"columns": [ {
 <<<<<<< HEAD
+<<<<<<< HEAD
 				"data" : "dcId",
 				"defaultContent":"",
 			}, {
 				"data" : "soNumber",
 =======
+=======
+>>>>>>> origin/features/trailing-spaces
 			"data" : "dcId",
 			"defaultContent":"",
 			render : function(data, type, row) {
@@ -117,7 +120,10 @@ $(document).ready(function(){
 			}
 		}, {
 			"data" : "soNumber",
+<<<<<<< HEAD
 >>>>>>> origin/features/timestamp-issue
+=======
+>>>>>>> origin/features/trailing-spaces
 				"defaultContent":"",
 
 			},{
@@ -260,10 +266,17 @@ $(document).ready(function(){
 			]
 	    });
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 	    //on double click of list navigate to view page
 	    $('#dcList tbody').on('dblclick', 'tr', function () {
 	 	   var data = dcTable.row(this).data();
+=======
+	    //on single click of Dc No. link navigate to view page
+	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
+	 	   e.preventDefault();
+	 	   var data = dcTable.row($(this).closest('tr')).data();
+>>>>>>> origin/features/trailing-spaces
 	 	   var dcId = data.dcId;
 	 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
 	 	});
