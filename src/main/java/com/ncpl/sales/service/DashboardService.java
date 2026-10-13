@@ -87,6 +87,26 @@ public class DashboardService {
         }
     }
 
+    public boolean isListsReady() {
+        return listsSnapshot != null;
+    }
+
+    public DashboardListsDto getDashboardListsIfReady() {
+        DashboardListsDto s = listsSnapshot;
+        if (s != null) {
+            return s;
+        }
+        DashboardListsDto empty = new DashboardListsDto();
+        empty.setPendingSalesList(new java.util.ArrayList<>());
+        empty.setPendingPurchaseList(new java.util.ArrayList<>());
+        empty.setInvoiceList(new java.util.ArrayList<>());
+        empty.setAllSalesList(new java.util.ArrayList<>());
+        empty.setTdsApprovedList(new java.util.ArrayList<>());
+        empty.setSalesItemsWithoutDesignList(new java.util.ArrayList<>());
+        empty.setSalesOrderWithDesignList(new java.util.ArrayList<>());
+        return empty;
+    }
+
     /** Invoked by {@link DashboardCountsRefreshScheduler}. */
     public void scheduledRefreshSnapshot() {
         recomputeSnapshotQuietly();
@@ -123,14 +143,28 @@ public class DashboardService {
 
     private DashboardListsDto loadLists() {
         DashboardListsDto d = new DashboardListsDto();
+        long t = System.currentTimeMillis();
         d.setPendingSalesList(salesService.getPendingSalesList());
+        t = lap("pendingSales", t);
         d.setPendingPurchaseList(purchaseOrderService.getPenidngPoList());
+        t = lap("pendingPurchase", t);
         d.setInvoiceList(invoiceService.getInvoiceList());
+        t = lap("invoices", t);
         d.setAllSalesList(salesService.getAllSalesOrderList());
+        t = lap("allSales", t);
         d.setTdsApprovedList(tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDone());
+        t = lap("tdsApproved", t);
         List<Map<String, Object>> withoutDesign = salesService.getSoWithoutDesignSummaryForDashboard();
         d.setSalesItemsWithoutDesignList(withoutDesign);
+        t = lap("withoutDesign", t);
         d.setSalesOrderWithDesignList(salesService.getAllSalesOrderQithDesignAndPoNotDoneForDashboard());
+        lap("withDesign", t);
         return d;
+    }
+
+    private long lap(String name, long start) {
+        long now = System.currentTimeMillis();
+        log.info("Dashboard list '{}' took {} ms", name, now - start);
+        return now;
     }
 }

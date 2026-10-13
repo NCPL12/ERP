@@ -1441,7 +1441,8 @@ public class SalesController {
 
 		// Dashboard list cards rendered straight from the same cached snapshot the counts
 		// use, so the page ships with data already on it - no per-card AJAX round-trip.
-		DashboardListsDto lists = dashboardService.getDashboardLists();
+		DashboardListsDto lists = dashboardService.getDashboardListsIfReady();
+model.addAttribute("listsLoading", !dashboardService.isListsReady());
 		ObjectMapper mapper = new ObjectMapper();
 		model.addAttribute("pendingSalesListDashboard", mapper.writeValueAsString(lists.getPendingSalesList()));
 		model.addAttribute("pendingPurchaseListDashboard", mapper.writeValueAsString(lists.getPendingPurchaseList()));
