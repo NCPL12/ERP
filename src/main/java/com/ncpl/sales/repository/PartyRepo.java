@@ -2,34 +2,18 @@ package com.ncpl.sales.repository;
 
 import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.ncpl.sales.model.Party;
-import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 
 @Repository
 public interface PartyRepo extends JpaRepository<Party, Long>{
 
 	@Query( value = "SELECT * FROM  tbl_party WHERE id = :id",nativeQuery = true)
 	public Party findById( @Param("id")String id);
-
-	// lightweight id+name projection for dropdowns (avoids loading eager associations)
-	@Query( value = "SELECT id AS id, party_name AS partyName FROM tbl_party ORDER BY LOWER(party_name) ASC", nativeQuery = true)
-	List<PartyDropdownProjection> findPartyDropdownList();
-
-	// @D0015 lazy-loaded, paginated Party list (see README.md)
-	@Query(value = "SELECT p FROM Party p WHERE (:keyword = '' "
-			+ "OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:keyword), '%') "
-			+ "OR LOWER(p.id) LIKE CONCAT('%', LOWER(:keyword), '%'))",
-			countQuery = "SELECT COUNT(p) FROM Party p WHERE (:keyword = '' "
-			+ "OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:keyword), '%') "
-			+ "OR LOWER(p.id) LIKE CONCAT('%', LOWER(:keyword), '%'))")
-	Page<Party> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 	
 	//Added ascending order
 	@Query( value = "SELECT * FROM  tbl_party WHERE type_id IN (:types) ORDER BY party_name ASC",nativeQuery = true)
@@ -44,5 +28,21 @@ public interface PartyRepo extends JpaRepository<Party, Long>{
 	@Query( value = "SELECT * FROM  tbl_party WHERE BINARY  party_name = :partyName",nativeQuery = true)
 	//@Query("SELECT p FROM Party p WHERE p.partyName = :partyName")
 	public Party findByName(String partyName);
+
+	// ---------------------------------------------------------------
+	// NEW: Party List page - only the columns the table needs, ONE query.
+	// Row layout (Object[]):
+	//   0 id, 1 partyName, 2 phone1, 3 website, 4 remarks,
+	//   5 type name, 6 city name, 7 state name, 8 country name
+	// ---------------------------------------------------------------
+	@Query("select p.id, p.partyName, p.phone1, p.website, p.remarks, " +
+	       "t.name, c.name, s.name, co.name " +
+	       "from Party p " +
+	       "left join p.party_type t " +
+	       "left join p.party_city c " +
+	       "left join c.state s " +
+	       "left join s.country co " +
+	       "order by p.partyName")
+	List<Object[]> findPartyListRows();
 	
 }

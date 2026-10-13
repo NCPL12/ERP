@@ -31,10 +31,11 @@
 <link rel="stylesheet"
 	href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+//@D0050
 <script type="text/javascript">
 var itemList = [];
-// var customerPartyList=${customerPartyList};
-// var supplierPartyList=${supplierPartyList};
+var customerPartyList=${customerPartyList};
+var supplierPartyList=${supplierPartyList};
 var allSupplierslist = [];
 var allStocksList = [];
 var makeList=${makeList};

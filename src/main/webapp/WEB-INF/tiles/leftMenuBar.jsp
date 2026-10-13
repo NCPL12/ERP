@@ -10,19 +10,23 @@
             <html>
 
             <head>
+              <style>
+                /* Fix: align top header height with sidebar brand-link (60px) so the two bars meet cleanly */
+                .main-header {
+                    min-height: 60px;
+                }
+                .main-header .nav-link,
+                .main-header .nav-item {
+                    line-height: 1;
+                }
+              </style>
             </head>
 
             <body>
               <!-- Main Sidebar Container -->
               <aside class="main-sidebar sidebar-dark-primary elevation-4 sidebar-no-expand">
                 <!-- Brand Logo -->
-                <security:authorize access="hasAuthority('DASHBOARD_VIEW')">
-                  <c:set var="brandHref" value="${pageContext.request.contextPath}/dashboard" />
-                </security:authorize>
-                <security:authorize access="!hasAuthority('DASHBOARD_VIEW')">
-                  <c:set var="brandHref" value="javascript:void(0)" />
-                </security:authorize>
-                <a href="${brandHref}" class="brand-link d-flex align-items-center" style="height: 60px;">
+                <a href="${pageContext.request.contextPath}/dashboard" class="brand-link d-flex align-items-center" style="height: 60px;">
                   <!-- for circled image use img-circle class in below img tag -->
                   <%-- <img src="${pageContext.request.contextPath}/resources/dist/img/ncpl.jpg"
                     class="brand-image  elevation-3" style="opacity: .8"> --%>
@@ -96,8 +100,46 @@
                     <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
 
+                    <security:authorize access="hasAnyAuthority('ITEMMASTER','STORE','STORE USER')">
+                      <c:set var="itemsOpen" value="${uri == '/itemMaster' or uri == '/companyAssets'}" />
+                      <li class="nav-item has-treeview ${itemsOpen ? 'menu-open' : ''}">
+                        <a href="#" class="nav-link ${itemsOpen ? 'active' : ''}">
+                          <i class="nav-icon fas fa-boxes"></i>
+                          <p>
+                            <spring:message code="items" />
+                            <i class="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+
+                        <ul class="nav nav-treeview">
+                          <li class="nav-item">
+                            <a href="${pageContext.request.contextPath}/itemMaster"
+                              class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
+                              <i class="nav-icon fas fa-box"></i>
+                              <p>
+                                <spring:message code="master.Item.dashboard" />
+                              </p>
+                            </a>
+                          </li>
+
+
+                        </ul>
+                        <ul class="nav nav-treeview">
+                          <li class="nav-item">
+                            <a href="${pageContext.request.contextPath}/companyAssets"
+                              class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
+                              <i class="nav-icon fas fa-building"></i>
+                              <p>
+                                <spring:message code="master.company.assets" />
+                              </p>
+                            </a>
+                          </li>
+                        </ul>
+                      </li>
+                    </security:authorize>
+
                     <!-- Creating Masters -->
-                    <security:authorize access="hasAuthority('DASHBOARD_VIEW')">
+                    <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
                       <c:set var="projectsOpen" value="${uri == '/dashboard'}" />
                       <li class="nav-item has-treeview ${projectsOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${projectsOpen ? 'active' : ''}">
@@ -123,9 +165,9 @@
                       </li>
                     </security:authorize>
 
-                    <!-- Master menu: hidden unless the role has View on at least one master module -->
+                    <!-- Master menu: shared by Purchase Store and Admin/Normal User/Purchase/Super Admin roles -->
                     <security:authorize
-                      access="hasAnyAuthority('PARTY_VIEW','ITEM_MASTER_VIEW','COMPANY_ASSETS_VIEW')">
+                      access="hasAnyAuthority('PURCHASE STORE','ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
                       <c:set var="masterOpen"
                         value="${uri == '/partyList' or uri == '/itemMaster' or uri == '/companyAssets'}" />
                       <li class="nav-item has-treeview ${masterOpen ? 'menu-open' : ''}">
@@ -139,7 +181,6 @@
                         <ul class="nav nav-treeview">
 
                           <!-- Party Dash board -->
-                          <security:authorize access="hasAuthority('PARTY_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/partyList"
                               class="nav-link ${uri == '/partyList' ? 'active' : ''}">
@@ -149,9 +190,7 @@
                               </p>
                             </a>
                           </li>
-                          </security:authorize>
 
-                          <security:authorize access="hasAuthority('ITEM_MASTER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/itemMaster"
                               class="nav-link ${uri == '/itemMaster' ? 'active' : ''}">
@@ -161,8 +200,6 @@
                               </p>
                             </a>
                           </li>
-                          </security:authorize>
-                          <security:authorize access="hasAuthority('COMPANY_ASSETS_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/companyAssets"
                               class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
@@ -172,7 +209,6 @@
                               </p>
                             </a>
                           </li>
-                          </security:authorize>
 
 
                         </ul>
@@ -180,22 +216,23 @@
                       </li>
                     </security:authorize>
 
-                    <c:set var="salesOpen"
-                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
-                    <security:authorize
-                      access="hasAnyAuthority('SALES_ORDER_VIEW','DELIVERY_CHALLAN_VIEW','RETURNABLE_VIEW','INVOICE_VIEW','WORK_ORDER_VIEW')">
+                   <c:set var="salesOpen"
+    value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableDCList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
                     <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
-                      <a href="#" class="nav-link ${salesOpen ? 'active' : ''}">
-                        <i class="nav-icon fas fa-shopping-cart"></i>
-                        <p>
-                          <spring:message code="sales.name" />
-                          <i class="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
+                      <security:authorize
+                        access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER','SALES')">
+                        <a href="#" class="nav-link ${salesOpen ? 'active' : ''}">
+                          <i class="nav-icon fas fa-shopping-cart"></i>
+                          <p>
+                            <spring:message code="sales.name" />
+                            <i class="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                      </security:authorize>
 
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAuthority('SALES_ORDER_VIEW')">
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE','STORE')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/salesList"
                               class="nav-link ${uri == '/salesList' ? 'active' : ''}">
@@ -207,7 +244,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAuthority('DELIVERY_CHALLAN_VIEW')">
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','SALES','PURCHASE STORE')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/dcList"
                               class="nav-link ${uri == '/dcList' ? 'active' : ''}">
@@ -218,8 +255,8 @@
                             </a>
                           </li>
                         </security:authorize>
-                        <security:authorize
-                          access="hasAuthority('RETURNABLE_VIEW')">
+                        <!-- <security:authorize
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/returnableList"
                               class="nav-link ${uri == '/returnableList' ? 'active' : ''}">
@@ -229,8 +266,23 @@
                               </p>
                             </a>
                           </li>
-                        </security:authorize>
-                        <security:authorize access="hasAuthority('INVOICE_VIEW')">
+                        </security:authorize> -->
+
+                        <security:authorize
+    access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
+
+    <li class="nav-item">
+        <a href="${pageContext.request.contextPath}/returnableDCList"
+           class="nav-link ${uri == '/returnableDCList' ? 'active' : ''}">
+            <i class="nav-icon fas fa-undo"></i>
+            <p>
+                Returnable DC
+            </p>
+        </a>
+    </li>
+
+</security:authorize>
+                        <security:authorize access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','SUPER ADMIN')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/invoiceList"
                               class="nav-link ${uri == '/invoiceList' ? 'active' : ''}">
@@ -240,8 +292,6 @@
                               </p>
                             </a>
                           </li>
-                        </security:authorize>
-                        <security:authorize access="hasAuthority('WORK_ORDER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/workOrderList"
                               class="nav-link ${uri == '/workOrderList' ? 'active' : ''}">
@@ -255,24 +305,24 @@
 
                       </ul>
                     </li>
-                    </security:authorize>
 
                     <!-- Purchase section started here -->
                     <c:set var="purchaseOpen"
                       value="${uri == '/purchase' or uri == '/grnLists' or uri == '/nonBillableList'}" />
-                    <security:authorize
-                      access="hasAnyAuthority('PURCHASE_VIEW','GRN_VIEW','NON_BILLABLE_VIEW')">
                     <li class="nav-item has-treeview ${purchaseOpen ? 'menu-open' : ''}">
-                      <a href="#" class="nav-link ${purchaseOpen ? 'active' : ''}">
-                        <i class="nav-icon fas fa-shopping-basket"></i>
-                        <p>
-                          <spring:message code="purchase.name" />
-                          <i class="right fas fa-angle-left"></i>
-                        </p>
-                      </a>
+                      <security:authorize
+                        access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER')">
+                        <a href="#" class="nav-link ${purchaseOpen ? 'active' : ''}">
+                          <i class="nav-icon fas fa-shopping-basket"></i>
+                          <p>
+                            <spring:message code="purchase.name" />
+                            <i class="right fas fa-angle-left"></i>
+                          </p>
+                        </a>
+                      </security:authorize>
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAuthority('PURCHASE_VIEW')">
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE','STORE USER')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/purchase"
                               class="nav-link ${uri == '/purchase' ? 'active' : ''}">
@@ -284,7 +334,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAuthority('GRN_VIEW')">
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','STORE USER','PURCHASE STORE')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/grnLists"
                               class="nav-link ${uri == '/grnLists' ? 'active' : ''}">
@@ -296,7 +346,7 @@
                           </li>
                         </security:authorize>
                         <security:authorize
-                          access="hasAuthority('NON_BILLABLE_VIEW')">
+                          access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/nonBillableList"
                               class="nav-link ${uri == '/nonBillableList' ? 'active' : ''}">
@@ -309,11 +359,10 @@
                         </security:authorize>
                       </ul>
                     </li>
-                    </security:authorize>
 
                     <!--Report section starts  -->
                     <security:authorize
-                      access="hasAuthority('REPORTS_VIEW')">
+                      access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
                       <c:set var="reportOpen" value="${uri == '/sales_report'}" />
                       <li class="nav-item has-treeview ${reportOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${reportOpen ? 'active' : ''}">
@@ -340,7 +389,7 @@
                       </li>
                     </security:authorize>
                     <security:authorize
-                      access="hasAuthority('SALES_ORDER_VIEW')">
+                      access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN')">
                       <c:set var="chartsOpen" value="${uri == '/soChart'}" />
                       <li class="nav-item has-treeview ${chartsOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${chartsOpen ? 'active' : ''}">
@@ -365,7 +414,7 @@
                     </security:authorize>
 
                     <security:authorize
-                      access="hasAuthority('ARCHIVES_VIEW')">
+                      access="hasAnyAuthority('ADMIN','NORMAL USER','PURCHASE','STORE','SUPER ADMIN','PURCHASE STORE')">
                       <!-- Archived section started here -->
                       <c:set var="archivedOpen"
                         value="${uri == '/salesList_archived' or uri == '/purchase_archived' or uri == '/dc_archived' or uri == '/grn_archived'}" />
@@ -420,36 +469,48 @@
                       </li>
                     </security:authorize>
 
-                    <security:authorize access="hasAnyAuthority('USER_MANAGEMENT_VIEW','USER_MANAGEMENT_EDIT')">
-                      <c:set var="adminOpen" value="${uri == '/user-management' or uri == '/role-management'}" />
-                      <li class="nav-item has-treeview ${adminOpen ? 'menu-open' : ''}">
-                        <a href="#" class="nav-link ${adminOpen ? 'active' : ''}">
-                          <i class="nav-icon fas fa-user-shield"></i>
-                          <p>
-                            Administration
-                            <i class="right fas fa-angle-left"></i>
-                          </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/user-management"
-                              class="nav-link ${uri == '/user-management' ? 'active' : ''}">
-                              <i class="nav-icon fas fa-user-cog"></i>
-                              <p>Users</p>
-                            </a>
-                          </li>
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/role-management"
-                              class="nav-link ${uri == '/role-management' ? 'active' : ''}">
-                              <i class="nav-icon fas fa-user-lock"></i>
-                              <p>Roles &amp; Access</p>
-                            </a>
-                          </li>
-                        </ul>
-                      </li>
-                    </security:authorize>
 
                     <!--Items section starts  -->
+                    <!-- User Management section -->
+<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+
+    <c:set var="userMgmtOpen" value="${uri == '/user-management'}" />
+
+    <li class="nav-item has-treeview ${userMgmtOpen ? 'menu-open' : ''}">
+
+        <a href="#" class="nav-link ${userMgmtOpen ? 'active' : ''}">
+
+            <i class="nav-icon fas fa-users-cog"></i>
+
+            <p>
+                <spring:message code="user.management" />
+                <i class="right fas fa-angle-left"></i>
+            </p>
+
+        </a>
+
+        <ul class="nav nav-treeview">
+
+            <li class="nav-item">
+
+                <a href="${pageContext.request.contextPath}/user-management"
+                   class="nav-link ${uri == '/user-management' ? 'active' : ''}">
+
+                    <i class="nav-icon fas fa-list"></i>
+
+                    <p>
+                        <spring:message code="user.list" />
+                    </p>
+
+                </a>
+
+            </li>
+
+        </ul>
+
+    </li>
+
+</security:authorize>
 
 
                   </ul>

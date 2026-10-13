@@ -245,7 +245,11 @@ function addContactRows(){
     columns += '<td style="width: 15%;"><input class="form-control form-control-sm" name="contacts['+arrayCount+'].email_id"  path="contacts['+arrayCount+'].email_id" type="text" style="width: 100%;"    /></td>';
     columns += '<td style="width: 15%;"><input class="form-control form-control-sm" name="contacts['+arrayCount+'].skype_id"  path="contacts['+arrayCount+'].skype_id" type="text"  style="width: 100%;" /></td>';
     
+<<<<<<< HEAD
     columns += canDeleteParty ? '<td align="center" style="width: 2%;"><i class="deleteButton positionOfTextBox fa fa-trash"  aria-hidden="true" style="width: 100%;" ></i></td>' : '<td style="width: 2%;"></td>';
+=======
+    columns += '<td align="center" style="width: 2%;"><i class="deleteButton positionOfTextBox fa fa-trash"  aria-hidden="true" style="width: 100%;" ></i></td>';
+>>>>>>> origin/features/timestamp-issue
 	newRow.append(columns);
 	
 	$("#contactTable").append(newRow);
@@ -580,7 +584,11 @@ function categoryListTable(categoryList){
 				"width":"10%",
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 		                    return canDeleteParty ? '<i class="deleteCategory fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+		                    return '<i class="deleteCategory fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 		                }
 		    }
 		    ]
@@ -791,7 +799,11 @@ function typeListTable(typeList){
 		    	"title":'Delete',
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 		                    return canDeleteParty ? '<i class="deleteType fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+		                    return '<i class="deleteType fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 		                }
 		    }
 		    ]
@@ -1059,7 +1071,11 @@ function cityListTable(cityList){
 			 "title":'Delete',
 			 "class":"styleOfSlNo",
 				 render : function ( data, type, row,meta ) {
+<<<<<<< HEAD
 						 return canDeleteParty ? '<i class="deleteCity fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+						 return '<i class="deleteCity fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 					 }
 		 }
 		 ]
@@ -1306,7 +1322,11 @@ function designationListTable(designationList){
 				"width":"10%",
 				"class":"styleOfSlNo",
 				render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 					return canDeleteParty ? '<i class="deleteDesignation fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+					return '<i class="deleteDesignation fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 				}
 			}
 			]
@@ -1648,7 +1668,11 @@ function addContactRows(){
     columns += '<td style="width: 15%;"><input class="form-control form-control-sm" name="contacts['+arrayCount+'].email_id"  path="contacts['+arrayCount+'].email_id" type="text" style="width: 100%;"    /></td>';
     columns += '<td style="width: 15%;"><input class="form-control form-control-sm" name="contacts['+arrayCount+'].skype_id"  path="contacts['+arrayCount+'].skype_id" type="text"  style="width: 100%;" /></td>';
     
+<<<<<<< HEAD
     columns += canDeleteParty ? '<td align="center" style="width: 2%;"><i class="deleteButton positionOfTextBox fa fa-trash"  aria-hidden="true" style="width: 100%;" ></i></td>' : '<td style="width: 2%;"></td>';
+=======
+    columns += '<td align="center" style="width: 2%;"><i class="deleteButton positionOfTextBox fa fa-trash"  aria-hidden="true" style="width: 100%;" ></i></td>';
+>>>>>>> origin/features/timestamp-issue
 	newRow.append(columns);
 	
 	$("#contactTable").append(newRow);
@@ -1993,7 +2017,11 @@ function categoryListTable(categoryList){
 				"width":"10%",
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 		                    return canDeleteParty ? '<i class="deleteCategory fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+		                    return '<i class="deleteCategory fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 		                }
 		    }
 		    ]
@@ -2204,7 +2232,11 @@ function typeListTable(typeList){
 		    	"title":'Delete',
 		    	"class":"styleOfSlNo",
 		    		render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 		                    return canDeleteParty ? '<i class="deleteType fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+		                    return '<i class="deleteType fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 		                }
 		    }
 		    ]
@@ -2472,7 +2504,11 @@ function cityListTable(cityList){
 			 "title":'Delete',
 			 "class":"styleOfSlNo",
 				 render : function ( data, type, row,meta ) {
+<<<<<<< HEAD
 						 return canDeleteParty ? '<i class="deleteCity fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+						 return '<i class="deleteCity fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 					 }
 		 }
 		 ]
@@ -2719,7 +2755,11 @@ function designationListTable(designationList){
 				"width":"10%",
 				"class":"styleOfSlNo",
 				render : function ( mData, type, row,meta ) {
+<<<<<<< HEAD
 					return canDeleteParty ? '<i class="deleteDesignation fa fa-trash " aria-hidden="true"></i>' : '';
+=======
+					return '<i class="deleteDesignation fa fa-trash " aria-hidden="true"></i>';
+>>>>>>> origin/features/timestamp-issue
 				}
 			}
 			]

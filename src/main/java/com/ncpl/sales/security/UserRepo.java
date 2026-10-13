@@ -9,14 +9,22 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserRepo extends JpaRepository<User, Long>{
+public interface UserRepo extends JpaRepository<User, Long> {
 
-	@Query("SELECT u FROM User u WHERE u.username = :username")
-	public User findUserByUserName(@Param("username") String username);
+    // Find user by username
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    User findUserByUserName(
+            @Param("username") String username
+    );
 
-	@Modifying
-	@Transactional
-	@Query("UPDATE User u SET u.password = :password WHERE u.id = :userId")
-	int updatePassword(@Param("userId") Long userId, @Param("password") String password);
+
+    // Change user password
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.password = :password WHERE u.id = :userId")
+    int updatePassword(
+            @Param("userId") Long userId,
+            @Param("password") String password
+    );
 
 }

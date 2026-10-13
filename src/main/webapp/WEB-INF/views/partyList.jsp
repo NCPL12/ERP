@@ -4,8 +4,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
-<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
-<security:authorize access="hasAuthority('PARTY_EDIT')" var="canEditParty" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,9 +13,9 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <script type="text/javascript" src="resources/js/partyList.js"></script>
 <script>
-// @D0015 lazy-loaded, paginated Party list (see README.md)
+
+var data=${partyList};
 var pageContext = '${pageContext.request.contextPath}';
-var canEditParty = ${canEditParty};
 </script>
 <style>
 	/*styled to fix custom length**/
@@ -33,7 +31,7 @@ var canEditParty = ${canEditParty};
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />

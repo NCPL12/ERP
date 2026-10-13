@@ -189,9 +189,6 @@ class PartialDCExcel{
 		//Collections.sort(salesItemsList);
 		for (DeliveryChallanItems dcItem : dcItemList) {
 			Optional<SalesItem> salesItem=salesService.getSalesItemObjById(dcItem.getDescription());
-			if (!salesItem.isPresent()) {
-				continue;
-			}
 			CellStyle threeSideborder = workbook.createCellStyle();
 			threeSideborder.setWrapText(true);
 			threeSideborder.setVerticalAlignment((short) (VERTICAL_JUSTIFY));

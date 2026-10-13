@@ -7,6 +7,10 @@ $.ajax({
     Type:'GET',
     url : api.PARTY_LIST,
     dataType:'json',
+<<<<<<< HEAD
+=======
+    async: 'false',
+>>>>>>> origin/features/timestamp-issue
     success  : function(response){
     	$.each(response, function( key, value ) {
     		  $('#partyDropDown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
@@ -21,6 +25,10 @@ $.ajax({
     Type:'GET',
     url : api.PURCHASEORDER_LIST,
     dataType:'json',
+<<<<<<< HEAD
+=======
+    async: 'false',
+>>>>>>> origin/features/timestamp-issue
     success  : function(response){
     	$.each(response, function( key, value ) {
     		  $('#partyDropDown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 

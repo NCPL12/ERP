@@ -160,7 +160,7 @@ $(document).ready(function () {
     	{
 			"class":"styleOfSlNo",
 			render : function () {
-				return canDeleteParty ? '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>' : '';
+				return '<i class="deleteButton fa fa-trash " aria-hidden="true"></i>';
 			}
 		}
     	

@@ -4,8 +4,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
-<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
-<security:authorize access="hasAuthority('SALES_ORDER_EDIT')" var="canEditSalesOrder" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,7 +15,6 @@ var dataObj=${salesOrderList};
 var role = ${role};
 var user = ${user};
 var pageContext = '${pageContext.request.contextPath}';
-var canEditSalesOrder = ${canEditSalesOrder};
 </script> 
 
 <script src="<c:url value="/resources/js/dashboard.js" />"></script>
@@ -30,7 +27,7 @@ var canEditSalesOrder = ${canEditSalesOrder};
 </style>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
