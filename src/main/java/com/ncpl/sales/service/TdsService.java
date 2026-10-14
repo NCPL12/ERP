@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,12 @@ public class TdsService {
 
 	@Autowired
 	TdsLotUpdateReportService tdsLotUpdateReportService;
+
+	@Autowired
+	SalesOrderDesignRepo salesOrderDesignRepo;
+
+	@PersistenceContext
+	EntityManager em;
 
 	@Transactional(rollbackFor = Exception.class)
 	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
@@ -260,7 +268,7 @@ public class TdsService {
 		return emailContents;
 	}
 	
-	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
+	/*public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
 		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
 		ArrayList<TdsItems> tdsItemList = new ArrayList<TdsItems>();
 		for (TdsItems tdsItem : tdsItemsList) {
@@ -281,6 +289,96 @@ public class TdsService {
 				tdsItem.set("desc",salesItemObj.get().getDescription());
 				tdsItem.set("slNo",salesItemObj.get().getSlNo());
 			}
+		}
+		return tdsItemList;
+		
+	}*/
+
+	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
+		ArrayList<TdsItems> tdsItemList = new ArrayList<TdsItems>();
+
+		// 1) approved rows as plain columns only. TdsItems.lots and SalesItem.salesOrder are EAGER,
+		// so loading them as entities pulls in lots / sales orders / parties one query at a time.
+		List<Object[]> tdsRows = em.createQuery(
+				"select t.tdsItemId, t.description, t.siteQuantity, t.modelNumber, t.designQty "
+				+ "from TdsItems t where t.tdsApproved = true and t.siteQuantity > 0 order by t.tdsItemId",
+				Object[].class).getResultList();
+		if (tdsRows.isEmpty()) {
+			return tdsItemList;
+		}
+		Set<String> salesItemIdSet = new HashSet<String>();
+		Set<String> itemMasterIdSet = new HashSet<String>();
+		for (Object[] r : tdsRows) {
+			if (r[1] != null) {
+				salesItemIdSet.add((String) r[1]);
+			}
+			if (r[3] != null) {
+				itemMasterIdSet.add((String) r[3]);
+			}
+		}
+
+		// 2) sales item + sales order + client name in one query
+		Map<String, Object[]> salesItemRows = new HashMap<String, Object[]>();
+		List<Object[]> siRows = em.createQuery(
+				"select s.id, s.description, s.slNo, so.id, so.clientPoNumber, so.created, p.partyName "
+				+ "from SalesItem s join s.salesOrder so left join so.party p where s.id in :ids",
+				Object[].class).setParameter("ids", new ArrayList<String>(salesItemIdSet)).getResultList();
+		for (Object[] r : siRows) {
+			salesItemRows.put((String) r[0], r);
+		}
+
+		// 3) item masters in one query (same call SalesService uses)
+		Map<String, ItemMaster> itemMastersById = itemService.getItemsByIds(new ArrayList<String>(itemMasterIdSet));
+
+		// 4) (sales item, item) pairs that already have a PO item, in one query
+		Set<String> poPairs = new HashSet<String>();
+		List<Object[]> poRows = em.createQuery(
+				"select p.description, p.modelNo from PurchaseItem p where p.description in :ids",
+				Object[].class).setParameter("ids", new ArrayList<String>(salesItemIdSet)).getResultList();
+		for (Object[] r : poRows) {
+			poPairs.add(r[0] + "|" + r[1]);
+		}
+
+		Map<String, SalesOrder> salesOrderCache = new HashMap<String, SalesOrder>();
+		for (Object[] r : tdsRows) {
+			String salesItemId = (String) r[1];
+			String itemId = (String) r[3];
+			Object[] si = salesItemRows.get(salesItemId);
+			ItemMaster itemObj = itemMastersById.get(itemId);
+			if (si == null || itemObj == null) {
+				continue;
+			}
+			if (poPairs.contains(salesItemId + "|" + itemId)) {
+				continue;
+			}
+			TdsItems tdsItem = new TdsItems();
+			tdsItem.setTdsItemId(((Number) r[0]).intValue());
+			tdsItem.setDescription(salesItemId);
+			tdsItem.setTdsApproved(true);
+			tdsItem.setSiteQuantity(((Number) r[2]).floatValue());
+			tdsItem.setModelNumber(itemId);
+			tdsItem.setDesignQty(((Number) r[4]).floatValue());
+
+			String soId = (String) si[3];
+			SalesOrder salesOrder = salesOrderCache.get(soId);
+			if (salesOrder == null) {
+				salesOrder = new SalesOrder();
+				salesOrder.setId(soId);
+				salesOrder.setClientPoNumber((String) si[4]);
+				salesOrder.setCreated((Date) si[5]);
+				Party party = new Party();
+				party.setPartyName((String) si[6]);
+				salesOrder.setParty(party);
+				salesOrderCache.put(soId, salesOrder);
+			}
+			tdsItem.set("clientpoNum",salesOrder.getClientPoNumber());
+			tdsItem.set("salesOrderObj",salesOrder);
+			tdsItem.set("modelNum",itemObj.getModel());
+			tdsItem.set("client",(String) si[6]);
+			tdsItem.set("createdDt",salesOrder.getCreated());
+			tdsItem.set("desc",(String) si[1]);
+			tdsItem.set("slNo",(String) si[2]);
+			tdsItemList.add(tdsItem);
 		}
 		return tdsItemList;
 		

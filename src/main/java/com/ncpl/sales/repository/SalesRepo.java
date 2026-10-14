@@ -38,12 +38,15 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	@Query(" from SalesOrder where archive=1 ")
 	public List<SalesOrder> findArchivedSalesList();
 	 
-	@Query(value = "SELECT * FROM  tbl_sales_order WHERE id NOT IN (SELECT so_number from tbl_dc) and archive=0",nativeQuery = true)
+	@Query(value = "SELECT so.* FROM tbl_sales_order so WHERE so.archive = 0 " +
+			"AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id)", nativeQuery = true)
 	public List<SalesOrder> getSalesListWhereDCNotDone();
 	@Query(value = "SELECT * FROM  tbl_sales_order WHERE id IN (SELECT so_number from tbl_dc) and archive=0",nativeQuery = true)
 	public List<SalesOrder> getSalesListWhereDCDone();
-	@Query(value = "SELECT distinct so.* FROM tbl_sales_order so where so.id\r\n" + 
-			"in (select si.sales_order_id from tbl_sales_item si where si.id not in(select d.sales_item_id from sales_order_design d) and si.units_id<>20 and si.quantity<>0 and si.unit_price>0) and so.archive=0",nativeQuery = true)
+	@Query(value = "SELECT so.* FROM tbl_sales_order so WHERE so.archive = 0 " +
+			"AND EXISTS (SELECT 1 FROM tbl_sales_item si WHERE si.sales_order_id = so.id " +
+			"AND si.units_id <> 20 AND si.quantity <> 0 AND si.unit_price > 0 " +
+			"AND NOT EXISTS (SELECT 1 FROM sales_order_design d WHERE d.sales_item_id = si.id))", nativeQuery = true)
 	public List<SalesOrder> getSalesOrderWithoutDesign();
 	
 	@Query(value = "SELECT so.id AS id, so.client_po_number AS clientPoNumber, p.party_name AS partyName, so.created AS created, " +
@@ -51,15 +54,11 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 			"(COUNT(DISTINCT si.id) - COUNT(DISTINCT sod.sales_item_id)) AS pendingDesigns " +
 			"FROM tbl_sales_order so " +
 			"LEFT JOIN tbl_party p ON p.id = so.party_id " +
-			"LEFT JOIN tbl_sales_item si ON so.id = si.sales_order_id AND si.units_id<>20 AND si.quantity<>0 AND si.unit_price>0 " +
+			"JOIN tbl_sales_item si ON so.id = si.sales_order_id AND si.units_id<>20 AND si.quantity<>0 AND si.unit_price>0 " +
 			"LEFT JOIN sales_order_design sod ON si.id = sod.sales_item_id " +
-			"WHERE so.archive = 0 AND so.id IN (" +
-			"SELECT DISTINCT so2.id FROM tbl_sales_order so2 " +
-			"JOIN tbl_sales_item si2 ON si2.sales_order_id = so2.id " +
-			"LEFT JOIN sales_order_design sod2 ON sod2.sales_item_id = si2.id " +
-			"WHERE so2.archive = 0 AND si2.units_id<>20 AND si2.quantity<>0 AND si2.unit_price>0 " +
-			"GROUP BY so2.id HAVING COUNT(DISTINCT si2.id) > COUNT(DISTINCT sod2.sales_item_id)) " +
+			"WHERE so.archive = 0 " +
 			"GROUP BY so.id, so.client_po_number, p.party_name, so.created " +
+			"HAVING pendingDesigns > 0 " +
 			"ORDER BY pendingDesigns DESC, so.client_po_number", nativeQuery = true)
 	List<Object[]> getSoWithoutDesignSummaryForDashboard();
 
@@ -159,6 +158,19 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 			"(SELECT COALESCE(SUM(di.todays_qty), 0) FROM tbl_dc d JOIN tbl_dc_items di ON d.dc_id = di.dc_id WHERE d.so_number = so.id)", nativeQuery = true)
 	long countPendingSalesOrdersPartialDC();
 
+	@Query(value = "SELECT so.id AS soId, so.client_po_number AS clientPoNumber, " +
+			"p.party_name AS partyName, si.modelNo AS modelNo, " +
+			"td.site_quantity AS siteQuantity " +
+			"FROM tbl_tds_items td " +
+			"JOIN tbl_sales_item si ON td.description = si.id " +
+			"JOIN tbl_sales_order so ON si.sales_order_id = so.id " +
+			"LEFT JOIN tbl_party p ON so.party_id = p.id " +
+			"WHERE td.tds_approved = 1 AND td.site_quantity > 0 " +
+			"AND si.id NOT IN (SELECT pi.sales_item_id FROM tbl_purchase_items pi) " +
+			"AND NOT EXISTS (SELECT 1 FROM tbl_dc d WHERE d.so_number = so.id) " +
+			"AND so.archive = 0", nativeQuery = true)
+	List<Object[]> getTdsApprovedPendingListForDashboard();
+}
 @Query(value =
     "SELECT so.* FROM tbl_sales_order so " +
     "LEFT JOIN (SELECT sales_order_id, SUM(quantity) AS qty " +

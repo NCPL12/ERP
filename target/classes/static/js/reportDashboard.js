@@ -11,7 +11,7 @@ function loadDashboardCountsFromApi() {
 			$("#purchaseOrderCount").text(data.purchaseOrderCount != null ? data.purchaseOrderCount : "");
 			$("#invoiceCount").text(data.invoiceCount != null ? data.invoiceCount : "");
 			$("#projectPreviewCount").text(data.projectPreviewCount != null ? data.projectPreviewCount : "");
-			$("#tdsItemsCount").text(data.tdsItemsCount != null ? data.tdsItemsCount : "");
+			// CHANGED: #tdsItemsCount line removed. It is now set from the TDS list in loadTdsApprovedTable().
 			$("#sowithoutDesignCount").text(data.sowithoutDesignCount != null ? data.sowithoutDesignCount : "");
 			$("#sowithDesignCount").text(data.sowithDesignCount != null ? data.sowithDesignCount : "");
 <<<<<<< HEAD
@@ -613,6 +613,10 @@ function loadTdsApprovedTable(response) {
 			"destroy": true,
 			"columns": tdsApprovedItemColumns()
 		});
+
+		// CHANGED (added): tile count always comes from the same list the table shows
+		$("#tdsItemsCount").text(Array.isArray(response) ? response.length : 0);
+
 		   $('#tdsApprovedItemsTable tbody').on('dblclick', 'tr', function () {
 			   var data = tdsTabe.row(this).data();
 			   var salesOrderId = data.salesOrderObj ? data.salesOrderObj.id : null;
@@ -2163,6 +2167,10 @@ function loadTdsApprovedTablePartial(response) {
 <<<<<<< HEAD
 			"columns": tdsApprovedItemColumns()
 		});
+
+		// CHANGED (added): keep the TDS tile in sync with the table
+		$("#tdsItemsCount").text(Array.isArray(response) ? response.length : 0);
+
 		   $('#tdsApprovedItemsTable tbody').on('dblclick', 'tr', function () {
 			   var data = tdsTabe.row(this).data();
 			   var salesOrderId = data.salesOrderObj ? data.salesOrderObj.id : null;
@@ -2470,4 +2478,3 @@ return clientName;
 	}
 
 }
-
