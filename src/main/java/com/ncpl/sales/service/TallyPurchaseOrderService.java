@@ -797,9 +797,15 @@ public class TallyPurchaseOrderService {
         return match;
     }
 
+    private java.nio.file.Path syncStatePath() {
+        java.nio.file.Path path = java.nio.file.Paths.get(syncStateFile);
+        // Relative state files are anchored under the app data dir so they no longer depend on the working directory.
+        return path.isAbsolute() ? path : java.nio.file.Paths.get(com.ncpl.common.Constants.FILE_LOCATION, syncStateFile);
+    }
+
     public Set<String> previouslyExportedNumbers() {
         java.util.Properties states = new java.util.Properties();
-        java.nio.file.Path path = java.nio.file.Paths.get(syncStateFile);
+        java.nio.file.Path path = syncStatePath();
         try (InputStream input = java.nio.file.Files.newInputStream(path)) { states.load(input); }
         catch (Exception error) { return Collections.emptySet(); }
         String prefix = serverUrl + "|" + companyName + "|";
@@ -819,14 +825,14 @@ public class TallyPurchaseOrderService {
     }
 
     private void loadVerifiedStates() {
-        java.nio.file.Path path = java.nio.file.Paths.get(syncStateFile);
+        java.nio.file.Path path = syncStatePath();
         if (!java.nio.file.Files.exists(path)) return;
         try (InputStream input = java.nio.file.Files.newInputStream(path)) { verifiedStates.load(input); }
         catch (Exception error) { log.warn("Unable to read PO sync state; saved POs will be checked again", error); }
     }
 
     private void saveVerifiedStates() {
-        java.nio.file.Path path = java.nio.file.Paths.get(syncStateFile).toAbsolutePath();
+        java.nio.file.Path path = syncStatePath();
         try {
             java.nio.file.Files.createDirectories(path.getParent());
             java.nio.file.Path temporary = java.nio.file.Files.createTempFile(path.getParent(), "po-sync-", ".tmp");
