@@ -58,7 +58,7 @@ public class TallyPurchaseOrderService {
     private final java.util.Properties verifiedStates = new java.util.Properties();
     private final java.util.concurrent.atomic.AtomicBoolean exportRunning = new java.util.concurrent.atomic.AtomicBoolean();
 
-    @Value("${cashflow.tally.server.url:http://localhost:9000}")
+    @Value("${cashflow.tally.server.url:http://192.168.0.196:9000}")
     private String serverUrl;
 
     @Value("${cashflow.tally.company-name:}")
