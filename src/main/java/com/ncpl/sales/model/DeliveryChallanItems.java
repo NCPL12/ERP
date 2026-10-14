@@ -32,7 +32,8 @@ public class DeliveryChallanItems extends TimeStampEntity{
     private float totalQuantity;
     private float deliveredQuantity;
     private float todaysQty;
-	
+    private boolean companyAsset;
+
 	@ManyToOne
 	@JsonManagedReference
 	@JoinColumn(name="dc_id")
@@ -110,5 +111,11 @@ public class DeliveryChallanItems extends TimeStampEntity{
 	}
 	public void setDeliveryChallan(DeliveryChallan deliveryChallan) {
 		this.deliveryChallan = deliveryChallan;
+	}
+	public boolean isCompanyAsset() {
+		return companyAsset;
+	}
+	public void setCompanyAsset(boolean companyAsset) {
+		this.companyAsset = companyAsset;
 	}
 }

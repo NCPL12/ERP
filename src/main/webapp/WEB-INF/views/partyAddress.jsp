@@ -4,6 +4,8 @@ pageEncoding="ISO-8859-1"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<security:authorize access="hasAuthority('PARTY_DELETE')" var="canDeleteParty" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -27,6 +29,7 @@ $("#deleteaddress").hover(function() {
 var data=${AddressList};
 //var partyId='${partyId}';
 var pageContext = '${pageContext.request.contextPath}';
+var canDeleteParty = ${canDeleteParty};
 </script>
 <style type="text/css">
 .positionOfTextBox {
@@ -102,7 +105,7 @@ padding-top: 9px!important;
 }
 </style>
 </head>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 <tiles:insertAttribute name="header" />
 <tiles:insertAttribute name="sideMenu" />

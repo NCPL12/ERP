@@ -5,15 +5,22 @@ $(document).ready(function () {
 	}
 });
 
-function getLotFieldsHtml(arrayCount, lotIndex, lotNumber, quantity, readonly) {
+function getLotFieldsHtml(arrayCount, lotIndex, lotNumber, quantity, readonly, showAdd) {
 	var lotNoVal = lotNumber || '';
 	var qtyVal = (quantity !== null && quantity !== undefined) ? quantity : '';
 	var qtyRoAttr = readonly ? 'readonly' : '';
-	var delBtn = readonly ? '' : '<i class="fa fa-trash" onclick="removeLot(this)" style="cursor:pointer;color:red;padding-top:6px;" aria-hidden="true"></i>';
+	var actionBtn = '';
+	if (readonly) {
+		actionBtn = '';
+	} else if (showAdd) {
+		actionBtn = '<button type="button" class="btn btn-success btn-sm add-lot-btn" onclick="addLotRow(this)">+</button>';
+	} else {
+		actionBtn = '<i class="fa fa-trash" onclick="removeLot(this)" style="cursor:pointer;color:red;" aria-hidden="true"></i>';
+	}
 	return '<div class="lot-entry" style="display:flex;gap:4px;margin-bottom:2px;align-items:center;">' +
 		'<input type="text" class="form-control form-control-sm PositionofTextbox" style="width:100px" name="items[' + arrayCount + '].lots[' + lotIndex + '].lotNumber" placeholder="Lot No" value="' + lotNoVal + '" readonly />' +
 		'<input type="number" class="form-control form-control-sm PositionofTextbox" style="width:80px" name="items[' + arrayCount + '].lots[' + lotIndex + '].quantity" placeholder="Qty" value="' + qtyVal + '" step="any" ' + qtyRoAttr + ' />' +
-		delBtn +
+		actionBtn +
 		'</div>';
 }
 
@@ -31,13 +38,13 @@ function getTotalLotQty(container) {
 function updateAddBtn(container) {
 	var poQty = parseFloat(container.data('poqty'));
 	if (isNaN(poQty) || poQty <= 0) {
-		container.closest('tr').find('.add-lot-btn').show();
+		container.find('.add-lot-btn').show();
 		return;
 	}
 	if (getTotalLotQty(container) >= poQty) {
-		container.closest('tr').find('.add-lot-btn').hide();
+		container.find('.add-lot-btn').hide();
 	} else {
-		container.closest('tr').find('.add-lot-btn').show();
+		container.find('.add-lot-btn').show();
 	}
 }
 
@@ -58,7 +65,7 @@ function addLotRow(button) {
 
 function addFirstLot(container) {
 	var arrayCount = container.data('arraycount');
-	container.append(getLotFieldsHtml(arrayCount, 0, 1));
+	container.append(getLotFieldsHtml(arrayCount, 0, 1, '', false, true));
 	container.data('lotindex', 1);
 	container.data('nextlotnumber', 2);
 }
@@ -70,7 +77,7 @@ function removeLot(btn) {
 	var entries = container.find('.lot-entry');
 	if (entries.length == 0) {
 		container.data('lotindex', 0);
-		container.closest('tr').find('.add-lot-btn').hide();
+		container.find('.add-lot-btn').hide();
 	} else {
 		entries.each(function (idx) {
 			var inputs = $(this).find('input');
@@ -81,9 +88,19 @@ function removeLot(btn) {
 					$(this).attr('name', name);
 				}
 			});
-			var delBtn = $(this).find('.fa-trash');
-			if (delBtn.length) {
-				delBtn.attr('onclick', 'removeLot(this)');
+			var entryEditable = !$(this).find('input[name$=".quantity"]').prop('readonly');
+			if (idx == 0 && entryEditable) {
+				if (!$(this).find('.add-lot-btn').length) {
+					if ($(this).find('.fa-trash').length) {
+						$(this).find('.fa-trash').remove();
+					}
+					$(this).append('<button type="button" class="btn btn-success btn-sm add-lot-btn" onclick="addLotRow(this)">+</button>');
+				}
+			} else {
+				var delBtn = $(this).find('.fa-trash');
+				if (delBtn.length) {
+					delBtn.attr('onclick', 'removeLot(this)');
+				}
 			}
 		});
 		container.data('lotindex', entries.length);
@@ -160,9 +177,9 @@ function getSalesItemListBySoItem(salesOrderObj) {
 					var soItems = "<tr><td width='4%'>" + slNo + "</td><td width='20%'>" + description + "</td>" +
 						"<td width='12%'>" + modelNumber + "</td><td width='6%'>" + poQty + "</td><td width='4%'>" + unitName + "</td>" +
 						"<td width='7%'>" + model + "</td><td width='5%'>" + qty + "</td>" +
-						"<td width='6%'><input type='hidden' name='items[" + arrayCount + "].tdsApproved' value='false'/><input type='checkbox' class='form-control form-control-sm PositionofTextbox tdsApproved' id='tdsApproved" + arrayCount + "' name='items[" + arrayCount + "].tdsApproved' value='true'/></td>" +
+						"<td width='6%'><input type='hidden' name='items[" + arrayCount + "].tdsApproved' value='false'/><input type='checkbox' class='form-control form-control-sm PositionofTextbox tdsApproved' id='tdsApproved" + arrayCount + "' name='items[" + arrayCount + "].tdsApproved' value='true' disabled title='Add a design for this item before approving TDS'/></td>" +
 						"<td width='15%'><div class='lot-container' data-arraycount='" + arrayCount + "' data-lotindex='0' data-poqty='" + poQty + "'></div></td>" +
-						"<td width='5%'><button type='button' class='btn btn-success btn-sm add-lot-btn' style='display:none;' onclick='addLotRow(this)'>+</button></td>" +
+						"<td width='5%'></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='description" + arrayCount + "' name='items[" + arrayCount + "].description' path='items[" + arrayCount + "].description' value='" + value.id + "'/></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='modelNumber" + arrayCount + "' name='items[" + arrayCount + "].modelNumber' path='items[" + arrayCount + "].modelNumber' value=''/></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='designQty" + arrayCount + "' name='items[" + arrayCount + "].designQty' path='items[" + arrayCount + "].designQty' value=0 ></td>" +
@@ -195,7 +212,7 @@ function getSalesItemListBySoItem(salesOrderObj) {
 						"<td width='7%'>" + model + "</td><td width='5%'>" + qty + "</td>" +
 						"<td width='6%'><input type='hidden' name='items[" + arrayCount + "].tdsApproved' value='false'/><input type='checkbox' class='form-control form-control-sm PositionofTextbox tdsApproved' id='tdsApproved" + arrayCount + "' name='items[" + arrayCount + "].tdsApproved' value='true'/></td>" +
 						"<td width='15%'><div class='lot-container' data-arraycount='" + arrayCount + "' data-lotindex='0' data-poqty='" + qty + "'></div></td>" +
-						"<td width='5%'><button type='button' class='btn btn-success btn-sm add-lot-btn' style='display:none;' onclick='addLotRow(this)'>+</button></td>" +
+						"<td width='5%'></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='description" + arrayCount + "' name='items[" + arrayCount + "].description' path='items[" + arrayCount + "].description' value='" + value.id + "'/></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='modelNumber" + arrayCount + "' name='items[" + arrayCount + "].modelNumber' path='items[" + arrayCount + "].modelNumber' value='" + itemId + "'/></td>" +
 						"<td style='display:none'><input type='hidden' class='form-control PositionofTextbox' id='designQty" + arrayCount + "' name='items[" + arrayCount + "].designQty' path='items[" + arrayCount + "].designQty' value='" + qty + "'/></td>" +
@@ -228,7 +245,6 @@ $(document).on("click", ".tdsApproved", function () {
 	}
 	var tr = $(this).closest("tr");
 	var container = tr.find('.lot-container');
-	var addBtn = tr.find('.add-lot-btn');
 	var checkbox = $(this);
 	if (checkbox.is(':checked')) {
 		var index = tr.index();
@@ -258,37 +274,34 @@ $(document).on("click", ".tdsApproved", function () {
 						for (var j = 0; j < itemLots.length; j++) {
 							container.append(getLotFieldsHtml(container.data('arraycount'), j, itemLots[j].lotNumber, itemLots[j].quantity, true));
 						}
-						container.data('lotindex', itemLots.length);
-						container.data('nextlotnumber', maxLotIdx + 1);
-						addBtn.show();
+						container.append(getLotFieldsHtml(container.data('arraycount'), itemLots.length, maxLotIdx + 1, '', false, true));
+						container.data('lotindex', itemLots.length + 1);
+						container.data('nextlotnumber', maxLotIdx + 2);
+						updateAddBtn(container);
 					} else {
 						// New item — one editable lot at the next available lot number
 						var nextNum = maxLotIdx + 1;
-						container.append(getLotFieldsHtml(container.data('arraycount'), 0, nextNum, '', false));
+						container.append(getLotFieldsHtml(container.data('arraycount'), 0, nextNum, '', false, true));
 						container.data('lotindex', 1);
 						container.data('nextlotnumber', nextNum + 1);
-						addBtn.show();
+						updateAddBtn(container);
 					}
-					updateAddBtn(container);
 					checkbox.attr('data-saved', 'true');
 					checkbox.css('pointer-events', 'none');
 				},
 				error: function () {
 					addFirstLot(container);
-					addBtn.show();
 					checkbox.attr('data-saved', 'true');
 					checkbox.css('pointer-events', 'none');
 				}
 			});
 		} else {
 			addFirstLot(container);
-			addBtn.show();
 			checkbox.attr('data-saved', 'true');
 			checkbox.css('pointer-events', 'none');
 		}
 	} else {
 		clearLots(container);
-		addBtn.hide();
 	}
 
 })
@@ -396,7 +409,12 @@ function loadExistingTdsItems(soNumber) {
 						for (var j = 0; j < itemLots.length; j++) {
 							container.append(getLotFieldsHtml(container.data('arraycount'), j, itemLots[j].lotNumber, itemLots[j].quantity, true));
 						}
-						container.data('lotindex', itemLots.length);
+						if (itemLots.length > 0) {
+							container.append(getLotFieldsHtml(container.data('arraycount'), itemLots.length, globalMaxLotIdx + 1, '', false, true));
+							container.data('lotindex', itemLots.length + 1);
+						} else {
+							container.data('lotindex', 0);
+						}
 						container.data('nextlotnumber', globalMaxLotIdx + 1);
 						updateAddBtn(container);
 					}

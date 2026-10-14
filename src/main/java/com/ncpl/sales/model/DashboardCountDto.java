@@ -8,6 +8,7 @@ public class DashboardCountDto {
     private long sowithDesignCount;
     private long sowithoutDesignCount;
     private long projectPreviewCount;
+    private long tdsApprovedPendingCount;
 
     public long getSalesOrderCount() {
         return salesOrderCount;
@@ -65,6 +66,14 @@ public class DashboardCountDto {
         this.projectPreviewCount = projectPreviewCount;
     }
 
+    public long getTdsApprovedPendingCount() {
+        return tdsApprovedPendingCount;
+    }
+
+    public void setTdsApprovedPendingCount(long tdsApprovedPendingCount) {
+        this.tdsApprovedPendingCount = tdsApprovedPendingCount;
+    }
+
     /** Defensive copy for cached responses. */
     public static DashboardCountDto copyOf(DashboardCountDto src) {
         if (src == null) {
@@ -78,6 +87,7 @@ public class DashboardCountDto {
         d.setSowithDesignCount(src.getSowithDesignCount());
         d.setSowithoutDesignCount(src.getSowithoutDesignCount());
         d.setProjectPreviewCount(src.getProjectPreviewCount());
+        d.setTdsApprovedPendingCount(src.getTdsApprovedPendingCount());
         return d;
     }
 }

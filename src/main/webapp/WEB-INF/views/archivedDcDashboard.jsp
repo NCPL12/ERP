@@ -12,7 +12,7 @@
 <tiles:insertAttribute name="header-resources" />
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
-<script src="<c:url value="/resources/js/dcDashboard.js" />"></script> 
+<script src="<c:url value="/resources/js/dcDashboard.js" />"></script>
 <script type="text/javascript">
 var partyList = ${partyList};
 var role = ${role};
@@ -41,7 +41,6 @@ var isArchivedPage = true;
 							<th width="8%">Date</th>
 							<th width="8%">DC</th>
 							<th width="3%">View</th>
-							<th width="2%">Returnable</th>
 							<th width="4%">Archive</th>
 						</tr>
 					</thead>

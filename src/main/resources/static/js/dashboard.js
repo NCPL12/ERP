@@ -63,13 +63,16 @@ $(document).ready( function () {
 				if (type !== 'display') {
 					return clientPoNumber || "";
 				}
+				var safeText = $('<div>').text(clientPoNumber || "").html();
+				if (!canEditSalesOrder) {
+					return safeText;
+				}
 				var url = pageContext + "/api/sales_order/view?salesOrderId="
 						+ encodeURIComponent(row.id);
-				var safeText = $('<div>').text(clientPoNumber || "").html();
 				return "<a class='sales-order-link' href='" + url
 						+ "' title='Open sales order'>" + safeText + "</a>";
 			}
-		
+
 		},{
 			"mData" : "party",
 
@@ -129,9 +132,12 @@ $(document).ready( function () {
 		{
 			"mData" : "edit"	,
 			render : function(datam, type, row) {
+				if (!canEditSalesOrder) {
+					return "";
+				}
 				var url;
 				url = pageContext+"/api/salesOrder_tds/view?salesOrderId="+row.id;
-				return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-edit'></i></button></a>";			
+				return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-edit'></i></button></a>";
 			}
 		},
 		{
@@ -153,9 +159,12 @@ $(document).ready( function () {
 		{
 			"mData" : "pdf"	,
 			render : function(datam, type, row) {
+				if (!canEditSalesOrder) {
+					return "";
+				}
 				//var url;
 				//url ="/ncpl-sales/api/clientPo/upload/"+row.id;
-				return "<button type='button'  class='btn btn-default btn-flat btn-xs clientPoUploadBtn' ><i class='fa fa-fw fa-upload'></i> Upload</button>";				
+				return "<button type='button'  class='btn btn-default btn-flat btn-xs clientPoUploadBtn' ><i class='fa fa-fw fa-upload'></i> Upload</button>";
 			}
 		},
 		{
@@ -169,16 +178,22 @@ $(document).ready( function () {
 		{
 			"mData" : "pdf"	,
 			render : function(datam, type, row) {
+				if (!canEditSalesOrder) {
+					return "";
+				}
 				//var url;
 				//url ="/ncpl-sales/api/clientPo/upload/"+row.id;
-				return "<button type='button'  class='btn btn-default btn-flat btn-xs designUploadBtn' ><i class='fa fa-fw fa-upload'></i> Upload</button>";				
+				return "<button type='button'  class='btn btn-default btn-flat btn-xs designUploadBtn' ><i class='fa fa-fw fa-upload'></i> Upload</button>";
 			}
 		}
 		]
     });
-   
+
     //On double click of row navigate to edit page
    $('#salesList tbody').on('dblclick', 'tr', function () {
+	   if (!canEditSalesOrder) {
+		   return;
+	   }
 	   var data = table.row(this).data();
 	   var salesOrderId = data.id;
 	   window.location = pageContext+"/api/sales_order/view?salesOrderId="+salesOrderId;

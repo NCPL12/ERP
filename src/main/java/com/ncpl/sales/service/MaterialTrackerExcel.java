@@ -720,11 +720,49 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 		descriptionMergeRightStyle.setBorderRight(BORDER_THIN);
 		descriptionMergeRightStyle.setBorderTop(BORDER_THIN);
 		descriptionMergeRightStyle.setBorderBottom(BORDER_THIN);
-		
+
+		CellStyle threeSideborderNotDesigned = workbook.createCellStyle();
+		threeSideborderNotDesigned.cloneStyleFrom(threeSideborder);
+		threeSideborderNotDesigned.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		threeSideborderNotDesigned.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
+		CellStyle descriptionStyleNotDesigned = workbook.createCellStyle();
+		descriptionStyleNotDesigned.cloneStyleFrom(descriptionStyle);
+		descriptionStyleNotDesigned.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		descriptionStyleNotDesigned.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
+		CellStyle descriptionMergeMiddleStyleNotDesigned = workbook.createCellStyle();
+		descriptionMergeMiddleStyleNotDesigned.cloneStyleFrom(descriptionMergeMiddleStyle);
+		descriptionMergeMiddleStyleNotDesigned.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		descriptionMergeMiddleStyleNotDesigned.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
+		CellStyle descriptionMergeRightStyleNotDesigned = workbook.createCellStyle();
+		descriptionMergeRightStyleNotDesigned.cloneStyleFrom(descriptionMergeRightStyle);
+		descriptionMergeRightStyleNotDesigned.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		descriptionMergeRightStyleNotDesigned.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
+		CellStyle qtyborderNotDesigned = workbook.createCellStyle();
+		qtyborderNotDesigned.cloneStyleFrom(qtyborder);
+		qtyborderNotDesigned.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+		qtyborderNotDesigned.setFillPattern(CellStyle.SOLID_FOREGROUND);
+
 		int rowCount = 11;
 		for (SalesItem salesItem : salesItems) {
 			String unitName=salesItem.getItem_units().getName();
 			String key = salesItem.getId();
+			String soItemId = key;
+			List<DesignItems> designItemList = null;
+			if (designItemsMap != null) {
+				designItemList = (List<DesignItems>) designItemsMap.get(soItemId);
+			}
+			if (designItemList == null) {
+				designItemList = soDesignService.getDesignItemListBySOItemId(soItemId);
+			}
+			if (designItemList == null) {
+				designItemList = new ArrayList<DesignItems>();
+			}
+			boolean notDesigned = !unitName.equals("Heading") && designItemList.isEmpty()
+					&& salesItem.getQuantity() != 0 && salesItem.getUnitPrice() > 0;
 			String itemValue = (String) itemsList.get(key);
 			int purchaseQtyStartsFrom = itemValue.indexOf("$");
 			int noOrderQtyStartsFrom = itemValue.indexOf("&");
@@ -757,33 +795,33 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 			}
 			
 			Cell slno = row1.createCell(0);
-			slno.setCellStyle(threeSideborder);
+			slno.setCellStyle(notDesigned ? threeSideborderNotDesigned : threeSideborder);
 			slno.setCellValue(salesItem.getSlNo());
 			Cell description = row1.createCell(1);
-			description.setCellStyle(descriptionStyle);
+			description.setCellStyle(notDesigned ? descriptionStyleNotDesigned : descriptionStyle);
 			description.setCellValue(salesItem.getDescription());
 			for (int col = 2; col <= 5; col++) {
 				Cell mergedCell = row1.createCell(col);
-				mergedCell.setCellStyle(descriptionMergeMiddleStyle);
+				mergedCell.setCellStyle(notDesigned ? descriptionMergeMiddleStyleNotDesigned : descriptionMergeMiddleStyle);
 				mergedCell.setCellValue("");
 			}
 			Cell mergedRightCell = row1.createCell(6);
-			mergedRightCell.setCellStyle(descriptionMergeRightStyle);
+			mergedRightCell.setCellStyle(notDesigned ? descriptionMergeRightStyleNotDesigned : descriptionMergeRightStyle);
 			mergedRightCell.setCellValue("");
-			
-			
+
+
 			Cell qtyBoqCell = row1.createCell(7);
-			qtyBoqCell.setCellStyle(qtyborder);
+			qtyBoqCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			Cell qtySiteCell = row1.createCell(8);
-			qtySiteCell.setCellStyle(qtyborder);
+			qtySiteCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			Cell orderedQtyCell = row1.createCell(9);
-			orderedQtyCell.setCellStyle(qtyborder);
+			orderedQtyCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			Cell notOrderedQtyCell = row1.createCell(10);
-			notOrderedQtyCell.setCellStyle(qtyborder);
+			notOrderedQtyCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			Cell deliveredQtyCell = row1.createCell(11);
-			deliveredQtyCell.setCellStyle(qtyborder);
+			deliveredQtyCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			Cell instoreQtyCell = row1.createCell(12);
-			instoreQtyCell.setCellStyle(qtyborder);
+			instoreQtyCell.setCellStyle(notDesigned ? qtyborderNotDesigned : qtyborder);
 			if(unitName.equals("Heading")) {
 				qtyBoqCell.setCellValue("");
 				qtySiteCell.setCellValue("");
@@ -806,19 +844,7 @@ public class MaterialTrackerExcel extends AbstractXlsxView{
 				instoreQtyCell.setCellValue(grnQty);
 			
 			}
-			
-			String soItemId = salesItem.getId();
-			
-			List<DesignItems> designItemList = null;
-			if (designItemsMap != null) {
-				designItemList = (List<DesignItems>) designItemsMap.get(soItemId);
-			}
-			if (designItemList == null) {
-				designItemList = soDesignService.getDesignItemListBySOItemId(soItemId);
-			}
-			if (designItemList == null) {
-				designItemList = new ArrayList<DesignItems>();
-			}
+
 			if(unitName.equals("Heading")) {
 				Cell modelCell = row1.createCell(13);
 				modelCell.setCellStyle(threeSideborder);

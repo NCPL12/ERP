@@ -34,5 +34,8 @@ public interface SalesItemRepo  extends JpaRepository<SalesItem, String>{
 
 	@Query("SELECT si FROM SalesItem si JOIN FETCH si.item_units JOIN FETCH si.salesOrder so JOIN FETCH so.party WHERE si.id IN :ids")
 	List<SalesItem> findByIdsWithJoins(@Param("ids") Collection<String> ids);
+
+	@Query("SELECT si FROM SalesItem si JOIN FETCH si.item_units JOIN FETCH si.salesOrder so JOIN FETCH so.party WHERE si.salesOrder.id IN :salesOrderIds")
+	List<SalesItem> findSalesItemsBySalesOrderIds(@Param("salesOrderIds") Collection<String> salesOrderIds);
 	
 }

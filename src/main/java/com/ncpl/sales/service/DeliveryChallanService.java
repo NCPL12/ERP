@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ncpl.common.Constants;
 import com.ncpl.sales.generator.FileNameGenerator;
@@ -56,6 +57,10 @@ import com.ncpl.sales.security.UserService;
 
 @Service
 public class DeliveryChallanService {
+ private static String blankToNull(String value) {
+        return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
 	@Autowired
 	DeliveryChallanRepo dcRepo;
 	@Autowired
@@ -100,6 +105,21 @@ public class DeliveryChallanService {
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
 	String filePath = Constants.FILE_LOCATION + File.separator + fileName;
 	
+	// DC items checked as "Company Asset" while creating the DC, not yet
+	// turned into a CompanyAssets record from the Company Assets page.
+	public List<DeliveryChallanItems> getCompanyAssetCandidates() {
+		List<DeliveryChallanItems> candidates = dcItemRepo.findCompanyAssetCandidates();
+		for (DeliveryChallanItems item : candidates) {
+			String soModelNo = item.getSoModelNo();
+			Optional<ItemMaster> itemObj = (soModelNo == null || soModelNo.trim().isEmpty())
+					? Optional.empty() : itemService.getItemById(soModelNo);
+			item.set("modelName", itemObj.isPresent() ? itemObj.get().getModel() : soModelNo);
+			item.set("itemDescription", itemObj.isPresent() ? itemObj.get().getItemName() : null);
+			item.set("dcId", item.getDeliveryChallan() != null ? item.getDeliveryChallan().getDcId() : null);
+		}
+		return candidates;
+	}
+
 	//code to dave delivery challan
 	@SuppressWarnings("unchecked")
 	public DeliveryChallan saveDc(DeliveryChallan deliveryChallan, String[] designArray, String soNumber) throws Exception {
@@ -227,6 +247,11 @@ public class DeliveryChallanService {
 	public List<DeliveryChallan> getAllDcList(){
 		List<DeliveryChallan> dcList = dcRepo.findAllDc();
 		return dcList;
+	}
+
+	// ms picker for /returnable/create — single query, no items
+	public List<java.util.Map<String, Object>> getDcPickerList(){
+		return dcRepo.findPickerMaps();
 	}
 	
 	//code to get list of delivery challan
@@ -377,6 +402,22 @@ public class DeliveryChallanService {
 		return dcItemList;
 	}
 	
+	// Bulk variant of getDcItemListBySoItemId(): one query for all the given sales
+	// item ids and grouped by sales item id, instead of one query per item (N+1).
+	public Map<String, List<DeliveryChallanItems>> getDcItemListBySalesItemIds(List<String> soItemIds) {
+		Map<String, List<DeliveryChallanItems>> dcItemsBySalesItemId = new HashMap<String, List<DeliveryChallanItems>>();
+		if (soItemIds == null || soItemIds.isEmpty()) {
+			return dcItemsBySalesItemId;
+		}
+		for (String soItemId : soItemIds) {
+			dcItemsBySalesItemId.put(soItemId, new ArrayList<DeliveryChallanItems>());
+		}
+		for (DeliveryChallanItems dcItem : dcItemRepo.findBySalesItemIdIn(soItemIds)) {
+			dcItemsBySalesItemId.computeIfAbsent(dcItem.getDescription(), k -> new ArrayList<DeliveryChallanItems>()).add(dcItem);
+		}
+		return dcItemsBySalesItemId;
+	}
+
 	public List<DeliveryChallanItems> getDcItemListBySoItemIdWhereDcQtyNotZero(String soItemId){
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItemId);
 		return dcItemList;
@@ -784,32 +825,29 @@ public class DeliveryChallanService {
 		
 	}
 	
+	@Transactional
 	public List<DeliveryChallanItems> getPartialDcItems(){
 		List<DeliveryChallan> dcList=getAllDcList();
 		ArrayList<DeliveryChallanItems> dcItemLists=new ArrayList<DeliveryChallanItems>();
 		for (DeliveryChallan dc : dcList) {
 			List<DeliveryChallanItems> dcItemList=dc.getItems();
 			for (DeliveryChallanItems deliveryChallanItems : dcItemList) {
-				System.out.println("not found"+deliveryChallanItems.getDescription());
 				Optional<SalesItem> salesItem=salesService.getSalesItemObjById(deliveryChallanItems.getDescription());
-				if(salesItem!=null) {
-				System.out.println(salesItem.get().getId());
-					List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
-					for (DesignItems designItem : designItemsList) {
-						if(designItem.getDeliveredQty()!=0) {
-							if(designItem.getDeliveredQty()<designItem.getQuantity()) {
-								dcItemLists.add(deliveryChallanItems);
-							
-								break;
-							}
+				if(!salesItem.isPresent()) {
+					continue;
+				}
+				List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
+				for (DesignItems designItem : designItemsList) {
+					if(designItem.getDeliveredQty()!=0) {
+						if(designItem.getDeliveredQty()<designItem.getQuantity()) {
+							dcItemLists.add(deliveryChallanItems);
+							break;
 						}
 					}
 				}
 			}
 		}
-		System.out.println("size:" + dcItemLists.size());
 		return dcItemLists;
-		
 	}
 	
 	// Pagination methods for lazy loading
@@ -830,34 +868,73 @@ public class DeliveryChallanService {
 		return dcPage;
 	}
 	
-	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber, 
-			String clientName, String clientPo, String shipping) {
-		
-		Integer dcIdInt = null;
-		if (dcId != null && !dcId.trim().isEmpty()) {
-			try {
-				dcIdInt = Integer.parseInt(dcId);
-			} catch (NumberFormatException e) {
-				// Invalid dcId, will be ignored
-			}
-		}
-		
+	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber,
+			String clientName, String clientPo, String shipping, String comment, String date) {
+
 		Page<DeliveryChallan> dcPage = dcRepo.searchAdvanced(
-			archived, 
-			dcIdInt, 
-			soNumber, 
-			clientName, 
-			clientPo, 
-			shipping, 
+			archived,
+			emptyToNull(dcId),
+			emptyToNull(soNumber),
+			emptyToNull(clientName),
+			emptyToNull(clientPo),
+			emptyToNull(shipping),
+			emptyToNull(comment),
+			parseDateFrom(date),
+			parseDateTo(date),
 			pageable
 		);
-		
+
 		// Enrich the data with additional fields
 		for (DeliveryChallan dc : dcPage.getContent()) {
 			enrichDeliveryChallanData(dc);
 		}
-		
+
 		return dcPage;
+	}
+
+	private static String emptyToNull(String s) {
+		if (s == null) return null;
+		String t = s.trim();
+		return t.isEmpty() ? null : t;
+	}
+
+	/** Parse the Date column filter (e.g. "29-9-2026", "29-09-2026", "2026-09-29") to a day-start timestamp; null if unparseable. */
+	private static java.util.Date parseDateFrom(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[0];
+	}
+
+	/** Exclusive end of the filtered day (start of next day). */
+	private static java.util.Date parseDateTo(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[1];
+	}
+
+	private static java.util.Date[] parseDateRange(String dateStr) {
+		if (dateStr == null || dateStr.trim().isEmpty()) {
+			return null;
+		}
+		String s = dateStr.trim();
+		String[] patterns = { "d-M-yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "d/M/yyyy", "dd/MM/yyyy" };
+		for (String p : patterns) {
+			try {
+				java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(p);
+				sdf.setLenient(false);
+				java.util.Date d = sdf.parse(s);
+				java.util.Calendar cal = java.util.Calendar.getInstance();
+				cal.setTime(d);
+				cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+				cal.set(java.util.Calendar.MINUTE, 0);
+				cal.set(java.util.Calendar.SECOND, 0);
+				cal.set(java.util.Calendar.MILLISECOND, 0);
+				java.util.Date from = cal.getTime();
+				cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+				java.util.Date to = cal.getTime();
+				return new java.util.Date[] { from, to };
+			} catch (Exception ignored) {
+			}
+		}
+		return null;
 	}
 	
 	public List<DeliveryChallanItems> getDcItemListByDate(Timestamp fromDate, Timestamp toDate) {

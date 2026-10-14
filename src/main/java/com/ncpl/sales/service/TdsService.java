@@ -1,4 +1,5 @@
 package com.ncpl.sales.service;
+import com.ncpl.sales.repository.SalesOrderDesignRepo;
 
 import java.io.File;
 import java.io.IOException;
@@ -412,7 +413,12 @@ public class TdsService {
 		
 	}
 
-	private String tdsItemKey(TdsItems item) {
+	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDonePartial() {
+ List<TdsItems> items = getTdsItemsListWhereTdsApprovedAndPoNotDone();
+ return new ArrayList<>(items.subList(0, Math.min(10, items.size())));
+ }
+
+ private String tdsItemKey(TdsItems item) {
 		return item.getDescription() + "|" + (item.getModelNumber() != null ? item.getModelNumber() : "");
 	}
 

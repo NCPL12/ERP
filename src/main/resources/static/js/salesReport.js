@@ -126,7 +126,7 @@ function searchGrnAndPoByModel(modelNo) {
 
 	$.ajax({
 		type: 'GET',
-		url: contextRoot + parentApi + '/grn_po_by_model',
+		url: parentApi + '/grn_po_by_model',
 		data: { modelNo: modelNo },
 		dataType: 'json',
 		success: function(response) {
