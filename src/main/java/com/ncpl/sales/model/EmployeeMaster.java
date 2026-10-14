@@ -16,8 +16,7 @@ public class EmployeeMaster {
 	private Integer id;
 	private String empId;
 	private String name;
-	private String contactNo;
-
+	
 	public Integer getId() {
 		return id;
 	}
@@ -36,10 +35,6 @@ public class EmployeeMaster {
 	public void setName(String name) {
 		this.name = name;
 	}
-	public String getContactNo() {
-		return contactNo;
-	}
-	public void setContactNo(String contactNo) {
-		this.contactNo = contactNo;
-	}
+	
+	
 }

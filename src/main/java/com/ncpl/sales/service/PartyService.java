@@ -3,14 +3,12 @@ package com.ncpl.sales.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.ncpl.sales.model.City;
@@ -20,7 +18,6 @@ import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.model.PartyContact;
 import com.ncpl.sales.model.Type;
 import com.ncpl.sales.repository.PartyRepo;
-import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 @Service
 public class PartyService {
 	@Autowired
@@ -68,23 +65,28 @@ public class PartyService {
 	public List<Party> getPartyList() {
 		List<Party> partyList=partyRepo.findAll();
 		Collections.sort(partyList);
-
+		
 		return partyList;
 	}
 
-	// lightweight id+name list for dropdowns
-	public List<PartyDropdownProjection> getPartyDropdownList() {
-		return partyRepo.findPartyDropdownList();
-	}	 
-
-	// @D0015 lazy-loaded, paginated Party list (see README.md)
-	public Page<Party> getPartyListPage(int page, int size, String keyword) {
-		Page<Party> partyPage = partyRepo.searchByKeyword(keyword == null ? "" : keyword.trim(),
-				PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "partyName")));
-		for (Party party : partyPage.getContent()) {
-			party.setCategory(partyCategoryService.getPartyCategoryCountbyPartyId(party.getId()));
+	// NEW: fast list for the Party List page (one query, only needed columns)
+	public List<Map<String, Object>> getPartyListRows() {
+		List<Object[]> rows = partyRepo.findPartyListRows();
+		List<Map<String, Object>> result = new ArrayList<>(rows.size());
+		for (Object[] r : rows) {
+			Map<String, Object> m = new LinkedHashMap<>();
+			m.put("id", r[0]);
+			m.put("partyName", r[1]);
+			m.put("phone1", r[2]);
+			m.put("website", r[3]);
+			m.put("remarks", r[4]);
+			m.put("type", r[5]);
+			m.put("city", r[6]);
+			m.put("state", r[7]);
+			m.put("country", r[8]);
+			result.add(m);
 		}
-		return partyPage;
+		return result;
 	}
 	
 	public Party getPartyById(String id) {

@@ -1,14 +1,8 @@
 var dcTable;
 $(document).ready(function(){
 	var archivedPage = (typeof isArchivedPage !== "undefined" && isArchivedPage === true);
-	// How many leading columns are real data (searchable): Dc No, SO, Client, PO, Shipping, Comment, Date.
-	// Action columns (DC download / View / Returnable) and Archive get no search box.
-	var SEARCHABLE_COLS = 7;
 	$('#dcList thead tr').clone(true).appendTo( '#dcList thead' );
 	    $('#dcList thead tr:eq(1) th').each( function (i) {
-	        if (i >= SEARCHABLE_COLS) {
-	            return;
-	        }
 	        var title = $(this).text();
 	        $(this).html( '<input type="text" style="width:100%;" placeholder="Search '+title+'" />' );
 	        $( 'input', this ).on( 'keyup change', function () {
@@ -43,10 +37,8 @@ $(document).ready(function(){
 	    		var clientNameFilter = ($('#dcList thead tr:eq(1) th:eq(2) input').val() || '').trim();
 	    		var clientPoFilter = ($('#dcList thead tr:eq(1) th:eq(3) input').val() || '').trim();
 	    		var shippingFilter = ($('#dcList thead tr:eq(1) th:eq(4) input').val() || '').trim();
-	    		var commentFilter = ($('#dcList thead tr:eq(1) th:eq(5) input').val() || '').trim();
-	    		var dateFilter = ($('#dcList thead tr:eq(1) th:eq(6) input').val() || '').trim();
 	    		// If any column filter is active, suppress global keyword to leverage advanced search on backend
-	    		if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter || commentFilter || dateFilter) {
+	    		if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter) {
 	    			keyword = "";
 	    		}
 	    		$.ajax({
@@ -63,9 +55,7 @@ $(document).ready(function(){
 	    				soNumber: soFilter,
 	    				clientName: clientNameFilter,
 	    				clientPo: clientPoFilter,
-	    				shipping: shippingFilter,
-	    				comment: commentFilter,
-	    				date: dateFilter
+	    				shipping: shippingFilter
 	    			},
 	    			success: function(resp){
 	    				callback({
@@ -104,9 +94,6 @@ $(document).ready(function(){
 				"defaultContent":"",
 				"class": "text-field-large-nowrap",
 	    		render: function ( data, type, row ) {
-	    			if(data==undefined || data==null || data==""){
-	    				return "";
-	    			}
 	    		    return data.length > 35 ?
 	    		    		data.substr( 0, 35 ) +'...' :
 	    		    			data;
@@ -164,7 +151,7 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' class='btn btn-default btn-flat btn-xs generateDc' ><i class='fa fa-fw fa-download'></i> Download DC</button>";
+					return "<button type='button' class='btn btn-default btn-flat btn-xs generateDc' ><i class='fa fa-fw fa-download'></i> Download DC</button>";				
 				}
 			},
 			{
@@ -172,40 +159,49 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";
+					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";;				
 				}
 			},
-			
+			{
+				"mData" : "dcId"	,
+				render : function(datam, type, row) {
+					var url = null;
+					url ="/ncpl-sales/returnable/"+row.dcId;
+					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";				
+				}
+			}
+			,
 			{
 				"mData" : "archive"	,
-				"visible": archivedPage,
 				render : function(datam, type, row) {
 					var archive;
 					if(role=="SUPER ADMIN"){
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
 						}
 					}else{
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
 						}
 					}
-
+					
 				}
 			}
 			]
 	    });
-	    //on single click of Dc No. link navigate to view page
-	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
-	 	   e.preventDefault();
-	 	   var data = dcTable.row($(this).closest('tr')).data();
-	 	   var dcId = data.dcId;
-	 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
-	 	});
+	    
+	   
+	  //on single click of Dc No. link navigate to view page
+$('#dcList tbody').on('click', 'a.dcLink', function (e) {
+   e.preventDefault();
+   var data = dcTable.row($(this).closest('tr')).data();
+   var dcId = data.dcId;
+   window.location = pageContext+"/api/dc/view?dcId="+dcId;
+});
 	    $('#dcList tbody').on('click', ".generateDc",function () {
 	    	$("#dcExcelDropdown").val("").trigger("change");
 	    	 var dcId = $(this).closest("tr").find("td:eq(0)").text();
@@ -219,7 +215,7 @@ $(document).ready(function(){
 		 	    async: 'false',
 		 	    success  : function(response){
 		 	    	  $("#dcPartialItemsModal").modal({backdrop: 'static',
-							keyboard: false})
+								keyboard: false})
 		 	    	 $("#dcPartialItemsTable tbody").empty();
 		 				var arrayCount=0;
 		 				itemsList = response;
@@ -237,9 +233,10 @@ $(document).ready(function(){
 		 					$("#dcPartialItemsTable tbody").append(dcItems);
 		 		    		arrayCount++;
 		 		    		slno++;
-
+		 				
+		 			
 		 	    	});
-
+		 			
 		 	    },
 		 		complete:function(resp){
 		 			if(resp.status==500){
@@ -248,11 +245,11 @@ $(document).ready(function(){
 		 		},
 		 		error : function(e) {
 		 			console.log(e);
-		 		}
-		 	  });
-
+		 		} 
+		 	  }); 
+		 	  
 		 	});
-
+	    
 })
 
 $(document).on("click","#dcPartialItemsBtn",function(){
@@ -297,10 +294,10 @@ $(document).on("click",".dcView",function(){
 					$("#dcViewModalTable tbody").append(dcItems);
 		    		arrayCount++;
 		    		slno++;
-
-
+				
+			
 	    	});
-
+				
 				$("#dcViewBtn").on("click",function(){
 				 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
 				})
@@ -312,9 +309,9 @@ $(document).on("click",".dcView",function(){
 		},
 		error : function(e) {
 			console.log(e);
-		}
-	  });
-
+		} 
+	  }); 
+	
 });
 
 $(document).on("click","#generateDcExcelBtn",function(){
@@ -344,7 +341,7 @@ $(document).on('click',".archiveCheckbox",function(){
 			callback: function (result) {
 				result ? archiveDC(dcNum):window.location.reload();;
 			}
-		});
+		});	
 	}else{
 		bootbox.confirm({
 			message: "Do you want to remove this DC from archive?",
@@ -359,19 +356,19 @@ $(document).on('click',".archiveCheckbox",function(){
 			callback: function (result) {
 				result ? unArchiveDC(dcNum):window.location.reload();;
 			}
-		});
+		});	
 	}
 });
 function archiveDC(dcNum){
 	//window.location.href = pageContext+"/api/update_so_archive?soId="+soId;
 	//window.location=pageContext+"/salesList";
 	$.ajax({
-		type : "POST",
+		type : "POST",  
 		url : api.UPDATE_DC_ARCHIVE +"?dcNum="+dcNum,
 		success : function(response) {
 				window.location.reload();
-
-		},
+			
+		},  
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -379,18 +376,18 @@ function archiveDC(dcNum){
 		},
 		error : function(e) {
 			console.log(e);
-		}
+		}  
 	});
 }
 
 function unArchiveDC(dcNum){
 	$.ajax({
-		type : "POST",
+		type : "POST",  
 		url : api.UPDATE_DC_UNARCHIVE +"?dcNum="+dcNum,
 		success : function(response) {
 				window.location.reload();
-
-		},
+			
+		},  
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -398,6 +395,6 @@ function unArchiveDC(dcNum){
 		},
 		error : function(e) {
 			console.log(e);
-		}
+		}  
 	});
 }

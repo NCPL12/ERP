@@ -4,8 +4,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
-<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
-<security:authorize access="hasAuthority('GRN_EDIT')" var="canEditGrn" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,8 +15,6 @@
  <script>
 var role = ${role};
 var pageContext = '${pageContext.request.contextPath}';
-var isArchivedPage = false;
-var canEditGrn = ${canEditGrn};
 </script> 
 
 <style>
@@ -41,7 +37,7 @@ var itemList=${itemList};
 </script>
 </head>
 <body>
-<body class="hold-transition sidebar-mini layout-fixed">
+<body class="hold-transition sidebar-mini">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
@@ -63,6 +59,7 @@ var itemList=${itemList};
 							<th width="5%">Total</th>
 							<th width="3%">View</th>
 							<th width="3%">GRN</th>
+							<th width="3%">Archive</th>
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">
