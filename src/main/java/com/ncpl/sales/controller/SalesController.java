@@ -1669,7 +1669,21 @@ public class SalesController {
     @GetMapping("/po_list/tally/sync-status")
     @org.springframework.web.bind.annotation.ResponseBody
     @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
-    public com.ncpl.sales.service.TallyPurchaseOrderAutoSync tallyPoSyncStatus() { return tallyPoAutoSync; }
+    public Map<String,Object> tallyPoSyncStatus() {
+        // Return a plain map, NOT the TallyPurchaseOrderAutoSync bean.
+        // The bean is a CGLIB proxy (the class is @Transactional/@Scheduled), so returning it
+        // forced Jackson to serialise Spring's AOP internals (advisors -> TransactionInterceptor
+        // -> AnnotationTransactionAttributeSource) and fail with a 500:
+        //   InvalidDefinitionException: No serializer found for class ...AnnotationTransactionAttributeSource
+        // This map exposes only what the Sales Reports page reads (salesReport.jsp:698-700).
+        Map<String,Object> status = new HashMap<>();
+        status.put("enabled", tallyPoAutoSync.isEnabled());
+        status.put("running", tallyPoAutoSync.isRunning());
+        status.put("lastCompleted", tallyPoAutoSync.getLastCompleted());
+        status.put("lastError", tallyPoAutoSync.getLastError());
+        status.put("lastResult", tallyPoAutoSync.getLastResult());
+        return status;
+    }
 
 	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
 	@GetMapping("/po_list/tally/progress")
