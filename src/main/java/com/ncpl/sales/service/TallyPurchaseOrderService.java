@@ -66,15 +66,21 @@ public class TallyPurchaseOrderService {
 
     @Value("${cashflow.tally.default-stock-group:Billable Materials}")
     private String defaultStockGroup;
+    @Value("${tally.po.sync.time-zone:Asia/Kolkata}") private String timeZone = "Asia/Kolkata";
+    @Value("${tally.po.sync.request-timeout-ms:60000}") private int requestTimeoutMs = 60000;
+    @Value("${tally.po.sync.unit-mappings:}") private String unitMappings = "";
+    private final ThreadLocal<Integer> connectionCheckTimeout = new ThreadLocal<>();
 
     public TallyPurchaseOrderService(ItemMasterService itemMasterService) {
         this.itemMasterService = itemMasterService;
     }
 
     public Options loadOptions() throws Exception {
-        MasterSnapshot snapshot = loadMasterSnapshot(false);
-        return new Options(serverUrl, blank(companyName) ? "Company currently open in Tally" : companyName,
-                snapshot.purchaseLedgers);
+        connectionCheckTimeout.set(Math.min(requestTimeoutMs, 5000));
+        try {
+            MasterSnapshot snapshot = loadMasterSnapshot(false);
+            return new Options(serverUrl, blank(companyName) ? "Company currently open in Tally" : companyName, snapshot.purchaseLedgers);
+        } finally { connectionCheckTimeout.remove(); }
     }
 
     public ExportResult exportAllPending(List<PurchaseOrder> purchaseOrders) throws Exception {
@@ -263,8 +269,8 @@ public class TallyPurchaseOrderService {
                         if ((response.created > 0 || response.altered > 0)
                                 && response.errors == 0 && response.exceptions == 0) {
                             snapshot.ledgerNames.put(partyKey, order.getParty().getPartyName().trim());
-                        }
-                    } catch (Exception ignored) { }
+                        } else { snapshot.masterErrors.put("LEDGER:" + partyKey, "Tally rejected vendor ledger: " + firstNonBlank(response.lineError, "errors=" + response.errors + ", exceptions=" + response.exceptions)); }
+                    } catch (Exception error) { snapshot.masterErrors.put("LEDGER:" + partyKey, error.getMessage()); }
                 }
             }
             if (order.getItems() == null) continue;
@@ -287,10 +293,13 @@ public class TallyPurchaseOrderService {
                     log.warn("Unable to resolve Tally stock item alias {}", tallyName, error);
                 }
                 String unit = itemMaster.getItem_units() == null ? "" : trim(itemMaster.getItem_units().getName());
-                String tallyUnit = resolveTallyUnit(unit, snapshot);
+                String tallyUnit;
+                try { tallyUnit = resolveTallyUnit(unit, snapshot); }
+                catch (IllegalArgumentException error) { snapshot.masterErrors.put(itemKey, error.getMessage()); continue; }
                 if (blank(tallyUnit)) {
                     log.warn("Cannot create Tally stock item {} because ERP unit '{}' has no Tally equivalent",
                             tallyName, unit);
+                    snapshot.masterErrors.put(itemKey, "ERP unit '" + unit + "' has no matching Tally unit for '" + tallyName + "'. Create the equivalent unit in Tally or configure tally.po.sync.unit-mappings. No quantity conversion was applied.");
                     continue;
                 }
                 try {
@@ -301,11 +310,13 @@ public class TallyPurchaseOrderService {
                             && response.errors == 0 && response.exceptions == 0) {
                         snapshot.stockItems.put(itemKey, new TallyStockItem(tallyName, tallyUnit));
                     } else {
+                        snapshot.masterErrors.put(itemKey, "Tally rejected stock item '" + tallyName + "': " + firstNonBlank(response.lineError, "created=" + response.created + ", altered=" + response.altered + ", errors=" + response.errors + ", exceptions=" + response.exceptions));
                         log.warn("Tally rejected stock item master {}: {}", tallyName, responseXml);
                         TallyStockItem recovered = loadStockItemObject(tallyName);
                         if (recovered != null) snapshot.stockItems.put(itemKey, recovered);
                     }
                 } catch (Exception error) {
+                    snapshot.masterErrors.putIfAbsent(itemKey, "Unable to create stock item '" + tallyName + "': " + error.getMessage());
                     log.warn("Unable to create Tally stock item master {}", tallyName, error);
                 }
             }
@@ -313,14 +324,23 @@ public class TallyPurchaseOrderService {
     }
 
     private String resolveTallyUnit(String erpUnit, MasterSnapshot snapshot) {
+        for (String mapping : unitMappings.split(";")) {
+            String[] parts = mapping.split("=", 2);
+            if (parts.length == 2 && normalize(parts[0]).equals(normalize(erpUnit))) {
+                String mapped = snapshot.unitNames.get(normalize(parts[1]));
+                if (blank(mapped)) throw new IllegalArgumentException("Configured Tally unit '" + parts[1].trim() + "' does not exist for ERP unit '" + erpUnit + "'.");
+                return mapped;
+            }
+        }
         String exact = snapshot.unitNames.get(normalize(erpUnit));
         if (!blank(exact)) return exact;
         String key = normalize(erpUnit).replaceAll("[^A-Z0-9]", "");
         String[] numberAliases = { "NO", "NOS", "NUMBER", "NUMBERS", "PCS", "PC", "PIECE", "PIECES", "EACH" };
         for (String alias : numberAliases) {
             if (key.equals(alias)) {
-                String nos = snapshot.unitNames.get(normalize("Nos"));
-                if (!blank(nos)) return nos;
+                for (String available : snapshot.unitNames.values()) {
+                    if (java.util.Arrays.asList(numberAliases).contains(normalize(available).replaceAll("[^A-Z0-9]", ""))) return available;
+                }
             }
         }
         String[][] equivalentUnits = {
@@ -335,7 +355,7 @@ public class TallyPurchaseOrderService {
                 if (java.util.Arrays.asList(equivalents).contains(availableKey)) return available;
             }
         }
-        if (key.startsWith("PKT") || key.startsWith("PACK") || key.startsWith("PACKET")) {
+        if (java.util.Arrays.asList("PKT", "PKTS", "PACK", "PACKS", "PACKET", "PACKETS").contains(key)) {
             String packet = snapshot.unitNames.get(normalize("Pkt"));
             if (!blank(packet)) return packet;
         }
@@ -414,7 +434,7 @@ public class TallyPurchaseOrderService {
         }
         String party = snapshot.ledgerNames.get(normalize(order.getParty().getPartyName()));
         if (party == null) {
-            throw new IllegalArgumentException("Vendor ledger not found in Tally: " + order.getParty().getPartyName());
+            throw new IllegalArgumentException(firstNonBlank(snapshot.masterErrors.get("LEDGER:" + normalize(order.getParty().getPartyName())), "Vendor ledger not found in Tally: " + order.getParty().getPartyName()));
         }
         if (order.getItems() == null || order.getItems().isEmpty()) {
             throw new IllegalArgumentException("PO has no items.");
@@ -442,7 +462,8 @@ public class TallyPurchaseOrderService {
             TallyStockItem tallyItem = firstStockItem(snapshot,
                     itemMaster.getModel(), itemMaster.getItemName(), item.getModelNo());
             if (tallyItem == null) {
-                throw new IllegalArgumentException("Stock item not found in Tally: " + firstNonBlank(itemMaster.getModel(), itemMaster.getItemName()));
+                String name = firstNonBlank(itemMaster.getModel(), itemMaster.getItemName());
+                throw new IllegalArgumentException(firstNonBlank(snapshot.masterErrors.get(normalize(name)), "Stock item not found in Tally: " + name));
             }
             if (blank(tallyItem.unit)) {
                 throw new IllegalArgumentException("Tally stock item has no base unit: " + tallyItem.name);
@@ -658,7 +679,7 @@ public class TallyPurchaseOrderService {
     private String buildPurchaseOrdersRequest() {
         return "<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Export</TALLYREQUEST>"
                 + "<TYPE>Collection</TYPE><ID>ErpExistingPurchaseOrders</ID></HEADER><BODY><DESC><STATICVARIABLES>"
-                + "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT><SVFROMDATE TYPE=\"Date\">1-Jan-2020</SVFROMDATE><SVTODATE TYPE=\"Date\">" + LocalDate.now().plusYears(1).format(TALLY_IDENTIFIER_DATE) + "</SVTODATE>" + companyVariable()
+                + "<SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT><SVFROMDATE TYPE=\"Date\">1-Jan-2020</SVFROMDATE><SVTODATE TYPE=\"Date\">" + LocalDate.now(ZoneId.of(timeZone)).plusYears(1).format(TALLY_IDENTIFIER_DATE) + "</SVTODATE>" + companyVariable()
                 + "</STATICVARIABLES><TDL><TDLMESSAGE><COLLECTION NAME=\"ErpExistingPurchaseOrders\" ISMODIFY=\"No\">"
                 + "<TYPE>Voucher</TYPE><FILTER>ErpIsPurchaseOrder</FILTER>"
                 + "<FETCH>VoucherNumber,Date,Narration,GUID,MasterID,AlterID</FETCH></COLLECTION>"
@@ -900,7 +921,16 @@ public class TallyPurchaseOrderService {
         Document document = parseXml(responseXml);
         return new ImportResponse(integerText(document, "CREATED"), integerText(document, "ALTERED"),
                 integerText(document, "ERRORS"), integerText(document, "EXCEPTIONS"), integerText(document, "IGNORED"),
-                firstText(document.getDocumentElement(), "LINEERROR"));
+                importErrors(document));
+    }
+
+    private String importErrors(Document document) {
+        java.util.Set<String> errors = new java.util.LinkedHashSet<>();
+        for (String tag : new String[]{"LINEERROR", "ERROR"}) {
+            NodeList nodes = document.getElementsByTagName(tag);
+            for(int i=0; i<nodes.getLength(); i++) if(!blank(nodes.item(i).getTextContent())) errors.add(nodes.item(i).getTextContent().trim());
+        }
+        return String.join("; ", errors);
     }
 
     private int integerText(Document document, String tag) {
@@ -913,9 +943,14 @@ public class TallyPurchaseOrderService {
     }
 
     private String post(String xml) throws Exception {
+        int timeout = connectionCheckTimeout.get() == null ? requestTimeoutMs : connectionCheckTimeout.get();
+        return TallyRequestDeadline.call(() -> postConnection(xml, timeout), timeout);
+    }
+
+    private String postConnection(String xml, int timeout) throws Exception {
         HttpURLConnection connection = (HttpURLConnection) new URL(serverUrl).openConnection();
         connection.setConnectTimeout(4000);
-        connection.setReadTimeout(60000);
+        connection.setReadTimeout(timeout);
         connection.setRequestMethod("POST");
         boolean unicodeResponse = !xml.contains("<TALLYREQUEST>Import");
         connection.setRequestProperty("Content-Type", unicodeResponse ? "UTF-16" : "text/xml; charset=utf-8");
@@ -1027,7 +1062,9 @@ public class TallyPurchaseOrderService {
     private static BigDecimal decimal(double value) { return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP); }
     private static String money(BigDecimal value) { return value.setScale(2, RoundingMode.HALF_UP).toPlainString(); }
     private static String quantity(BigDecimal value) { return value.stripTrailingZeros().toPlainString(); }
-    private static LocalDate toLocalDate(Date date) { return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(); }
+    public java.util.TimeZone getBusinessTimeZone() { return java.util.TimeZone.getTimeZone(ZoneId.of(timeZone)); }
+
+    LocalDate toLocalDate(Date date) { return java.time.Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.of(timeZone)).toLocalDate(); }
     private static String safeMessage(Exception error) {
         return error == null || blank(error.getMessage()) ? "Unable to communicate with Tally." : error.getMessage();
     }
@@ -1038,6 +1075,7 @@ public class TallyPurchaseOrderService {
         private final List<String> purchaseLedgers;
         private final Map<String, TallyStockItem> stockItems;
         private final Map<String, String> unitNames;
+        private final Map<String,String> masterErrors = new HashMap<>();
         private final Map<String, ExistingVoucher> purchaseOrders;
         private MasterSnapshot(Map<String, String> ledgerNames, Set<String> purchaseLedgerKeys,
                                List<String> purchaseLedgers, Map<String, TallyStockItem> stockItems,

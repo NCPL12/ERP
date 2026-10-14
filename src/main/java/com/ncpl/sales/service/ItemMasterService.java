@@ -81,6 +81,17 @@ public class ItemMasterService {
 	PurchaseItemService purchaseItemService;
 										 
 
+    public List<Map<String,Object>> getPoLookupItems() {
+        List<Map<String,Object>> result = new ArrayList<>();
+        for (Map<String,Object> source : itemMasterRepo.findPoLookupItems()) {
+            Map<String,Object> row = new HashMap<>(source);
+            Map<String,Object> unit = new HashMap<>();
+            unit.put("name", row.remove("unitName")); unit.put("id", row.remove("unitId"));
+            row.put("item_units", unit); result.add(row);
+        }
+        return result;
+    }
+
 	public List<ItemMaster> getItemList() {
 		List<ItemMaster> itemList = itemMasterRepo.findAll();
 		//trimSpacesFromModelNo();

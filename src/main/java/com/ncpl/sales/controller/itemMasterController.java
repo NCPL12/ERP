@@ -272,12 +272,8 @@ public class itemMasterController {
 				model.addAttribute("clientList", mapper.writeValueAsString(customerpartyList));
 				model.addAttribute("vendorList", mapper.writeValueAsString(partyList));
 				model.addAttribute("pageHeader", "Sales Reports");
-				try {
-					TallyPurchaseOrderService.Options tallyOptions = tallyPurchaseOrderService.loadOptions();
-					model.addAttribute("tallyCompanyName", tallyOptions.getCompany());
-				} catch (Exception e) {
-					model.addAttribute("tallyOptionsError", "Tally is unavailable. Open Tally and the required company, then click Check Tally.");
-				}
+                // Tally availability is fetched asynchronously after this page loads.
+
 				
 				return "salesReport";
 			}

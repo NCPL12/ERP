@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 
 
-<script src="<c:url value="/resources/js/purchaseOrder.js" />"></script>
+<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261014-po-lookup" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 <script type="text/javascript">

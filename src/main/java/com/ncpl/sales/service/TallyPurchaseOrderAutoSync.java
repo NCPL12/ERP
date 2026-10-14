@@ -20,6 +20,7 @@ public class TallyPurchaseOrderAutoSync {
     private final TallyPurchaseOrderService exporter;
     @Value("${tally.po.sync.enabled:false}") private boolean enabled;
     @Value("${tally.po.sync.from-date:}") private String fromDate = "";
+    @Value("${tally.po.sync.time-zone:Asia/Kolkata}") private String timeZone = "Asia/Kolkata";
     @Value("${tally.po.sync.include-previously-exported:false}") private boolean includePreviouslyExported;
     private volatile TallyPurchaseOrderService.ExportResult lastResult;
     private volatile LocalDateTime lastCompleted;
@@ -38,13 +39,13 @@ public class TallyPurchaseOrderAutoSync {
             java.util.Set<String> previous = includePreviouslyExported ? exporter.previouslyExportedNumbers() : java.util.Collections.emptySet();
             List<PurchaseOrder> orders = purchaseRepo.findAllPO().stream()
                     .filter(po -> previous.contains(po.getPoNumber()) || (po.getCreated() != null && !java.time.Instant.ofEpochMilli(po.getCreated().getTime())
-                            .atZone(java.time.ZoneId.of("Asia/Kolkata")).toLocalDate().isBefore(startingDate)))
+                            .atZone(java.time.ZoneId.of(timeZone)).toLocalDate().isBefore(startingDate)))
                     .filter(po -> po.getPoNumber() != null && !po.getPoNumber().startsWith("CODEX-")
                             && !po.getPoNumber().startsWith("ERP-PO-TEST")
                             && !po.getPoNumber().startsWith("ERP-PO-VERIFY"))
                     .collect(Collectors.toList());
             lastResult = exporter.exportChangedOrders(orders);
-            lastCompleted = LocalDateTime.now(); lastError = null;
+            lastCompleted = LocalDateTime.now(java.time.ZoneId.of(timeZone)); lastError = null;
             log.info("Automatic Tally PO sync: total={}, exported={}, unchanged/skipped={}, failed={}",
                     lastResult.getTotal(), lastResult.getImported(), lastResult.getSkipped(), lastResult.getFailed());
             for (TallyPurchaseOrderService.ExportLine line : lastResult.getRecords())
@@ -54,6 +55,12 @@ public class TallyPurchaseOrderAutoSync {
             log.warn("Automatic Tally PO sync could not complete; will retry next cycle: {}", lastError);
         }
     }
+    public String getConfigurationError() {
+        if (!enabled) return null;
+        try { java.time.LocalDate.parse(fromDate.trim()); java.time.ZoneId.of(timeZone); return null; }
+        catch (Exception error) { return "Automatic PO sync needs tally.po.sync.from-date (yyyy-MM-dd) and a valid tally.po.sync.time-zone."; }
+    }
+    public boolean isConfigured() { return getConfigurationError() == null; }
     public boolean isEnabled() { return enabled; }
     public boolean isRunning() { return exporter.isExportRunning(); }
     public TallyPurchaseOrderService.ExportResult getLastResult() { return lastResult; }

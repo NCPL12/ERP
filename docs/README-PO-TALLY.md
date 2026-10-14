@@ -128,3 +128,30 @@ mvn "-Dtest=TallyPurchaseOrderServiceTest,TallyPurchaseOrderAutoSyncTest" test
 ```
 
 Build a clean WAR with `mvn clean package`. Automated tests are not live Finance acceptance. Validate the target database/company/date scope before enabling scheduled jobs. Back up application/configuration and data before deployment. Restore the prior application through the team process for rollback; restoring ERP does not undo Tally imports.
+
+
+### Developer issue fixes (14 October 2026)
+
+PO date conversion, automatic date scope and the PO List By Date range use one business timezone, independent of the server default. Set it once for this deployment:
+
+```properties
+tally.po.sync.time-zone=Asia/Kolkata
+tally.po.sync.request-timeout-ms=60000
+tally.po.sync.unit-mappings=Pieces=Nos;Meters=Mtr
+```
+
+The mapping example is illustrative: replace it with Finance-approved one-to-one aliases to units that actually exist in the destination Tally company. Exact matches and standard singular/plural aliases are supported. Unknown units produce a per-PO error naming the ERP unit and corrective configuration, rather than a misleading missing-stock-item error. Unit mappings do not convert quantities or pack sizes. A unit such as “Pack of 10” is never silently mapped by its prefix. Create the correct equivalent unit in Tally first or configure an approved mapping.
+
+Sales Reports no longer waits for Tally while generating the page. The connection check runs asynchronously and Check Tally updates only its status and Send button, preserving entered dates. Offline/error results disable Send; retry Check Tally after correcting connectivity. Each connection check request is capped at five seconds (two requests can be required); normal import requests use the configured overall caller deadline. Blocked request workers are bounded so retries cannot accumulate unlimited threads. A timeout does not establish that Tally applied no changes: verify the results before retrying. Existing voucher checks/checkpoints remain in place.
+
+Automatic sync shows disabled, running, invalid starting-date/timezone and failed-run states. Status-endpoint failures are visible. Tally master rejection messages retain the actual LINEERROR/ERROR text. The shared sync lock, archived-PO exclusion, corrected state-file location and plain-map status endpoint from the other developers are preserved.
+
+PO create/edit dropdowns use one scalar query rather than full item entities. All 8,466 local items were retained; the measured item payload decreased from 3,473,865 to 1,474,012 characters and database statements from 14 to 1. These are lookup measurements, not an end-to-end page timing guarantee. Description autocomplete starts after two characters and limits each result list to 50; refine the search to locate further matches.
+
+Rebuild/redeploy and restart ERP for these changes. No database schema migration is needed. Configure environment values before enabling unattended sync. Test against the actual office company/units using a small approved PO scope before bulk export.
+
+Regression tests:
+```text
+mvn test
+node src/test/js/po-tally-refresh.test.cjs
+```

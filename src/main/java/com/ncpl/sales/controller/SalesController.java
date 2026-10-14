@@ -1678,6 +1678,8 @@ public class SalesController {
         // This map exposes only what the Sales Reports page reads (salesReport.jsp:698-700).
         Map<String,Object> status = new HashMap<>();
         status.put("enabled", tallyPoAutoSync.isEnabled());
+        status.put("configured", tallyPoAutoSync.isConfigured());
+        status.put("configurationError", tallyPoAutoSync.getConfigurationError());
         status.put("running", tallyPoAutoSync.isRunning());
         status.put("lastCompleted", tallyPoAutoSync.getLastCompleted());
         status.put("lastError", tallyPoAutoSync.getLastError());
@@ -1711,16 +1713,18 @@ public class SalesController {
 			throws ParseException {
 		SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
 		format.setLenient(false);
+        format.setTimeZone(tallyPurchaseOrderService.getBusinessTimeZone());
 		Date fromDate = format.parse(fromDateString.replace('/', '-'));
 		Date toDate = format.parse(toDateString.replace('/', '-'));
 		if (fromDate.after(toDate)) {
 			throw new IllegalArgumentException("From date cannot be after To date.");
 		}
-		Calendar end = Calendar.getInstance();
+		Calendar end = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
 		end.setTime(toDate);
 		end.set(Calendar.HOUR_OF_DAY, 23);
 		end.set(Calendar.MINUTE, 59);
 		end.set(Calendar.SECOND, 59);
+        end.set(Calendar.MILLISECOND, 999);
 		return purchaseOrderService.getPurchaseOrderListByDate(
 				convertDate.convertJavaDateToSqlDate(fromDate),
 				convertDate.convertJavaDateToSqlDate(end.getTime()));
@@ -2026,6 +2030,8 @@ public class SalesController {
 			String todateString = request.getParameter("poListByToDate");
 			todateString = todateString.replaceAll("/", "-");
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            sdf.setLenient(false);
+            sdf.setTimeZone(tallyPurchaseOrderService.getBusinessTimeZone());
 			Date todaysDate = null;
 			Date fromDate = null;
 			// Parsing date
@@ -2036,8 +2042,8 @@ public class SalesController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Calendar c = Calendar.getInstance();
-			Calendar c1 = Calendar.getInstance();
+			Calendar c = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
+			Calendar c1 = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
 			c.setTime(todaysDate);
 			c1.setTime(fromDate);
 			// c.add(Calendar.DATE, 0);
@@ -2046,6 +2052,8 @@ public class SalesController {
 			fromDate = c1.getTime();
 			c.add(Calendar.HOUR_OF_DAY, +23);
 			c.add(Calendar.MINUTE, 59);
+            c.set(Calendar.SECOND, 59);
+            c.set(Calendar.MILLISECOND, 999);
 			todaysDate = c.getTime();
 			Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(todaysDate);
 			Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDate);

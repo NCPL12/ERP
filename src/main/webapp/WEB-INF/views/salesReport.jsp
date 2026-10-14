@@ -442,10 +442,10 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 								   </div>
 								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p>
                                    <p class="text-muted mb-2">Tally purchase and GST ledgers are selected automatically from each ERP PO and item master.</p>
-								   <small id="tallyPoConnectionStatus" class="form-text ${empty tallyOptionsError ? 'text-success' : 'text-danger'}"><c:choose><c:when test="${not empty tallyOptionsError}"><c:out value="${tallyOptionsError}" /></c:when><c:otherwise><i class="fa fa-check-circle"></i> <c:out value="${tallyCompanyName}" /> is ready</c:otherwise></c:choose></small>
+								   <small id="tallyPoConnectionStatus" class="form-text text-info">Checking Tally connection...</small>
 								 </div>
 								 <div class="card-footer d-flex justify-content-end" style="gap: 6px;">
-								  <a href="${pageContext.request.contextPath}/sales_report" class="btn btn-default btn-sm"><i class='fa fa-fw fa-refresh'></i> Check Tally</a>
+								  <button type="button" id="checkTallyPo" class="btn btn-default btn-sm"><i class="fa fa-fw fa-refresh"></i> Check Tally</button>
 								  <button type="submit" formaction="${pageContext.request.contextPath}/po_list/tally/import" formmethod="post" class="btn btn-success btn-sm" ${not empty tallyOptionsError ? 'disabled' : ''}><i class='fa fa-fw fa-exchange'></i> Send to Tally</button>
 								  <button type="submit" class="btn btn-primary btn-sm"><i class='fa fa-fw fa-download'></i> Download</button>
 								 </div>
@@ -691,15 +691,31 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			</div></div>
 		</div>
     <script>
+    function refreshPoTallyConnection() {
+        var button = document.getElementById('checkTallyPo');
+        var label = document.getElementById('tallyPoConnectionStatus');
+        var send = document.querySelector('button[formaction$="/po_list/tally/import"]');
+        button.disabled = true; send.disabled = true; label.textContent = 'Checking Tally connection...';
+        var abort = new AbortController();
+        var timer = setTimeout(function() { abort.abort(); }, 15000);
+        fetch('${pageContext.request.contextPath}/po_list/tally/options', {credentials:'same-origin',signal:abort.signal})
+        .then(function(response) { return response.json().then(function(data) { if (!response.ok) throw new Error(data.message || 'Tally unavailable'); return data; }); })
+        .then(function(data) { label.textContent = data.company + ' is ready'; label.className = 'form-text text-success'; send.disabled = document.getElementById('poLostByDateForm').dataset.exportRunning === 'true'; })
+        .catch(function(error) { label.textContent = error.name === 'AbortError' ? 'Tally connection timed out. Check Tally and the server address.' : error.message; label.className = 'form-text text-danger'; send.disabled = true; })
+        .finally(function() { clearTimeout(timer); button.disabled = false; });
+    }
+    document.getElementById('checkTallyPo').addEventListener('click', refreshPoTallyConnection);
+    refreshPoTallyConnection();
     function refreshPoAutoSyncStatus() {
         fetch('${pageContext.request.contextPath}/po_list/tally/sync-status', {credentials:'same-origin'})
         .then(function(response) { if (!response.ok) throw new Error('Status unavailable'); return response.json(); })
         .then(function(status) {
-            var message = !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync checks every 5 minutes.';
+            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync checks every 5 minutes.';
             if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
             if (status.lastError) message += ' ' + status.lastError;
             document.getElementById('tallyPoAutoSyncStatus').textContent = message;
-        }).catch(function() {});
+            document.getElementById('tallyPoAutoSyncStatus').className = status.configurationError || status.lastError || (status.lastResult && status.lastResult.failed) ? 'text-danger mb-2' : 'text-info mb-2';
+        }).catch(function() { var label = document.getElementById('tallyPoAutoSyncStatus'); label.textContent = 'Automatic PO sync status is unavailable. Check ERP logs or retry.'; label.className = 'text-danger mb-2'; });
     }
     refreshPoAutoSyncStatus();
     setInterval(refreshPoAutoSyncStatus, 15000);
