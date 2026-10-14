@@ -42,23 +42,44 @@ text-align: center;
 
 .faderv2 {
 	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
 	width: 100%;
-	height: 150%;
-	background: rgba(255, 255, 255, 0.85);
+	height: 100%;
+	background: rgba(0, 0, 0, 0.45);
 	z-index: 999999;
 	display: none;
-	top: 0;
 }
 
 .loaderv2 {
-	background-color: rgba(255, 255, 255, 0);
-	padding: 15px;
-	position: absolute;
-	top: 200px;
-	left: 45%;
-	border: 3px solid rgba(255, 255, 255, 0);
-	z-index: 999999;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+	padding: 18px;
+	text-align: center;
+	z-index: 1000000;
 	display: none;
+}
+
+.loaderv2 .spinner {
+	width: 36px;
+	height: 36px;
+	border: 3px solid rgba(0, 0, 0, 0.15);
+	border-top-color: #007bff;
+	border-radius: 50%;
+	animation: loader-spin 0.8s linear infinite;
+}
+
+@keyframes loader-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .loaderv2-message {
@@ -137,11 +158,18 @@ text-align: center;
 .clientNamePos{
 	top:15px!important;
 }
-.loaderWidth{
-	width: 213px!important;
-}
 .marginLeft50{
 	margin-left:50px!important;
+}
+
+/* Delivery Challan client/PO value text (used inside the DC info card on the page itself —
+   see deliveryChallan.jsp's .dc-field-value). */
+.dc-header-value{
+	color: #212529;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
 }
 
 /* Top-level sidebar section headers (Projects, Masters, Sales, Purchase, Reporting, Charts, Archived Data)
@@ -199,4 +227,59 @@ text-align: center;
 .sidebar-collapse .main-sidebar .nav-sidebar > .nav-item > .nav-link .nav-icon {
 	margin-right: 0 !important;
 	width: auto !important;
+}
+
+/* Professional sidebar column, 240px expanded (AdminLTE default is 250px /
+   4.6rem collapsed). Each state's content offset (content-wrapper/header/footer
+   margin-left) must stay in sync with that state's actual sidebar width, or the
+   sidebar and main content gap/overlap - hence the paired rules below instead
+   of one blanket ".main-sidebar { width }" override. */
+@media (min-width: 768px) {
+	/* Expanded (default) state: 240px */
+	body:not(.sidebar-collapse) .main-sidebar,
+	body:not(.sidebar-collapse) .main-sidebar::before,
+	body.layout-fixed:not(.sidebar-collapse) .brand-link {
+		width: 240px !important;
+	}
+	body.sidebar-mini-md:not(.sidebar-collapse) .content-wrapper,
+	body.sidebar-mini-md:not(.sidebar-collapse) .main-footer,
+	body.sidebar-mini-md:not(.sidebar-collapse) .main-header {
+		margin-left: 240px !important;
+	}
+
+	/* Collapsed (icon-only) state: 70px. ":hover"/".sidebar-focused" are
+	   included so the icon rail doesn't briefly widen before header.jsp's
+	   hover-lock rule (kept in sync at 70px) takes over. */
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar::before,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar:hover,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused {
+		width: 70px !important;
+	}
+	body.sidebar-mini-md.sidebar-collapse.layout-fixed .brand-link,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar:hover .brand-link,
+	body.sidebar-mini-md.sidebar-collapse .main-sidebar.sidebar-focused .brand-link {
+		width: 70px !important;
+	}
+	body.sidebar-mini-md.sidebar-collapse .content-wrapper,
+	body.sidebar-mini-md.sidebar-collapse .main-footer,
+	body.sidebar-mini-md.sidebar-collapse .main-header {
+		margin-left: 70px !important;
+	}
+}
+
+/* Prevent horizontal overflow from the sidebar during the expand/collapse
+   transition (matches AdminLTE's own overflow-x:hidden on the collapsed
+   sidebar itself). */
+.wrapper {
+	overflow-x: hidden;
+}
+
+/* Sidebar stays scrollable but hides the scrollbar track/thumb. */
+.main-sidebar .sidebar {
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE/Edge */
+}
+.main-sidebar .sidebar::-webkit-scrollbar {
+	display: none; /* Chrome/Safari */
 }

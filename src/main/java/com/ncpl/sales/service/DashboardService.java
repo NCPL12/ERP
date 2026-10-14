@@ -1,21 +1,31 @@
 package com.ncpl.sales.service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ncpl.sales.model.DashboardCountDto;
+import com.ncpl.sales.model.DashboardListsDto;
+import com.ncpl.sales.model.Invoice;
+import com.ncpl.sales.model.PurchaseOrder;
+import com.ncpl.sales.model.SalesOrder;
+import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.DashboardAggregateJdbcRepository;
 
 import javax.annotation.PostConstruct;
 
 /**
- * Dashboard counts: in-memory snapshot for fast HTTP; recomputation uses one JDBC
- * round-trip when possible, plus async warmup and periodic refresh (see
- * {@link DashboardCountsRefreshScheduler}).
+ * Dashboard counts + the 7 dashboard list cards: in-memory snapshots for fast HTTP.
+ * Recomputation (including the two N+1-shaped list queries — invoices, TDS approved)
+ * always runs on a background thread (async warmup + periodic refresh, see
+ * {@link DashboardCountsRefreshScheduler}) so a page load is always a cache read.
  */
 @Service
 public class DashboardService {
@@ -24,14 +34,27 @@ public class DashboardService {
 
     @Autowired
     private DashboardAggregateJdbcRepository dashboardAggRepo;
+    @Autowired
+    private SalesService salesService;
+    @Autowired
+    private PurchaseOrderService purchaseOrderService;
+    @Autowired
+    private InvoiceService invoiceService;
+    @Autowired
+    private TdsService tdsService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private volatile DashboardCountDto snapshot;
+    private volatile DashboardListsDto listsSnapshot;
     private final Object snapshotLock = new Object();
+    private final Object listsSnapshotLock = new Object();
 
     @PostConstruct
     public void warmupSnapshotAsync() {
         CompletableFuture.runAsync(this::recomputeSnapshotQuietly);
-    }   
+        CompletableFuture.runAsync(this::recomputeListsSnapshotQuietly);
+    }
 
     /**
      * HTTP entry: returns cached snapshot when available (typically under 1 ms). If the
@@ -51,9 +74,47 @@ public class DashboardService {
         }
     }
 
+    /**
+     * HTTP entry for the 7 dashboard list cards: cache read, same blocking-on-first-call
+     * fallback as {@link #getDashboardCounts()}.
+     */
+    public DashboardListsDto getDashboardLists() {
+        DashboardListsDto s = listsSnapshot;
+        if (s != null) {
+            return s;
+        }
+        synchronized (listsSnapshotLock) {
+            if (listsSnapshot == null) {
+                listsSnapshot = loadLists();
+            }
+            return listsSnapshot;
+        }
+    }
+
+    public boolean isListsReady() {
+        return listsSnapshot != null;
+    }
+
+    public DashboardListsDto getDashboardListsIfReady() {
+        DashboardListsDto lists = listsSnapshot;
+        if (lists != null) {
+            return lists;
+        }
+        lists = new DashboardListsDto();
+        lists.setPendingSalesList(java.util.Collections.emptyList());
+        lists.setPendingPurchaseList(java.util.Collections.emptyList());
+        lists.setInvoiceList(java.util.Collections.emptyList());
+        lists.setAllSalesList(java.util.Collections.emptyList());
+        lists.setTdsApprovedList(java.util.Collections.emptyList());
+        lists.setSalesItemsWithoutDesignList(java.util.Collections.emptyList());
+        lists.setSalesOrderWithDesignList(java.util.Collections.emptyList());
+        return lists;
+    }
+
     /** Invoked by {@link DashboardCountsRefreshScheduler}. */
     public void scheduledRefreshSnapshot() {
         recomputeSnapshotQuietly();
+        recomputeListsSnapshotQuietly();
     }
 
     private void recomputeSnapshotQuietly() {
@@ -70,7 +131,36 @@ public class DashboardService {
         }
     }
 
+    private void recomputeListsSnapshotQuietly() {
+        try {
+            synchronized (listsSnapshotLock) {
+                listsSnapshot = loadLists();
+            }
+        } catch (Exception e) {
+            log.error("Dashboard lists refresh failed", e);
+        }
+    }
+
     private DashboardCountDto loadCounts() {
         return dashboardAggRepo.fetchAllCounts();
+    }
+
+    private DashboardListsDto loadLists() {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setReadOnly(true);
+        return transaction.execute(status -> loadListsInTransaction());
+    }
+
+    private DashboardListsDto loadListsInTransaction() {
+        DashboardListsDto d = new DashboardListsDto();
+        d.setPendingSalesList(salesService.getPendingSalesList());
+        d.setPendingPurchaseList(purchaseOrderService.getPenidngPoList());
+        d.setInvoiceList(invoiceService.getInvoiceList());
+        d.setAllSalesList(salesService.getAllSalesOrderList());
+        d.setTdsApprovedList(tdsService.getTdsItemsListWhereTdsApprovedAndPoNotDone());
+        List<Map<String, Object>> withoutDesign = salesService.getSoWithoutDesignSummaryForDashboard();
+        d.setSalesItemsWithoutDesignList(withoutDesign);
+        d.setSalesOrderWithDesignList(salesService.getAllSalesOrderQithDesignAndPoNotDoneForDashboard());
+        return d;
     }
 }
