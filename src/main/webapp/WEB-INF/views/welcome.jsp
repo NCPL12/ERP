@@ -72,7 +72,6 @@ obj = obj.replace(/\&/g, "\"");
     padding-right: 20px;
 }
 
-<<<<<<< Updated upstream
 * html .ui-autocomplete {
     height: 100px;
 } */

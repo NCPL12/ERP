@@ -426,5 +426,3 @@ public class itemMasterController {
 		}
 
 }
-
-

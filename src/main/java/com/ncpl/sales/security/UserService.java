@@ -101,41 +101,41 @@ public class UserService implements UserDetailsService{
 		user.setRole("NORMAL USER");
 		user.setEnabled(true);
 		userRepo.save(user);
-		
+
 		User user1 = new User();
 		user1.setUsername("freeda");
 		user1.setPassword(encryptPasswd.encrytePassword("123#freeda"));
 		user1.setRole("NORMAL USER");
 		user1.setEnabled(true);
 		userRepo.save(user1);
-		
+
 		User user2 = new User();
 		user2.setUsername("surendra");
 		user2.setPassword(encryptPasswd.encrytePassword("admin_surendra"));
 		user2.setRole("NORMAL USER");
 		user2.setEnabled(true);
 		userRepo.save(user2);*/
-		
+
 		// User user = new User();
 		// user.setUsername("HI");
 		// user.setPassword(encryptPasswd.encrytePassword("hi@123"));
 		// user.setRole("ITEMMASTER");
 		// user.setEnabled(true);
 		// userRepo.save(user);
-	
-		
-		
+
+
+
 		return null;
 	}
-	
+
 	public User findByUserName(String userName) {
 		return userRepo.findUserByUserName(userName);
 	}
-	
+
 public List<User> getAllUsers() {
     return userRepo.findAll();
 }
-	
+
 	public User getCurrentUser() {
 		User user = null;
 		try {

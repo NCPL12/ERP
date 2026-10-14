@@ -54,7 +54,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 .antMatchers("/user-management/**", "/role-management/**").hasAnyAuthority("ADMIN","SUPER ADMIN","USER_MANAGEMENT_VIEW","USER_MANAGEMENT_EDIT")
 		 .antMatchers("/nonBillableList/**").hasAuthority("NON_BILLABLE_VIEW")
 		 .antMatchers("/dashboard/**").hasAuthority("DASHBOARD_VIEW")
-		 .antMatchers("/returnableList/**", "/returnable/**").hasAuthority("RETURNABLE_VIEW")
+		 .antMatchers("/returnableList/**", "/returnable/**", "/returnableDCList", "/returnableDcList").hasAuthority("RETURNABLE_VIEW")
 		 .antMatchers("/add/returned_items").hasAuthority("RETURNABLE_EDIT")
 		 .antMatchers("/partyList/**").hasAuthority("PARTY_VIEW")
 		 .antMatchers("/party", "/add/party", "/add/party#").hasAuthority("PARTY_EDIT")

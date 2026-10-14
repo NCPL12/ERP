@@ -43,10 +43,10 @@ $(document).ready(function(){
 	    		var clientNameFilter = ($('#dcList thead tr:eq(1) th:eq(2) input').val() || '').trim();
 	    		var clientPoFilter = ($('#dcList thead tr:eq(1) th:eq(3) input').val() || '').trim();
 	    		var shippingFilter = ($('#dcList thead tr:eq(1) th:eq(4) input').val() || '').trim();
-	    		var commentFilter = ($('#dcList thead tr:eq(1) th:eq(5) input').val() || '').trim();
-	    		var dateFilter = ($('#dcList thead tr:eq(1) th:eq(6) input').val() || '').trim();
+                var commentFilter = ($('#dcList thead tr:eq(1) th:eq(5) input').val() || '').trim();
+                var dateFilter = ($('#dcList thead tr:eq(1) th:eq(6) input').val() || '').trim();
 	    		// If any column filter is active, suppress global keyword to leverage advanced search on backend
-	    		if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter || commentFilter || dateFilter) {
+                if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter || commentFilter || dateFilter) {
 	    			keyword = "";
 	    		}
 	    		$.ajax({
@@ -63,9 +63,9 @@ $(document).ready(function(){
 	    				soNumber: soFilter,
 	    				clientName: clientNameFilter,
 	    				clientPo: clientPoFilter,
-	    				shipping: shippingFilter,
-	    				comment: commentFilter,
-	    				date: dateFilter
+                        shipping: shippingFilter,
+                        comment: commentFilter,
+                        date: dateFilter
 	    			},
 	    			success: function(resp){
 	    				callback({
@@ -87,10 +87,16 @@ $(document).ready(function(){
 	    		});
 	    	},
 	    	"columns": [ {
-				"data" : "dcId",
-				"defaultContent":"",
-			}, {
-				"data" : "soNumber",
+			"data" : "dcId",
+			"defaultContent":"",
+			render : function(data, type, row) {
+				if (type === 'display') {
+					return "<a href='#' class='dcLink'>" + data + "</a>";
+				}
+				return data;
+			}
+		}, {
+			"data" : "soNumber",
 				"defaultContent":"",
 
 			},{
@@ -98,9 +104,9 @@ $(document).ready(function(){
 				"defaultContent":"",
 				"class": "text-field-large-nowrap",
 	    		render: function ( data, type, row ) {
-	    			if(data==undefined || data==null || data==""){
-	    				return "";
-	    			}
+                    if(data==undefined || data==null || data==""){
+                        return "";
+                    }
 	    		    return data.length > 35 ?
 	    		    		data.substr( 0, 35 ) +'...' :
 	    		    			data;
@@ -169,7 +175,7 @@ $(document).ready(function(){
 					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";
 				}
 			},
-			
+
 			{
 				"mData" : "archive"	,
 				"visible": archivedPage,
@@ -193,13 +199,13 @@ $(document).ready(function(){
 			}
 			]
 	    });
-
-	    //on double click of list navigate to view page
-	    $('#dcList tbody').on('dblclick', 'tr', function () {
-	 	   var data = dcTable.row(this).data();
-	 	   var dcId = data.dcId;
-	 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
-	 	});
+	    //on single click of Dc No. link navigate to view page
+	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
+            e.preventDefault();
+            var data = dcTable.row($(this).closest('tr')).data();
+            var dcId = data.dcId;
+            window.location = pageContext+"/api/dc/view?dcId="+dcId;
+         });
 	    $('#dcList tbody').on('click', ".generateDc",function () {
 	    	$("#dcExcelDropdown").val("").trigger("change");
 	    	 var dcId = $(this).closest("tr").find("td:eq(0)").text();
@@ -242,8 +248,8 @@ $(document).ready(function(){
 		 		},
 		 		error : function(e) {
 		 			console.log(e);
-		 		}
-		 	  });
+                 }
+               });
 
 		 	});
 

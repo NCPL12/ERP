@@ -23,13 +23,19 @@ $(document).ready(function(){
 		    fixedHeader: true,
 		    order:[[ 4, "desc" ]],
 		    'columnDefs': [ {
-	    	    'targets': grnUnorderableTargets,
+                'targets': grnUnorderableTargets,
 	    	    'orderable': false,
 	    	 }],
-	    	columns: (function(){
-	    		var cols = [ {
+            columns: (function(){
+                var cols = [ {
 					"data" : "grnId",
 					"defaultContent":"",
+					render : function(data, type, row) {
+						if (type === 'display') {
+							return "<a href='#' class='grnLink'>" + data + "</a>";
+						}
+						return data;
+					}
 				}, {
 					"data" : "poNumber",
 					"defaultContent":"",
@@ -64,11 +70,11 @@ $(document).ready(function(){
 					"defaultContent":"",
 
 					"class": "text-field-large-nowrap",
-		    		render: function ( data, type, row ) {
-		    		    return data.length > 35 ?
-		    		    		data.substr( 0, 35 ) +'...' :
-		    		    			data;
-		    		}
+                    render: function ( data, type, row ) {
+                        return data.length > 35 ?
+                                data.substr( 0, 35 ) +'...' :
+                                    data;
+                    }
 
 				},
 				{
@@ -99,8 +105,8 @@ $(document).ready(function(){
 						return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-fw fa-download'></i></button></a>";
 					}
 				} ];
-	    		if (isArchivedPage) {
-	    			cols.push({
+                if (isArchivedPage) {
+                    cols.push({
 						"mData" : "archive"	,
 						render : function(datam, type, row) {
 							var archive;
@@ -118,10 +124,10 @@ $(document).ready(function(){
 								}
 							}
 						}
-	    			});
-	    		}
-	    		return cols;
-	    	})(),
+                    });
+                }
+                return cols;
+            })(),
 	    	ajax: function (data, callback, settings) {
 	    		var keyword = (data.search && data.search.value) ? data.search.value.trim() : "";
 	    		if (!keyword && data.columns) {
@@ -131,7 +137,7 @@ $(document).ready(function(){
 	    		    }
 	    		}
 	    		if (!keyword) {
-	    		    for (var i = 0; i < grnColumnCount; i++) {
+                    for (var i = 0; i < grnColumnCount; i++) {
 	    		        var colSearch = ($('#grnList thead tr:eq(1) th:eq(' + i + ') input').val() || '').trim();
 	    		        if (colSearch) { keyword = colSearch; break; }
 	    		    }
@@ -148,7 +154,7 @@ $(document).ready(function(){
 	    		        sortDir: sortDir
 	    		};
 	    		// Send column-specific search so backend can filter by column (e.g. Grn No. only)
-	    		for (var c = 0; c < grnColumnCount; c++) {
+                for (var c = 0; c < grnColumnCount; c++) {
 	    		    var colVal = (data.columns && data.columns[c] && data.columns[c].search && data.columns[c].search.value) ? data.columns[c].search.value.trim() : "";
 	    		    if (!colVal) colVal = ($('#grnList thead tr:eq(1) th:eq(' + c + ') input').val() || '').trim();
 	    		    if (colVal) ajaxData["columns[" + c + "][search][value]"] = colVal;
@@ -170,16 +176,113 @@ $(document).ready(function(){
 	    		    }
 	    		});
 	    	},
+	    	"columns": [ {
+		"data" : "grnId",
+		"defaultContent":"",
+		render : function(data, type, row) {
+			if (type === 'display') {
+				return "<a href='#' class='grnLink'>" + data + "</a>";
+			}
+			return data;
+		}
+	}, {
+		"data" : "poNumber",
+		"defaultContent":"",
+		
+	}, {
+		"data" : "created",
+		"defaultContent":"",
+				"class":"hideTd",
+				"type": "date"
+			}, {
+				"data" : "poDate",
+				"defaultContent":"",
+				"type": "date",
+				render: function (data) {
+					if (!data) {
+						return "";
+					}
+					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+				}
+			}, {
+				"data" : "created",
+				"defaultContent":"",
+				"type": "date",
+				render: function (data) {
+					if (!data) {
+						return "";
+					}
+					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
+				}
+			}, {
+				"data" : "vendor",
+				"defaultContent":"",
+				
+				"class": "text-field-large-nowrap",
+	    		render: function ( data, type, row ) {
+	    		    return data.length > 35 ?
+	    		    		data.substr( 0, 35 ) +'...' :
+	    		    			data;
+	    		}
+
+			},
+			{
+				"data" : "invoiceNo",
+				"defaultContent":"",
+				
+			},
+			
+			{
+				"data" : "total",
+				"defaultContent":"",
+				"type": "num"
+			},
+			
+			{
+				"mData" : "grnId"	,
+				render : function(datam, type, row) {
+					var url = null;
+					//url ="/ncpl-sales/dc/details/"+row.dcId;
+					return "<button type='button' id='"+row.grnId+"' class='btn btn-default btn-flat btn-xs grnView'><i class='fa fa-eye'></i></button>";;				
+				}
+			},
+			{
+				"mData" : "pdf"	,
+				render : function(datam, type, row) {
+					var url = null;
+					url ="/ncpl-sales/grn/download/"+row.grnId;
+					return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-fw fa-download'></i></button></a>";				
+				}
+			},
+			{
+				"mData" : "archive"	,
+				render : function(datam, type, row) {
+					var archive;
+					if(role=="SUPER ADMIN"){
+						if(row.archive==true){
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
+						}else{
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
+						}
+					}else{
+						if(row.archive==true){
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
+						}else{
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
+						}
+					}
+				}
+			}
+			]
 	    });
-	    //on double click of list navigate to view page — use ?grnId= to handle "GRN 8732..." space correctly
-	    $('#grnList tbody').on('dblclick', 'tr', function () {
-	 	   if (!canEditGrn) {
-	 		   return;
-	 	   }
-	 	   var data = grnDataTable.row(this).data();
-	 	   var grnId = data.grnId;
-	 	   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
-	 	});
+	    //on double click of list navigate to view page
+	  $('#grnList tbody').on('click', 'a.grnLink', function (e) {
+   e.preventDefault();
+   if (!canEditGrn) return;
+   var data = grnDataTable.row($(this).closest('tr')).data();
+   var grnId = data.grnId;
+   window.location = pageContext+"/api/grn/view?grnId="+grnId;
+});
 })
 
  $(document).on('click',".archiveCheckbox",function(){
@@ -317,7 +420,7 @@ $(document).on("click",".grnView",function(){
 					if (!canEditGrn) {
 						return;
 					}
-				 	   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
+                        window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
 				})
 	    },
 		complete:function(resp){

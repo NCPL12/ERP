@@ -92,7 +92,7 @@ $(document).ready( function () {
 		{ "title":"Phone",
 		   "width":"10%",
 			"data": "phone1"},
-    	{
+        {
 			"title":"Website",
 			"width":"18%",
 			"data": "website",
@@ -130,9 +130,9 @@ $(document).ready( function () {
 
 	//redirect to the party edit page on double click of row — only when the role can edit.
     $('#partyList tbody').on('dblclick', 'tr', function () {
-    	if (!canEditParty) {
-    		return;
-    	}
+        if (!canEditParty) {
+            return;
+        }
     	var data1 = partyTable.row(this).data();
     	var partyId = data1.id;
     	window.location = pageContext+"/api/party/view?partyId="+partyId;
