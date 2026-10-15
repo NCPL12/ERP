@@ -104,7 +104,7 @@ class TallyPurchaseOrderServiceTest {
                 "PO-2", LocalDate.of(2026, 10, 1), "VENDOR", new BigDecimal("100"),
                 java.util.Collections.emptyList(), java.util.Collections.emptyMap());
         String xml = "<ENVELOPE><VOUCHER><VOUCHERNUMBER>PO-1</VOUCHERNUMBER></VOUCHER>"
-                + "<VOUCHER><VOUCHERNUMBER>PO-2</VOUCHERNUMBER><ALLLEDGERENTRIES.LIST>"
+                + "<VOUCHER><DATE>20261001</DATE><VOUCHERNUMBER>PO-2</VOUCHERNUMBER><ALLLEDGERENTRIES.LIST>"
                 + "<LEDGERNAME>VENDOR</LEDGERNAME><ISPARTYLEDGER>Yes</ISPARTYLEDGER>"
                 + "<AMOUNT>100</AMOUNT></ALLLEDGERENTRIES.LIST></VOUCHER></ENVELOPE>";
         javax.xml.parsers.DocumentBuilder parser = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -123,7 +123,7 @@ class TallyPurchaseOrderServiceTest {
         TallyPurchaseOrderService.PreparedOrder order = new TallyPurchaseOrderService.PreparedOrder(
                 "PO-1", LocalDate.of(2026, 10, 1), "VENDOR", new BigDecimal("109"),
                 java.util.Collections.emptyList(), taxes);
-        String good = "<VOUCHER><ALLLEDGERENTRIES.LIST><LEDGERNAME>VENDOR</LEDGERNAME>"
+        String good = "<VOUCHER><DATE>20261001</DATE><ALLLEDGERENTRIES.LIST><LEDGERNAME>VENDOR</LEDGERNAME>"
                 + "<ISPARTYLEDGER>Yes</ISPARTYLEDGER><AMOUNT>109</AMOUNT></ALLLEDGERENTRIES.LIST>"
                 + "<ALLLEDGERENTRIES.LIST><LEDGERNAME>CGST</LEDGERNAME><ISPARTYLEDGER>No</ISPARTYLEDGER>"
                 + "<AMOUNT>-9</AMOUNT></ALLLEDGERENTRIES.LIST></VOUCHER>";
@@ -181,8 +181,8 @@ class TallyPurchaseOrderServiceTest {
         assertThat(alterXml).contains("ACTION=\"Alter\"")
                 .contains("<TALLYREQUEST>Import</TALLYREQUEST>")
                 .contains("DATE=\"01-Oct-2026\"")
-                .contains("TAGNAME=\"Voucher Number\"")
-                .contains("TAGVALUE=\"ERP-PO-1\"")
+                .contains("TAGNAME=\"MASTER ID\"")
+                .contains("TAGVALUE=\"100\"")
                 .doesNotContain("REMOTEID=\"remote-1\"")
                 .contains("<GUID>guid-1</GUID>")
                 .doesNotContain("<MASTERID>")

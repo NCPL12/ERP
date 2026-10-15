@@ -446,7 +446,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 								 </div>
 								 <div class="card-footer d-flex justify-content-end" style="gap: 6px;">
 								  <button type="button" id="checkTallyPo" class="btn btn-default btn-sm"><i class="fa fa-fw fa-refresh"></i> Check Tally</button>
-								  <button type="submit" formaction="${pageContext.request.contextPath}/po_list/tally/import" formmethod="post" class="btn btn-success btn-sm" ${not empty tallyOptionsError ? 'disabled' : ''}><i class='fa fa-fw fa-exchange'></i> Send to Tally</button>
+								  <security:authorize access="hasAuthority('PURCHASE_EDIT')" var="canExportTally" />
+                                  <button data-can-export="${canExportTally}" type="submit" formaction="${pageContext.request.contextPath}/po_list/tally/import" formmethod="post" class="btn btn-success btn-sm" ${not empty tallyOptionsError ? 'disabled' : ''}><i class='fa fa-fw fa-exchange'></i> Send to Tally</button>
 								  <button type="submit" class="btn btn-primary btn-sm"><i class='fa fa-fw fa-download'></i> Download</button>
 								 </div>
 								 <c:if test="${not empty tallyPoImportResult}">
@@ -700,7 +701,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         var timer = setTimeout(function() { abort.abort(); }, 15000);
         fetch('${pageContext.request.contextPath}/po_list/tally/options', {credentials:'same-origin',signal:abort.signal})
         .then(function(response) { return response.json().then(function(data) { if (!response.ok) throw new Error(data.message || 'Tally unavailable'); return data; }); })
-        .then(function(data) { label.textContent = data.company + ' is ready'; label.className = 'form-text text-success'; send.disabled = document.getElementById('poLostByDateForm').dataset.exportRunning === 'true'; })
+        .then(function(data) { label.textContent = data.company + ' is ready'; label.className = 'form-text text-success'; send.disabled = send.getAttribute('data-can-export') === 'false' || document.getElementById('poLostByDateForm').dataset.exportRunning === 'true'; })
         .catch(function(error) { label.textContent = error.name === 'AbortError' ? 'Tally connection timed out. Check Tally and the server address.' : error.message; label.className = 'form-text text-danger'; send.disabled = true; })
         .finally(function() { clearTimeout(timer); button.disabled = false; });
     }

@@ -69,6 +69,7 @@ public class TallyPurchaseOrderService {
     @Value("${tally.po.sync.time-zone:Asia/Kolkata}") private String timeZone = "Asia/Kolkata";
     @Value("${tally.po.sync.request-timeout-ms:60000}") private int requestTimeoutMs = 60000;
     @Value("${tally.po.sync.unit-mappings:}") private String unitMappings = "";
+    @Value("${tally.po.sync.unit-conversions:}") private String unitConversions = "";
     private final ThreadLocal<Integer> connectionCheckTimeout = new ThreadLocal<>();
 
     public TallyPurchaseOrderService(ItemMasterService itemMasterService) {
@@ -153,8 +154,15 @@ public class TallyPurchaseOrderService {
                     Collections.singletonList(new ExportLine("", "FAILED", "No active ERP purchase orders were found.")));
         }
 
+        if (purchaseOrders.stream().allMatch(po -> po != null && po.isArchive())) {
+            List<ExportLine> archived = new ArrayList<>();
+            for (PurchaseOrder po : purchaseOrders) archived.add(new ExportLine(po.getPoNumber(), "SKIPPED", "Archived ERP PO; nothing sent to Tally."));
+            return new ExportResult(purchaseOrders.size(), 0, purchaseOrders.size(), 0, archived);
+        }
         MasterSnapshot snapshot = loadMasterSnapshot(true);
-        ensureRequiredMasters(purchaseOrders, snapshot);
+        List<PurchaseOrder> safeOrders = new ArrayList<>();
+        for (PurchaseOrder po : purchaseOrders) if (po != null && !po.isArchive() && !snapshot.ambiguousNumbers.contains(normalize(po.getPoNumber()))) safeOrders.add(po);
+        ensureRequiredMasters(safeOrders, snapshot);
 
         int imported = 0;
         int skipped = 0;
@@ -171,7 +179,13 @@ public class TallyPurchaseOrderService {
                 lines.add(new ExportLine("", "FAILED", "ERP PO number is missing."));
                 continue;
             }
+            if (purchaseOrder.isArchive()) {
+                skipped++; lines.add(new ExportLine(poNumber, "SKIPPED", "Archived ERP PO; nothing sent to Tally.")); continue;
+            }
             String numberKey = normalize(poNumber);
+            if (snapshot.ambiguousNumbers.contains(numberKey)) {
+                failed++; lines.add(new ExportLine(poNumber, "FAILED", "Multiple Tally POs have this number; no master or voucher write was made for this PO. Resolve the duplicate vouchers first.")); continue;
+            }
             if (!seenNumbers.add(numberKey)) {
                 skipped++;
                 lines.add(new ExportLine(poNumber, "SKIPPED", "Repeated ERP PO number in this batch; already processed."));
@@ -324,6 +338,18 @@ public class TallyPurchaseOrderService {
     }
 
     private String resolveTallyUnit(String erpUnit, MasterSnapshot snapshot) {
+        for (String configured : unitConversions.split(";")) {
+            String[] mapping=configured.split("=",2);
+            if(mapping.length!=2 || !normalize(mapping[0]).equals(normalize(erpUnit))) continue;
+            String[] target=mapping[1].split("\\*",2);
+            if(target.length!=2) throw new IllegalArgumentException("Unit conversion must use SOURCE=TARGET*FACTOR.");
+            BigDecimal factor;
+            try { factor=new BigDecimal(target[1].trim()); } catch(Exception error) { throw new IllegalArgumentException("Invalid unit conversion factor for "+erpUnit); }
+            if(factor.signum()<=0)throw new IllegalArgumentException("Unit conversion factor must be positive for "+erpUnit);
+            String unit=snapshot.unitNames.get(normalize(target[0]));
+            if(blank(unit))throw new IllegalArgumentException("Configured conversion target unit '"+target[0].trim()+"' does not exist in Tally.");
+            return unit;
+        }
         for (String mapping : unitMappings.split(";")) {
             String[] parts = mapping.split("=", 2);
             if (parts.length == 2 && normalize(parts[0]).equals(normalize(erpUnit))) {
@@ -468,7 +494,7 @@ public class TallyPurchaseOrderService {
             if (blank(tallyItem.unit)) {
                 throw new IllegalArgumentException("Tally stock item has no base unit: " + tallyItem.name);
             }
-            BigDecimal quantity = decimal(item.getQuantity());
+            BigDecimal quantity = quantityDecimal(item.getQuantity());
             BigDecimal rate = decimal(item.getUnitPrice());
             if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Quantity must be greater than zero for " + tallyItem.name + ".");
@@ -476,6 +502,12 @@ public class TallyPurchaseOrderService {
             if (rate.compareTo(BigDecimal.ZERO) < 0) {
                 throw new IllegalArgumentException("Rate cannot be negative for " + tallyItem.name + ".");
             }
+            String erpUnit = itemMaster.getItem_units() == null ? "" : itemMaster.getItem_units().getName();
+            BigDecimal[] converted = convertUnits(erpUnit, tallyItem.unit, quantity, rate, snapshot);
+            quantity = converted[0]; rate = converted[1];
+            Integer decimals = snapshot.unitDecimals.get(normalize(tallyItem.unit));
+            if (decimals != null && quantity.stripTrailingZeros().scale() > decimals)
+                throw new IllegalArgumentException("Quantity " + quantity.toPlainString() + " exceeds Tally unit '" + tallyItem.unit + "' precision (" + decimals + " decimal places). No rounding was applied.");
             BigDecimal amount = decimal(item.getAmount());
             if (amount.compareTo(BigDecimal.ZERO) <= 0) {
                 amount = quantity.multiply(rate).setScale(2, RoundingMode.HALF_UP);
@@ -594,7 +626,7 @@ public class TallyPurchaseOrderService {
         Document groupsDocument = parseXml(post(buildCollectionRequest("ErpTallyGroups", "Group", "Name,Parent")));
         Document ledgersDocument = parseXml(post(buildCollectionRequest("ErpTallyLedgers", "Ledger", "Name,Parent")));
         Document stockDocument = parseXml(includeOrders ? post(buildCollectionRequest("ErpTallyStockItems", "StockItem", "Name,BaseUnits")) : "<ENVELOPE/>");
-        Document unitsDocument = parseXml(includeOrders ? post(buildCollectionRequest("ErpTallyUnits", "Unit", "Name")) : "<ENVELOPE/>");
+        Document unitsDocument = parseXml(includeOrders ? post(buildCollectionRequest("ErpTallyUnits", "Unit", "Name,DecimalPlaces")) : "<ENVELOPE/>");
 
         Map<String, String> groupParents = new HashMap<>();
         NodeList groups = groupsDocument.getElementsByTagName("GROUP");
@@ -631,6 +663,7 @@ public class TallyPurchaseOrderService {
         }
 
         Map<String, ExistingVoucher> purchaseOrders = new HashMap<>();
+        Set<String> ambiguousNumbers = new HashSet<>();
         if (includeOrders) {
             Document ordersDocument = parseXml(post(buildPurchaseOrdersRequest()));
             NodeList vouchers = ordersDocument.getElementsByTagName("VOUCHER");
@@ -638,7 +671,7 @@ public class TallyPurchaseOrderService {
                 Element voucher = (Element) vouchers.item(i);
                 String number = firstText(voucher, "VOUCHERNUMBER");
                 if (!blank(number)) {
-                    purchaseOrders.put(normalize(number), new ExistingVoucher(
+                    recordExistingVoucher(purchaseOrders, ambiguousNumbers, number, new ExistingVoucher(
                             trim(voucher.getAttribute("REMOTEID")), trim(voucher.getAttribute("VCHKEY")),
                             firstText(voucher, "GUID"), firstText(voucher, "MASTERID"),
                             firstText(voucher, "ALTERID"), firstNonBlank(firstText(voucher, "NARRATION"), ""),
@@ -654,7 +687,55 @@ public class TallyPurchaseOrderService {
             String name = firstNonBlank(unit.getAttribute("NAME"), firstText(unit, "NAME"));
             if (!blank(name)) unitNames.put(normalize(name), name.trim());
         }
-        return new MasterSnapshot(ledgerNames, purchaseLedgerKeys, purchaseLedgers, stockItems, unitNames, purchaseOrders);
+        MasterSnapshot snapshot = new MasterSnapshot(ledgerNames, purchaseLedgerKeys, purchaseLedgers, stockItems, unitNames, purchaseOrders);
+        snapshot.ambiguousNumbers.addAll(ambiguousNumbers);
+        for (int i=0; i<unitNodes.getLength(); i++) {
+            Element unit=(Element)unitNodes.item(i); String places=firstText(unit,"DECIMALPLACES");
+            if (!blank(places)) snapshot.unitDecimals.put(normalize(firstNonBlank(unit.getAttribute("NAME"),firstText(unit,"NAME"))), Integer.parseInt(places));
+        }
+        return snapshot;
+    }
+
+    static void recordExistingVoucher(Map<String,ExistingVoucher> vouchers, Set<String> ambiguous, String number, ExistingVoucher voucher) {
+        String key=normalize(number);
+        if (vouchers.putIfAbsent(key,voucher)!=null) ambiguous.add(key);
+    }
+
+    static BigDecimal quantityDecimal(float quantity) {
+        if (!Float.isFinite(quantity)) throw new IllegalArgumentException("ERP quantity is not finite.");
+        return new BigDecimal(Float.toString(quantity));
+    }
+
+    private static String unitFamily(String unit) {
+        String key=normalize(unit).replaceAll("[^A-Z0-9]", "");
+        String[][] families={{"NO","NOS","NUMBER","NUMBERS","PCS","PC","PIECE","PIECES","EACH"},
+            {"PAIR","PAIRS"},{"SET","SETS"},{"BOX","BOXS","BOXES"},{"ROLL","ROLLS"},
+            {"MTR","MTRS","METER","METERS","METRE","METRES"},{"KG","KGS","KILOGRAM","KILOGRAMS"},
+            {"LTR","LTRS","LITER","LITERS","LITRE","LITRES"},{"PKT","PKTS","PACK","PACKS","PACKET","PACKETS"}};
+        for(String[] family:families) if(java.util.Arrays.asList(family).contains(key)) return family[0];
+        return normalize(unit);
+    }
+
+    private BigDecimal[] convertUnits(String source, String target, BigDecimal qty, BigDecimal rate, MasterSnapshot snapshot) {
+        if(blank(source)||blank(target)) throw new IllegalArgumentException("ERP and Tally base units are required before PO export.");
+        for(String configured:unitConversions.split(";")) {
+            String[] mapping=configured.split("=",2);
+            if(mapping.length!=2||!normalize(mapping[0]).equals(normalize(source))) continue;
+            String[] conversion=mapping[1].split("\\*",2);
+            if(conversion.length!=2||!normalize(conversion[0]).equals(normalize(target)))
+                throw new IllegalArgumentException("Unit conversion for '"+source+"' must target Tally unit '"+target+"' using TARGET*FACTOR.");
+            BigDecimal factor;
+            try {factor=new BigDecimal(conversion[1].trim());} catch(Exception error) {throw new IllegalArgumentException("Invalid unit conversion factor for "+source);}
+            if(factor.signum()<=0)throw new IllegalArgumentException("Unit conversion factor must be positive for "+source);
+            BigDecimal convertedQty=qty.multiply(factor);
+            BigDecimal convertedRate=rate.divide(factor,12,RoundingMode.HALF_UP).stripTrailingZeros();
+            if(convertedQty.multiply(convertedRate).setScale(2,RoundingMode.HALF_UP).compareTo(qty.multiply(rate).setScale(2,RoundingMode.HALF_UP))!=0)
+                throw new IllegalArgumentException("Unit conversion cannot preserve the ERP line value for "+source);
+            return new BigDecimal[]{convertedQty,convertedRate};
+        }
+        if(unitFamily(source).equals(unitFamily(target)))
+            return new BigDecimal[]{qty,rate};
+        throw new IllegalArgumentException("ERP unit '"+source+"' differs from Tally base unit '"+target+"'. Configure a Finance-approved tally.po.sync.unit-conversions factor; no implicit conversion was applied.");
     }
 
     private boolean isUnderPurchaseAccounts(String parent, Map<String, String> groupParents) {
@@ -694,17 +775,19 @@ public class TallyPurchaseOrderService {
     String buildImportRequest(PreparedOrder order, ExistingVoucher existing) {
         StringBuilder xml = new StringBuilder(4096);
         String action = existing == null ? "Create" : "Alter";
+        if (existing != null && blank(existing.masterId)) throw new IllegalArgumentException("Cannot alter a Tally PO without its stable Master ID.");
         if (existing == null) {
             xml.append("<ENVELOPE><HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER><BODY><IMPORTDATA>")
                     .append("<REQUESTDESC><REPORTNAME>Vouchers</REPORTNAME><STATICVARIABLES>")
                     .append(companyVariable()).append("</STATICVARIABLES></REQUESTDESC><REQUESTDATA>");
         } else {
             xml.append("<ENVELOPE><HEADER><VERSION>1</VERSION><TALLYREQUEST>Import</TALLYREQUEST>")
-                    .append("<TYPE>Data</TYPE><ID>Vouchers</ID></HEADER><BODY><DESC></DESC><DATA>");
+                    .append("<TYPE>Data</TYPE><ID>Vouchers</ID></HEADER><BODY><DESC><STATICVARIABLES>")
+                    .append(companyVariable()).append("</STATICVARIABLES></DESC><DATA>");
         }
         xml.append("<TALLYMESSAGE xmlns:UDF=\"TallyUDF\"><VOUCHER")
                 .append(existing == null ? "" : " DATE=\"" + (existing.date == null ? order.date : existing.date).format(TALLY_IDENTIFIER_DATE)
-                        + "\" TAGNAME=\"Voucher Number\" TAGVALUE=\"" + escapeXml(order.number) + "\"")
+                        + "\" TAGNAME=\"MASTER ID\" TAGVALUE=\"" + escapeXml(existing.masterId) + "\"")
                 .append(" VCHTYPE=\"Purchase Order\" ACTION=\"").append(action)
                 .append("\" OBJVIEW=\"Invoice Voucher View\">")
                 .append(tag("DATE", order.date.format(TALLY_DATE)))
@@ -733,7 +816,7 @@ public class TallyPurchaseOrderService {
                 .append("</LEDGERENTRIES.LIST>");
         for (PreparedItem item : order.items) {
             String quantity = quantity(item.quantity) + " " + item.unit;
-            String rate = money(item.rate) + "/" + item.unit;
+            String rate = item.rate.stripTrailingZeros().toPlainString() + "/" + item.unit;
             String negativeAmount = "-" + money(item.amount);
             xml.append("<ALLINVENTORYENTRIES.LIST>")
                     .append(tag("STOCKITEMNAME", item.name))
@@ -786,14 +869,14 @@ public class TallyPurchaseOrderService {
                 .replace("ErpExistingPurchaseOrders", "ErpVerifiedPurchaseOrders")
                 .replace("ErpIsPurchaseOrder", "ErpVerifyPurchaseOrder")
                 .replace("VoucherNumber,Date,Narration,GUID,MasterID,AlterID",
-                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*")
+                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*")
                 .replace("</SYSTEM>", selection + "</SYSTEM>");
     }
 
     private void verifySavedOrder(PreparedOrder order) throws Exception {
         String request = buildPurchaseOrdersRequest()
                 .replace("VoucherNumber,Date,Narration,GUID,MasterID,AlterID",
-                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*")
+                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*")
                 .replace("</SYSTEM>", " AND $VoucherNumber = &quot;"
                         + escapeXml(order.number) + "&quot;</SYSTEM>");
         // Select the exact number in Java so invoice references cannot broaden a match.
@@ -842,7 +925,7 @@ public class TallyPurchaseOrderService {
                 .digest(buildImportRequest(order).getBytes(StandardCharsets.UTF_8));
         StringBuilder hash = new StringBuilder();
         for (byte value : digest) hash.append(String.format("%02x", value & 255));
-        return hash + ":" + trim(alterId);
+        return "inventory-v2:" + hash + ":" + trim(alterId);
     }
 
     private void loadVerifiedStates() {
@@ -865,6 +948,8 @@ public class TallyPurchaseOrderService {
     }
 
     void verifySavedOrder(PreparedOrder order, Element voucher) {
+        if (!order.date.equals(savedDate(firstText(voucher,"DATE")))) throw new IllegalStateException("Saved PO date does not match ERP.");
+        verifyInventory(order,voucher);
         NodeList ledgers = voucher.getElementsByTagName("ALLLEDGERENTRIES.LIST");
         if (ledgers.getLength() == 0) throw new IllegalStateException("Saved PO has no ledger entries.");
         Element party = (Element) ledgers.item(0);
@@ -917,6 +1002,69 @@ public class TallyPurchaseOrderService {
                 throw new IllegalStateException("Saved PO GST amount differs for " + tax.getKey() + ".");
         }
     }
+    private static List<Element> children(Element parent, String tag) {
+        List<Element> elements=new ArrayList<>();
+        for(Node n=parent.getFirstChild();n!=null;n=n.getNextSibling()) if(n instanceof Element && tag.equals(n.getNodeName())) elements.add((Element)n);
+        return elements;
+    }
+
+    private static LocalDate savedDate(String text) {
+        for(DateTimeFormatter format:new DateTimeFormatter[]{TALLY_DATE,TALLY_DUE_DATE,TALLY_IDENTIFIER_DATE,DateTimeFormatter.ISO_LOCAL_DATE})
+            try{return LocalDate.parse(text,format);}catch(Exception ignored){}
+        throw new IllegalStateException("Saved PO has a missing or unsupported date: "+text);
+    }
+
+    private static BigDecimal savedNumber(String text) {
+        if(text==null)throw new IllegalStateException("Saved inventory quantity/rate is missing.");
+        java.util.regex.Matcher m=java.util.regex.Pattern.compile("^\\s*([+-]?[0-9,]+(?:\\.[0-9]+)?)").matcher(text);
+        if(!m.find())throw new IllegalStateException("Unsupported saved inventory value: "+text);
+        return new BigDecimal(m.group(1).replace(",",""));
+    }
+
+    private boolean savedQuantityMatches(String text, PreparedItem item) {
+        if(text==null)return false;
+        java.util.regex.Matcher m=java.util.regex.Pattern.compile("^\\s*[+-]?[0-9,]+(?:\\.[0-9]+)?\\s+(.+?)\\s*$").matcher(text);
+        return m.matches() && normalize(item.unit).equals(normalize(m.group(1))) && savedNumber(text).compareTo(item.quantity)==0;
+    }
+
+    private String rawInventoryName(Element line) {
+        NodeList names=line.getElementsByTagName("STOCKITEMNAME");
+        return names.getLength()==0 ? null : names.item(0).getTextContent();
+    }
+
+    private void verifyInventory(PreparedOrder order, Element voucher) {
+        List<Element> saved=new ArrayList<>(children(voucher,"ALLINVENTORYENTRIES.LIST"));
+        saved.addAll(children(voucher,"INVENTORYENTRIES.LIST"));
+        if(saved.size()!=order.items.size())throw new IllegalStateException("Saved inventory line count does not match ERP.");
+        for(PreparedItem item:order.items) {
+            Element match=null;
+            for(Element line:saved) {
+                try {
+                    if(!item.name.equals(rawInventoryName(line)) || !savedQuantityMatches(firstText(line,"BILLEDQTY"),item)
+                            || !savedQuantityMatches(firstText(line,"ACTUALQTY"),item))continue;
+                    String rate=firstText(line,"RATE");
+                    int slash=rate==null?-1:rate.lastIndexOf('/');
+                    if(slash<0||!normalize(item.unit).equals(normalize(rate.substring(slash+1)))||savedNumber(rate).compareTo(item.rate)!=0)continue;
+                    if(new BigDecimal(firstText(line,"AMOUNT")).compareTo(item.amount.negate())!=0)continue;
+                    List<Element> batches=children(line,"BATCHALLOCATIONS.LIST");
+                    if(batches.isEmpty())continue;
+                    BigDecimal batchQty=BigDecimal.ZERO;
+                    boolean dueMatches=true;
+                    for(Element batch:batches){
+                        if(!item.dueDate.equals(savedDate(firstText(batch,"ORDERDUEDATE"))))dueMatches=false;
+                        String q=firstText(batch,"BILLEDQTY");
+                        java.util.regex.Matcher u=java.util.regex.Pattern.compile("^\\s*[+-]?[0-9,]+(?:\\.[0-9]+)?\\s+(.+?)\\s*$").matcher(q==null?"":q);
+                        if(!u.matches()||!normalize(item.unit).equals(normalize(u.group(1))))dueMatches=false;
+                        batchQty=batchQty.add(savedNumber(q));
+                    }
+                    if(dueMatches&&batchQty.compareTo(item.quantity)==0){match=line;break;}
+                } catch(RuntimeException invalidSavedLine) { /* Try another occurrence of the same stock item. */ }
+            }
+            if(match==null)throw new IllegalStateException("Saved inventory differs for "+item.name+": expected "+item.quantity.toPlainString()+" "+item.unit+", rate "+item.rate.toPlainString()+", amount "+item.amount.toPlainString()+", due "+item.dueDate+". Identity, quantity, unit, rate, amount and batch due dates must all match.");
+            saved.remove(match);
+        }
+    }
+
     private ImportResponse parseImportResponse(String responseXml) throws Exception {
         Document document = parseXml(responseXml);
         return new ImportResponse(integerText(document, "CREATED"), integerText(document, "ALTERED"),
@@ -1053,7 +1201,7 @@ public class TallyPurchaseOrderService {
         return "";
     }
 
-    private String normalize(String value) {
+    private static String normalize(String value) {
         return trim(value).replaceAll("\\s+", " ").toUpperCase(Locale.ROOT);
     }
 
@@ -1076,6 +1224,8 @@ public class TallyPurchaseOrderService {
         private final Map<String, TallyStockItem> stockItems;
         private final Map<String, String> unitNames;
         private final Map<String,String> masterErrors = new HashMap<>();
+        private final Set<String> ambiguousNumbers = new HashSet<>();
+        private final Map<String,Integer> unitDecimals = new HashMap<>();
         private final Map<String, ExistingVoucher> purchaseOrders;
         private MasterSnapshot(Map<String, String> ledgerNames, Set<String> purchaseLedgerKeys,
                                List<String> purchaseLedgers, Map<String, TallyStockItem> stockItems,

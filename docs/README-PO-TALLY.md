@@ -155,3 +155,21 @@ Regression tests:
 mvn test
 node src/test/js/po-tally-refresh.test.cjs
 ```
+
+### Assigned issue fixes (#48–#55)
+
+Create and alter requests both select the configured Tally company. Alterations target the saved MASTER ID and original voucher date. Duplicate normalized PO numbers in Tally are blocked before master or voucher writes; resolve the ambiguous vouchers before retrying.
+
+Both export POST routes require PURCHASE_EDIT, including for administrator role tokens. Read-only users cannot enable Send through the asynchronous connection check. Archived POs are excluded by the query and independently rejected by the exporter. Sales Reports renders without a synchronous Tally call.
+
+Quantities retain their ERP fractional precision. The destination unit's decimal limit is checked; incompatible quantities fail instead of being rounded. Equivalent unit aliases remain supported. Different unit families require an explicit Finance-approved conversion, for example:
+
+```properties
+tally.po.sync.unit-conversions=Box=Nos*10
+```
+
+This example means ten destination Nos per source Box: quantity is multiplied by ten and rate divided by ten. It is illustrative, not a default pack size. The target unit must exist in Tally. A one-to-one unit-mappings alias does not authorize a cross-family conversion. Converted quantity/rate must preserve the monetary line amount.
+
+Readback checks the saved date, inventory line count, stock item names, actual/billed quantities and units, rates, line amounts, allocation due dates and quantities, plus party, taxes and totals. Only a matching readback earns an inventory-v2 checkpoint. Older financial-only checkpoints are deliberately reverified once. A verification failure can follow an accepted write; inspect the per-PO result and saved voucher before retrying.
+
+Rebuild/redeploy and restart ERP. No database schema migration is required. Run mvn test and the JavaScript regression command above. Deployment acceptance should include the real office company, a different active company, approved unit conversions and a small scoped export before bulk operation. Automated tests use a local fake Tally endpoint, not the office company.

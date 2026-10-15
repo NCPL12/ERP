@@ -1637,7 +1637,7 @@ public class SalesController {
 		return "pendingPOReportbyPoNum";
 
 	}
-@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
 	@GetMapping("/po_list/tally/options")
 	@ResponseBody
 	public ResponseEntity<?> tallyPurchaseOrderOptions() {
@@ -1650,7 +1650,7 @@ public class SalesController {
 		}
 	}
 
-	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+	@PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 	@PostMapping("/po_list/tally")
 	@ResponseBody
 	public ResponseEntity<?> sendPurchaseOrdersToTally(
@@ -1676,7 +1676,7 @@ public class SalesController {
 
     @GetMapping("/po_list/tally/sync-status")
     @org.springframework.web.bind.annotation.ResponseBody
-    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
     public Map<String,Object> tallyPoSyncStatus() {
         // Return a plain map, NOT the TallyPurchaseOrderAutoSync bean.
         // The bean is a CGLIB proxy (the class is @Transactional/@Scheduled), so returning it
@@ -1695,12 +1695,12 @@ public class SalesController {
         return status;
     }
 
-	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
 	@GetMapping("/po_list/tally/progress")
     @org.springframework.web.bind.annotation.ResponseBody
     public java.util.Map<String,Object> tallyPoProgress() { return tallyPurchaseOrderService.getProgress(); }
 
-    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')")
+    @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
     @PostMapping("/po_list/tally/import")
 	public String importPurchaseOrdersToTally(
 			@RequestParam("poListByFromDate") String fromDateString,
