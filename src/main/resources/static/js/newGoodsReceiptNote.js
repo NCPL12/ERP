@@ -162,7 +162,7 @@ $(document).on("change", "#purchaseOrderDropDown", function () {
 
 
 	}
-	var row = $('table > tbody  > tr').length - 1;
+	var row = $('#grnTable > tbody > tr').length - 1;
 	var poNumber = $("#purchaseOrderDropDown option:selected").val();
 	var updatedDate;
 	$.each(poList, function (index, value) {
@@ -257,7 +257,7 @@ function addGrnRow() {
 
 
 	var newRow = $("<tr>");
-	var row = $('table > tbody  > tr').length;
+	var row = $('#grnTable > tbody > tr').length;
 	var rowCount = row + 1
 	rowCountofAddeditems = rowCount;
 	var arraycount = rowCount - 1;
@@ -292,11 +292,11 @@ function addGrnRow() {
 	columns += '<td align="center"><i class="deleteButton fa fa-trash" aria-hidden="true"></i></td>';
 	columns += '<td style="display:none"><input type="hidden" class="poItemId" id="poItemId'+ arraycount +'" /></td>';
 	newRow.append(columns);
-	$("#grnTable").append(newRow);
+	$("#grnTable > tbody").append(newRow);
 	$("#descriptionDropdown" + arraycount).select2({ dropdownAutoWidth: true });
-	getPurchaseItemListByPoNumber();
-	getPurchaseItemsByPurchaseItemId();
 	if (grnObj == "") {
+		getPurchaseItemListByPoNumber();
+		getPurchaseItemsByPurchaseItemId();
 		$("#descriptionDropdown" + previousRow).attr("disabled", true);
 	}
 
@@ -325,7 +325,7 @@ function addGrnRow() {
 
 //get items by purchase itemId
 function getPurchaseItemListByPoNumber(){
-var row=$('table > tbody  > tr').length -1;	
+var row=$('#grnTable > tbody > tr').length -1;
 var poNumber=  $('#poNumber').val();
 //Sending class name to differentiate between api called in grn and po..
 var className="grn";
@@ -690,7 +690,10 @@ function getGrnObjById(grnId) {
 				$("#amount"+key).val(commaSeparateNumber(value.amount));
 				$("#poDateVal").val(grnObj.poDate);
 				$("#purchaseOrderDropDown").val(grnObj.poNumber);
-				$("#purchaseOrderDropDown").select2(grnObj, { id: grnObj.poNumber, a_key: grnObj.poNumber });
+				if (!$("#purchaseOrderDropDown option").filter(function () { return this.value === grnObj.poNumber; }).length) {
+					$("#purchaseOrderDropDown").append(new Option(grnObj.poNumber, grnObj.poNumber));
+				}
+				$("#purchaseOrderDropDown").val(grnObj.poNumber).trigger("change.select2");
 				$("#poNumber").val(grnObj.poNumber);
 				$("#purchaseOrderDropDown").attr("disabled", true);
 				

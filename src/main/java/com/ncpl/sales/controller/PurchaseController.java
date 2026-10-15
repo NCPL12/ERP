@@ -815,7 +815,9 @@ public class PurchaseController {
 				model.addAttribute("grnObj",mapper.writeValueAsString(grnObj) );
 				// purchaseItemList is only needed to repopulate an existing GRN being
 				// edited (see newGoodsReceiptNote.js) - skip the full-table fetch otherwise
-				List<PurchaseItem> purchaseItemList = purchaseItemService.getAllPurchaseItems();
+				List<PurchaseItem> purchaseItemList = grnObj == null || grnObj.getPoNumber() == null
+					? java.util.Collections.<PurchaseItem>emptyList()
+					: purchaseItemService.getPurchaseItemsByPoNumber(grnObj.getPoNumber());
 				model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
 			} else {
 				model.addAttribute("purchaseItemList", "[]");
@@ -1085,15 +1087,9 @@ public class PurchaseController {
 	 @GetMapping("/deliveryChallan")
 		public String deliveryChallanPage(Model model,HttpServletRequest req) throws JsonProcessingException {
 		 Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
-		 	List<Party> partyList = partyService.getPartyList();
 		 	List<Party> clientList = partyService.getPartyListByTypeCustomer();
-			List<ItemMaster> itemList=itemMasterService.getItemList();
-			 List<SalesOrder> salesList = salesService.findAllSalesOrderList();
 			ObjectMapper mapper = utilService.getObjectMapper();
-			 model.addAttribute("salesOrderList",mapper.writeValueAsString(salesList));
-			model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 			model.addAttribute("clientList", mapper.writeValueAsString(clientList));
-			 model.addAttribute("itemList", mapper.writeValueAsString(itemList));
 			model.addAttribute("pageHeader", "Delivery Challan");
 			 if(flashMap!=null) {
 				 DeliveryChallan dcObj =  (DeliveryChallan) flashMap.get("dcObj");
