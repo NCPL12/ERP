@@ -38,6 +38,13 @@ public class MonthlyStockMovementService {
 
     private final MonthlyStockMovementRepo movementRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${monthly.stock.auto-freeze.zone:Asia/Kolkata}")
+    private String snapshotZone = "Asia/Kolkata";
+
+    private long snapshotCutoff(Timestamp boundary) {
+        return boundary.toLocalDateTime().atZone(java.time.ZoneId.of(snapshotZone)).toInstant().toEpochMilli();
+    }
+
     public MonthlyStockMovementService(MonthlyStockMovementRepo movementRepository) {
         this.movementRepository = movementRepository;
     }
@@ -48,10 +55,10 @@ public class MonthlyStockMovementService {
             throw new IllegalArgumentException("A valid monthly date range is required");
         }
 
-        Map<String, BigDecimal> openingQty = loadStockSnapshot(fromInclusive.getTime() - 1L);
+        Map<String, BigDecimal> openingQty = loadStockSnapshot(snapshotCutoff(fromInclusive) - 1L);
         java.time.LocalDate reportEndDate = toInclusive.toLocalDateTime().toLocalDate();
-        Map<String, BigDecimal> closingQty = reportEndDate.equals(java.time.LocalDate.now())
-                ? loadCurrentStock() : loadStockSnapshot(toInclusive.getTime());
+        Map<String, BigDecimal> closingQty = reportEndDate.equals(java.time.LocalDate.now(java.time.ZoneId.of(snapshotZone)))
+                ? loadCurrentStock() : loadStockSnapshot(snapshotCutoff(toInclusive));
         Map<String, GrnSummary> grn = loadGrnSummary(fromInclusive, toInclusive);
         Map<String, DcSummary> dcMovements = loadDcSummary(fromInclusive, toInclusive);
         Map<String, BigDecimal> averagePoPrices = loadAveragePoPrices();

@@ -115,10 +115,10 @@ In the current source, baseline routes use the legacy ERP security chain, which 
 ```properties
 monthly.stock.auto-freeze.enabled=true
 monthly.stock.auto-freeze.zone=Asia/Kolkata
-monthly.stock.auto-freeze.cron=0 59 23 * * ?
+monthly.stock.auto-freeze.cron=0 5 0 1 * ?
 ```
 
-It checks at 23:59 and acts only on the last calendar day of the month. ERP must be running, and postings must be finalized before capture; it does not automatically repair missed historical months or transactions posted after the snapshot. Existing snapshots are not overwritten. A manual administrator freeze endpoint also exists at `/api/monthly_stock_report/freeze`, taking reportFromDate/reportToDate in `dd-MM-yyyy`; use only after Finance confirms that period is ready to freeze.
+It runs at 00:05 on the first calendar day and captures the completed previous month. ERP must be running, and postings must be finalized before capture; it does not automatically repair missed historical months or transactions posted after the snapshot. Existing snapshots are not overwritten. A manual administrator freeze endpoint also exists at `/api/monthly_stock_report/freeze`, taking reportFromDate/reportToDate in `dd-MM-yyyy`; use only after Finance confirms that period is ready to freeze.
 
 
 ## Build and acceptance
@@ -128,3 +128,10 @@ mvn "-Dtest=StockReportMoneyTest" test
 ```
 
 Build a clean WAR with `mvn clean package`. Automated tests are not live Finance acceptance. Validate the target database/company/date scope before enabling scheduled jobs. Back up application/configuration and data before deployment. Restore the prior application through the team process for rollback; restoring ERP does not undo Tally imports.
+
+
+### Issue #41: correct month-end scheduling
+
+The default job runs at 00:05 on the first day of each month in `monthly.stock.auto-freeze.zone` and freezes the previous calendar month through its final nanosecond. Running before midnight would omit the last minute of movements. The method also checks the previous day is a month-end, so an ordinary-day/manual invocation cannot freeze an unintended date. Business-zone cutoff conversion is explicit and completed-month closes use historical stock audit snapshots, not the next month's live stock.
+
+Update any external override of the old `0 59 23 * * ?` cron to `0 5 0 1 * ?`, rebuild/redeploy and restart. The job remains disabled by default. Existing approved/frozen closes are not overwritten. A missed first-day run requires a Finance-reviewed baseline import or deliberate recovery; ordinary-day runs do not fabricate a closing snapshot. Validation errors are logged as errors rather than misreported as already-frozen snapshots. No database migration is required.

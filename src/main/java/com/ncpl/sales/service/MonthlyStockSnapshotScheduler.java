@@ -2,6 +2,7 @@ package com.ncpl.sales.service;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.Clock;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
@@ -23,31 +24,34 @@ public class MonthlyStockSnapshotScheduler {
     private static final Logger log = LoggerFactory.getLogger(MonthlyStockSnapshotScheduler.class);
 
     private final MonthlyStockMovementService monthlyStockMovementService;
+    private final Clock clock;
 
     @Value("${monthly.stock.auto-freeze.enabled:false}")
     private boolean enabled;
 
     @Value("${monthly.stock.auto-freeze.zone:Asia/Kolkata}")
-    private String zone;
+    private String zone = "Asia/Kolkata";
 
+    @org.springframework.beans.factory.annotation.Autowired
     public MonthlyStockSnapshotScheduler(MonthlyStockMovementService monthlyStockMovementService) {
-        this.monthlyStockMovementService = monthlyStockMovementService;
+        this(monthlyStockMovementService, Clock.systemUTC());
     }
 
-    /**
-     * Runs every night at 23:59. The date guard makes it act only on the last
-     * calendar day of a month. It is intentionally disabled until the first
-     * Finance-approved baseline has been imported.
-     */
-    @Scheduled(cron = "${monthly.stock.auto-freeze.cron:0 59 23 * * ?}", zone = "${monthly.stock.auto-freeze.zone:Asia/Kolkata}")
+    MonthlyStockSnapshotScheduler(MonthlyStockMovementService service, Clock clock) {
+        this.monthlyStockMovementService = service;
+        this.clock = clock;
+    }
+
+    /** Runs after the final minute has completed, targeting only the previous month-end. */
+    @Scheduled(cron = "${monthly.stock.auto-freeze.cron:0 5 0 1 * ?}", zone = "${monthly.stock.auto-freeze.zone:Asia/Kolkata}")
     public void freezeMonthEndStock() {
         if (!enabled) {
             return;
         }
 
         ZoneId zoneId = ZoneId.of(zone);
-        LocalDate closingDate = LocalDate.now(zoneId);
-        if (!closingDate.plusDays(1).getMonth().equals(closingDate.getMonth())) {
+        LocalDate closingDate = LocalDate.now(clock.withZone(zoneId)).minusDays(1);
+        if (closingDate.plusDays(1).getMonth().equals(closingDate.getMonth())) {
             return;
         }
 
@@ -57,7 +61,11 @@ public class MonthlyStockSnapshotScheduler {
             int itemCount = monthlyStockMovementService.freeze(from, to);
             log.info("Automatically froze {} month-end stock records for {}", itemCount, closingDate);
         } catch (IllegalStateException alreadyFrozen) {
-            log.info("Month-end stock snapshot already exists for {}", closingDate);
+            if (alreadyFrozen.getMessage() != null && alreadyFrozen.getMessage().startsWith("A frozen monthly stock snapshot already exists for ")) {
+                log.info("Month-end stock snapshot already exists for {}", closingDate);
+            } else {
+                log.error("Month-end stock validation failed for {}", closingDate, alreadyFrozen);
+            }
         } catch (Exception exception) {
             log.error("Automatic month-end stock snapshot failed for {}", closingDate, exception);
         }
