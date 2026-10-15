@@ -981,14 +981,14 @@ public class DeliveryChallanService {
 		// Price: avg of all PO unit prices per item — same methodology as the
 		// monthly stock movement report, so DC-by-date values tally with its
 		// outward column. Items with no PO history are excluded there too.
-		Map<String, Double> avgPoPriceMap = new HashMap<>();
+		Map<String, java.math.BigDecimal> avgPoPriceMap = new HashMap<>();
 		// NEW: load all PO unit prices for all items in a few batch queries (instead of loading
 		// full PO item objects one item at a time). Same result: average of all unit prices per
 		// item; items with no PO items are simply absent from the map (same as the old "continue").
 		// If the batch query fails for any reason, the old per-item loop below is used as a fallback.
 		boolean priceBatchOk = false;
 		try {
-			Map<String, Double> sumByModel = new HashMap<>();
+			Map<String, java.math.BigDecimal> sumByModel = new HashMap<>();
 			Map<String, Integer> cntByModel = new HashMap<>();
 			List<String> priceIds = new ArrayList<>(itemMasterMap.keySet());
 			for (int i = 0; i < priceIds.size(); i += 1000) {
@@ -999,13 +999,13 @@ public class DeliveryChallanService {
 						.getResultList();
 				for (Object[] r : priceRows) {
 					String mid = (String) r[0];
-					double price = r[1] == null ? 0d : ((Number) r[1]).doubleValue();
-					sumByModel.merge(mid, price, Double::sum);
+					java.math.BigDecimal price = r[1] == null ? java.math.BigDecimal.ZERO : StockReportMoney.source(((Number) r[1]).floatValue());
+					sumByModel.merge(mid, price, java.math.BigDecimal::add);
 					cntByModel.merge(mid, 1, Integer::sum);
 				}
 			}
 			for (Map.Entry<String, Integer> pe : cntByModel.entrySet()) {
-				avgPoPriceMap.put(pe.getKey(), sumByModel.get(pe.getKey()) / pe.getValue());
+				avgPoPriceMap.put(pe.getKey(), sumByModel.get(pe.getKey()).divide(java.math.BigDecimal.valueOf(pe.getValue()), 2, java.math.RoundingMode.HALF_UP));
 			}
 			priceBatchOk = true;
 		} catch (Exception e) {
@@ -1019,11 +1019,7 @@ public class DeliveryChallanService {
 			if (poItems.isEmpty()) {
 				continue;
 			}
-			double priceSum = 0;
-			for (com.ncpl.sales.model.PurchaseItem pi : poItems) {
-				priceSum += pi.getUnitPrice();
-			}
-			avgPoPriceMap.put(itemMasterId, priceSum / poItems.size());
+			avgPoPriceMap.put(itemMasterId, StockReportMoney.average(poItems));
 		}
 		}
 		System.out.println("DC by date: prices for " + avgPoPriceMap.size() + " items ready in " + (System.currentTimeMillis() - tDcStep) + " ms (batch ok = " + priceBatchOk + ")");
