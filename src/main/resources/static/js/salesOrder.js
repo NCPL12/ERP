@@ -1222,8 +1222,16 @@ function designTable2Json(){
 		         	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
 		           
-		           //Display auto selected address
-		           $("#billingAddressDropdown").change();
+		   
+		         //Restore saved billing address when editing
+if(salesOrderObj!="" && salesOrderObj.billingAddress && $("#billingAddressDropdown option[value='"+salesOrderObj.billingAddress+"']").length){
+	$("#billingAddressDropdown").val(salesOrderObj.billingAddress);
+}
+//Display auto selected address
+$("#billingAddressDropdown").change();
+if(salesOrderObj!=""){
+	$("#billingClientsDropdown,#billingAddressDropdown").prop("disabled",true);
+}
 		   		
 			},
 			complete:function(resp){
@@ -1264,7 +1272,7 @@ function designTable2Json(){
 			       $("#shippingAddressPartyId").val(response.shippingAddr.id)
 			       
 			       if(response.shippingAddr.id!=response.mainParty.id){
-			    	   $("#shippingAddressDropdown").append(new Option(response.mainParty.addr1));
+			    	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
 			       }
 		    	   //populate other alternative addresses for billing address dropdown.
 		    	   var alternateAddressArr = response.addresses;
@@ -1273,7 +1281,13 @@ function designTable2Json(){
 		           }
 		           
 		           //Display auto selected address
-		           $("#shippingAddressDropdown").change();
+		           //Restore saved shipping address when editing
+if(salesOrderObj!="" && salesOrderObj.shippingAddress && $("#shippingAddressDropdown option[value='"+salesOrderObj.shippingAddress+"']").length){
+	$("#shippingAddressDropdown").val(salesOrderObj.shippingAddress);
+	$("#shippingAddressPartyId").val(salesOrderObj.shippingAddress);
+}
+//Display auto selected address
+$("#shippingAddressDropdown").change();
 	   		
 			},  
 			complete:function(resp){
@@ -1288,7 +1302,7 @@ function designTable2Json(){
 	}
 	
 	$(document).on("change","#shippingAddressDropdown",function(){
-		   var addressId = $("#shippingAddressPartyId").val();
+		 var addressId = $(this).val();
 		   if (addressId == "") {
 
 		  }

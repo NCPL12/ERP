@@ -20,6 +20,19 @@ var allSalesListDashboard = ${allSalesListDashboard};
 var tdsApprovedListDashboard = ${tdsApprovedListDashboard};
 var salesItemsWithoutDesignListDashboard = ${salesItemsWithoutDesignListDashboard};
 var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
+var dashboardListsLoading = ${listsLoading};
+if (dashboardListsLoading) {
+    (function waitForDashboardLists(attempt) {
+        if (attempt >= 30) return;
+        setTimeout(function () {
+            $.getJSON(pageContext + '/dashboard/lists-ready')
+                .done(function (ready) {
+                    if (ready) window.location.reload();
+                    else waitForDashboardLists(attempt + 1);
+                });
+        }, 2000);
+    })(0);
+}
 </script>
 <style>
 .hideTd{
@@ -366,7 +379,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -384,7 +397,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
@@ -417,7 +430,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -435,11 +448,11 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- project view modal ends -->	
+<!-- project view modal ends -->
 <!-- sales item without design modal starts -->
 <div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="salesItemwithoutDesignModal">
 		<div class="modal-dialog modal-lg"
@@ -468,7 +481,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -486,11 +499,11 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- sales item without design modal ends -->	
+<!-- sales item without design modal ends -->
 <!-- purchase modal starts -->
 <div class="modal show" tabindex="-1" role="dialog" aria-hidden="true" id="pendingPurchaseModal">
 		<div class="modal-dialog modal-lg"
@@ -515,10 +528,10 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="7%" rowspan="2" class="thStyle">Unit</th>
 										<th width="12%" rowspan="2" class="thStyle">Unit Price</th>
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
-										
+
 									</tr>
 
-							</thead> 
+							</thead>
 							<tbody id="table-body">
 							</tbody>
 					</table>
@@ -528,7 +541,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
@@ -561,7 +574,7 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 										<th width="10%" rowspan="2" class="thStyle">Amount</th>
 										<th width="5%" rowspan="2" class="thStyle">Design</th>
 										<th width="5%" rowspan="2" class="thStyle">Design Qty</th>
-										
+
 									</tr>
 
 									<!--dividing a cloumn into two rows-->
@@ -579,12 +592,12 @@ var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
 						<button class="btn btn-default btn-sm buttonDismiss" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-			
+
 			</div>
 		</div>
 	</div>
-<!-- sales item with design modal ends -->	
-	
+<!-- sales item with design modal ends -->
+
 </body>
 </body>
 </html>

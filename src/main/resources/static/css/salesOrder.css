@@ -26,11 +26,11 @@ text-align: center;
  }
 
  #salesTable .add-lot-btn {
- 	height: 24px;
- 	line-height: 1;
- 	padding: 0 8px;
- 	display: inline-flex;
- 	align-items: center;
+     height: 24px;
+     line-height: 1;
+     padding: 0 8px;
+     display: inline-flex;
+     align-items: center;
  }
  
  #itemMasterList tr td {

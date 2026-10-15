@@ -181,7 +181,7 @@
                     </security:authorize>
 
                     <c:set var="salesOpen"
-                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
+                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri.startsWith('/returnable/') or uri == '/returnableDCList' or uri == '/returnableDcList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
                     <security:authorize
                       access="hasAnyAuthority('SALES_ORDER_VIEW','DELIVERY_CHALLAN_VIEW','RETURNABLE_VIEW','INVOICE_VIEW','WORK_ORDER_VIEW')">
                     <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
@@ -227,6 +227,15 @@
                               <p>
                                 <spring:message code="dc.returnable" />
                               </p>
+                            </a>
+                          </li>
+                        </security:authorize>
+                        <security:authorize access="hasAuthority('RETURNABLE_VIEW')">
+                          <li class="nav-item">
+                            <a href="${pageContext.request.contextPath}/returnableDCList"
+                              class="nav-link ${uri == '/returnableDCList' or uri == '/returnableDcList' ? 'active' : ''}">
+                              <i class="nav-icon fas fa-undo"></i>
+                              <p>Returnable DC</p>
                             </a>
                           </li>
                         </security:authorize>

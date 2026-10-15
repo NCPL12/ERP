@@ -1423,6 +1423,12 @@ public class SalesController {
 		return new ResponseEntity<>(designList, HttpStatus.OK);
 	}
 
+	@GetMapping("/dashboard/lists-ready")
+	@ResponseBody
+	public boolean dashboardListsReady() {
+		return dashboardService.isListsReady();
+	}
+
 	@GetMapping("/dashboard")
 	public String dashboard(Model model) throws JsonProcessingException {
 		DashboardCountDto counts = dashboardService.getDashboardCounts();
@@ -1441,7 +1447,9 @@ public class SalesController {
 
 		// Dashboard list cards rendered straight from the same cached snapshot the counts
 		// use, so the page ships with data already on it - no per-card AJAX round-trip.
-		DashboardListsDto lists = dashboardService.getDashboardLists();
+		boolean listsReady = dashboardService.isListsReady();
+		DashboardListsDto lists = dashboardService.getDashboardListsIfReady();
+		model.addAttribute("listsLoading", !listsReady);
 		ObjectMapper mapper = new ObjectMapper();
 		model.addAttribute("pendingSalesListDashboard", mapper.writeValueAsString(lists.getPendingSalesList()));
 		model.addAttribute("pendingPurchaseListDashboard", mapper.writeValueAsString(lists.getPendingPurchaseList()));

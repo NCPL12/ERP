@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ncpl.sales.model.DashboardCountDto;
 import com.ncpl.sales.model.DashboardListsDto;
@@ -40,6 +42,8 @@ public class DashboardService {
     private InvoiceService invoiceService;
     @Autowired
     private TdsService tdsService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private volatile DashboardCountDto snapshot;
     private volatile DashboardListsDto listsSnapshot;
@@ -87,6 +91,26 @@ public class DashboardService {
         }
     }
 
+    public boolean isListsReady() {
+        return listsSnapshot != null;
+    }
+
+    public DashboardListsDto getDashboardListsIfReady() {
+        DashboardListsDto lists = listsSnapshot;
+        if (lists != null) {
+            return lists;
+        }
+        lists = new DashboardListsDto();
+        lists.setPendingSalesList(java.util.Collections.emptyList());
+        lists.setPendingPurchaseList(java.util.Collections.emptyList());
+        lists.setInvoiceList(java.util.Collections.emptyList());
+        lists.setAllSalesList(java.util.Collections.emptyList());
+        lists.setTdsApprovedList(java.util.Collections.emptyList());
+        lists.setSalesItemsWithoutDesignList(java.util.Collections.emptyList());
+        lists.setSalesOrderWithDesignList(java.util.Collections.emptyList());
+        return lists;
+    }
+
     /** Invoked by {@link DashboardCountsRefreshScheduler}. */
     public void scheduledRefreshSnapshot() {
         recomputeSnapshotQuietly();
@@ -122,6 +146,12 @@ public class DashboardService {
     }
 
     private DashboardListsDto loadLists() {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setReadOnly(true);
+        return transaction.execute(status -> loadListsInTransaction());
+    }
+
+    private DashboardListsDto loadListsInTransaction() {
         DashboardListsDto d = new DashboardListsDto();
         d.setPendingSalesList(salesService.getPendingSalesList());
         d.setPendingPurchaseList(purchaseOrderService.getPenidngPoList());

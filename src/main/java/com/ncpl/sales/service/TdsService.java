@@ -1,4 +1,5 @@
 package com.ncpl.sales.service;
+import com.ncpl.sales.repository.SalesOrderDesignRepo;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,6 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +36,7 @@ import com.ncpl.sales.model.Lot;
 import com.ncpl.sales.model.Tds;
 import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.PartyRepo;
-import com.ncpl.sales.repository.SalesOrderDesignRepo;
+import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.TdsItemRepo;
 import com.ncpl.sales.repository.TdsRepo;
 import com.ncpl.sales.service.TdsLotUpdateReportService;
@@ -58,7 +61,9 @@ public class TdsService {
 	TdsItemRepo tdsItemRepo;
 	@Autowired
 	PurchaseItemService purchaseItemService;
-
+	@Autowired
+	SalesRepo salesrepo;
+	
 	@Autowired
 	ItemMasterService itemService;
 
@@ -67,6 +72,9 @@ public class TdsService {
 
 	@Autowired
 	SalesOrderDesignRepo salesOrderDesignRepo;
+
+	@PersistenceContext
+	EntityManager em;
 
 	@Transactional(rollbackFor = Exception.class)
 	public void saveTds(Tds tds, HttpServletRequest req) throws IOException {
@@ -140,10 +148,6 @@ public class TdsService {
 					}
 				}
 				if (tdsItem.isTdsApproved()) {
-					if (salesOrderDesignRepo.getDesginListBySoItemId(tdsItem.getDescription()).isEmpty()) {
-						throw new RuntimeException("TDS cannot be approved for item \"" + tdsItem.getDescription()
-								+ "\" because no design is added for it.");
-					}
 					// The form posts designQty only for rows built from design items;
 					// rows without design items post 0, so fall back to the SO item qty.
 					float maxQty = tdsItem.getDesignQty();
@@ -265,7 +269,7 @@ public class TdsService {
 		return emailContents;
 	}
 	
-	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
+	/*public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
 		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
 		ArrayList<TdsItems> tdsItemList = new ArrayList<TdsItems>();
 		for (TdsItems tdsItem : tdsItemsList) {
@@ -289,15 +293,154 @@ public class TdsService {
 		}
 		return tdsItemList;
 		
+	}*/
+
+	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDone(){
+		ArrayList<TdsItems> tdsItemList = new ArrayList<TdsItems>();
+
+		// 1) approved rows as plain columns only. TdsItems.lots and SalesItem.salesOrder are EAGER,
+		// so loading them as entities pulls in lots / sales orders / parties one query at a time.
+		List<Object[]> tdsRows = em.createQuery(
+				"select t.tdsItemId, t.description, t.siteQuantity, t.modelNumber, t.designQty "
+				+ "from TdsItems t where t.tdsApproved = true and t.siteQuantity > 0 order by t.tdsItemId",
+				Object[].class).getResultList();
+		if (tdsRows.isEmpty()) {
+			return tdsItemList;
+		}
+		Set<String> salesItemIdSet = new HashSet<String>();
+		Set<String> itemMasterIdSet = new HashSet<String>();
+		for (Object[] r : tdsRows) {
+			if (r[1] != null) {
+				salesItemIdSet.add((String) r[1]);
+			}
+			if (r[3] != null) {
+				itemMasterIdSet.add((String) r[3]);
+			}
+		}
+
+		// 2) sales item + sales order + client name in one query
+		Map<String, Object[]> salesItemRows = new HashMap<String, Object[]>();
+		List<Object[]> siRows = em.createQuery(
+				"select s.id, s.description, s.slNo, so.id, so.clientPoNumber, so.created, p.partyName "
+				+ "from SalesItem s join s.salesOrder so left join so.party p where s.id in :ids",
+				Object[].class).setParameter("ids", new ArrayList<String>(salesItemIdSet)).getResultList();
+		for (Object[] r : siRows) {
+			salesItemRows.put((String) r[0], r);
+		}
+
+		// 3) item masters in one query (same call SalesService uses)
+		Map<String, ItemMaster> itemMastersById = itemService.getItemsByIds(new ArrayList<String>(itemMasterIdSet));
+
+		// 4) (sales item, item) pairs that already have a PO item, in one query
+		Set<String> poPairs = new HashSet<String>();
+		List<Object[]> poRows = em.createQuery(
+				"select p.description, p.modelNo from PurchaseItem p where p.description in :ids",
+				Object[].class).setParameter("ids", new ArrayList<String>(salesItemIdSet)).getResultList();
+		for (Object[] r : poRows) {
+			poPairs.add(r[0] + "|" + r[1]);
+		}
+
+		Map<String, SalesOrder> salesOrderCache = new HashMap<String, SalesOrder>();
+		for (Object[] r : tdsRows) {
+			String salesItemId = (String) r[1];
+			String itemId = (String) r[3];
+			Object[] si = salesItemRows.get(salesItemId);
+			ItemMaster itemObj = itemMastersById.get(itemId);
+			if (si == null || itemObj == null) {
+				continue;
+			}
+			if (poPairs.contains(salesItemId + "|" + itemId)) {
+				continue;
+			}
+			TdsItems tdsItem = new TdsItems();
+			tdsItem.setTdsItemId(((Number) r[0]).intValue());
+			tdsItem.setDescription(salesItemId);
+			tdsItem.setTdsApproved(true);
+			tdsItem.setSiteQuantity(((Number) r[2]).floatValue());
+			tdsItem.setModelNumber(itemId);
+			tdsItem.setDesignQty(((Number) r[4]).floatValue());
+
+			String soId = (String) si[3];
+			SalesOrder salesOrder = salesOrderCache.get(soId);
+			if (salesOrder == null) {
+				salesOrder = new SalesOrder();
+				salesOrder.setId(soId);
+				salesOrder.setClientPoNumber((String) si[4]);
+				salesOrder.setCreated((Date) si[5]);
+				Party party = new Party();
+				party.setPartyName((String) si[6]);
+				salesOrder.setParty(party);
+				salesOrderCache.put(soId, salesOrder);
+			}
+			tdsItem.set("clientpoNum",salesOrder.getClientPoNumber());
+			tdsItem.set("salesOrderObj",salesOrder);
+			tdsItem.set("modelNum",itemObj.getModel());
+			tdsItem.set("client",(String) si[6]);
+			tdsItem.set("createdDt",salesOrder.getCreated());
+			tdsItem.set("desc",(String) si[1]);
+			tdsItem.set("slNo",(String) si[2]);
+			tdsItemList.add(tdsItem);
+		}
+		return tdsItemList;
+		
 	}
 	
-	private String tdsItemKey(TdsItems item) {
-		return item.getDescription() + "|" + (item.getModelNumber() != null ? item.getModelNumber() : "");
+	/*@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
+		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
+		Set set = new HashSet();
+		for (TdsItems tdsItem : tdsItemsList) {
+			if(tdsItem.isTdsApproved()==true && tdsItem.getSiteQuantity()>0) {
+				String salesItemId=tdsItem.getDescription();
+				Optional<SalesItem> salesItemObj=salesService.getSalesItemObjById(salesItemId);
+				String itemId = tdsItem.getModelNumber();
+				List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemListBySalesItemIdAndItemId(salesItemId, itemId);
+				if(poItemList.size()==0) {
+					set.add(salesItemObj.get().getSalesOrder());
+				}
+				
+			}
+		}
+		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
+		return soList;
+		
+	}*/
+	
+	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
+		
+		ArrayList<SalesOrder> soList = salesrepo.getTdsApprovedAndPoNotDoneListDashboard();
+		return soList;
+		
 	}
 
 	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDonePartial() {
-		List<TdsItems> tdsItemList = getTdsItemsListWhereTdsApprovedAndPoNotDone();
-		return tdsItemList.size() > 10 ? tdsItemList.subList(0, 10) : tdsItemList;
+ List<TdsItems> items = getTdsItemsListWhereTdsApprovedAndPoNotDone();
+ return new ArrayList<>(items.subList(0, Math.min(10, items.size())));
+ }
+
+ private String tdsItemKey(TdsItems item) {
+		return item.getDescription() + "|" + (item.getModelNumber() != null ? item.getModelNumber() : "");
+	}
+
+	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboardPartial() {
+		List<TdsItems> tdsItemsList = tdsItemRepo.findAll();
+		Set set = new HashSet();
+		for (TdsItems tdsItem : tdsItemsList) {
+			if(set.size()<10) {
+			if(tdsItem.isTdsApproved()==true && tdsItem.getSiteQuantity()>0) {
+				String salesItemId=tdsItem.getDescription();
+				Optional<SalesItem> salesItemObj=salesService.getSalesItemObjById(salesItemId);
+				String itemId = tdsItem.getModelNumber();
+				List<PurchaseItem> poItemList = purchaseItemService.getPurchaseItemListBySalesItemIdAndItemId(salesItemId, itemId);
+				if(poItemList.size()==0) {
+					set.add(salesItemObj.get().getSalesOrder());
+				}
+			}
+				
+			}
+		}
+		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
+		return soList;
 	}
 
 }

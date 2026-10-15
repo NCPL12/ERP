@@ -806,6 +806,9 @@ function getSalesOrdertbySalesOrderId(soId) {
 		populateDescriptionDropdown(row, cachedItems);
 		return;
 	}
+	var $dd = $("#descriptionDropdown" + row);
+	$dd.children("option").filter(":not(:first)").remove();
+	$dd.append('<option value="" disabled data-loading="1">Loading...</option>');
 	$.ajax({
 		type: "GET",
 		url: api.SALES_LIST_BY_SOID + "?id=" + soId+"&&className="+className,
@@ -814,6 +817,7 @@ function getSalesOrdertbySalesOrderId(soId) {
 			populateDescriptionDropdown(row, response);
 		},  
 		complete:function(resp){
+			$("#descriptionDropdown" + row).find("option[data-loading]").remove();
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
@@ -841,6 +845,7 @@ function populateDescriptionDropdown(row, items){
 		optionsHtml += '<option value=' + value.id + '>' + value.slNo + '.' + description + '</option>';
 	});
 	dropdown.append(optionsHtml);
+	dropdown.trigger("change.select2");
 	$('input').removeClass("has-error");
 }
 
@@ -1128,6 +1133,8 @@ function addSalesOrder() {
 }
 /**on change of description item**/
 function getSalesItemtbySalesItemId() {
+	if (window.descHandlerBound) { return; }
+	window.descHandlerBound = true;
 	    var count =1;
 		var debouncedDescriptionDropdownHandler = debounce(function (target) {
 			var $target = $(target);
@@ -1156,7 +1163,7 @@ function getSalesItemtbySalesItemId() {
 					console.log(e);
 				}  	
 			});
-		}, 250);
+		}, 0);
 		$(document).on("change", '.descriptionDropdown', function () {
 			debouncedDescriptionDropdownHandler(this);
 		});
@@ -1966,7 +1973,7 @@ function loadTable(response){
 				"data": "Date",
 				"width":"10%",
 				render : function(data, type, row) {
-					var newdate = moment(new Date(row.purchaseOrder.created)).format("YYYY-MM-DD HH:mm:ss") ;
+					var newdate = moment(new Date(row.purchaseOrder.created)).format("DD-MM-YYYY HH:mm:ss") ;
 						return  newdate; 
 				}
 

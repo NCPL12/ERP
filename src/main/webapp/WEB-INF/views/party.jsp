@@ -97,10 +97,10 @@ width:100% !important;
 }
 
 .cursor{
- cursor:pointer;  
+ cursor:pointer;
    }
 .deleteButton{
- cursor:pointer;  
+ cursor:pointer;
    }
  table.cityInputTable>tbody>tr>th{
 padding: 2px 5px;
@@ -121,17 +121,17 @@ padding: 2px 12px!important;
     width: 200px;
     margin-left: auto;
     margin-right: auto;
-} 
+}
 .footerDivinCategory {
     width: 250px;
     margin-left: auto;
     margin-right: auto;
-} 
+}
 .footerDivinType{
     width: 180px;
     margin-left: auto;
     margin-right: auto;
-} 
+}
 </style>
 </head>
 <body>
@@ -165,63 +165,63 @@ padding: 2px 12px!important;
 </div>
 <div class="row padding">
 <label for="Address1" class="col-form-label form-control-sm col-sm-2">Address1</label>
-		 
-								
-																											 
-									  
-			   
-		 
-		  
-							 
-																							  
-		 
-								
-																											 
-									  
-			   
-		  
-							 
-																					  
-															 
-																											   
-														   
-						 
-			 
-																		  
-								  
-			   
-																									  
-							   
-																										  
-			   
-							  
-																											   
-									
-			  
-		  
-							 
-																					
-							   
-																						  
-			   
-																									  
-							   
-																										  
-			   
-							  
-																											   
-			  
-		  
-							 
-																						
-							   
-																									
-			   
-																								
-							   
-																						
-			   
-							  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <div class="col-sm-10">
 <form:input type="text" path="addr1" name="addr1" id="addr1" class="form-control form-control-sm"/>
@@ -306,7 +306,7 @@ aria-hidden="true"></i>
 <div class="col-sm-6">
 <form:input type="text" path="email2" name="email2" id="email2" class="form-control form-control-sm"/>
 </div>
-</div> 
+</div>
 </div>
       <div class="col-sm-4">
 <div class="row padding">
@@ -386,21 +386,21 @@ value="" class="form-control form-control-sm" />
 </div>
                 </div>
 
-                
+
 </div>
     </div>
-   
 
 
-								 
-																			  
+
+
+
 
 <div id="" class="col-md-12"
 style="height: 100%; max-height: 300px; width: 100%;padding: 27px 0px;">
-													
-															 
-					
-		   
+
+
+
+
 
 <div
 style="background: #EAF6F6; height: 23px; width: 100%;">
@@ -409,24 +409,24 @@ style="background: #EAF6F6; height: 23px; width: 100%;">
 Contact</a>
 </p>
 
-																				
-			   
-			
-												
+
+
+
+
 </div>
-																
-																						 
-								  
-			   
-																
-																										   
-															   
+
+
+
+
+
+
+
  <div style="width: 100%; height: 130px;">
-															   
-															  
-			  
-				
-																						  
+
+
+
+
+
 
 <table style="width: 100%;" id="contactTable" class="table contact-list">
 <thead>
@@ -452,20 +452,20 @@ aria-hidden="true"></i>
 </table>
 
 
-			 
-								 
 
-</div> 
+
+
+</div>
 <!-- Content Div closed -->
 
-												  
-											 
-															  
-																									
-						  
+
+
+
+
+
 </div>
 
-				
+
 <div class="button-div-style" align="center">
 <button type="submit" id="savePartyBtn"
 class="btn btn-primary btn-sm btn-inline">SAVE</button>
@@ -474,58 +474,58 @@ class="btn btn-primary btn-sm btn-inline">SAVE</button>
 </div>
 
 </form:form>
-														   
-									
-											 
-													
-											   
-												 
-								
-		  
-																												
-		  
-										 
-													 
-							
-																					
-			 
-											
-						 
-														
-														   
-											   
-										 
-								 
-			 
-		   
-			 
-		  
-												  
-											  
-										 
-									   
-											
-													   
-																					   
-		  
-		   
-		 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
-	   
- 
-								  
-															 
-									
-											 
-													
+
+
+
+
+
+
+
 </div>
-													
-								   
-		  
-																												
+
+
+
+
 </div>
-											
-							
+
+
 
 <!---model for adding and deleting category-->
 <div class="modal fade" id="categoryModel" role="dialog">
@@ -640,40 +640,40 @@ class="newPartyTxtBox txtCaps" />
 <button id="saveType" type="submit"
 class="btn btn-primary autoRefresh">Save</button>
 <button type="reset" class="btn btn-primary" id="typeResetBtn">Cancel</button>
-	  
-		   
-			
-		 
-		
-	   
- 
-								  
 
-										   
+
+
+
+
+
+
+
+
+
 </div>
-</form> 
-											 
-													
-											   
-											 
+</form>
+
+
+
+
 </div>
 </div>
-																												
+
 </div>
-									 
-							
+
+
 
 <!-- /.designation modal ends -->
-			 
-	 
-													 
-														   
-		  
-								 
-								 
-								  
-									
-		   
+
+
+
+
+
+
+
+
+
+
 
 <!---model for adding and deleting city-->
 <div class="modal fade" id="cityModel" role="dialog">
@@ -690,7 +690,7 @@ style="margin-left: 28%; margin-top: 0%;">
 <div class="modal-body">
 
 <table id="cityTable" class="typeTable table table-bordered table-striped">
-											   
+
 </table>
 
    <input type="hidden" name="id" id="cityId"/>
@@ -705,24 +705,24 @@ style="margin-left: 28%; margin-top: 0%;">
 <tr class="newRow">
 <td>
 <!-- <select class="newPartyTxtBox" style="width: 85%; font-size:16px; " name="city_name" id="city_name" > </select> -->
-				   
-																		
-									
+
+
+
 
 <input type="text" name="name" id="newCity"
 class="form-control form-control-sm" />
 </td>
-			 
-		  
-															  
-										
-													   
-																				   
-		  
-		   
-		 
-		
-	   
+
+
+
+
+
+
+
+
+
+
+
 
 <td><input type="text" name="code" id="newCode"
  class="form-control form-control-sm" /></td>
@@ -778,7 +778,7 @@ class="form-control form-control-sm" />
 <td><input type="text" name="code" id="newCode"
  class="form-control form-control-sm" /></td>
 
-<td style="display: inline-flex;"><select id="countryDropdown" 
+<td style="display: inline-flex;"><select id="countryDropdown"
   name="country" class="form-control form-control-sm select2" style="padding-top: 0px!important;" >
 <option value="" selected disabled>Select Country</option>
 </select><i
@@ -792,11 +792,11 @@ class="btn btn-primary autoRefresh">Save</button>
 <button type="reset" class="btn btn-primary" id="stateResetBtn">Cancel</button>
 </div>
 </div>
-            </form> 
+            </form>
 </div>
 </div>
 </div>
-    
+
 <tiles:insertAttribute name="footer" />
 </div>
 </body>
