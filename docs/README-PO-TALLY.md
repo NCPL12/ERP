@@ -173,3 +173,11 @@ This example means ten destination Nos per source Box: quantity is multiplied by
 Readback checks the saved date, inventory line count, stock item names, actual/billed quantities and units, rates, line amounts, allocation due dates and quantities, plus party, taxes and totals. Only a matching readback earns an inventory-v2 checkpoint. Older financial-only checkpoints are deliberately reverified once. A verification failure can follow an accepted write; inspect the per-PO result and saved voucher before retrying.
 
 Rebuild/redeploy and restart ERP. No database schema migration is required. Run mvn test and the JavaScript regression command above. Deployment acceptance should include the real office company, a different active company, approved unit conversions and a small scoped export before bulk operation. Automated tests use a local fake Tally endpoint, not the office company.
+
+### Issues #62 and #63: company and purchase-ledger verification
+
+A nonblank cashflow.tally.company-name is required for manual export, automatic sync and the connection/options check. Set the exact intended company name in the deployed external configuration and restart ERP. A blank value produces a configuration error before any Tally request or export-state change; automatic sync reports the error before loading POs. ERP does not fall back to the currently active Tally company.
+
+Saved inventory accounting allocations must name the expected purchase ledger and sum to the signed line amount. Missing, wrong-ledger, wrong-sign or incorrect-value allocations fail verification even if the vendor, GST and total match. The readback explicitly fetches accounting allocations. A failed readback can follow an accepted write, so inspect the reported voucher before retrying.
+
+The inventory-ledger-v3 checkpoint version forces older verified POs through the stronger check on their next eligible sync. Keep the state file; do not delete checkpoints to trigger rechecking. No database schema migration is required. Rebuild/redeploy and restart; confirm company configuration and test a small approved PO scope in the target office environment.

@@ -34,6 +34,7 @@ public class TallyPurchaseOrderAutoSync {
     public void synchronize() {
         if (!enabled || exporter.isExportRunning()) return;
         try {
+            exporter.requireConfiguredCompany();
             if (fromDate.trim().isEmpty()) throw new IllegalStateException("Automatic PO sync needs a configured starting date.");
             java.time.LocalDate startingDate = java.time.LocalDate.parse(fromDate);
             java.util.Set<String> previous = includePreviouslyExported ? exporter.previouslyExportedNumbers() : java.util.Collections.emptySet();
@@ -57,6 +58,8 @@ public class TallyPurchaseOrderAutoSync {
     }
     public String getConfigurationError() {
         if (!enabled) return null;
+        try { exporter.requireConfiguredCompany(); }
+        catch (IllegalStateException error) { return error.getMessage(); }
         try { java.time.LocalDate.parse(fromDate.trim()); java.time.ZoneId.of(timeZone); return null; }
         catch (Exception error) { return "Automatic PO sync needs tally.po.sync.from-date (yyyy-MM-dd) and a valid tally.po.sync.time-zone."; }
     }

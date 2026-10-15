@@ -85,6 +85,7 @@ class TallyPurchaseOrderServiceTest {
     @Test
     void rejectsOverlappingExportWithoutContactingTally() throws Exception {
         TallyPurchaseOrderService service = new TallyPurchaseOrderService(null);
+        org.springframework.test.util.ReflectionTestUtils.setField(service,"companyName","Company A");
         java.lang.reflect.Field field = TallyPurchaseOrderService.class.getDeclaredField("exportRunning");
         field.setAccessible(true);
         java.util.concurrent.atomic.AtomicBoolean running = (java.util.concurrent.atomic.AtomicBoolean) field.get(service);

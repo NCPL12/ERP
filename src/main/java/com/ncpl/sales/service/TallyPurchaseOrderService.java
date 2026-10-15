@@ -77,10 +77,11 @@ public class TallyPurchaseOrderService {
     }
 
     public Options loadOptions() throws Exception {
+        requireConfiguredCompany();
         connectionCheckTimeout.set(Math.min(requestTimeoutMs, 5000));
         try {
             MasterSnapshot snapshot = loadMasterSnapshot(false);
-            return new Options(serverUrl, blank(companyName) ? "Company currently open in Tally" : companyName, snapshot.purchaseLedgers);
+            return new Options(serverUrl, companyName, snapshot.purchaseLedgers);
         } finally { connectionCheckTimeout.remove(); }
     }
 
@@ -113,6 +114,7 @@ public class TallyPurchaseOrderService {
     }
 
     private ExportResult exportWithLock(List<PurchaseOrder> purchaseOrders, boolean onlyChanged) throws Exception {
+        requireConfiguredCompany();
         if (!exportRunning.compareAndSet(false, true)) {
             throw new IllegalStateException("A PO export is already running. Wait for its result before sending again.");
         }
@@ -869,14 +871,14 @@ public class TallyPurchaseOrderService {
                 .replace("ErpExistingPurchaseOrders", "ErpVerifiedPurchaseOrders")
                 .replace("ErpIsPurchaseOrder", "ErpVerifyPurchaseOrder")
                 .replace("VoucherNumber,Date,Narration,GUID,MasterID,AlterID",
-                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*")
+                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*,AllInventoryEntries.AccountingAllocations.*")
                 .replace("</SYSTEM>", selection + "</SYSTEM>");
     }
 
     private void verifySavedOrder(PreparedOrder order) throws Exception {
         String request = buildPurchaseOrdersRequest()
                 .replace("VoucherNumber,Date,Narration,GUID,MasterID,AlterID",
-                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*")
+                        "VoucherNumber,Date,PartyLedgerName,MasterID,AlterID,AllLedgerEntries.*,AllInventoryEntries.*,AllInventoryEntries.BatchAllocations.*,AllInventoryEntries.AccountingAllocations.*")
                 .replace("</SYSTEM>", " AND $VoucherNumber = &quot;"
                         + escapeXml(order.number) + "&quot;</SYSTEM>");
         // Select the exact number in Java so invoice references cannot broaden a match.
@@ -925,7 +927,7 @@ public class TallyPurchaseOrderService {
                 .digest(buildImportRequest(order).getBytes(StandardCharsets.UTF_8));
         StringBuilder hash = new StringBuilder();
         for (byte value : digest) hash.append(String.format("%02x", value & 255));
-        return "inventory-v2:" + hash + ":" + trim(alterId);
+        return "inventory-ledger-v3:" + hash + ":" + trim(alterId);
     }
 
     private void loadVerifiedStates() {
@@ -1046,6 +1048,15 @@ public class TallyPurchaseOrderService {
                     int slash=rate==null?-1:rate.lastIndexOf('/');
                     if(slash<0||!normalize(item.unit).equals(normalize(rate.substring(slash+1)))||savedNumber(rate).compareTo(item.rate)!=0)continue;
                     if(new BigDecimal(firstText(line,"AMOUNT")).compareTo(item.amount.negate())!=0)continue;
+                    List<Element> allocations=children(line,"ACCOUNTINGALLOCATIONS.LIST");
+                    if(allocations.isEmpty())continue;
+                    BigDecimal allocated=BigDecimal.ZERO;
+                    boolean ledgerMatches=true;
+                    for(Element allocation:allocations) {
+                        if(!normalize(item.purchaseLedger).equals(normalize(firstText(allocation,"LEDGERNAME"))))ledgerMatches=false;
+                        allocated=allocated.add(new BigDecimal(firstText(allocation,"AMOUNT")));
+                    }
+                    if(!ledgerMatches||allocated.compareTo(item.amount.negate())!=0)continue;
                     List<Element> batches=children(line,"BATCHALLOCATIONS.LIST");
                     if(batches.isEmpty())continue;
                     BigDecimal batchQty=BigDecimal.ZERO;
@@ -1060,7 +1071,7 @@ public class TallyPurchaseOrderService {
                     if(dueMatches&&batchQty.compareTo(item.quantity)==0){match=line;break;}
                 } catch(RuntimeException invalidSavedLine) { /* Try another occurrence of the same stock item. */ }
             }
-            if(match==null)throw new IllegalStateException("Saved inventory differs for "+item.name+": expected "+item.quantity.toPlainString()+" "+item.unit+", rate "+item.rate.toPlainString()+", amount "+item.amount.toPlainString()+", due "+item.dueDate+". Identity, quantity, unit, rate, amount and batch due dates must all match.");
+            if(match==null)throw new IllegalStateException("Saved inventory differs for "+item.name+": expected "+item.quantity.toPlainString()+" "+item.unit+", rate "+item.rate.toPlainString()+", amount "+item.amount.toPlainString()+", due "+item.dueDate+", purchase ledger "+item.purchaseLedger+". Identity, quantity, unit, rate, amount, purchase-ledger allocations and batch due dates must all match.");
             saved.remove(match);
         }
     }
@@ -1157,6 +1168,10 @@ public class TallyPurchaseOrderService {
 
     private String companyVariable() {
         return blank(companyName) ? "" : tag("SVCURRENTCOMPANY", companyName);
+    }
+
+    void requireConfiguredCompany() {
+        if (blank(companyName)) throw new IllegalStateException("Configure cashflow.tally.company-name with the exact destination company before checking or exporting POs. No PO import was started.");
     }
 
     static String masterName(Element master) {

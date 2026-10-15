@@ -11,9 +11,10 @@ import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
 class TallyVerificationFlowTest {
-    @Test void duplicateTallyNumbersBlockBeforeAnyMasterOrVoucherWrite() throws Exception {run(true);}
-    @Test void matchingTotalWithWrongInventoryNeverCreatesVerifiedCheckpoint() throws Exception {run(false);}
-    private void run(boolean duplicate) throws Exception {
+    @Test void duplicateTallyNumbersBlockBeforeAnyMasterOrVoucherWrite() throws Exception {run(true,false);}
+    @Test void matchingTotalWithWrongInventoryNeverCreatesVerifiedCheckpoint() throws Exception {run(false,false);}
+    @Test void wrongPurchaseLedgerNeverCreatesVerifiedCheckpoint() throws Exception {run(false,true);}
+    private void run(boolean duplicate, boolean wrongLedger) throws Exception {
         AtomicInteger writes=new AtomicInteger();
         com.sun.net.httpserver.HttpServer server=com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1",0),0);
         server.createContext("/",exchange->{
@@ -22,7 +23,7 @@ class TallyVerificationFlowTest {
             byte[] body=bytes.toByteArray();String request=new String(body,body.length>1&&body[1]==0?StandardCharsets.UTF_16LE:StandardCharsets.UTF_8);
             String response="<ENVELOPE/>";
             if(request.contains("<TALLYREQUEST>Import")){writes.incrementAndGet();response="<RESPONSE><CREATED>1</CREATED></RESPONSE>";}
-            else if(request.contains("ErpVerifiedPurchaseOrders"))response="<ENVELOPE>"+AssignedTallyIssuesTest.savedVoucher().replace("1.234 Mtr","1.230 Mtr")+"</ENVELOPE>";
+            else if(request.contains("ErpVerifiedPurchaseOrders"))response="<ENVELOPE>"+(wrongLedger ? AssignedTallyIssuesTest.savedVoucher().replace("State Purchase@0%","Wrong Purchase") : AssignedTallyIssuesTest.savedVoucher().replace("1.234 Mtr","1.230 Mtr"))+"</ENVELOPE>";
             else if(request.contains("ErpExistingPurchaseOrders")&&duplicate)response="<ENVELOPE>"+voucher("123")+voucher("124")+"</ENVELOPE>";
             else if(request.contains("ErpTallyGroups"))response="<ENVELOPE><GROUP NAME=\"Purchase Accounts\"><PARENT>Primary</PARENT></GROUP></ENVELOPE>";
             else if(request.contains("ErpTallyLedgers"))response="<ENVELOPE><LEDGER NAME=\"Vendor\"><PARENT>Sundry Creditors</PARENT></LEDGER><LEDGER NAME=\"State Purchase@0%\"><PARENT>Purchase Accounts</PARENT></LEDGER></ENVELOPE>";

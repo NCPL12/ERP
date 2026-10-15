@@ -16,6 +16,37 @@ import static org.mockito.Mockito.*;
 import static org.assertj.core.api.Assertions.*;
 
 class AssignedTallyIssuesTest {
+    @Test void blankCompanyBlocksManualAndAutomaticExportsBeforeNetworkOrStateChanges() throws Exception {
+        for(String company:Arrays.asList(null,""," \t\r\n")) {
+            TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+            ReflectionTestUtils.setField(service,"companyName",company);
+            ReflectionTestUtils.setField(service,"serverUrl","invalid://must-not-connect");
+            assertThatThrownBy(()->service.exportAllPending(Collections.emptyList())).hasMessageContaining("cashflow.tally.company-name");
+            assertThatThrownBy(()->service.exportChangedOrders(Collections.emptyList())).hasMessageContaining("cashflow.tally.company-name");
+            assertThatThrownBy(service::loadOptions).hasMessageContaining("cashflow.tally.company-name");
+            assertThat(service.isExportRunning()).isFalse();assertThat(service.getProgress()).isEmpty();
+            com.ncpl.sales.repository.PurchaseRepo repo=mock(com.ncpl.sales.repository.PurchaseRepo.class);
+            TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(repo,service);
+            ReflectionTestUtils.setField(sync,"enabled",true);ReflectionTestUtils.setField(sync,"fromDate","2026-04-01");
+            sync.synchronize();verifyZeroInteractions(repo);
+            assertThat(sync.getLastError()).contains("cashflow.tally.company-name");
+            assertThat(sync.getConfigurationError()).contains("cashflow.tally.company-name");
+        }
+    }
+    @Test void savedPurchaseLedgerAndAllocatedAmountMustMatch() throws Exception {
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        String saved=savedVoucher();service.verifySavedOrder(order(),xml(saved));
+        String allocation="<ACCOUNTINGALLOCATIONS.LIST><LEDGERNAME>State Purchase@0%</LEDGERNAME><AMOUNT>-12.34</AMOUNT></ACCOUNTINGALLOCATIONS.LIST>";
+        for(String wrong:Arrays.asList(saved.replace("State Purchase@0%","Wrong Purchase"),
+                saved.replace(allocation,""),saved.replace(allocation,allocation.replace("-12.34","-12.33")),
+                saved.replace(allocation,allocation+allocation),
+                saved.replace(allocation,allocation.replace("-12.34","12.34"))))
+            assertThatThrownBy(()->service.verifySavedOrder(order(),xml(wrong))).hasMessageContaining("purchase ledger");
+        service.verifySavedOrder(order(),xml(saved.replace(allocation,
+                allocation.replace("-12.34","-6.00")+allocation.replace("-12.34","-6.34"))));
+        java.lang.reflect.Method checkpoint=TallyPurchaseOrderService.class.getDeclaredMethod("verifiedState",TallyPurchaseOrderService.PreparedOrder.class,String.class);
+        checkpoint.setAccessible(true);assertThat((String)checkpoint.invoke(service,order(),"1")).startsWith("inventory-ledger-v3:");
+    }
     @Test void createAndAlterAlwaysSelectConfiguredCompanyAndStableId() {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
         ReflectionTestUtils.setField(service,"companyName","Neptune & Company A");
@@ -53,7 +84,8 @@ class AssignedTallyIssuesTest {
     }
     @Test void archivedOrdersAreSkippedWithoutAnyTallyConnection() throws Exception {
         PurchaseOrder archived=new PurchaseOrder();archived.setPoNumber("ARCHIVED");archived.setArchive(true);
-        TallyPurchaseOrderService.ExportResult result=new TallyPurchaseOrderService(null).exportAllPending(Collections.singletonList(archived));
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null); ReflectionTestUtils.setField(service,"companyName","Company A");
+        TallyPurchaseOrderService.ExportResult result=service.exportAllPending(Collections.singletonList(archived));
         assertThat(result.getSkipped()).isEqualTo(1);assertThat(result.getImported()).isZero();
     }
     @Test void inventoryMustMatchEvenWhenFinancialTotalsMatch() throws Exception {
@@ -89,7 +121,7 @@ class AssignedTallyIssuesTest {
         return new TallyPurchaseOrderService.PreparedOrder("PO-1",LocalDate.of(2026,10,1),"Vendor",new BigDecimal("12.34"),Collections.singletonList(item),Collections.emptyMap());
     }
     static String savedVoucher() {
-        return "<VOUCHER><VOUCHERNUMBER>PO-1</VOUCHERNUMBER><DATE>20261001</DATE><ALTERID>1</ALTERID><ALLLEDGERENTRIES.LIST><LEDGERNAME>Vendor</LEDGERNAME><ISPARTYLEDGER>Yes</ISPARTYLEDGER><AMOUNT>12.34</AMOUNT></ALLLEDGERENTRIES.LIST><ALLINVENTORYENTRIES.LIST><STOCKITEMNAME>Cable</STOCKITEMNAME><BILLEDQTY>1.234 Mtr</BILLEDQTY><ACTUALQTY>1.234 Mtr</ACTUALQTY><RATE>10/Mtr</RATE><AMOUNT>-12.34</AMOUNT><BATCHALLOCATIONS.LIST><BILLEDQTY>1.234 Mtr</BILLEDQTY><ORDERDUEDATE>01-Oct-26</ORDERDUEDATE></BATCHALLOCATIONS.LIST></ALLINVENTORYENTRIES.LIST></VOUCHER>";
+        return "<VOUCHER><VOUCHERNUMBER>PO-1</VOUCHERNUMBER><DATE>20261001</DATE><ALTERID>1</ALTERID><ALLLEDGERENTRIES.LIST><LEDGERNAME>Vendor</LEDGERNAME><ISPARTYLEDGER>Yes</ISPARTYLEDGER><AMOUNT>12.34</AMOUNT></ALLLEDGERENTRIES.LIST><ALLINVENTORYENTRIES.LIST><STOCKITEMNAME>Cable</STOCKITEMNAME><BILLEDQTY>1.234 Mtr</BILLEDQTY><ACTUALQTY>1.234 Mtr</ACTUALQTY><RATE>10/Mtr</RATE><AMOUNT>-12.34</AMOUNT><ACCOUNTINGALLOCATIONS.LIST><LEDGERNAME>State Purchase@0%</LEDGERNAME><AMOUNT>-12.34</AMOUNT></ACCOUNTINGALLOCATIONS.LIST><BATCHALLOCATIONS.LIST><BILLEDQTY>1.234 Mtr</BILLEDQTY><ORDERDUEDATE>01-Oct-26</ORDERDUEDATE></BATCHALLOCATIONS.LIST></ALLINVENTORYENTRIES.LIST></VOUCHER>";
     }
     static org.w3c.dom.Element xml(String s) throws Exception {return javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new org.xml.sax.InputSource(new java.io.StringReader(s))).getDocumentElement();}
     private Object snapshot() throws Exception {
