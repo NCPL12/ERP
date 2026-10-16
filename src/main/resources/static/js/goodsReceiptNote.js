@@ -176,112 +176,29 @@ $(document).ready(function(){
 	    		    }
 	    		});
 	    	},
-	    	"columns": [ {
-		"data" : "grnId",
-		"defaultContent":"",
-		render : function(data, type, row) {
-			if (type === 'display') {
-				return "<a href='#' class='grnLink'>" + data + "</a>";
-			}
-			return data;
-		}
-	}, {
-		"data" : "poNumber",
-		"defaultContent":"",
-		
-	}, {
-		"data" : "created",
-		"defaultContent":"",
-				"class":"hideTd",
-				"type": "date"
-			}, {
-				"data" : "poDate",
-				"defaultContent":"",
-				"type": "date",
-				render: function (data) {
-					if (!data) {
-						return "";
-					}
-					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
-				}
-			}, {
-				"data" : "created",
-				"defaultContent":"",
-				"type": "date",
-				render: function (data) {
-					if (!data) {
-						return "";
-					}
-					return moment(new Date(data)).format("DD-MM-YY HH:mm:ss");
-				}
-			}, {
-				"data" : "vendor",
-				"defaultContent":"",
-				
-				"class": "text-field-large-nowrap",
-	    		render: function ( data, type, row ) {
-	    		    return data.length > 35 ?
-	    		    		data.substr( 0, 35 ) +'...' :
-	    		    			data;
-	    		}
 
-			},
-			{
-				"data" : "invoiceNo",
-				"defaultContent":"",
-				
-			},
-			
-			{
-				"data" : "total",
-				"defaultContent":"",
-				"type": "num"
-			},
-			
-			{
-				"mData" : "grnId"	,
-				render : function(datam, type, row) {
-					var url = null;
-					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' id='"+row.grnId+"' class='btn btn-default btn-flat btn-xs grnView'><i class='fa fa-eye'></i></button>";;				
-				}
-			},
-			{
-				"mData" : "pdf"	,
-				render : function(datam, type, row) {
-					var url = null;
-					url ="/ncpl-sales/grn/download/"+row.grnId;
-					return "<a class='text-info ' href='" + url + "'><button type='button'  class='btn btn-default btn-flat btn-xs' ><i class='fa fa-fw fa-download'></i></button></a>";				
-				}
-			},
-			{
-				"mData" : "archive"	,
-				render : function(datam, type, row) {
-					var archive;
-					if(role=="SUPER ADMIN"){
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
-						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
-						}
-					}else{
-						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
-						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
-						}
-					}
-				}
-			}
-			]
 	    });
-	    //on double click of list navigate to view page
+	   	    //common function: open GRN view page
+	    function openGrn(rowData){
+	    	if (!canEditGrn || !rowData) {
+	    		return;
+	    	}
+	    	window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(rowData.grnId);
+	    }
+
+	    //SINGLE CLICK: only on the Grn No. link
 	  $('#grnList tbody').on('click', 'a.grnLink', function (e) {
    e.preventDefault();
-   if (!canEditGrn) return;
-   var data = grnDataTable.row($(this).closest('tr')).data();
-   var grnId = data.grnId;
-   window.location = pageContext+"/api/grn/view?grnId="+grnId;
+   openGrn(grnDataTable.row($(this).closest('tr')).data());
+});
+
+	    //DOUBLE CLICK: on any other column of the row
+	  $('#grnList tbody').on('dblclick', 'tr', function (e) {
+   //skip link, view / download buttons and archive checkbox
+   if ($(e.target).closest('a, button, input, select').length) {
+       return;
+   }
+   openGrn(grnDataTable.row(this).data());
 });
 })
 
@@ -416,7 +333,7 @@ $(document).on("click",".grnView",function(){
 			
 	    	});
 				
-				$("#grnViewBtn").on("click",function(){
+				$("#grnViewBtn").off("click.grnView").on("click.grnView",function(){
 					if (!canEditGrn) {
 						return;
 					}

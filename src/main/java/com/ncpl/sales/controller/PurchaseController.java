@@ -798,6 +798,37 @@ public class PurchaseController {
 		return "goodsReceiptNote";
 	}
 	
+	// ---------- shared model population for the GRN page ----------
+	private void populateGrnModel(Model model, Grn grnObj) throws JsonProcessingException {
+		List<Map<String, Object>> poList = purchaseService.findAllPoNumbersAndDates();
+		List<String> grnInvoiceNumbers = grnService.getAllInvoiceNumbers();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
+		ObjectMapper mapper = utilService.getObjectMapper();
+
+		model.addAttribute("grn", new Grn());
+		model.addAttribute("poList", mapper.writeValueAsString(poList));
+		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		model.addAttribute("grnList", mapper.writeValueAsString(grnInvoiceNumbers));
+
+		if (grnObj != null) {
+			model.addAttribute("grnObj", mapper.writeValueAsString(grnObj));
+			// FIX: only the items of THIS GRN's PO are needed to repopulate the screen
+			// (was purchaseItemService.getAllPurchaseItems() = every item of every PO -> ~33 MB page)
+			List<PurchaseItem> purchaseItemList = new ArrayList<>();
+			if (grnObj.getPoNumber() != null) {
+				Optional<PurchaseOrder> po = purchaseService.findById(grnObj.getPoNumber());
+				if (po.isPresent() && po.get().getItems() != null) {
+					purchaseItemList = po.get().getItems();
+				}
+			}
+			model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
+		} else {
+			model.addAttribute("purchaseItemList", "[]");
+		}
+	}
+
+	// ---------- /new_grn : only for creating a NEW GRN (or re-showing after a save error) ----------
+	/* OLD
 	@GetMapping("/new_grn")
 	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
 		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
@@ -821,6 +852,15 @@ public class PurchaseController {
 				model.addAttribute("purchaseItemList", "[]");
 			}
 			return "newGoodsReceiptNote";
+	}
+	*/
+	@GetMapping("/new_grn")
+	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
+		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
+		Grn grnObj = (flashMap != null) ? (Grn) flashMap.get("grnObj") : null; // set by saveGrn on error
+		populateGrnModel(model, grnObj);
+		model.addAttribute("pageHeader", "New Grn");
+		return "newGoodsReceiptNote";
 	}
 	
 	@GetMapping("/api/getPurchaseItemList")
@@ -1051,6 +1091,7 @@ public class PurchaseController {
 	 * @param model
 	 * @return
 	 */
+	 /* OLD
 	 @GetMapping("/api/grn/view")
 		public String displayGrnView(@RequestParam("grnId") String grnId,RedirectAttributes redirectAttr, Model model){
 			
@@ -1058,7 +1099,16 @@ public class PurchaseController {
 			redirectAttr.addFlashAttribute("grnObj",grn.get());
 			return "redirect:/new_grn";
 		}
+	 */
+	 // ---------- old API URL: keep working, but send to the new URL ----------
+	 @GetMapping("/api/grn/view")
+		public String displayGrnView(@RequestParam("grnId") String grnId, RedirectAttributes redirectAttr) {
+			redirectAttr.addAttribute("grnId", grnId);   // fills {grnId} and URL-encodes spaces
+			return "redirect:/grn/{grnId}";
+		}
 
+	 // ---------- /grn/{grnId} : existing GRN, URL stays /grn/GRN 8732-071026 ----------
+	 /* OLD
 	 @GetMapping("/grn/{grnId:.+}")
 		public String viewGrn(@org.springframework.web.bind.annotation.PathVariable("grnId") String grnId, RedirectAttributes redirectAttr){
 			// JS does window.location = pageContext+"/grn/"+grnId (grnId like "GRN 8732-071026" → GRN%208732-071026)
@@ -1068,6 +1118,17 @@ public class PurchaseController {
 				return "redirect:/new_grn";
 			}
 			return "redirect:/grnLists";
+		}
+	 */
+	 @GetMapping("/grn/{grnId:.+}")
+		public String viewGrn(@PathVariable("grnId") String grnId, Model model) throws JsonProcessingException {
+			Optional<Grn> grn = grnService.getGrnById(grnId);
+			if (!grn.isPresent()) {
+				return "redirect:/grnLists";
+			}
+			populateGrnModel(model, grn.get());
+			model.addAttribute("pageHeader", "New Grn");
+			return "newGoodsReceiptNote";   // view name returned directly, so no redirect and the URL is unchanged
 		}
 	 @GetMapping("/api/grn_items_by_grnId")
 	 public  ResponseEntity<?> getGrnItemListByGrnId(@RequestParam("grnId")  String  grnId,Model model) {
@@ -2154,7 +2215,3 @@ public class PurchaseController {
 				return "companyAssetDetails";
 			}
 }
-	
-
-
-
