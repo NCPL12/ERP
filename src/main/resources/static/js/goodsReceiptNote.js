@@ -178,14 +178,20 @@ $(document).ready(function(){
 	    	},
 
 	    });
-	    //on double click of list navigate to view page
-	  $('#grnList tbody').on('click', 'a.grnLink', function (e) {
-   e.preventDefault();
-   if (!canEditGrn) return;
-   var data = grnDataTable.row($(this).closest('tr')).data();
-   var grnId = data.grnId;
-   window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
-});
+	    function openGrnRow(row) {
+	        if (!canEditGrn) return;
+	        var data = grnDataTable.row(row).data();
+	        if (!data || !data.grnId) return;
+	        window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(data.grnId);
+	    }
+	    $('#grnList tbody').on('click', 'a.grnLink', function (e) {
+	        e.preventDefault();
+	        openGrnRow($(this).closest('tr'));
+	    });
+	    $('#grnList tbody').on('dblclick', 'tr', function (e) {
+	        if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+	        openGrnRow(this);
+	    });
 })
 
  $(document).on('click',".archiveCheckbox",function(){
