@@ -202,9 +202,10 @@ $(document).ready(function () {
 		}
 		$("#modelNo0").append('<option value=' + value.id + '>' + modelNo + '</option>');
 	});*/
-	itemName = itemList.map(({ itemName }) => itemName);
+	itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 	$(".poDescription").autocomplete({
-		source: itemName
+		source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 	});
 	/*unitName = unitsList.map(({ name }) => name);
 	$(".unit").autocomplete({
@@ -1025,9 +1026,10 @@ function addSalesOrder() {
 		//$("#salesOrderDropdown" + previousRow).attr("disabled", true);
 		//$("#descriptionInput" + previousRow).attr("readonly", "readonly");
 
-		itemName = itemList.map(({ itemName }) => itemName);
+		itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 		$(".poDescription").autocomplete({
-			source: itemName
+			source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 		});
 		/*unitName = unitsList.map(({ name }) => name);
 		$(".unit").autocomplete({
@@ -1607,9 +1609,10 @@ $(document).ready(function () {
 		//$("#salesOrderDropdown" + previousRow).attr("disabled", true);
 		//$("#descriptionInput" + previousRow).attr("readonly", "readonly");
 
-		itemName = itemList.map(({ itemName }) => itemName);
+		itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 		$(".poDescription").autocomplete({
-			source: itemName
+			source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 		});
 		/*unitName = unitsList.map(({ name }) => name);
 		$(".unit").autocomplete({

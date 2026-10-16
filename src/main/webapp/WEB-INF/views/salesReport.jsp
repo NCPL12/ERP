@@ -3,6 +3,7 @@
 
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
 <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
@@ -20,7 +21,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/salesReport.css" />">
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
-<script src="<c:url value="/resources/js/salesReport.js" />"></script>
+<script defer src="<c:url value="/resources/js/salesReport.js?v=20260929-tally-po" />"></script>
 <script type="text/javascript">
 var clientList=${clientList};
 var vendorList=${vendorList};
@@ -429,26 +430,45 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="po.list.by.date" />
 							  </h5>
-						  	<form  id="poLostByDateForm" action="${pageContext.request.contextPath}/po_list/by_date" method="get">
+						  	<form id="poLostByDateForm" action="${pageContext.request.contextPath}/po_list/by_date" method="get">
 								 <div class="card-body">
-									   <div class="form-group row mb-1">
-										    <label for="poListByFromDate" class="col-sm-2 col-form-label">From</label>
-										    <div class="col-sm-10">
-										     <input type="text" autocomplete="off" name="poListByFromDate" id="poListByFromDate" class="form-control PositionofTextbox">
-										    </div>
-									   </div>
-									   <div class="form-group row mb-1">
-										    <label for="poListByToDate" class="col-sm-2 col-form-label">To</label>
-										    <div class="col-sm-10">
-										     <input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" class="form-control PositionofTextbox">
-										    </div>
-									   </div>
+								   <div class="form-group row mb-1">
+								    <label for="poListByFromDate" class="col-sm-2 col-form-label">From</label>
+								    <div class="col-sm-10"><input type="text" autocomplete="off" name="poListByFromDate" id="poListByFromDate" required class="form-control PositionofTextbox"></div>
+								   </div>
+								   <div class="form-group row mb-1">
+								    <label for="poListByToDate" class="col-sm-2 col-form-label">To</label>
+								    <div class="col-sm-10"><input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" required class="form-control PositionofTextbox"></div>
+								   </div>
+								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p>
+                                   <p class="text-muted mb-2">Tally purchase and GST ledgers are selected automatically from each ERP PO and item master.</p>
+								   <small id="tallyPoConnectionStatus" class="form-text text-info">Checking Tally connection...</small>
 								 </div>
-								<div  class="card-footer">		  
-								    <button type="submit" id=""
-														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
-							  </div>
-						  </form>
+								 <div class="card-footer d-flex justify-content-end" style="gap: 6px;">
+								  <button type="button" id="checkTallyPo" class="btn btn-default btn-sm"><i class="fa fa-fw fa-refresh"></i> Check Tally</button>
+								  <security:authorize access="hasAuthority('PURCHASE_EDIT')" var="canExportTally" />
+                                  <button data-can-export="${canExportTally}" type="submit" formaction="${pageContext.request.contextPath}/po_list/tally/import" formmethod="post" class="btn btn-success btn-sm" ${not empty tallyOptionsError ? 'disabled' : ''}><i class='fa fa-fw fa-exchange'></i> Send to Tally</button>
+								  <button type="submit" class="btn btn-primary btn-sm"><i class='fa fa-fw fa-download'></i> Download</button>
+								 </div>
+								 <c:if test="${not empty tallyPoImportResult}">
+								  <div class="alert alert-info m-2">Total: ${tallyPoImportResult.total} | Imported: ${tallyPoImportResult.imported} | Skipped: ${tallyPoImportResult.skipped} | Failed: ${tallyPoImportResult.failed}</div>
+								  <div class="table-responsive tally-po-result m-2">
+								   <table class="table table-sm table-bordered mb-0">
+								    <thead><tr><th>ERP PO number</th><th>Status</th><th>Details</th></tr></thead>
+								    <tbody>
+								     <c:forEach items="${tallyPoImportResult.records}" var="record">
+								      <tr class="${record.status eq 'FAILED' ? 'table-danger' : ((record.status eq 'IMPORTED' or record.status eq 'UPDATED') ? 'table-success' : 'table-warning')}">
+								       <td><c:out value="${record.poNumber}" /></td>
+								       <td><strong><c:out value="${record.status}" /></strong></td>
+								       <td><c:out value="${record.message}" /></td>
+								      </tr>
+								     </c:forEach>
+								    </tbody>
+								   </table>
+								  </div>
+								 </c:if>
+								 <c:if test="${not empty tallyPoImportError}"><div class="alert alert-danger m-2"><c:out value="${tallyPoImportError}" /></div></c:if>
+							  </form>
 						</div>
 				</div>
 				</security:authorize>
@@ -658,6 +678,59 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 			</div>
 		</div>
+
+		<div class="modal fade" id="tallyPoResultModal" tabindex="-1" role="dialog">
+			<div class="modal-dialog modal-lg" role="document"><div class="modal-content">
+				<div class="modal-header custom-box-header-modal"><h5 class="modal-title">Tally Purchase Order Export</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+				<div class="modal-body">
+					<div id="tallyPoSummary" class="alert alert-info"></div>
+					<div class="table-responsive" style="max-height: 420px; overflow-y: auto;"><table class="table table-bordered table-sm">
+						<thead><tr><th>PO Number</th><th>Status</th><th>Details</th></tr></thead><tbody id="tallyPoResultRows"></tbody>
+					</table></div>
+				</div>
+				<div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
+			</div></div>
+		</div>
+    <script>
+    function refreshPoTallyConnection() {
+        var button = document.getElementById('checkTallyPo');
+        var label = document.getElementById('tallyPoConnectionStatus');
+        var send = document.querySelector('button[formaction$="/po_list/tally/import"]');
+        button.disabled = true; send.disabled = true; label.textContent = 'Checking Tally connection...';
+        var abort = new AbortController();
+        var timer = setTimeout(function() { abort.abort(); }, 15000);
+        fetch('${pageContext.request.contextPath}/po_list/tally/options', {credentials:'same-origin',signal:abort.signal})
+        .then(function(response) { return response.json().then(function(data) { if (!response.ok) throw new Error(data.message || 'Tally unavailable'); return data; }); })
+        .then(function(data) { label.textContent = data.company + ' is ready'; label.className = 'form-text text-success'; send.disabled = send.getAttribute('data-can-export') === 'false' || document.getElementById('poLostByDateForm').dataset.exportRunning === 'true'; })
+        .catch(function(error) { label.textContent = error.name === 'AbortError' ? 'Tally connection timed out. Check Tally and the server address.' : error.message; label.className = 'form-text text-danger'; send.disabled = true; })
+        .finally(function() { clearTimeout(timer); button.disabled = false; });
+    }
+    document.getElementById('checkTallyPo').addEventListener('click', refreshPoTallyConnection);
+    refreshPoTallyConnection();
+    function refreshPoAutoSyncStatus() {
+        fetch('${pageContext.request.contextPath}/po_list/tally/sync-status', {credentials:'same-origin'})
+        .then(function(response) { if (!response.ok) throw new Error('Status unavailable'); return response.json(); })
+        .then(function(status) {
+            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync checks every 5 minutes.';
+            if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
+            if (status.lastError) message += ' ' + status.lastError;
+            document.getElementById('tallyPoAutoSyncStatus').textContent = message;
+            document.getElementById('tallyPoAutoSyncStatus').className = status.configurationError || status.lastError || (status.lastResult && status.lastResult.failed) ? 'text-danger mb-2' : 'text-info mb-2';
+        }).catch(function() { var label = document.getElementById('tallyPoAutoSyncStatus'); label.textContent = 'Automatic PO sync status is unavailable. Check ERP logs or retry.'; label.className = 'text-danger mb-2'; });
+    }
+    refreshPoAutoSyncStatus();
+    setInterval(refreshPoAutoSyncStatus, 15000);
+    document.getElementById('poLostByDateForm').addEventListener('submit', function(event) {
+        var button = event.submitter || document.activeElement;
+        if (!button || (button.getAttribute('formaction') || '').indexOf('/tally/import') < 0) return;
+        if (this.dataset.exportRunning === 'true') { event.preventDefault(); return; }
+        this.dataset.exportRunning = 'true';
+        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending and verifying POs...';
+        document.getElementById('tallyPoConnectionStatus').textContent = 'Export in progress. Please wait for the verified result.';
+        // Disable after the browser has captured the submitter URL and method.
+        setTimeout(function() { button.disabled = true; }, 0);
+    });
+    </script>
 	</body>
 
 </html>

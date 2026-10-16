@@ -189,7 +189,7 @@ public class PurchaseController {
 		 User userObj  = userService.getCurrentUser();
 		 String role = userObj.getRole();
 		 List<SalesOrder> salesList = salesService.findAllSalesOrderList();
-		 List<ItemMaster> itemList=itemMasterService.getItemList();
+		 List<Map<String,Object>> itemList=itemMasterService.getPoLookupItems();
 		 List<Units> unitsList = itemMasterService.getUnitList();
 		 model.addAttribute("salesOrderList",mapper.writeValueAsString(salesList));
 		 List<Party> partyList=partyService.getPartyListbyTypeSupplier();
@@ -240,7 +240,7 @@ public class PurchaseController {
 		User userObj  = userService.getCurrentUser();
 		String role = userObj.getRole();
 		List<SalesItem> salesItemList = salesService.getAllSalesItemList();
-		 List<ItemMaster> itemList=itemMasterService.getItemList();
+		 List<Map<String,Object>> itemList=itemMasterService.getPoLookupItems();
 		List<Party> partyList = partyService.getPartyListbyTypeSupplier();
 		 List<Units> unitsList = itemMasterService.getUnitList();
 		ObjectMapper mapper = utilService.getObjectMapper();
