@@ -135,15 +135,14 @@
 			});
 		var purchaseOrderId;
 		var  version;
-		//On double click of row navigate to edit page
-	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
-		e.preventDefault();
+	function openPurchaseOrderRow(row) {
 		if (!canEditPurchase) {
 			return;
 		}
-		var data1 = table.row($(this).closest('tr')).data();
+		var data1 = table.row(row).data();
+		if (!data1 || !data1.poNumber) return;
 		var poNumber = data1.poNumber;
-			purchaseOrderId = data1.poNumber;
+		purchaseOrderId = data1.poNumber;
 		getPurchasecopy(poNumber,purchaseOrderId);
 		//getPurchasecopyItems(poNumber);
 		// getVendorAddressForPreview(poNumber);
@@ -154,7 +153,15 @@
 		var version = data1.version;
 		$('#poNumber').val(purchaseOrderId);
 		window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&&version="+version;*/
-		});
+	}
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
+		openPurchaseOrderRow($(this).closest('tr'));
+	});
+	$('#purchaseList tbody').on('dblclick', 'tr', function (e) {
+		if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+		openPurchaseOrderRow(this);
+	});
 	
 	if(role=="STORE USER"){
 		$(".addPO").on("click", function (event) {

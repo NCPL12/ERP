@@ -199,13 +199,19 @@ $(document).ready(function(){
 			}
 			]
 	    });
-	    //on single click of Dc No. link navigate to view page
+	    function openDcRow(row) {
+	        var data = dcTable.row(row).data();
+	        if (!data || !data.dcId) return;
+	        window.location = pageContext+"/api/dc/view?dcId="+data.dcId;
+	    }
 	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
-            e.preventDefault();
-            var data = dcTable.row($(this).closest('tr')).data();
-            var dcId = data.dcId;
-            window.location = pageContext+"/api/dc/view?dcId="+dcId;
-         });
+	        e.preventDefault();
+	        openDcRow($(this).closest('tr'));
+	    });
+	    $('#dcList tbody').on('dblclick', 'tr', function (e) {
+	        if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+	        openDcRow(this);
+	    });
 	    $('#dcList tbody').on('click', ".generateDc",function () {
 	    	$("#dcExcelDropdown").val("").trigger("change");
 	    	 var dcId = $(this).closest("tr").find("td:eq(0)").text();
