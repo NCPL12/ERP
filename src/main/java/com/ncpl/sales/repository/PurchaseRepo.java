@@ -20,7 +20,8 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	public Optional<PurchaseOrder> findPurchaseOrderByNoAndVersion(String poNumber, String version);
 	@Query(" from PurchaseOrder where party_id=?1")
 	public List<PurchaseOrder> getPurchaseListByPartyId(String partyId);
-	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2")
+	// archive=0 excludes deleted/archived POs so they are not sent to Tally or listed by date
+	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2 and archive=0")
 	public List<PurchaseOrder> findPurchaseOrderListByDate(Timestamp d1, Timestamp d2);
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=0 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllPO();

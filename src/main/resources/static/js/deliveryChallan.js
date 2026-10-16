@@ -26,21 +26,11 @@ $(document).ready(function() {
 		});
 	}
 	
-	//display client po number list.
-	$.each(salesList,function(index,value){
-		var clientPoNumber=value.clientPoNumber;
-		if(clientPoNumber!=null){
-			if(clientPoNumber!=""){
-		
-			$("#clientPoDropdown").append('<option value='+value.id+'>'+value.clientPoNumber+'</option>');
-			}
-		}
-	});
-	
-	$.each(clientList,function(index,value){
-		
-			$("#partyName").append('<option value='+value.id+'>'+value.partyName+'</option>');
-		
+	$.each(clientList || [], function(index, value) {
+		$("#partyName").append($('<option>', {
+			value: value.id,
+			text: value.partyName
+		}));
 	});
 	
 	//getSalesItemsbySalesItemId();
@@ -319,13 +309,23 @@ function loadItemsList(response){
 }
 
 //get client name on change of Client po order dropdown
-function getClientNameBySoId(soId){
+function getClientNameBySoId(soId, readOnly){
 	$.ajax({
 		method : 'GET',
-		url : api.GET_SALESORDER_BYID  +"?salesOrderId="+soId,
+		url : api.GET_SALESORDER_BYID  +"?salesOrderId="+encodeURIComponent(soId),
 		success : function(response) {
-		$("#clientId").val(response.party.id);
-		$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
+			if (!response || !response.party) return;
+			var $poDropdown = $("#clientPoDropdown");
+			if (response.clientPoNumber && !$poDropdown.find("option").filter(function() { return this.value == soId; }).length) {
+				$poDropdown.append($('<option>', { value: soId, text: response.clientPoNumber }));
+			}
+			$poDropdown.val(String(soId));
+			$("#clientId").val(response.party.id);
+			$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
+			if (readOnly) {
+				$("#partyName").val(String(response.party.id)).trigger("change.select2").prop("disabled", true);
+				$poDropdown.prop("disabled", true);
+			}
 		},
 		complete:function(resp){
 			if(resp.status==500){
@@ -945,6 +945,7 @@ function getDcObjectByDcId(dcId){
 	    success  : function(response){
 	    	$(".add").hide();
 	    	$("#buttonDiv").hide();
+			getClientNameBySoId(dcObj.soNumber, true);
 	    	// Set DC-level comment and make it read-only for view
 	    	$("#dcComment").val(dcObj.dcComment || "");
 	    	$("#dcComment").attr("readonly", true);
@@ -958,11 +959,8 @@ function getDcObjectByDcId(dcId){
 			$("input[name='items[" +key+ "].deliveredQuantity']").val(value.deliveredQuantity);
 			$("input[name='items[" +key+ "].totalQuantity']").val(value.totalQuantity);
 			$("input[name='items[" +key+ "].todaysQty']").val(value.todaysQty);
-			$('#clientPoDropdown').val(dcObj.soNumber);
-			$('#clientPoDropdown').attr("disabled",true);
-			$('#clientPoDropdown').select2(dcObj, {id: dcObj.soNumber, a_key:dcObj.soNumber});
+			$('#clientPoDropdown').attr("disabled", true);
 			$("#clientName").text(dcObj.clientName).attr("title", dcObj.clientName);
-			$('#clientPoDropdown,#clientName').attr("disabled",true);
             $("#descriptionDropdown" + key).replaceWith('<input type="text" class="form-control PositionofTextbox description" id="description' + key + '" name="items['+key+'].description">');
             $("#description" + key).val(value.description);
             $("#hiddenSalesItemId" + key).val(value.salesItemIdHidden);
@@ -990,42 +988,55 @@ function getDcObjectByDcId(dcId){
 }
 
 $(document).on("change", "#partyName" , function() {
+	var partyId = $(this).val();
+	var selectedClientName = $(this).find("option:selected").text();
+	$("#clientId").val(partyId);
+	$("#clientName").text(partyId ? selectedClientName : "").attr("title", partyId ? selectedClientName : "");
+	$("#clientPoDropdown").empty().append('<option value="">Select Client PO No.</option>');
+	if (!partyId) {
+		$("#clientModal").modal("hide");
+		return;
+	}
 	$("#clientModal").modal("show");
-	var partyId=$(this).val();
-	loadClientPoTable(partyId)
-})
+	loadClientPoTable(partyId);
+});
 
-function  loadClientPoTable(partyId){
+function loadClientPoTable(partyId) {
 	$.ajax({
-		method :'GET',
-		url:api.SO_LIST_BY_CLIENTID + "?partyId=" + partyId,
-		success:function(response){
-			console.log(response);
-			getClientPOList(response);	
-				
-				/*	
-					$("#clientPOTable tbody").empty();
-					$.each(response,function(index,value){
-						
-						var soObjs = "<tr><td width='60%'> " + value.clientPoNumber + "</td>" +
-								"<td width='20%'> " + value.clientPoDate + "</td>" +
-								"<td width='20%'> " + value.created + "</td></tr>";
-						$("#clientPOTable tbody").append(soObjs);
-					});
-				*/
-			
-		},  
-		complete:function(resp){
-			if(resp.status==500){
-				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
-			}
-			
+		method: 'GET',
+		url: api.SO_LIST_BY_CLIENTID + "?partyId=" + encodeURIComponent(partyId),
+		success: function(response) {
+			var salesOrders = response || [];
+			$("#clientPoDropdown").empty().append('<option value="">Select Client PO No.</option>');
+			$.each(salesOrders, function(index, salesOrder) {
+				if (salesOrder.clientPoNumber) {
+					$("#clientPoDropdown").append($('<option>', {
+						value: salesOrder.id,
+						text: salesOrder.clientPoNumber
+					}));
+				}
+			});
+			getClientPOList(salesOrders);
 		},
-		error : function(e) {
-			console.log(e);
-		}  	
-	})
+		complete: function(resp) {
+			if (resp.status == 500) {
+				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : " + resp.responseJSON["errorMessage"]);
+			}
+		},
+		error: function(error) {
+			console.log(error);
+		}
+	});
 }
+
+// Clicking a PO in the client history selects it and populates its challan items.
+$(document).on("click", "#clientPOTable tbody tr", function() {
+	if (!clientPOTable) return;
+	var salesOrder = clientPOTable.row(this).data();
+	if (!salesOrder || !salesOrder.id) return;
+	$("#clientPoDropdown").val(String(salesOrder.id)).trigger("change");
+	$("#clientModal").modal("hide");
+});
 
 //get all the designation list and display in datatable
 function getClientPOList(clientPoList){

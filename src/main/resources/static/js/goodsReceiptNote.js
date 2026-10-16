@@ -178,28 +178,20 @@ $(document).ready(function(){
 	    	},
 
 	    });
-	   	    //common function: open GRN view page
-	    function openGrn(rowData){
-	    	if (!canEditGrn || !rowData) {
-	    		return;
-	    	}
-	    	window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(rowData.grnId);
+	    function openGrnRow(row) {
+	        if (!canEditGrn) return;
+	        var data = grnDataTable.row(row).data();
+	        if (!data || !data.grnId) return;
+	        window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(data.grnId);
 	    }
-
-	    //SINGLE CLICK: only on the Grn No. link
-	  $('#grnList tbody').on('click', 'a.grnLink', function (e) {
-   e.preventDefault();
-   openGrn(grnDataTable.row($(this).closest('tr')).data());
-});
-
-	    //DOUBLE CLICK: on any other column of the row
-	  $('#grnList tbody').on('dblclick', 'tr', function (e) {
-   //skip link, view / download buttons and archive checkbox
-   if ($(e.target).closest('a, button, input, select').length) {
-       return;
-   }
-   openGrn(grnDataTable.row(this).data());
-});
+	    $('#grnList tbody').on('click', 'a.grnLink', function (e) {
+	        e.preventDefault();
+	        openGrnRow($(this).closest('tr'));
+	    });
+	    $('#grnList tbody').on('dblclick', 'tr', function (e) {
+	        if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+	        openGrnRow(this);
+	    });
 })
 
  $(document).on('click',".archiveCheckbox",function(){
