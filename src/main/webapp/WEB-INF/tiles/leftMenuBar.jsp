@@ -125,9 +125,9 @@
 
                     <!-- Master menu: hidden unless the role has View on at least one master module -->
                     <security:authorize
-                      access="hasAnyAuthority('PARTY_VIEW','ITEM_MASTER_VIEW','COMPANY_ASSETS_VIEW')">
+                      access="hasAnyAuthority('PARTY_VIEW','ITEM_MASTER_VIEW')">
                       <c:set var="masterOpen"
-                        value="${uri == '/partyList' or uri == '/itemMaster' or uri == '/companyAssets'}" />
+                        value="${uri == '/partyList' or uri == '/itemMaster'}" />
                       <li class="nav-item has-treeview ${masterOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${masterOpen ? 'active' : ''}">
                           <i class="nav-icon fas fa-database"></i>
@@ -162,19 +162,6 @@
                             </a>
                           </li>
                           </security:authorize>
-                          <security:authorize access="hasAuthority('COMPANY_ASSETS_VIEW')">
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/companyAssets"
-                              class="nav-link ${uri == '/companyAssets' ? 'active' : ''}">
-                              <i class="nav-icon fas fa-building"></i>
-                              <p>
-                                <spring:message code="master.company.assets" />
-                              </p>
-                            </a>
-                          </li>
-                          </security:authorize>
-
-
                         </ul>
 
                       </li>
