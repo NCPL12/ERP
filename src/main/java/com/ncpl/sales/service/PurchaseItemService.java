@@ -175,6 +175,10 @@ public class PurchaseItemService {
 		return poItemList;
 	}
 
+	public List<PurchaseItem> getPurchaseItemsByPoNumber(String poNumber) {
+		return purchaseItemRepo.findByPurchaseOrder_PoNumber(poNumber);
+	}
+
 	public List<PurchaseItem> getAllPurchaseItems() {
 		List<PurchaseItem> purchaseItemList = purchaseItemRepo.findAll();
 		return purchaseItemList;

@@ -202,31 +202,19 @@ $(document).ready(function(){
 			}
 			]
 	    });
-
-	    //common function used by single click (on Dc No. link) and double click (on any column of the row)
-	    function openDc(rowData){
-	    	if(!rowData){
-	    		return;
-	    	}
-	    	var dcId = rowData.dcId;
-	    	window.location = pageContext+"/api/dc/view?dcId="+dcId;
+	    function openDcRow(row) {
+	        var data = dcTable.row(row).data();
+	        if (!data || !data.dcId) return;
+	        window.location = pageContext+"/api/dc/view?dcId="+data.dcId;
 	    }
-
-	    //SINGLE CLICK: only on the Dc No. link navigate to view page
 	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
-            e.preventDefault();
-            openDc(dcTable.row($(this).closest('tr')).data());
-         });
-
-	    //DOUBLE CLICK: any column of the row navigate to view page
-	    $('#dcList tbody').on('dblclick', 'tr', function (e) {
-	    	//skip the link, Download DC / View buttons and archive checkbox
-	    	if ($(e.target).closest('a.dcLink, button, input, select').length) {
-	    		return;
-	    	}
-	    	openDc(dcTable.row(this).data());
+	        e.preventDefault();
+	        openDcRow($(this).closest('tr'));
 	    });
-
+	    $('#dcList tbody').on('dblclick', 'tr', function (e) {
+	        if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+	        openDcRow(this);
+	    });
 	    $('#dcList tbody').on('click', ".generateDc",function () {
 	    	$("#dcExcelDropdown").val("").trigger("change");
 	    	 var dcId = $(this).closest("tr").find("td:eq(0)").text();

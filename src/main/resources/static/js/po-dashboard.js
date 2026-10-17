@@ -135,40 +135,33 @@ var table;
 			});
 		var purchaseOrderId;
 		var  version;
-
-		//common function used by single click (on PO number link) and double click (on any column of the row)
-		function openPo(rowData){
-			if (!canEditPurchase || !rowData) {
-				return;
-			}
-			var poNumber = rowData.poNumber;
-				purchaseOrderId = rowData.poNumber;
-			getPurchasecopy(poNumber,purchaseOrderId);
-			//getPurchasecopyItems(poNumber);
-			// getVendorAddressForPreview(poNumber);
-			// 	 $("#poPreviewModal").modal("show");
-			//   $("#pono").html(purchaseOrderId);
-			/* var data1 = table.row(this).data();
-			var purchaseOrderId = data1.poNumber;
-			var version = data1.version;
-			$('#poNumber').val(purchaseOrderId);
-			window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&&version="+version;*/
-		}
-
-		//SINGLE CLICK: only on the PO number link
-	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
-		e.preventDefault();
-		openPo(table.row($(this).closest('tr')).data());
-		});
-
-		//DOUBLE CLICK: any column of the row
-	$('#purchaseList tbody').on('dblclick', 'tr', function (e) {
-		//skip the link, Generate PO button and archive checkbox
-		if ($(e.target).closest('a.poLink, button, input, select').length) {
+	function openPurchaseOrderRow(row) {
+		if (!canEditPurchase) {
 			return;
 		}
-		openPo(table.row(this).data());
-		});
+		var data1 = table.row(row).data();
+		if (!data1 || !data1.poNumber) return;
+		var poNumber = data1.poNumber;
+		purchaseOrderId = data1.poNumber;
+		getPurchasecopy(poNumber,purchaseOrderId);
+		//getPurchasecopyItems(poNumber);
+		// getVendorAddressForPreview(poNumber);
+		// 	 $("#poPreviewModal").modal("show");
+		//   $("#pono").html(purchaseOrderId);
+		/* var data1 = table.row(this).data();
+		var purchaseOrderId = data1.poNumber;
+		var version = data1.version;
+		$('#poNumber').val(purchaseOrderId);
+		window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&&version="+version;*/
+	}
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
+		openPurchaseOrderRow($(this).closest('tr'));
+	});
+	$('#purchaseList tbody').on('dblclick', 'tr', function (e) {
+		if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+		openPurchaseOrderRow(this);
+	});
 	
 	if(role=="STORE USER"){
 		$(".addPO").on("click", function (event) {

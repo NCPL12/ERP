@@ -16,15 +16,22 @@
 <tiles:insertAttribute name="header-resources" />
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
+
+<c:if test="${!canDeleteGrn}">
+<style type="text/css">
+.deleteButton{ display: none !important; }
+</style>
+</c:if>
+
+
+<div id="grnErrorMessage" style="display:none;"><c:out value="${errorMessage}"/></div>
 <script type="text/javascript">
-var poList=${poList};
-var itemList=${itemList};
-var purchaseItemList=${purchaseItemList}; 
-var grnList = ${grnList};
-var grnObj = "";
-if ('${grnObj}' != null && '${grnObj}' != "") {
-	grnObj= $.parseJSON('${grnObj}');
-}
+$(function(){
+	var grnErrMsg = $('#grnErrorMessage').text();
+	if (grnErrMsg) {
+		alert("Error: " + grnErrMsg);
+	}
+});
 </script>
  <script src="<c:url value="/resources/js/newGoodsReceiptNote.js" />"></script> 
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
@@ -43,8 +50,21 @@ if ('${grnObj}' != null && '${grnObj}' != "") {
 }
 </style>
 </head>
-<body>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
+<div id="grnPageData" hidden
+ data-po-list="<c:out value='${poList}'/>"
+ data-item-list="<c:out value='${itemList}'/>"
+ data-purchase-items="<c:out value='${purchaseItemList}'/>"
+ data-invoices="<c:out value='${grnList}'/>"
+ data-grn="<c:out value='${grnObj}'/>"></div>
+<script type="text/javascript">
+var grnPageData = document.getElementById("grnPageData");
+var poList = JSON.parse(grnPageData.getAttribute("data-po-list") || "[]");
+var itemList = JSON.parse(grnPageData.getAttribute("data-item-list") || "[]");
+var purchaseItemList = JSON.parse(grnPageData.getAttribute("data-purchase-items") || "[]");
+var grnList = JSON.parse(grnPageData.getAttribute("data-invoices") || "[]");
+var grnObj = JSON.parse(grnPageData.getAttribute("data-grn") || "null") || "";
+</script>
 	<div class="wrapper">
 			
 		 <tiles:insertAttribute name="header" />

@@ -32,10 +32,8 @@
 </c:if>
 
 <script type="text/javascript">
-var salesList = ${salesOrderList};
-var partyList = ${partyList};
 var clientList=${clientList};
-var itemList =${itemList};
+var clientPoOptions=${clientPoOptions};
 var obj = '${dcObj}';
 obj = obj.replace(/\&/g, "\'");
 obj = obj.replace(/\&/g, "\"");
