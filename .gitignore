@@ -1,7 +1,10 @@
+
 /bin/
 /target/
 
-<<<<<<< HEAD
+/bin/
+/target/
+
 # Generated output, local caches, runtime data and handoff copies
 /.m2-cache/
 /.sts4-cache/
@@ -13,6 +16,3 @@
 /handoff/
 *.log
 /cashflow-local-classpath.txt
-=======
-/ERP/
->>>>>>> b3514c7 (Remove accidental nested ERP repository)
