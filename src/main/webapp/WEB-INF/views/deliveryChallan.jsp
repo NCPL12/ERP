@@ -33,6 +33,7 @@
 
 <script type="text/javascript">
 var clientList=${clientList};
+var clientPoOptions=${clientPoOptions};
 var obj = '${dcObj}';
 obj = obj.replace(/\&/g, "\'");
 obj = obj.replace(/\&/g, "\"");

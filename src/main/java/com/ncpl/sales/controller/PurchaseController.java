@@ -1090,6 +1090,15 @@ public class PurchaseController {
 		 	List<Party> clientList = partyService.getPartyListByTypeCustomer();
 			ObjectMapper mapper = utilService.getObjectMapper();
 			model.addAttribute("clientList", mapper.writeValueAsString(clientList));
+			List<Map<String, String>> clientPoOptions = new ArrayList<>();
+			for (Object[] row : salesService.getDcClientPoOptions()) {
+				Map<String, String> option = new HashMap<>();
+				option.put("id", (String) row[0]);
+				option.put("clientPoNumber", (String) row[1]);
+				option.put("partyId", (String) row[2]);
+				clientPoOptions.add(option);
+			}
+			model.addAttribute("clientPoOptions", mapper.writeValueAsString(clientPoOptions));
 			model.addAttribute("pageHeader", "Delivery Challan");
 			 if(flashMap!=null) {
 				 DeliveryChallan dcObj =  (DeliveryChallan) flashMap.get("dcObj");

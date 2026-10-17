@@ -32,6 +32,7 @@ $(document).ready(function() {
 			text: value.partyName
 		}));
 	});
+	populateClientPoOptions("");
 	
 	//getSalesItemsbySalesItemId();
 
@@ -193,6 +194,7 @@ $(document).on("change","#clientPoDropdown",function(){
 	}
 	var soId = $(this).val();
 	$("#soNumber").val(soId);
+	if (!soId) return;
 	getClientNameBySoId(soId);
 	
 	getItemsWithoutDesignList(soId);
@@ -316,14 +318,16 @@ function getClientNameBySoId(soId, readOnly){
 		success : function(response) {
 			if (!response || !response.party) return;
 			var $poDropdown = $("#clientPoDropdown");
+			populateClientPoOptions(response.party.id, soId);
 			if (response.clientPoNumber && !$poDropdown.find("option").filter(function() { return this.value == soId; }).length) {
 				$poDropdown.append($('<option>', { value: soId, text: response.clientPoNumber }));
 			}
-			$poDropdown.val(String(soId));
+			$poDropdown.val(String(soId)).trigger("change.select2");
 			$("#clientId").val(response.party.id);
 			$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
+			$("#partyName").val(String(response.party.id)).trigger("change.select2");
 			if (readOnly) {
-				$("#partyName").val(String(response.party.id)).trigger("change.select2").prop("disabled", true);
+				$("#partyName").prop("disabled", true);
 				$poDropdown.prop("disabled", true);
 			}
 		},
@@ -992,7 +996,8 @@ $(document).on("change", "#partyName" , function() {
 	var selectedClientName = $(this).find("option:selected").text();
 	$("#clientId").val(partyId);
 	$("#clientName").text(partyId ? selectedClientName : "").attr("title", partyId ? selectedClientName : "");
-	$("#clientPoDropdown").empty().append('<option value="">Select Client PO No.</option>');
+	$("#soNumber").val("");
+	populateClientPoOptions(partyId);
 	if (!partyId) {
 		$("#clientModal").modal("hide");
 		return;
@@ -1001,22 +1006,23 @@ $(document).on("change", "#partyName" , function() {
 	loadClientPoTable(partyId);
 });
 
+function populateClientPoOptions(partyId, selectedSoId) {
+	var $dropdown = $("#clientPoDropdown");
+	$dropdown.empty().append($('<option>', { value: "", text: "Select Client PO No." }));
+	$.each(clientPoOptions || [], function(index, option) {
+		if (!partyId || option.partyId === partyId) {
+			$dropdown.append($('<option>', { value: option.id, text: option.clientPoNumber }));
+		}
+	});
+	$dropdown.val(selectedSoId ? String(selectedSoId) : "").trigger("change.select2");
+}
+
 function loadClientPoTable(partyId) {
 	$.ajax({
 		method: 'GET',
 		url: api.SO_LIST_BY_CLIENTID + "?partyId=" + encodeURIComponent(partyId),
 		success: function(response) {
-			var salesOrders = response || [];
-			$("#clientPoDropdown").empty().append('<option value="">Select Client PO No.</option>');
-			$.each(salesOrders, function(index, salesOrder) {
-				if (salesOrder.clientPoNumber) {
-					$("#clientPoDropdown").append($('<option>', {
-						value: salesOrder.id,
-						text: salesOrder.clientPoNumber
-					}));
-				}
-			});
-			getClientPOList(salesOrders);
+			if ($("#partyName").val() === partyId) getClientPOList(response || []);
 		},
 		complete: function(resp) {
 			if (resp.status == 500) {
