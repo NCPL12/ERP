@@ -1,4 +1,4 @@
-	var table;
+var table;
 	var popreviewitemstable;
 	var vendorState;
 	$(document).ready( function () {
@@ -861,3 +861,4 @@
 		return res;
 
 		}
+		
