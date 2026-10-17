@@ -798,6 +798,37 @@ public class PurchaseController {
 		return "goodsReceiptNote";
 	}
 	
+	// ---------- shared model population for the GRN page ----------
+	private void populateGrnModel(Model model, Grn grnObj) throws JsonProcessingException {
+		List<Map<String, Object>> poList = purchaseService.findAllPoNumbersAndDates();
+		List<String> grnInvoiceNumbers = grnService.getAllInvoiceNumbers();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
+		ObjectMapper mapper = utilService.getObjectMapper();
+
+		model.addAttribute("grn", new Grn());
+		model.addAttribute("poList", mapper.writeValueAsString(poList));
+		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		model.addAttribute("grnList", mapper.writeValueAsString(grnInvoiceNumbers));
+
+		if (grnObj != null) {
+			model.addAttribute("grnObj", mapper.writeValueAsString(grnObj));
+			// FIX: only the items of THIS GRN's PO are needed to repopulate the screen
+			// (was purchaseItemService.getAllPurchaseItems() = every item of every PO -> ~33 MB page)
+			List<PurchaseItem> purchaseItemList = new ArrayList<>();
+			if (grnObj.getPoNumber() != null) {
+				Optional<PurchaseOrder> po = purchaseService.findById(grnObj.getPoNumber());
+				if (po.isPresent() && po.get().getItems() != null) {
+					purchaseItemList = po.get().getItems();
+				}
+			}
+			model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
+		} else {
+			model.addAttribute("purchaseItemList", "[]");
+		}
+	}
+
+	// ---------- /new_grn : only for creating a NEW GRN (or re-showing after a save error) ----------
+	/* OLD
 	@GetMapping("/new_grn")
 	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
 		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
@@ -823,6 +854,15 @@ public class PurchaseController {
 				model.addAttribute("purchaseItemList", "[]");
 			}
 			return "newGoodsReceiptNote";
+	}
+	*/
+	@GetMapping("/new_grn")
+	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
+		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
+		Grn grnObj = (flashMap != null) ? (Grn) flashMap.get("grnObj") : null; // set by saveGrn on error
+		populateGrnModel(model, grnObj);
+		model.addAttribute("pageHeader", "New Grn");
+		return "newGoodsReceiptNote";
 	}
 	
 	@GetMapping("/api/getPurchaseItemList")
@@ -1053,6 +1093,7 @@ public class PurchaseController {
 	 * @param model
 	 * @return
 	 */
+	 /* OLD
 	 @GetMapping("/api/grn/view")
 		public String displayGrnView(@RequestParam("grnId") String grnId,RedirectAttributes redirectAttr, Model model){
 			
@@ -1060,7 +1101,16 @@ public class PurchaseController {
 			redirectAttr.addFlashAttribute("grnObj",grn.get());
 			return "redirect:/new_grn";
 		}
+	 */
+	 // ---------- old API URL: keep working, but send to the new URL ----------
+	 @GetMapping("/api/grn/view")
+		public String displayGrnView(@RequestParam("grnId") String grnId, RedirectAttributes redirectAttr) {
+			redirectAttr.addAttribute("grnId", grnId);   // fills {grnId} and URL-encodes spaces
+			return "redirect:/grn/{grnId}";
+		}
 
+	 // ---------- /grn/{grnId} : existing GRN, URL stays /grn/GRN 8732-071026 ----------
+	 /* OLD
 	 @GetMapping("/grn/{grnId:.+}")
 		public String viewGrn(@org.springframework.web.bind.annotation.PathVariable("grnId") String grnId, RedirectAttributes redirectAttr){
 			// JS does window.location = pageContext+"/grn/"+grnId (grnId like "GRN 8732-071026" → GRN%208732-071026)
@@ -1070,6 +1120,17 @@ public class PurchaseController {
 				return "redirect:/new_grn";
 			}
 			return "redirect:/grnLists";
+		}
+	 */
+	 @GetMapping("/grn/{grnId:.+}")
+		public String viewGrn(@PathVariable("grnId") String grnId, Model model) throws JsonProcessingException {
+			Optional<Grn> grn = grnService.getGrnById(grnId);
+			if (!grn.isPresent()) {
+				return "redirect:/grnLists";
+			}
+			populateGrnModel(model, grn.get());
+			model.addAttribute("pageHeader", "New Grn");
+			return "newGoodsReceiptNote";   // view name returned directly, so no redirect and the URL is unchanged
 		}
 	 @GetMapping("/api/grn_items_by_grnId")
 	 public  ResponseEntity<?> getGrnItemListByGrnId(@RequestParam("grnId")  String  grnId,Model model) {
@@ -1324,30 +1385,51 @@ public class PurchaseController {
 	  * @return
 	  */
 	 
-	 @GetMapping("/api/dc/view")
-		public String displayDcView(@RequestParam("dcId") int dcId,RedirectAttributes redirectAttr, Model model){
-			
-			Optional<DeliveryChallan> dc =deliveryChallanService.getDcById(dcId);
-			if(dc.isPresent()) {
-				String soNumber=dc.get().getSoNumber();
-				Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(soNumber);
-				if(salesOrder.isPresent()) {
-					Party party = salesOrder.get().getParty();
-					String partyName = party.getPartyName();
-					partyName = partyName.replace("\"", "&");
-					partyName = partyName.replace("'", "&");
-					String clientPo = salesOrder.get().getClientPoNumber();
-					clientPo = clientPo.replace("'", "&");
-					clientPo = clientPo.replace("\"", "&");
-					dc.get().set("clientPoNumber",clientPo);
-					dc.get().set("clientName",partyName);
-					redirectAttr.addFlashAttribute("dcObj",dc.get());
-					return "redirect:/deliveryChallan";
-				}
-			}
-			// If DC not found, redirect back to DC list
-			return "redirect:/dcList";
-		}
+/**
+ * Detail page for an existing DC, e.g. /ncpl-sales/dc/8782/
+ * The \\d+ regex keeps it from clashing with /dc/details/{dcId}/{option}.
+ */
+@GetMapping({ "/dc/{dcId:\\d+}", "/dc/{dcId:\\d+}/" })
+public String viewDc(@PathVariable("dcId") int dcId, Model model) throws JsonProcessingException {
+    Optional<DeliveryChallan> dc = deliveryChallanService.getDcById(dcId);
+    if (!dc.isPresent()) {
+        return "redirect:/dcList";
+    }
+
+    Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(dc.get().getSoNumber());
+    if (!salesOrder.isPresent()) {
+        return "redirect:/dcList";
+    }
+
+    // same quote-sanitizing the old /api/dc/view did
+    String partyName = salesOrder.get().getParty().getPartyName()
+            .replace("\"", "&").replace("'", "&");
+    String clientPo = salesOrder.get().getClientPoNumber()
+            .replace("'", "&").replace("\"", "&");
+    dc.get().set("clientPoNumber", clientPo);
+    dc.get().set("clientName", partyName);
+
+    List<Party> partyList = partyService.getPartyList();
+    List<Party> clientList = partyService.getPartyListByTypeCustomer();
+    List<ItemMaster> itemList = itemMasterService.getItemList();
+    List<SalesOrder> salesList = salesService.findAllSalesOrderList();
+    ObjectMapper mapper = utilService.getObjectMapper();
+    model.addAttribute("salesOrderList", mapper.writeValueAsString(salesList));
+    model.addAttribute("partyList", mapper.writeValueAsString(partyList));
+    model.addAttribute("clientList", mapper.writeValueAsString(clientList));
+    model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+    model.addAttribute("pageHeader", "Delivery Challan");
+    model.addAttribute("dcObj", mapper.writeValueAsString(dc.get()));
+    return "deliveryChallan";
+}
+
+/**
+ * Old entry point kept for backward compatibility - redirects to /dc/{dcId}/
+ */
+@GetMapping("/api/dc/view")
+public String displayDcView(@RequestParam("dcId") int dcId) {
+    return "redirect:/dc/" + dcId + "/";
+}
 	 
 	 @SuppressWarnings({ "rawtypes", "unused" })
 	@GetMapping("/invoice/details/{invNumber}")
@@ -2159,7 +2241,3 @@ public class PurchaseController {
 				return "companyAssetDetails";
 			}
 }
-	
-
-
-
