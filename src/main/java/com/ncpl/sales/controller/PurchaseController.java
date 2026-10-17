@@ -1380,30 +1380,51 @@ public class PurchaseController {
 	  * @return
 	  */
 	 
-	 @GetMapping("/api/dc/view")
-		public String displayDcView(@RequestParam("dcId") int dcId,RedirectAttributes redirectAttr, Model model){
-			
-			Optional<DeliveryChallan> dc =deliveryChallanService.getDcById(dcId);
-			if(dc.isPresent()) {
-				String soNumber=dc.get().getSoNumber();
-				Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(soNumber);
-				if(salesOrder.isPresent()) {
-					Party party = salesOrder.get().getParty();
-					String partyName = party.getPartyName();
-					partyName = partyName.replace("\"", "&");
-					partyName = partyName.replace("'", "&");
-					String clientPo = salesOrder.get().getClientPoNumber();
-					clientPo = clientPo.replace("'", "&");
-					clientPo = clientPo.replace("\"", "&");
-					dc.get().set("clientPoNumber",clientPo);
-					dc.get().set("clientName",partyName);
-					redirectAttr.addFlashAttribute("dcObj",dc.get());
-					return "redirect:/deliveryChallan";
-				}
-			}
-			// If DC not found, redirect back to DC list
-			return "redirect:/dcList";
-		}
+/**
+ * Detail page for an existing DC, e.g. /ncpl-sales/dc/8782/
+ * The \\d+ regex keeps it from clashing with /dc/details/{dcId}/{option}.
+ */
+@GetMapping({ "/dc/{dcId:\\d+}", "/dc/{dcId:\\d+}/" })
+public String viewDc(@PathVariable("dcId") int dcId, Model model) throws JsonProcessingException {
+    Optional<DeliveryChallan> dc = deliveryChallanService.getDcById(dcId);
+    if (!dc.isPresent()) {
+        return "redirect:/dcList";
+    }
+
+    Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(dc.get().getSoNumber());
+    if (!salesOrder.isPresent()) {
+        return "redirect:/dcList";
+    }
+
+    // same quote-sanitizing the old /api/dc/view did
+    String partyName = salesOrder.get().getParty().getPartyName()
+            .replace("\"", "&").replace("'", "&");
+    String clientPo = salesOrder.get().getClientPoNumber()
+            .replace("'", "&").replace("\"", "&");
+    dc.get().set("clientPoNumber", clientPo);
+    dc.get().set("clientName", partyName);
+
+    List<Party> partyList = partyService.getPartyList();
+    List<Party> clientList = partyService.getPartyListByTypeCustomer();
+    List<ItemMaster> itemList = itemMasterService.getItemList();
+    List<SalesOrder> salesList = salesService.findAllSalesOrderList();
+    ObjectMapper mapper = utilService.getObjectMapper();
+    model.addAttribute("salesOrderList", mapper.writeValueAsString(salesList));
+    model.addAttribute("partyList", mapper.writeValueAsString(partyList));
+    model.addAttribute("clientList", mapper.writeValueAsString(clientList));
+    model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+    model.addAttribute("pageHeader", "Delivery Challan");
+    model.addAttribute("dcObj", mapper.writeValueAsString(dc.get()));
+    return "deliveryChallan";
+}
+
+/**
+ * Old entry point kept for backward compatibility - redirects to /dc/{dcId}/
+ */
+@GetMapping("/api/dc/view")
+public String displayDcView(@RequestParam("dcId") int dcId) {
+    return "redirect:/dc/" + dcId + "/";
+}
 	 
 	 @SuppressWarnings({ "rawtypes", "unused" })
 	@GetMapping("/invoice/details/{invNumber}")
