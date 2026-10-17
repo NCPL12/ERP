@@ -168,7 +168,7 @@
                     </security:authorize>
 
                     <c:set var="salesOpen"
-                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri.startsWith('/returnable/') or uri == '/returnableDCList' or uri == '/returnableDcList' or uri == '/invoiceList' or uri == '/workOrderList'}" />
+                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri.startsWith('/returnable/') or uri == '/invoiceList' or uri == '/workOrderList'}" />
                     <security:authorize
                       access="hasAnyAuthority('SALES_ORDER_VIEW','DELIVERY_CHALLAN_VIEW','RETURNABLE_VIEW','INVOICE_VIEW','WORK_ORDER_VIEW')">
                     <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
@@ -217,6 +217,7 @@
                             </a>
                           </li>
                         </security:authorize>
+                        <%-- Returnable DC is hidden until its dashboard uses real records.
                         <security:authorize access="hasAuthority('RETURNABLE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/returnableDCList"
@@ -226,6 +227,7 @@
                             </a>
                           </li>
                         </security:authorize>
+                        --%>
                         <security:authorize access="hasAuthority('INVOICE_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/invoiceList"
