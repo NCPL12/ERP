@@ -21,7 +21,7 @@
 
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
-<script type="text/javascript" src="resources/js/deliveryChallan.js"></script>
+<script type="text/javascript" src="<c:url value="/resources/js/deliveryChallan.js" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 

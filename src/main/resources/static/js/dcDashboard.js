@@ -23,7 +23,10 @@ $(document).ready(function(){
 	    dcTable= $('#dcList').DataTable({
 	    	orderCellsTop: true,
 		    fixedHeader: true,
-		    processing: true,
+		    processing: false,
+			language: {
+    processing: ""
+},
 		    serverSide: true,
 		    pageLength: 100,
 		    lengthMenu: [[50, 100, 250, 500, 1000], [50, 100, 250, 500, 1000]],
@@ -307,9 +310,9 @@ $(document).on("click",".dcView",function(){
 
 	    	});
 
-				$("#dcViewBtn").on("click",function(){
-				 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
-				})
+				$("#dcViewBtn").off("click").on("click", function(){
+    window.location = pageContext + "/dc/" + dcId + "/";
+})
 	    },
 		complete:function(resp){
 			if(resp.status==500){
