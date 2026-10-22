@@ -1167,7 +1167,8 @@ public class TallyPurchaseOrderService {
     }
 
     private String companyVariable() {
-        return blank(companyName) ? "" : tag("SVCURRENTCOMPANY", companyName);
+        requireConfiguredCompany();
+        return tag("SVCURRENTCOMPANY", companyName.trim());
     }
 
     void requireConfiguredCompany() {
