@@ -29,7 +29,7 @@ Log in as an existing ERP `ADMIN` or `SUPER ADMIN`. Open the Cashflow Analyzer t
 
 http://localhost:8880/ncpl-sales/cashflow-analyzer/overview
 
-The test profile uses Tally at `http://192.168.0.176:9000` and company
+The test profile uses Tally at `http://192.168.0.183:9000` and company
 `Neptune Controls Pvt Ltd. -2024-2025 1-Apr-24)`. Keep that company loaded.
 Click **Sync Now** to populate the module's own tables. Scheduled synchronization in this
 test profile starts after 24 hours and repeats every 24 hours; stop the test when finished.
