@@ -127,13 +127,10 @@ public class CashFlowApiController {
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
 
-            String originalName = file.getOriginalFilename();
-            String cleanedOriginal = (originalName != null) ? StringUtils.cleanPath(originalName) : "";
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String filename = (!StringUtils.hasText(cleanedOriginal))
-                    ? ("upload-" + timestamp + ".xlsx")
-                    : (timestamp + "-" + cleanedOriginal);
-            Path target = uploadPath.resolve(filename);
+            String filename = "upload-" + timestamp + "-" + java.util.UUID.randomUUID() + ".xlsx";
+            Path target = uploadPath.resolve(filename).normalize();
+            if (!target.startsWith(uploadPath)) throw new IOException("Invalid upload path");
             Files.copy(file.getInputStream(), target);
 
             List<Invoice> invoices = excelReaderService.readExcelFile(target.toString());
@@ -193,10 +190,9 @@ public class CashFlowApiController {
             Files.createDirectories(uploadPath);
 
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String filename = (!StringUtils.hasText(cleanedOriginal))
-                    ? ("upload-" + timestamp + ".xlsx")
-                    : (timestamp + "-" + cleanedOriginal);
-            Path target = uploadPath.resolve(filename);
+            String filename = "upload-" + timestamp + "-" + java.util.UUID.randomUUID() + ".xlsx";
+            Path target = uploadPath.resolve(filename).normalize();
+            if (!target.startsWith(uploadPath)) throw new IOException("Invalid upload path");
             Files.copy(file.getInputStream(), target);
 
             List<Invoice> invoices = excelReaderService.readExcelFile(target.toString());
@@ -325,7 +321,9 @@ public class CashFlowApiController {
             return ResponseEntity.badRequest().body(com.ncpl.sales.cashflow.util.Java8Collections.map("error", "No file uploaded"));
         }
 
-        if (!file.getOriginalFilename().endsWith(".xlsx") && !file.getOriginalFilename().endsWith(".xls")) {
+        String originalName = file.getOriginalFilename();
+        String lowerOriginalName = originalName == null ? "" : originalName.toLowerCase(Locale.ENGLISH);
+        if (!lowerOriginalName.endsWith(".xlsx") && !lowerOriginalName.endsWith(".xls")) {
             return ResponseEntity.badRequest().body(com.ncpl.sales.cashflow.util.Java8Collections.map("error", "Only Excel files (.xlsx, .xls) are supported"));
         }
 
@@ -333,19 +331,16 @@ public class CashFlowApiController {
             Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(uploadPath);
 
-            String originalName = file.getOriginalFilename();
-            String cleanedOriginal = (originalName != null) ? StringUtils.cleanPath(originalName) : "";
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String filename = (!StringUtils.hasText(cleanedOriginal))
-                    ? ("upload-" + timestamp + ".xlsx")
-                    : (timestamp + "-" + cleanedOriginal);
-            Path target = uploadPath.resolve(filename);
+            String filename = "upload-" + timestamp + "-" + java.util.UUID.randomUUID() + ".xlsx";
+            Path target = uploadPath.resolve(filename).normalize();
+            if (!target.startsWith(uploadPath)) throw new IOException("Invalid upload path");
             Files.copy(file.getInputStream(), target);
 
             List<Invoice> invoices = excelReaderService.readExcelFile(target.toString());
             AnalyticsDTO analytics = analyticsService.analyzeMonthlyAndWeekly(invoices);
 
-            sessionDataService.setUploadedFileName(originalName);
+            sessionDataService.setUploadedFileName(originalName == null ? filename : originalName);
             sessionDataService.setSavedFilePath(target.toString());
             sessionDataService.setInvoices(invoices);
             sessionDataService.setAnalyticsData(analytics);

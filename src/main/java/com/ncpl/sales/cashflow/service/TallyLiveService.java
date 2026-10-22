@@ -1052,9 +1052,10 @@ public class TallyLiveService {
     }
 
     private String tallyCompanyVariable() {
-        return companyName == null || companyName.codePoints().allMatch(Character::isWhitespace)
-                ? ""
-                : "<SVCURRENTCOMPANY>" + escapeXml(companyName) + "</SVCURRENTCOMPANY>";
+        if (companyName == null || companyName.trim().isEmpty()) {
+            throw new IllegalStateException("Tally company is not configured. Set cashflow.tally.company-name before reading or syncing Tally.");
+        }
+        return "<SVCURRENTCOMPANY>" + escapeXml(companyName.trim()) + "</SVCURRENTCOMPANY>";
     }
 
     private Document parseXml(String xml) throws Exception {

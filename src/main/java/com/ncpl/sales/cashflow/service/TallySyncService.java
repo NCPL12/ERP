@@ -62,13 +62,13 @@ public class TallySyncService {
         }
         if (!syncInProgress.compareAndSet(false, true)) {
             logger.debug("Tally synchronization already in progress; skipping overlapping request");
-            return;
+            throw new IllegalStateException("Tally synchronization is already in progress");
         }
 
         if (!com.ncpl.sales.service.TallySyncCoordinator.tryAcquire()) {
             syncInProgress.set(false);
             logger.info("PO synchronization is using Tally; cashflow refresh will retry next cycle");
-            return;
+            throw new IllegalStateException("Tally is busy with another synchronization");
         }
         logger.info("Starting live TallyPrime synchronization... (force={})", force);
         LocalDateTime syncStartTime = LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata"));
@@ -98,9 +98,11 @@ public class TallySyncService {
         } catch (IOException e) {
             logger.error("IO Error during Tally sync: {}", e.getMessage(), e);
             recordSyncFailure("IO Error: " + e.getMessage());
+            throw new IllegalStateException("Tally synchronization failed: " + e.getMessage(), e);
         } catch (Exception e) {
             logger.error("Unexpected error during Tally sync: {}", e.getMessage(), e);
             recordSyncFailure("Unexpected error: " + e.getMessage());
+            throw new IllegalStateException("Tally synchronization failed: " + e.getMessage(), e);
         } finally {
             syncInProgress.set(false);
             com.ncpl.sales.service.TallySyncCoordinator.release();
