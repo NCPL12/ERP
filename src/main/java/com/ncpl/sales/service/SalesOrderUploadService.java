@@ -58,7 +58,15 @@ public class SalesOrderUploadService {
 	                List<SalesItem> items = new ArrayList<SalesItem>();
 
 	                // Parse metadata (rows 1-6)
-	                order.setClientPoNumber(sheet.getRow(1).getCell(0).getStringCellValue().split(":")[1].trim());
+	                //order.setClientPoNumber(sheet.getRow(1).getCell(0).getStringCellValue().split(":")[1].trim());
+	                String clientPoNo = sheet.getRow(1).getCell(0).getStringCellValue().split(":")[1].trim();
+
+	                // DUPLICATE CHECK: same client PO already uploaded -> stop here, nothing is saved
+	                if (salesOrderRepository.existsByClientPoNumberIgnoreCase(clientPoNo)) {
+	                	workbook.close();
+	                	throw new IllegalStateException("Client PO " + clientPoNo + " is already uploaded. Duplicate upload is not allowed.");
+	                }
+	                order.setClientPoNumber(clientPoNo);
 	                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 	                
 	                String clientPoDateStr = sheet.getRow(2).getCell(0).getStringCellValue().split(":")[1].trim();
@@ -177,9 +185,3 @@ public class SalesOrderUploadService {
 	    }
 	        
 }
-	                
-	                
-	                
-	                
-	                
-	         

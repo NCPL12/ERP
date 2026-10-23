@@ -5,6 +5,8 @@ var itemName;
 var unitName;
 var designTable
 var getAmountBound = false;
+var bulkLoading = false;
+var unitOptionsHtml = null;
 $(document).ready(function () {
 	// Show loader immediately on page init for new_salesOrder and tie to global AJAX
 	if (typeof showLoader === 'function') { try { showLoader(); } catch(e) {} }
@@ -209,7 +211,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	function addSalesOrder(){
 	
 		 var newRow = $("<tr>");
-		 var row=$('#salesTable  > tbody  > tr').length;
+		 var row=document.getElementById('table-body').rows.length;
 		 var rowCount = row+1;
 		 var arraycount = rowCount-1;
 		 
@@ -232,7 +234,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         newRow.append(columns);
          $("#table-body").append(newRow);
          // Check if expand all header should be shown/hidden after adding new row
-         toggleExpandAllHeader();
+         if(!bulkLoading){ toggleExpandAllHeader(); }
         // Ensure no suggestions/autocomplete on description for new row as well
         var $desc2 = newRow.find(".description");
         $desc2.attr("autocomplete","off");
@@ -251,11 +253,15 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
     		$(".unit").autocomplete({
     		       source: unitName
     		     });*/
-     		$("#unit" + arraycount).select2({ dropdownAutoWidth: true });
+     		if(!bulkLoading){ $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
     		//display unit list in dropdown
-    		$.each(unitsList,function(index,value){
-    			$("#unit"+ arraycount).append('<option value='+value.id+'>'+value.name+'</option>');
-    		});
+    		if(unitOptionsHtml === null){
+    			unitOptionsHtml = "";
+    			$.each(unitsList,function(index,value){
+    				unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
+    			});
+    		}
+    		$("#unit"+ arraycount).append(unitOptionsHtml);
 	}
 	
 	$(document).on("change",".unit",function(){
@@ -337,6 +343,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    success  : function(response){
 		    	//$(".add").hide();
 		    	$("#resetSalesOrder").hide();
+		    	bulkLoading = true;
 		    	$.each(response,function( key, value ){
 				    	addSalesOrder();
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
@@ -350,23 +357,23 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    	
 				
 				$("#salesItemId"+key).val(value.id)
-				$("input[name='items[" +key+ "].slNo']").val(value.slNo);
-		    	$("input[name='items[" +key+ "].description']").val(value.description);
+				$("#slNo"+key).val(value.slNo);
+		    	$("#description"+key).val(value.description);
 		    	$("#descriptionDiv"+key). addClass('CellComment');
 		    	$("#descriptionDiv"+key).html(value.description);
-		    	$("input[name='total']").val(commaSeparateNumber(salesOrderObj.total));
-		    	$("input[name='gst']").val(commaSeparateNumber(salesOrderObj.gst));
-		    	$("input[name='grandTotal']").val(commaSeparateNumber(salesOrderObj.grandTotal));
-				$("input[name='items[" +key+ "].modelNo']").val(value.modelNo);
-				$("input[name='items[" +key+ "].hsnCode']").val(value.hsnCode);
-				$("input[name='items[" +key+ "].servicehsnCode']").val(value.servicehsnCode);
-				$("input[name='items[" +key+ "].quantity']").val(value.quantity);
+		    	$("#total").val(commaSeparateNumber(salesOrderObj.total));
+		    	$("#gst").val(commaSeparateNumber(salesOrderObj.gst));
+		    	$("#grandTotal").val(commaSeparateNumber(salesOrderObj.grandTotal));
+				$("#modelNo"+key).val(value.modelNo);
+				$("#hsnCode"+key).val(value.hsnCode);
+				$("#servicehsnCode"+key).val(value.servicehsnCode);
+				$("#qty"+key).val(value.quantity);
 				var unitPrice = commaSeparateNumber(value.unitPrice);
-				$("input[name='items[" +key+ "].unitPrice']").val(unitPrice);	
+				$("#unitPrice"+key).val(unitPrice);	
 				var servicePrice = commaSeparateNumber(value.servicePrice);
-				$("input[name='items[" +key+ "].servicePrice']").val(servicePrice);
+				$("#servicePrice"+key).val(servicePrice);
 				var amountPrice = commaSeparateNumber(value.amount);
-				$("input[name='items[" +key+ "].amount']").val(amountPrice);
+				$("#amount"+key).val(amountPrice);
 				
 				/*$("#unit"+key).replaceWith('<input type="text" class="form-control PositionofTextbox unit" id="unitVal'+key+'" name="items[' +key+ '].unit">');
 				$('#unitVal'+key).val(value.item_units.name);
@@ -374,20 +381,20 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				//$('#unitVal'+key).attr("disabled",true);
 				
 				$("#unit"+key).val(value.item_units.id)
-				$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name});
+				//$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name}); // now done in chunks after the loop
 				
 				
 				if(unitName=="Heading"){
-					$("input[name='items[" +key+ "].servicePrice']").attr("readonly",true);
-					$("input[name='items[" +key+ "].unitPrice']").attr("readonly",true);
+					$("#servicePrice"+key).attr("readonly",true);
+					$("#unitPrice"+key).attr("readonly",true);
 					$("#qty"+key).attr("readonly",true);
 					$("#modelNo"+key).attr("readonly",true);
 					$("#hsnCode"+key).attr("readonly",true);
 					$("#servicehsnCode"+key).attr("readonly",true);
 					$("#designTd"+key).hide();
 				}else{
-					$("input[name='items[" +key+ "].servicePrice']").attr("readonly",false);
-					$("input[name='items[" +key+ "].unitPrice']").attr("readonly",false);
+					$("#servicePrice"+key).attr("readonly",false);
+					$("#unitPrice"+key).attr("readonly",false);
 					$("#qty"+key).attr("readonly",false);
 					$("#modelNo"+key).attr("readonly",false);
 					$("#hsnCode"+key).attr("readonly",false);
@@ -401,6 +408,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				 }
 				//$(".deleteButton").hide();
 		    	});
+		    	bulkLoading = false;
 		    	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
 		    	$('#partyDropDown').val(salesOrderObj.party.id);
 		    	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
@@ -414,6 +422,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    		isDirty = true;
 		    		
 		    		});
+		    	initUnitSelect2InChunks(0);
 		    },  
 			complete:function(resp){
 				hideLoader();
@@ -429,6 +438,17 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	}
 	
 	
+	function initUnitSelect2InChunks(start){
+		var total = document.getElementById('table-body').rows.length;
+		var end = Math.min(start + 40, total);
+		for(var i = start; i < end; i++){
+			$("#unit" + i).select2({ dropdownAutoWidth: true });
+		}
+		if(end < total){
+			setTimeout(function(){ initUnitSelect2InChunks(end); }, 0);
+		}
+	}
+	
 	//bulk version of checkForDcExists: one request for all rows instead of one per row
 	function checkForDcExistsBulk(salesItemIds){
 		if(salesItemIds.length == 0){
@@ -440,8 +460,9 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			data : { salesItemIds : salesItemIds.join(",") },
 			success : function(idsWithDc) {
 				var anyDc = false;
+				var allRows = $("#salesTable >tbody > tr");
 				$.each(salesItemIds, function(key, id){
-					var row = $("#salesTable >tbody").find("tr:eq("+key+")");
+					var row = allRows.eq(key);
 					if(idsWithDc.indexOf(id) !== -1){
 						anyDc = true;
 						row.find("input,select,button").attr("disabled",true);
