@@ -1,10 +1,12 @@
 /**
- * 
+ *
  */
 var itemName;
 var unitName;
 var designTable
 var getAmountBound = false;
+var bulkLoading = false;
+var unitOptionsHtml = null;
 $(document).ready(function () {
 	// Show loader immediately on page init for new_salesOrder and tie to global AJAX
 	if (typeof showLoader === 'function') { try { showLoader(); } catch(e) {} }
@@ -18,9 +20,9 @@ $(document).ready(function () {
 			if (typeof $ !== 'undefined' && $.active === 0 && typeof hideLoader === 'function') { hideLoader(); }
 		} catch(e) {}
 	}, 400);
-	
+
 	if(role=="STORE"){
-		
+
 		$("#saveSalesOrder").prop("disabled",true);
 	}
 	//getPartyList();
@@ -34,7 +36,7 @@ $(document).ready(function () {
 	//addSalesOrder();
 	deleteSalesOrder();
 	//getAmount();
-	
+
 	  $( "#clientPoDate" ).datepicker({ dateFormat: 'dd-mm-yy' });
 	  $( "#projectClosureDate" ).datepicker({ dateFormat: 'dd-mm-yy' });
 	  // Prevent bubbling of frequent key events from table inputs
@@ -42,9 +44,9 @@ $(document).ready(function () {
 	//to display sales list view page
 	if(salesOrderObj!=""){
 		getSalesOrderById(salesOrderObj.id);
-		
+
 	}
-	
+
 	$("#partyDropDown option:not(:first)").remove();
 	$.each(customerPartyList, function( key, value ) {
 		var customerPartyList = value.partyName;
@@ -59,8 +61,8 @@ $(document).ready(function () {
 		}
 		$('#partyDropDown').append('<option value=' + value.id + '>' + customerPartyList + '</option>');
 		});
-	
-	//get party 
+
+	//get party
 	 $(document).on('change','#partyDropDown',function(){
 		var partyId = $('#partyDropDown').val()
 		$('#party').val(partyId);
@@ -100,22 +102,22 @@ $(document).ready(function () {
 			 content:description
 		 });
 	 })*/
-	
+
 
 	 $.each(unitsList,function(index,value){
 			$("#unit0").append('<option value='+value.id+'>'+value.name+'</option>');
 		});
-		
+
 		 $(document).on("click", ".add" , function() {
 			 addSalesOrder();
 		 });
-		 
+
 	 $.each(itemList,function(index,value){
 			$("#itemModel0").append('<option value='+value.id+'>'+value.model+'</option>');
 		});
 	 if(salesOrderObj!=""){
 	     // Removed per-keystroke qty handler to reduce typing lag; change handler below will handle UI updates
-	 
+
 	 $(document).on('change', '.qty', function () {
 		 var index=$(this).closest("tr").index();
 		 var salesItemId=$("#salesItemId"+index).val();
@@ -127,22 +129,22 @@ $(document).ready(function () {
 			 $("#designTd"+index).show();
 		 }
 		 }
-		 
+
 	 });
 	 }
-	 
+
 	 designValidation();
-	
+
 	 $("#designModal").draggable({
 	      handle: ".modal-header"
 	    });
 });
 $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
-    if(this.value.match(/\-/)) 
+    if(this.value.match(/\-/))
         this.value=this.value.replace(/\D/g,'')
 });
 
-//validation to enter only number or float value for qty. 
+//validation to enter only number or float value for qty.
 
 	function getPartyList(){
 	$.ajax({
@@ -150,9 +152,9 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	    url : api.PARTY_LIST,
 	    dataType:'json',
 	    success  : function(response){
-			
+
 			$("#partyDropDown option:not(:first)").remove();
-	    	$.each(response, function( key, value ) {
+	 	$.each(response, function( key, value ) {
 				var clientList = value.partyName;
 				clientList = clientList.split(' ');
 				if (clientList.length > 100) {
@@ -163,9 +165,9 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				if (length > 30) {
 					clientList = $.trim(clientList).substring(0, 30) + "....";
 				}
-				$('#clientsDropdown').append('<option value=' + value.id + '>' + clientList + '</option>'); 
-	    		});
-	    },  
+				$('#clientsDropdown').append('<option value=' + value.id + '>' + clientList + '</option>');
+	 		});
+	    },
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -173,23 +175,23 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		},
 		error : function(e) {
 			console.log(e);
-		}  
-	  }); 
+		}
+	  });
 }
 
 
 //check for empty value after clicking on save button
 	function checkForEmptyValidation(){
 		$("#save").on("click", function(){
-			$('table > tbody  > tr > td > input').each(function(index, input) { 
+			$('table > tbody  > tr > td > input').each(function(index, input) {
 				 if ($(this).val().trim() === '') {
 		                $(this).addClass("has-error")
 						//$('.para').text("please enter all fields").css("color","#ff0000")
 		                $("#SalesVal").show();
-		            }  
+		            }
 			});
 		});
-	} 
+	}
 
 //validating quantity on only allowing numeric values
 /*$(document).on("focusout",".qty,.designQty",function(e) {
@@ -201,18 +203,18 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 		}
 		else{
-        	$.error("only digits are allowed for qty");
+     	$.error("only digits are allowed for qty");
 		}
     });*/
 
 	//adding rows on click of add button
 	function addSalesOrder(){
-	
+
 		 var newRow = $("<tr>");
-		 var row=$('#salesTable  > tbody  > tr').length;
+		 var row=document.getElementById('table-body').rows.length;
 		 var rowCount = row+1;
 		 var arraycount = rowCount-1;
-		 
+
         var columns = "";
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox slNo" id="slNo'+ arraycount +'" name="items['+arraycount+'].slNo" path="items['+arraycount+'].slNo"/></td>';
 	    columns += '<td width="35%" class="CellWithComment"><input type="text" class="form-control PositionofTextbox description" autocomplete="off" id="description'+ arraycount +'" name="items['+arraycount+'].description" path="items['+arraycount+'].description"/><span id="descriptionDiv'+arraycount+'"></td>';
@@ -232,7 +234,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         newRow.append(columns);
          $("#table-body").append(newRow);
          // Check if expand all header should be shown/hidden after adding new row
-         toggleExpandAllHeader();
+         if(!bulkLoading){ toggleExpandAllHeader(); }
         // Ensure no suggestions/autocomplete on description for new row as well
         var $desc2 = newRow.find(".description");
         $desc2.attr("autocomplete","off");
@@ -246,18 +248,22 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         }
         $(document).off('keyup keypress input', '.description');
         $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
-        
-        		/*unitName = unitsList.map(({ name }) => name);
-    		$(".unit").autocomplete({
-    		       source: unitName
-    		     });*/
-     		$("#unit" + arraycount).select2({ dropdownAutoWidth: true });
-    		//display unit list in dropdown
-    		$.each(unitsList,function(index,value){
-    			$("#unit"+ arraycount).append('<option value='+value.id+'>'+value.name+'</option>');
-    		});
+
+     		/*unitName = unitsList.map(({ name }) => name);
+ 		$(".unit").autocomplete({
+ 		       source: unitName
+ 		     });*/
+  		if(!bulkLoading){ $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
+ 		//display unit list in dropdown
+ 		if(unitOptionsHtml === null){
+ 			unitOptionsHtml = "";
+ 			$.each(unitsList,function(index,value){
+ 				unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
+ 			});
+ 		}
+ 		$("#unit"+ arraycount).append(unitOptionsHtml);
 	}
-	
+
 	$(document).on("change",".unit",function(){
 		var index=$(this).closest("tr").index();
 		var unitName=$("#unit"+index).find("option:selected").text()
@@ -283,26 +289,26 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			$("#servicehsnCode"+index).attr("readonly",false);
 		}
 	})
-	
-	
+
+
 	/**get sales item list by sales order id and display on double click of sales list **/
 	function getSalesOrderById(soId){
 		showLoader();
 		//className String is used to differentiate. since this api is used many places
 		var className="so";
 		var partyId=salesOrderObj.party.id;
-   	 	if(partyId=="C1143"){
-   			$("#gstRow").css("display","none");
-   			$("#taxDropDownRow").css("display","none");
-   			}else{
-   				$("#gstRow").show();
-   				$("#taxDropDownRow").show();
-   			} 
-   	 $("#soId").val(soId);
-   	$("#saveSalesOrder").html("Update");
-   	
+		if(partyId=="C1143"){
+			$("#gstRow").css("display","none");
+			$("#taxDropDownRow").css("display","none");
+			}else{
+				$("#gstRow").show();
+				$("#taxDropDownRow").show();
+			}
+	 $("#soId").val(soId);
+	$("#saveSalesOrder").html("Update");
+
 	$('#party').val(salesOrderObj.party.id);
-	
+
 	var poDate=salesOrderObj.clientPoDate;
 	$("#clientPoDate").replaceWith('<input type="text" class="form-control PositionofTextbox" style="width:150px" id="poDateVal" name="clientPoDate">');
 	if(poDate==null || poDate==""){
@@ -329,65 +335,66 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	//$('#clientPoNumber').attr("readonly","readonly");
 	$("#clientPoNumber,#clientPo").val(salesOrderObj.clientPoNumber);
 	$("#taxDropDown").val(salesOrderObj.gstRate);
-	
+
 		$.ajax({
 		    Type:'GET',
 		    url : api.GET_SALES_ITEMS_LIST_BY_SALES_ORDER_ID+"?id="+soId+"&&className="+className,
 		    dataType:'json',
 		    success  : function(response){
-		    	//$(".add").hide();
-		    	$("#resetSalesOrder").hide();
-		    	$.each(response,function( key, value ){
-				    	addSalesOrder();
+		 	//$(".add").hide();
+		 	$("#resetSalesOrder").hide();
+		 	bulkLoading = true;
+		 	$.each(response,function( key, value ){
+				 	addSalesOrder();
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
-				
+
 				var unitName=value.item_units.name;
 				var qty=value.quantity;
 			//	$("#designTd"+key).show();
 				$("#toggleBriefTd"+key).show();
 				$("#design"+key).val(value.id);
-				
-		    	
-				
+
+
+
 				$("#salesItemId"+key).val(value.id)
-				$("input[name='items[" +key+ "].slNo']").val(value.slNo);
-		    	$("input[name='items[" +key+ "].description']").val(value.description);
-		    	$("#descriptionDiv"+key). addClass('CellComment');
-		    	$("#descriptionDiv"+key).html(value.description);
-		    	$("input[name='total']").val(commaSeparateNumber(salesOrderObj.total));
-		    	$("input[name='gst']").val(commaSeparateNumber(salesOrderObj.gst));
-		    	$("input[name='grandTotal']").val(commaSeparateNumber(salesOrderObj.grandTotal));
-				$("input[name='items[" +key+ "].modelNo']").val(value.modelNo);
-				$("input[name='items[" +key+ "].hsnCode']").val(value.hsnCode);
-				$("input[name='items[" +key+ "].servicehsnCode']").val(value.servicehsnCode);
-				$("input[name='items[" +key+ "].quantity']").val(value.quantity);
+				$("#slNo"+key).val(value.slNo);
+		 	$("#description"+key).val(value.description);
+		 	$("#descriptionDiv"+key). addClass('CellComment');
+		 	$("#descriptionDiv"+key).html(value.description);
+		 	$("#total").val(commaSeparateNumber(salesOrderObj.total));
+		 	$("#gst").val(commaSeparateNumber(salesOrderObj.gst));
+		 	$("#grandTotal").val(commaSeparateNumber(salesOrderObj.grandTotal));
+				$("#modelNo"+key).val(value.modelNo);
+				$("#hsnCode"+key).val(value.hsnCode);
+				$("#servicehsnCode"+key).val(value.servicehsnCode);
+				$("#qty"+key).val(value.quantity);
 				var unitPrice = commaSeparateNumber(value.unitPrice);
-				$("input[name='items[" +key+ "].unitPrice']").val(unitPrice);	
+				$("#unitPrice"+key).val(unitPrice);
 				var servicePrice = commaSeparateNumber(value.servicePrice);
-				$("input[name='items[" +key+ "].servicePrice']").val(servicePrice);
+				$("#servicePrice"+key).val(servicePrice);
 				var amountPrice = commaSeparateNumber(value.amount);
-				$("input[name='items[" +key+ "].amount']").val(amountPrice);
-				
+				$("#amount"+key).val(amountPrice);
+
 				/*$("#unit"+key).replaceWith('<input type="text" class="form-control PositionofTextbox unit" id="unitVal'+key+'" name="items[' +key+ '].unit">');
 				$('#unitVal'+key).val(value.item_units.name);
 				$('#unitVal'+ key).next(".select2-container").hide();*/
 				//$('#unitVal'+key).attr("disabled",true);
-				
+
 				$("#unit"+key).val(value.item_units.id)
-				$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name});
-				
-				
+				//$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name}); // now done in chunks after the loop
+
+
 				if(unitName=="Heading"){
-					$("input[name='items[" +key+ "].servicePrice']").attr("readonly",true);
-					$("input[name='items[" +key+ "].unitPrice']").attr("readonly",true);
+					$("#servicePrice"+key).attr("readonly",true);
+					$("#unitPrice"+key).attr("readonly",true);
 					$("#qty"+key).attr("readonly",true);
 					$("#modelNo"+key).attr("readonly",true);
 					$("#hsnCode"+key).attr("readonly",true);
 					$("#servicehsnCode"+key).attr("readonly",true);
 					$("#designTd"+key).hide();
 				}else{
-					$("input[name='items[" +key+ "].servicePrice']").attr("readonly",false);
-					$("input[name='items[" +key+ "].unitPrice']").attr("readonly",false);
+					$("#servicePrice"+key).attr("readonly",false);
+					$("#unitPrice"+key).attr("readonly",false);
 					$("#qty"+key).attr("readonly",false);
 					$("#modelNo"+key).attr("readonly",false);
 					$("#hsnCode"+key).attr("readonly",false);
@@ -400,21 +407,23 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					 $("#designTd"+key).show();
 				 }
 				//$(".deleteButton").hide();
-		    	});
-		    	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
-		    	$('#partyDropDown').val(salesOrderObj.party.id);
-		    	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
-		    	$('#partyDropDown').attr("disabled",true);
-		    	$("#taxDropDown").attr("disabled",true);
-		    	$("#salesTable >tbody>tr:last").remove();
-		    	$("#taxDropDown").trigger('change');
-		    	// Show expand all header since data is loaded
-		    	showExpandAllHeader();
-		    	$('input:not(:button,:submit),textarea,select').change(function () {
-		    		isDirty = true;
-		    		
-		    		});
-		    },  
+		 	});
+		 	bulkLoading = false;
+		 	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
+		 	$('#partyDropDown').val(salesOrderObj.party.id);
+		 	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
+		 	$('#partyDropDown').attr("disabled",true);
+		 	$("#taxDropDown").attr("disabled",true);
+		 	$("#salesTable >tbody>tr:last").remove();
+		 	$("#taxDropDown").trigger('change');
+		 	// Show expand all header since data is loaded
+		 	showExpandAllHeader();
+		 	$('input:not(:button,:submit),textarea,select').change(function () {
+		 		isDirty = true;
+
+		 		});
+		 	initUnitSelect2InChunks(0);
+		    },
 			complete:function(resp){
 				hideLoader();
 				if(resp.status==500){
@@ -427,8 +436,19 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			}
 		  });
 	}
-	
-	
+
+
+	function initUnitSelect2InChunks(start){
+		var total = document.getElementById('table-body').rows.length;
+		var end = Math.min(start + 40, total);
+		for(var i = start; i < end; i++){
+			$("#unit" + i).select2({ dropdownAutoWidth: true });
+		}
+		if(end < total){
+			setTimeout(function(){ initUnitSelect2InChunks(end); }, 0);
+		}
+	}
+
 	//bulk version of checkForDcExists: one request for all rows instead of one per row
 	function checkForDcExistsBulk(salesItemIds){
 		if(salesItemIds.length == 0){
@@ -440,8 +460,9 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			data : { salesItemIds : salesItemIds.join(",") },
 			success : function(idsWithDc) {
 				var anyDc = false;
+				var allRows = $("#salesTable >tbody > tr");
 				$.each(salesItemIds, function(key, id){
-					var row = $("#salesTable >tbody").find("tr:eq("+key+")");
+					var row = allRows.eq(key);
 					if(idsWithDc.indexOf(id) !== -1){
 						anyDc = true;
 						row.find("input,select,button").attr("disabled",true);
@@ -475,7 +496,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	function checkForDcExists(salesItemId,key){
 		var row=key+1;
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.DC_EXIST +"?salesItemId="+salesItemId,
 			success : function(response) {
 				if(response == true){
@@ -491,7 +512,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					$("#salesTable >tbody").find("tr:eq("+key+")").find("input,select,button").attr("disabled",false);
 					enableDesignAddBtn(key);
 				}
-			},  
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -499,10 +520,10 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			},
 			error : function(e) {
 				console.log(e);
-			}  
-		}); 
+			}
+		});
 	}
-	
+
 	function disableDesignAddBtn(key){
 		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",true);
@@ -510,7 +531,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			$(".addrow").hide();
 		})
 	}
-	
+
 	function enableDesignAddBtn(key){
 		$(document).off("click","#design"+key).on("click","#design"+key,function(){
 			$("#saveDesign").attr("disabled",false);
@@ -518,23 +539,23 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			$(".addrow").show();
 		})
 	}
-	
-	
+
+
 	$(document).on("change",".toggleBrief", function(){
 		var index=$(this).closest("tr").index();
 		let inputText =$("input[name='items[" +index+ "].description']").val();
 		if($(this).is(':checked')) {
-            
+
             $("#descriptionDiv"+index).addClass('CellComment');
-	    	$("#descriptionDiv"+index).html(inputText).show();
-	    	 $('#descriptionDiv'+index).css('display','block');
+	 	$("#descriptionDiv"+index).html(inputText).show();
+	 	 $('#descriptionDiv'+index).css('display','block');
         } else {
-        	$("#descriptionDiv"+index).addClass('CellComment');
+     	$("#descriptionDiv"+index).addClass('CellComment');
           //  $('#descriptionDiv'+index).removeAttr('style');
             $("#descriptionDiv"+index).html(inputText).hide();
         }
 	})
-	 
+
 	//on click of design link in sales order edit open design popup
 	$(document).on("click",".design",function(){
 		var modalHeaderDesc=$(this).closest("tr").find("td:eq(1)").find("input").val();
@@ -557,15 +578,15 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		getDesignItemList(salesItemId);
 	})
 	$(document).on("change","[id^='itemModel']",function(){
-        	let arraycount = this.id.replace("itemModel","");
-        	var itemId=$(this).val();
+     	let arraycount = this.id.replace("itemModel","");
+     	var itemId=$(this).val();
 	          $.ajax({
-				type : "GET",  
+				type : "GET",
 				url : api.ITEM_LIST_BYID +"?id="+itemId,
 				success : function(response) {
 					$("#unitMod"+arraycount).val(response.item_units.name)
-					
-				},  
+
+				},
 				complete:function(resp){
 					if(resp.status==500){
 						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -573,21 +594,21 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				},
 				error : function(e) {
 					console.log(e);
-				}  
-			}); 
-  	});
+				}
+			});
+	});
 	//on click of addrow button in design modal
 	$(document).on("click",".addrow",function(){
 		addDesignRow();
 	})
-	
+
 	//on click of addrow button in design modal add rows
 	function addDesignRow(){
 		 var newRow = $("<tr>");
 		 var row=$('#designTable  > tbody  > tr').length;
 		 var rowCount = row+1;
 		 var arraycount = rowCount-1;
-		 
+
         var columns = "";
         columns += '<td><select class="form-control PositionofTextbox itemModel" name="items['+arraycount+'].itemId" style="width: 100%; padding: 0px;" id="itemModel'+ arraycount +'"><option value="" selected>Select Model No:</option></td>';
         columns += '<td><input type="text" class="form-control PositionofTextbox unit" id="unitMod'+ arraycount +'" /></td>';
@@ -596,14 +617,14 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	    newRow.append(columns);
         $("#designTable").append(newRow);
         $("#itemModel" + arraycount).select2({ dropdownAutoWidth: true });
-        
+
         //populate model number
         $.each(itemList,function(index,value){
 			$("#itemModel"+ arraycount).append('<option value='+value.id+'>'+value.model+'</option>');
 		});
         //change handler is bound once via delegated "[id^='itemModel']" selector above
-        	
-	
+
+
 	}
 	//validate design form
 	function designValidation(){
@@ -611,7 +632,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			rules: {
 			},
 			submitHandler:function(form) {
-				
+
 				$("#saveDesign").attr('disabled', 'disabled');
 				var designJson = {};
 				var items = designTable2Json();
@@ -638,10 +659,10 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 					}
 					else{
-			        	$.error("only digits are allowed for qty at row " + row);
-			        	return false;
+			     	$.error("only digits are allowed for qty at row " + row);
+			     	return false;
 					}*/
-					
+
 				}
 				//saveDesign(designJson);
 				//var designJson=$(form).form2json();
@@ -651,19 +672,19 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					var itemId=items[i].itemId;
 					itemIdList.push(itemId);
 				}
-				var itemListArray = itemIdList.sort(); 
+				var itemListArray = itemIdList.sort();
 
 				var dupItemArray = [];
 				for (var i = 0; i < itemListArray.length - 1; i++) {
 				    if (itemListArray[i + 1] == itemListArray[i]) {
-				    	dupItemArray.push(itemListArray[i]);
+				 	dupItemArray.push(itemListArray[i]);
 				    }
 				}
 				if(dupItemArray.length>0){
 					$.error("Please enter distinct model No");
 					return false;
 				}
-				
+
 				$.ajax({
 					method:'GET',
 					url :api.DESIGN_VALIDATE + "?itemIdList="+itemIdList+ "&&salesItemId="+designJson.salesItemId,
@@ -674,7 +695,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 						}else{
 							$.error("Model already exist");
 						}
-					},  
+					},
 					complete:function(resp){
 						if(resp.status==500){
 							$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -682,20 +703,20 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					},
 					error : function(e) {
 						console.log(e);
-					}  
-				}); 
-   
+					}
+				});
+
 				$('input:not(:button,:submit),textarea,select').on("focusout input",function () {
 					$("#saveDesign").attr('disabled', false);
 					});
-				
+
 			}
 		});
- 	}
+	}
 
-	
-	
-	
+
+
+
 function designTable2Json(){
 
     var header = $('#designTable thead tr th').map(function () {
@@ -707,15 +728,15 @@ function designTable2Json(){
         $(this).find('td').each(function (i) {
             var rowName = header[i];
             if(rowName == 'Model No') {
-            	row["itemId"] = $(this).find("select").val();
+         	row["itemId"] = $(this).find("select").val();
             }else if(rowName=='Unit'){
-            	 row["unit"] = $(this).find("input").val();
+         	 row["unit"] = $(this).find("input").val();
             } else if(rowName=='Quantity'){
-            	 row["quantity"] = $(this).find("input").val();
-            	}
-        	});
-        	return row;
-    	}).get();
+         	 row["quantity"] = $(this).find("input").val();
+         	}
+     	});
+     	return row;
+ 	}).get();
     return tableObj;
 	}
 
@@ -723,7 +744,7 @@ function designTable2Json(){
 	//to save design
 	function saveDesign(designJson){
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.ADD_SO_DESIGN,
 			data : JSON.stringify(designJson),
 			dataType  : "json",
@@ -735,7 +756,7 @@ function designTable2Json(){
 				$("#designTable").find("tbody>tr:not(:first)").remove();
 				$.success("Design saved successfully");
 				isDirty = false;
-			},  
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -743,10 +764,10 @@ function designTable2Json(){
 			},
 			error : function(e) {
 				console.log(e);
-			}    
-		}); 
+			}
+		});
 	}
-	
+
 	//ajax call to get all the design item list
 	function getDesignItemList(salesItemId){
 		$.ajax({
@@ -754,9 +775,9 @@ function designTable2Json(){
 			url:api.SO_DESIGNITEM_LIST + "?salesItemId=" + salesItemId,
 			success:function(response){
 				console.log(response);
-				designListTable(response);	
-				
-			},  
+				designListTable(response);
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -764,7 +785,7 @@ function designTable2Json(){
 			},
 			error : function(e) {
 				console.log(e);
-			}  	
+			}
 		})
 	}
 
@@ -783,11 +804,11 @@ function designTable2Json(){
 					"mData": "unit"
 				},
 
-				{ 	
+				{
 					"title":'Quantity',
 					"width":"10%",
 					"mData":"quantity",
-					
+
 				},
 				{	"class":"hideTd",
 					"mData": "designId"
@@ -798,7 +819,7 @@ function designTable2Json(){
 				{	"class":"hideTd",
 					"mData": "itemMasterId"
 				},
-				{ 	
+				{
 					"title":'Delete',
 					"width":"10%",
 					"class":"styleOfSlNo",
@@ -807,7 +828,7 @@ function designTable2Json(){
 					}
 				}
 				]
-		});  
+		});
 	}
 	//on click of design display confirm bootbox
 	$(document).on("click",".deleteDesignBtn",function(){
@@ -830,13 +851,13 @@ function designTable2Json(){
 			callback: function (result) {
 				result ? deleteDesign(id,salesItemId,designId):"";
 			}
-		});		
+		});
 	})
 
 	//to delete the design
 	function deleteDesign(id,salesItemId,designId){
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.DELETE_DESIGN +"?id="+id + "&designId="+designId,
 			success : function(response) {
 				if(response == true){
@@ -846,7 +867,7 @@ function designTable2Json(){
 					getDesignItemList(salesItemId);
 					$.error("PO,Dc or Grn Created");
 				}
-			},  
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -854,9 +875,9 @@ function designTable2Json(){
 			},
 			error : function(e) {
 				console.log(e);
-			}  
-		}); 
-	}	
+			}
+		});
+	}
 
 	//delete sales Order
 	function deleteSalesOrder(){
@@ -865,15 +886,15 @@ function designTable2Json(){
 		let salesItemId=$(salesItemIdTd).find("input").val();
 		if(salesItemId!=""){
 			getDesignList(salesItemId,salesItemIdTd);
-		
+
 		}else{
-		   	 $(this).closest("tr").remove();
-		   	adjustIndex();
-		   	recalculateTotals();
+			 $(this).closest("tr").remove();
+			adjustIndex();
+			recalculateTotals();
 		}
 	});
 	}
-	
+
 	function adjustIndex(){
 		$('#salesTable tbody').find('tr').each(function (index) {
 			let prev=index-1;
@@ -927,7 +948,7 @@ function designTable2Json(){
 			$(twelthTdElement).find('input').attr('id', 'salesItemId'+index);
 		});
 	}
-	
+
 	//ajax call to get all the design item list
 	function getDesignList(salesItemId,salesItemIdTd){
 		$.ajax({
@@ -957,10 +978,10 @@ function designTable2Json(){
 								recalculateTotals();
 							}
 						}
-					});		
+					});
 				}
-				
-			},  
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -968,19 +989,19 @@ function designTable2Json(){
 			},
 			error : function(e) {
 				console.log(e);
-			}  	
+			}
 		})
 	}
-	
-	
+
+
 	function deleteSalesItemById(salesItemId){
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.DELETE_SALESITEM +"?salesItemId="+salesItemId,
 			success : function(response) {
 				$.success("SalesItem Deleted");
 				$("#salesTable").trigger("click");
-			},  
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -988,11 +1009,11 @@ function designTable2Json(){
 			},
 			error : function(e) {
 				console.log(e);
-			}  
-		}); 
+			}
+		});
 	}
-	
-	
+
+
 	function getAmount(){
         $(document).on('change blur','.qty, .unitPrice, .servicePrice, #partyDropDown, .unit',function () {
             /*$(document).on('change','.servicePrice,.deleteButton,#salesTable,#partyDropDown',function () { */
@@ -1008,13 +1029,13 @@ function designTable2Json(){
                  index= rowNum-1;
              }*/
             var parent = $(this).closest('tr');
-            
+
             var up1 = $("#unitPrice"+index).val();
             up1 = up1.replace(/,/g,"");
-            
+
             var sp1 = $("#servicePrice"+index).val();
             sp1 = sp1.replace(/,/g,"");
-            
+
             //calculating total amount((Uprice+Sprice)*Quantity))..
            parent.find('.amount').val((parseFloat(parent.find('.qty').val()) * parseFloat(up1))+(parseFloat(sp1)*parseFloat(parent.find('.qty').val()) ))
          //  parent.find('.amount').val(parseFloat(parent.find('.qtyInput').val()) * parseFloat(up1))
@@ -1026,32 +1047,32 @@ function designTable2Json(){
            var amountPrice = parseFloat(apWithCommas);
           //$("#amount"+index).val(amountPrice);
             $("#amount"+index).val(commaSeparateNumber(amountPrice));
-           
+
             /*var ap = $("#amount"+index).val();
             ap = ap.replace(/,/g,"");
             up1 = up1.replace(/,/g,"");*/
             if(parent.find('.amount').val()=="NaN"){
                 parent.find('.amount').val("");
             }
-           
+
            // $("#amount"+index).val(commaSeparateNumber(amountPrice));
           });
-        
+
     }
 
-	
-	
+
+
 	//For displayin first row of on selecting Model Number
-	
+
 	$(document).ready( function () {
-		
+
 		$.each(itemList,function(index,value){
 			$("#itemDropDown0").append('<option value='+value.id+'>'+value.model+'</option>');
 		});
 		getFirstRowsalesOrder();
 
 	});
-	
+
 	function getFirstRowsalesOrder(){
 	$(document).on("change", "[id^='itemDropDown']" , function() {
 
@@ -1079,10 +1100,10 @@ function designTable2Json(){
 			}
 		});
 
-    	});
+ 	});
 
 	}
-	
+
 	var checkDuplicate=false;
 	//on click of save button in sales order open address selection pop-up
 	$(document).on("click","#saveSalesOrder",function(e){
@@ -1101,7 +1122,7 @@ function designTable2Json(){
 				if(clientPoDate!="" && checkDuplicate==false){
 					if(clientPoNumber!="" && checkDuplicate==false){
 							$("#soAddressSlectionPopup").modal("show");
-					
+
 						 getBillingAddressTermsAndCondition(partyId);
 						 getAllPartyList();
 						 getUserList();
@@ -1109,10 +1130,10 @@ function designTable2Json(){
 				}
 			}
 		}
-		
-		
+
+
 	});
-	
+
 	//on change of client dropdown in popup populate shipping address dropdown
 	$(document).on("change","#clientsDropdown",function(){
 		var clientId=$(this).val();
@@ -1126,7 +1147,7 @@ function designTable2Json(){
 			getShippingAddressListByClientId(clientId);
 		}
 	})
-	
+
 	//on change of billing client dropdown in popup populate billing address dropdown
 	$(document).on("change","#billingClientsDropdown",function(){
 		var billingClientId=$(this).val();
@@ -1140,17 +1161,17 @@ function designTable2Json(){
 			getBillingAddressListByClientId(billingClientId);
 		}
 	})
-	
+
 	//use already-loaded customerPartyList to populate clients dropdown (no AJAX needed)
 	function getAllPartyList(){
-	    	$('#clientsDropdown').empty();
-	    	$('#billingClientsDropdown').empty();
-	    	$.each(customerPartyList, function( key, value ) {
-	    		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
-	    		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>'); 
-	    		});
-	    	if(salesOrderObj!=""){
-				
+	 	$('#clientsDropdown').empty();
+	 	$('#billingClientsDropdown').empty();
+	 	$.each(customerPartyList, function( key, value ) {
+	 		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
+	 		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
+	 		});
+	 	if(salesOrderObj!=""){
+
 				$("#clientsDropdown").val(salesOrderObj.shippingAddress);
 				$('#clientsDropdown').select2(salesOrderObj, {id: salesOrderObj.shippingAddress, a_key:salesOrderObj.shippingAddress});
 				getShippingAddressListByClientId(salesOrderObj.shippingAddress);
@@ -1182,13 +1203,13 @@ function designTable2Json(){
 				$("#warrantyDropdown").val(salesOrderObj.warranty);
 				$('#warrantyDropdown').select2(salesOrderObj, {id: salesOrderObj.warranty, a_key:salesOrderObj.warranty});
 				$("#otherTermsAndCondition").val(salesOrderObj.otherTermsAndConditions);
-				
-				
-			}else{ 
+
+
+			}else{
 				$("#clientsDropdown").val('').trigger('change');
 			}
 	}
-	
+
 	var billingAddressObj;
 	//ajax call to get all the party Address list by partyId and populate billing Address Dropdown
 	function getBillingAddressListByClientId(billingClientId){
@@ -1198,7 +1219,7 @@ function designTable2Json(){
 			success:function(response){
 				console.log(response);
 				billingAddressObj=response;
-		    	   //populate main party address for billing address dropdown.
+		 	   //populate main party address for billing address dropdown.
 				   $("#billingAddressDropdown").empty();
 				   var billingMainPartyAddress = response.mainParty.addr1;
 					billingMainPartyAddress = billingMainPartyAddress.split(' ');
@@ -1214,15 +1235,15 @@ function designTable2Json(){
 					}
 			       $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + '>' + billingMainPartyAddress + '</option>');
 			       $("#billingAddressPartyId").val(response.mainParty.id)
-			       
 
-		    	   //populate other alternative addresses for billing address dropdown.
-		    	   var alternateAddressArr = response.addresses;
+
+		 	   //populate other alternative addresses for billing address dropdown.
+		 	   var alternateAddressArr = response.addresses;
 		           for(var i=0; i< alternateAddressArr.length; i++){
-		         	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+		      	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
-		           
-		   
+
+
 		         //Restore saved billing address when editing
 if(salesOrderObj!="" && salesOrderObj.billingAddress && $("#billingAddressDropdown option[value='"+salesOrderObj.billingAddress+"']").length){
 	$("#billingAddressDropdown").val(salesOrderObj.billingAddress);
@@ -1232,7 +1253,7 @@ $("#billingAddressDropdown").change();
 if(salesOrderObj!=""){
 	$("#billingClientsDropdown,#billingAddressDropdown").prop("disabled",true);
 }
-		   		
+
 			},
 			complete:function(resp){
 				if(resp.status==500){
@@ -1244,7 +1265,7 @@ if(salesOrderObj!=""){
 			}
 	  });
 	}
-	
+
 	var shippingAddressObj;
 	//ajax call to get all the party Address list by partyId and populate shipping Address Dropdown
 	function getShippingAddressListByClientId(clientId){
@@ -1254,7 +1275,7 @@ if(salesOrderObj!=""){
 			success:function(response){
 				console.log(response);
 				shippingAddressObj=response;
-		    	   //populate main party address for billing address dropdown.
+		 	   //populate main party address for billing address dropdown.
 				   $("#shippingAddressDropdown").empty();
 				   var shiipingMainPartyAddress = response.shippingAddr.addr1;
 					shiipingMainPartyAddress = shiipingMainPartyAddress.split(' ');
@@ -1270,16 +1291,16 @@ if(salesOrderObj!=""){
 					}
 			       $("#shippingAddressDropdown").append('<option value=' + response.shippingAddr.id + '>' + shiipingMainPartyAddress + '</option>');
 			       $("#shippingAddressPartyId").val(response.shippingAddr.id)
-			       
+
 			       if(response.shippingAddr.id!=response.mainParty.id){
-			    	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
+			 	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
 			       }
-		    	   //populate other alternative addresses for billing address dropdown.
-		    	   var alternateAddressArr = response.addresses;
+		 	   //populate other alternative addresses for billing address dropdown.
+		 	   var alternateAddressArr = response.addresses;
 		           for(var i=0; i< alternateAddressArr.length; i++){
-		         	  $("#shippingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+		      	  $("#shippingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
-		           
+
 		           //Display auto selected address
 		           //Restore saved shipping address when editing
 if(salesOrderObj!="" && salesOrderObj.shippingAddress && $("#shippingAddressDropdown option[value='"+salesOrderObj.shippingAddress+"']").length){
@@ -1288,8 +1309,8 @@ if(salesOrderObj!="" && salesOrderObj.shippingAddress && $("#shippingAddressDrop
 }
 //Display auto selected address
 $("#shippingAddressDropdown").change();
-	   		
-			},  
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -1297,10 +1318,10 @@ $("#shippingAddressDropdown").change();
 			},
 			error : function(e) {
 				console.log(e);
-			}  
+			}
 		})
 	}
-	
+
 	$(document).on("change","#shippingAddressDropdown",function(){
 		 var addressId = $(this).val();
 		   if (addressId == "") {
@@ -1308,101 +1329,101 @@ $("#shippingAddressDropdown").change();
 		  }
 		else {
 		   $("#shippingAddressContent").empty();
-		   
+
 		   if(addressId == shippingAddressObj.mainParty.id) {
-		   
+
 			var addr2=shippingAddressObj.mainParty.addr2;
 			if(addr2==null || addr2 == undefined) {
 				addr2=' ';
 				}
-			
+
 			var pincode = shippingAddressObj.mainParty.pin;
 			if(pincode==null || pincode == undefined){
 				pincode = ' ';
 			}
-			$("#shippingAddressContent").append( 
-			          			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
-			          			"<span class=''>"+shippingAddressObj.mainParty.addr1+" ,</span>" +
-			          			"<span class=''>"+addr2+"</span>" +
-			          			"<span class=''>"+shippingAddressObj.mainParty.party_city.name+" ,</span>"+
-			          			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.name+" ,</span>"+
-			          			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.country.name+" -</span>"+
-			          			"<span class=''>"+pincode+" </span>");
+			$("#shippingAddressContent").append(
+			       			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+shippingAddressObj.mainParty.addr1+" ,</span>" +
+			       			"<span class=''>"+addr2+"</span>" +
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.name+" ,</span>"+
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.name+" ,</span>"+
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+pincode+" </span>");
 		   }else {
 			   var alternateAddressArr = shippingAddressObj.addresses;
 		          for(var i=0; i< alternateAddressArr.length; i++){
-		        	  if(addressId == alternateAddressArr[i].id) {
-		        		  var addr2=alternateAddressArr[i].addr2;
-		        			if(addr2==null || addr2 == undefined) {
-		        				addr2=' ';
-		        				}
-		        			
+		     	  if(addressId == alternateAddressArr[i].id) {
+		     		  var addr2=alternateAddressArr[i].addr2;
+		     			if(addr2==null || addr2 == undefined) {
+		     				addr2=' ';
+		     				}
 
-		        			var altpincode = alternateAddressArr[i].pin;
-		        			if(altpincode==null || altpincode == undefined){
-		        				altpincode = '';
-		        			}
-		        	  $("#shippingAddressContent").append( 
-			          			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
-			          			"<span class=''>"+altpincode+" </span>");
-		        	  }
+
+		     			var altpincode = alternateAddressArr[i].pin;
+		     			if(altpincode==null || altpincode == undefined){
+		     				altpincode = '';
+		     			}
+		     	  $("#shippingAddressContent").append(
+			       			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+altpincode+" </span>");
+		     	  }
 		          }
 		   }
 		}
 	});
-	
+
 	//on change of biling address dropdown display full address below dropdown.
 	$(document).on("change","#billingAddressDropdown",function(){
 		   var addressId = $(this).val();
 		   $("#billingAddressContent").empty();
-		   
+
 		   if(addressId == addressObj.mainParty.id) {
-		   
+
 			var addr2=addressObj.mainParty.addr2;
 			if(addr2==null || addr2 == undefined) {
 				addr2=' ';
 				}
-			
+
 			var pincode = addressObj.mainParty.pin;
 			if(pincode==null || pincode == undefined){
 				pincode = '';
 			}
-			
-			$("#billingAddressContent").append( 
-			          			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
-			          			"<span class=''>"+addressObj.mainParty.addr1+" ,</span>" +
-			          			"<span class=''>"+addr2+"</span>" +
-			          			"<span class=''>"+addressObj.mainParty.party_city.name+" ,</span>"+
-			          			"<span class=''>"+addressObj.mainParty.party_city.state.name+" ,</span>"+
-			          			"<span class=''>"+addressObj.mainParty.party_city.state.country.name+" -</span>"+
-			          			"<span class=''>"+pincode+" </span>");
+
+			$("#billingAddressContent").append(
+			       			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+addressObj.mainParty.addr1+" ,</span>" +
+			       			"<span class=''>"+addr2+"</span>" +
+			       			"<span class=''>"+addressObj.mainParty.party_city.name+" ,</span>"+
+			       			"<span class=''>"+addressObj.mainParty.party_city.state.name+" ,</span>"+
+			       			"<span class=''>"+addressObj.mainParty.party_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+pincode+" </span>");
 		   }else {
 			   var alternateAddressArr = addressObj.addresses;
 		          for(var i=0; i< alternateAddressArr.length; i++){
-		        	  if(addressId == alternateAddressArr[i].id) {
-		        		  var addr2=alternateAddressArr[i].addr2;
-		        			if(addr2==null || addr2 == undefined) {
-		        				addr2=' ';
-		        				}
-		        			
-		        			var altpincode = alternateAddressArr[i].pin;
-		        			if(altpincode==null || altpincode == undefined){
-		        				altpincode = '';
-		        			}
-		        	  $("#billingAddressContent").append( 
-			          			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
-			          			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
-			          			"<span class=''>"+altpincode+" </span>");
-		        	  }
+		     	  if(addressId == alternateAddressArr[i].id) {
+		     		  var addr2=alternateAddressArr[i].addr2;
+		     			if(addr2==null || addr2 == undefined) {
+		     				addr2=' ';
+		     				}
+
+		     			var altpincode = alternateAddressArr[i].pin;
+		     			if(altpincode==null || altpincode == undefined){
+		     				altpincode = '';
+		     			}
+		     	  $("#billingAddressContent").append(
+			       			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+altpincode+" </span>");
+		     	  }
 		          }
 		   }
 		});
@@ -1412,13 +1433,13 @@ $("#shippingAddressDropdown").change();
 		    url : api.USER_LIST,
 		    dataType:'json',
 		    success  : function(response){
-				
+
 				$("#respPersonDropdown option:not(:first)").remove();
-		    	$.each(response, function( key, value ) {
-					
-					$('#respPersonDropdown').append('<option value=' + value.id + '>' + value.username + '</option>'); 
-		    		});
-		    },  
+		 	$.each(response, function( key, value ) {
+
+					$('#respPersonDropdown').append('<option value=' + value.id + '>' + value.username + '</option>');
+		 		});
+		    },
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -1426,8 +1447,8 @@ $("#shippingAddressDropdown").change();
 			},
 			error : function(e) {
 				console.log(e);
-			}  
-		  }); 
+			}
+		  });
 	}
 
 
@@ -1438,10 +1459,10 @@ $("#shippingAddressDropdown").change();
 	       url:api.GET_SO_ADDRESS+"?partyId="+partyId,
 	       type:'GET',
 	       success:function(response) {
-	    	   
-	    	   addressObj = response;
-	    	   
-	    	   //populate main party address for billing address dropdown.
+
+	 	   addressObj = response;
+
+	 	   //populate main party address for billing address dropdown.
 			   $("#billingAddressDropdown").empty();
 			   var billingMainAddress = response.mainParty.addr1;
 
@@ -1454,19 +1475,19 @@ $("#shippingAddressDropdown").change();
 			   if (length > 50) {
 				   billingMainAddress = $.trim(billingMainAddress).substring(0, 50) + "....";
 			   }
-   
+
 			   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + '>' + billingMainAddress + '</option>');
-	    	   
-	    	  
-	    	   //populate other alternative addresses for billing address dropdown.
-	    	   var alternateAddressArr = response.addresses;
+
+
+	 	   //populate other alternative addresses for billing address dropdown.
+	 	   var alternateAddressArr = response.addresses;
 	           for(var i=0; i< alternateAddressArr.length; i++){
-	         	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+	      	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 	           }
-	           
+
 	           //Display auto selected address
 	           $("#billingAddressDropdown").change();
-	           
+
 	          //Populate mode of payment drop downs
 	          var modeOfPaymentArr = response.modeOfPayment.split('$$');
 	          var modeOfPaymentArr1 = response.modeOfPayment.split('&&');
@@ -1474,53 +1495,53 @@ $("#shippingAddressDropdown").change();
 	          var str =  modeOfPaymentArr[modeOfPaymentArr.length -1 ].split('&&')[0];
 	          var str1 =  modeOfPaymentArr1[modeOfPaymentArr1.length -1 ];//This contains "days PDC from the date of delivery"
 	          for(var i=0; i< modeOfPaymentArr.length-1; i++){
-	        	  if(i==0) {
-	        		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i], modeOfPaymentArr[i]));
-	        	  }else{
-	        		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
-	        	  }
+	     	  if(i==0) {
+	     		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i], modeOfPaymentArr[i]));
+	     	  }else{
+	     		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
+	     	  }
 	          }
 	          $("#modeOfPaymentDropdown").append(new Option(str1, str1));
-	        
+
 	          //Populate jurisdictionDropdown drop downs
 	          var jursidictionArr = response.jurisdiction.split('$$');
 	          $("#jurisdictionDropdown").empty();
 	          $("#regionDropdown").empty();
 	          for(var i=0; i< jursidictionArr.length; i++){
-	        	  $("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
-	        	  $("#regionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	     	  $("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	     	  $("#regionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
 	          }
-	          
+
 	          //Populate frieght drop downs
 	          var frieghtArr = response.frieght.split('$$');
 	          $("#freightDropdown").empty();
 	          for(var i=0; i< frieghtArr.length; i++){
-	        	  $("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
+	     	  $("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
 	          }
-	          
+
 	        //Populate delivery drop downs
 	          var deliveryArr = response.delivery.split('$$');
 	          $("#deliveryDropdown").empty();
 	          for(var i=0; i< deliveryArr.length -1 ; i++){
-	        	  var val;
-	        	  if(i  == 0 ){
-	        		  val = deliveryArr[i];
-	        	    
-	        	  }else {
-	        		  val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
-	        	  }
-	        	  $("#deliveryDropdown").append(new Option(val, val));
+	     	  var val;
+	     	  if(i  == 0 ){
+	     		  val = deliveryArr[i];
+
+	     	  }else {
+	     		  val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
+	     	  }
+	     	  $("#deliveryDropdown").append(new Option(val, val));
 	          }
-	          
+
 	        //Populate warranty drop downs
 	          var warrantyArr = response.warranty.split('$$');
 	          var strMonths =  warrantyArr[warrantyArr.length -1 ]; //This contains "months"
 	          $("#warrantyDropdown").empty();
 	          for(var i=0; i< warrantyArr.length -1; i++){
-	        	  $("#warrantyDropdown").append(new Option(warrantyArr[i]+' '+strMonths, warrantyArr[i]+' '+strMonths));
+	     	  $("#warrantyDropdown").append(new Option(warrantyArr[i]+' '+strMonths, warrantyArr[i]+' '+strMonths));
 	          }
 	          isDirty = false;
-	        },  
+	        },
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -1528,17 +1549,17 @@ $("#shippingAddressDropdown").change();
 			},
 			error : function(e) {
 				console.log(e);
-			}  
+			}
 	       })
 	 }
-	
+
 	//on click of save button in popup set shipping address billing address and other T&D values to hidden field and submit form with those values
 	$(document).on("click","#saveSoBtn",function(e){
-		
+
 		$('#salesTable > tbody  > tr > td > select.unit').each(function (index, input) {
 			$("#salesTable >tbody").find("tr:eq("+index+")").find("input,select,button").attr("disabled",false);
 		});
-		
+
 		var shippingAddress = $("#shippingAddressDropdown").val();
 		var billingAddress = $("#billingAddressDropdown").val();
 		var otherTAndC=$.trim($("#otherTermsAndCondition").val());
@@ -1555,8 +1576,8 @@ $("#shippingAddressDropdown").change();
 		clientPoDate= clientPoFormat[1]+"/"+clientPoFormat[0]+"/"+clientPoFormat[2]; //change the format to mm/dd/yyyy to work in next step
 		clientPoDate=new Date(clientPoDate);
 		clientPoDate=clientPoDate.toDateString();
-	
-		
+
+
 		var projectClosureDate=$("#projectClosureDate").val(); //display value in dd/mm/yyyy format
 		var projectClosureDateFormat=projectClosureDate.split("-"); //split date by "/"
 		projectClosureDate= projectClosureDateFormat[1]+"/"+projectClosureDateFormat[0]+"/"+projectClosureDateFormat[2]; //change the format to mm/dd/yyyy to work in next step
@@ -1579,7 +1600,7 @@ $("#shippingAddressDropdown").change();
 			$.error("Please select shipping address");
 			e.preventDefault();
 		}
-		
+
 		isDirty = false;
 		$('#salesOrderForm1').submit();
 		$(this).attr('disabled', 'disabled');
@@ -1596,30 +1617,30 @@ $("#shippingAddressDropdown").change();
 	     .attr('disabled', 'disabled');
 		 return true;
 		*/
-	
+
 	});
 	function submitFormValidation(e){
 		let partyValue=$('#partyDropDown option:selected').val();
 		if( partyValue== ""){
-			e.preventDefault(e);	
+			e.preventDefault(e);
 			$.error("Plaese select the party before submitting ");
 			$("#partyDropDown").addClass('border-color');
 		}
 		var clientPoNumber=$("#clientPo").val();
 		if(salesOrderObj==""){
-		
+
 		if(clientPoNumber == "" || clientPoNumber == null || clientPoNumber == undefined){
-            e.preventDefault(e);	
+            e.preventDefault(e);
 			$.error("Plaese enter client PO Number ");
 			$("#clientPoNumber").addClass('border-color');
 		}
 		$('input').off('change.clrPoNum').on('change.clrPoNum', function(){
 				$("#clientPoNumber").removeClass('border-color');
-		})   
-		
+		})
+
 		var clientPoDate=$("#poDate").val();
 		if(clientPoDate == "" || clientPoDate == null || clientPoDate == undefined){
-            e.preventDefault(e);	
+            e.preventDefault(e);
 			$.error("Plaese enter client PO Date ");
 			$("#clientPoDate").addClass('border-color');
 			checkDuplicate=true;
@@ -1627,14 +1648,14 @@ $("#shippingAddressDropdown").change();
 		$('input').off('change.clrPoDate').on('change.clrPoDate', function(){
 				$("#clientPoDate").removeClass('border-color');
 				checkDuplicate=false;
-		})   
+		})
 		}
 		var shippingAddress=$("#shippingAddress").val();
 		if(shippingAddress=="" || shippingAddress==undefined){
 			e.preventDefault();
 		}
-		
-		$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) { 
+
+		$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) {
 			var qty = $("#qty"+index).val();
 			let row=index+1
 			if(qty==undefined || qty==""){
@@ -1646,19 +1667,19 @@ $("#shippingAddressDropdown").change();
 				$("#qty"+index).removeClass('border-color');
 			})
 		});
-		$('#salesTable > tbody  > tr > td > input.description').each(function(index, input) { 
+		$('#salesTable > tbody  > tr > td > input.description').each(function(index, input) {
             let row=index+1
 			var description = $("#description"+index).val();
 			if(description == "" || description==undefined){
 				$.error("Please enter the description at row " +row);
 				 $("#description"+index).addClass('border-color');
-		        e.preventDefault(e); 
+		        e.preventDefault(e);
 			}
 			$('input').change(function(){
 				$("#description"+index).removeClass('border-color');
 			})
 		});
-		$('#salesTable > tbody  > tr > td > input.unitPrice').each(function(index, input) { 
+		$('#salesTable > tbody  > tr > td > input.unitPrice').each(function(index, input) {
 			let row=index+1
 			var unitPrice = $("#unitPrice"+index).val();
 			unitPrice = unitPrice.replace(/,/g,"");
@@ -1666,23 +1687,23 @@ $("#shippingAddressDropdown").change();
 			var amount = $("#amount"+index).val();
 			amount = amount.replace(/,/g,"");
 			 $("#amount"+index).val(amount);
-			 
+
 			 var total = $("#total").val();
 			 total = total.replace(/,/g,"");
 			 $("#total").val(total);
-			 
+
 			 var gst = $("#gst").val();
 			 gst = gst.replace(/,/g,"");
 			 $("#gst").val(gst);
-			 
+
 			 var grandTotal = $("#grandTotal").val();
 			 grandTotal = grandTotal.replace(/,/g,"");
 			 $("#grandTotal").val(grandTotal);
-			 
-			
+
+
 		});
-		
-		$('#salesTable > tbody  > tr > td > input.servicePrice').each(function(index, input) { 
+
+		$('#salesTable > tbody  > tr > td > input.servicePrice').each(function(index, input) {
 			let row=index+1
 			var servicePrice = $("#servicePrice"+index).val();
 			servicePrice = servicePrice.replace(/,/g,"");
@@ -1694,16 +1715,16 @@ $("#shippingAddressDropdown").change();
 					 $("#unitPrice"+index).addClass('border-color');
 					 $("#servicePrice"+index).addClass('border-color');
 						e.preventDefault(e);
-		        	$.error("Please enter price more than 0 at row "+ row);
+		     	$.error("Please enter price more than 0 at row "+ row);
 				}
 			}
 			$('input').change(function(){
 				$("#unitPrice"+index).removeClass('border-color');
 				$("#servicePrice"+index).removeClass('border-color');
-			})	
-			
+			})
+
 		});
-	/*	$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) { 
+	/*	$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) {
 			let row=index+1
 	        var qtyValue = this.value;
 			var digits= new RegExp(/^[0-9]+$/);
@@ -1712,57 +1733,57 @@ $("#shippingAddressDropdown").change();
 	        //if (qtyValue.match(digits)||qtyValue.match(floatNum)||qtyValue=="") {
 			if (qtyValue.match(digits)||qtyValue=="") {
 				if(qtyValueInt<=2147483647){
-					
+
 				}else{
 					 $("#qty"+index).addClass('border-color');
 						e.preventDefault(e);
-		        	$.error("Qty limit exceeded at row "+ row);
+		     	$.error("Qty limit exceeded at row "+ row);
 				}
 
 			}else{
 				 $("#qty"+index).addClass('border-color');
 					e.preventDefault(e);
-	        	$.error("only digits are allowed for qty at row "+ row);
+	     	$.error("only digits are allowed for qty at row "+ row);
 			}
 			$('input').change(function(){
 				$("#qty"+index).removeClass('border-color');
-			})	
+			})
 	    });*/
-		
-		$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) { 
+
+		$('#salesTable > tbody  > tr > td > input.qty').each(function(index, input) {
 			let row=index+1
 	        var qtyValue = this.value;
 			var qtyValueInt=parseInt(qtyValue);
 			var floatNum= new RegExp(/^[+-]?\d+(\.\d+)?$/);
 	        //if (qtyValue.match(digits)||qtyValue.match(floatNum)||qtyValue=="") {
 				if(qtyValueInt<=2147483647){
-					
+
 				}else{
 					 $("#qty"+index).addClass('border-color');
 						e.preventDefault(e);
-		        	$.error("Qty limit exceeded at row "+ row);
+		     	$.error("Qty limit exceeded at row "+ row);
 				}
 
-			
+
 			$('input').change(function(){
 				$("#qty"+index).removeClass('border-color');
-			})	
+			})
 	    });
 
-		
-		$('#salesTable > tbody  > tr > td > input.amount').each(function(index, input) { 
+
+		$('#salesTable > tbody  > tr > td > input.amount').each(function(index, input) {
 			let row=index+1
 			var amount = $("#amount"+index).val();
 			if(amount==undefined || amount== ""||amount=="NaN"){
 				 $("#amount"+index).addClass('border-color');
 				 $.error("Please enter amount at row "+ row);
 				e.preventDefault(e);
-			}	
+			}
 			$('input').change(function(){
 				$("#amount"+index).removeClass('border-color');
-			})	
+			})
 		});
-		$('#salesTable > tbody  > tr > td > select.unit').each(function(index, input) { 
+		$('#salesTable > tbody  > tr > td > select.unit').each(function(index, input) {
 			let row=index+1
 			var unit = $("#unit"+index).val();
 			if(unit == "" || unit==undefined){
@@ -1772,8 +1793,8 @@ $("#shippingAddressDropdown").change();
 			}
 			$('select').change(function(){
 					$("#unit"+index).removeClass('border-color');
-			})    
-			
+			})
+
 		});
 		//if(salesOrderObj==""){
 		//checck for duplicate validation of client po number
@@ -1785,7 +1806,7 @@ $("#shippingAddressDropdown").change();
 				checkDuplicate=true;
 			e.preventDefault(e);
 			return false;
-			
+
 		}else{
 			checkDuplicate=false;
 			$("#clientPoNumber,#clientPo").removeClass('border-color');
@@ -1794,18 +1815,18 @@ $("#shippingAddressDropdown").change();
 		}else{
 			//$("#clientPoNumber,#clientPo").removeClass('border-color');
 		}
-	
+
 //	}
 	}
-	
+
 
 	 //Reset form
 	 $(document).on("click", "#resetSalesOrder" , function() {
 		 $("#salesOrderForm1")[0].reset();
 		 $(".unit ").val("").trigger('change');
    });
-	 
-	 
+
+
 	 function commaSeparateNumber(val){
 		 var x=val;
 		 //x = x.replace(",","");
@@ -1824,13 +1845,13 @@ $("#shippingAddressDropdown").change();
 		 return res;
 
 		 }
-	 
+
 	 function recalculateTotals(){
 		 var sum=0;
 	    $('.amount').each(function(index,value) {
-	    	var c = $("#amount"+index).val();
-	    	c = c.replace(/,/g,"");
-	    	var amount=parseFloat(c);
+	 	var c = $("#amount"+index).val();
+	 	c = c.replace(/,/g,"");
+	 	var amount=parseFloat(c);
 		    sum+=amount;
 		    });
 	    var sumWithComma = commaSeparateNumber(sum);
@@ -1847,7 +1868,7 @@ $("#shippingAddressDropdown").change();
 	      $(".gst").attr("value", gstWithComma);
 	      $("#gst").val(gstWithComma);
 	    }else{
-	    	gst=0;
+	 	gst=0;
 	    }
 	    var grandTotal=sum+gst;
 	    grandTotal = Math.round(grandTotal * 100) / 100;
@@ -1860,7 +1881,7 @@ $("#shippingAddressDropdown").change();
 	 $(document).on('change blur','.qty,.unitPrice,.servicePrice,#partyDropDown',function () {
 		 recalculateTotals();
 	  });
-	 
+
 	 $(document).on('change', '#taxDropDown',function () {
 		 var gstValue = $("#taxDropDown").val();
 		 $("#gstrate").html("GST @ "+gstValue+"%");
@@ -1870,15 +1891,15 @@ $("#shippingAddressDropdown").change();
 		 // Master checkbox to toggle all description expansions
 		 $(document).on('change', '#masterToggleBrief', function() {
 		     var isChecked = $(this).prop('checked');
-		     
+
 		     // Check/uncheck all row checkboxes
 		     $('.toggleBrief').each(function() {
 		         $(this).prop('checked', isChecked);
-		         
+
 		         // Get index
 		         var index = $(this).closest("tr").index();
 		         let inputText = $("input[name='items[\" +index+ \"].description']").val();
-		         
+
 		         if(isChecked) {
 		             $("#descriptionDiv"+index).addClass('CellComment');
 		             $("#descriptionDiv"+index).html(inputText).show();
@@ -1894,7 +1915,7 @@ $("#shippingAddressDropdown").change();
 		 $(document).on('change', '.toggleBrief', function() {
 		     var totalCheckboxes = $('.toggleBrief').length;
 		     var checkedCheckboxes = $('.toggleBrief:checked').length;
-		     
+
 		     // If all are checked, check master
 		     if (totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes) {
 		         $('#masterToggleBrief').prop('checked', true);
@@ -1907,16 +1928,16 @@ $("#shippingAddressDropdown").change();
 // Function to check if table has meaningful data and show/hide expand all header
 function toggleExpandAllHeader() {
 	var hasData = false;
-	
+
 	// Check if there are any rows with data (excluding the first empty row)
 	$('#salesTable tbody tr').each(function(index) {
 		var description = $(this).find('.description').val();
 		var qty = $(this).find('.qty').val();
 		var unitPrice = $(this).find('.unitPrice').val();
 		var servicePrice = $(this).find('.servicePrice').val();
-		
+
 		// Consider row has data if any of these fields have meaningful values
-		if ((description && description.trim() !== '') || 
+		if ((description && description.trim() !== '') ||
 			(qty && qty.trim() !== '' && qty !== '0') ||
 			(unitPrice && unitPrice.trim() !== '' && unitPrice !== '0.0') ||
 			(servicePrice && servicePrice.trim() !== '' && servicePrice !== '0.0')) {
@@ -1924,7 +1945,7 @@ function toggleExpandAllHeader() {
 			return false; // Break out of each loop
 		}
 	});
-	
+
 	// Show or hide the expand all header based on data presence
 	if (hasData) {
 		$('#expandAllHeader').show();

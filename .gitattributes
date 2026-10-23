@@ -1,0 +1,2 @@
+*.java whitespace=-space-before-tab
+*.js whitespace=-space-before-tab
