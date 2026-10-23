@@ -42,15 +42,15 @@ public class SalesOrderUploadService {
 		ItemMasterService itemService;
 
 	    public String uploadExcelFile(MultipartFile file) {
-	  	 Workbook workbook;
-	  	 try (InputStream inputStream = file.getInputStream()){
-	  			 if (file.getOriginalFilename().endsWith(".xls")) {
-	  	                workbook = new HSSFWorkbook(inputStream); // For older Excel files (.xls)
-	  	            } else if (file.getOriginalFilename().endsWith(".xlsx")) {
-	  	                workbook = new XSSFWorkbook(inputStream); // For newer Excel files (.xlsx)
-	  	            } else {
-	  	                throw new IllegalArgumentException("Invalid file format. Only .xls and .xlsx files are supported.");
-	  	            }
+	 	 Workbook workbook;
+	 	 try (InputStream inputStream = file.getInputStream()){
+	 			 if (file.getOriginalFilename().endsWith(".xls")) {
+	 	                workbook = new HSSFWorkbook(inputStream); // For older Excel files (.xls)
+	 	            } else if (file.getOriginalFilename().endsWith(".xlsx")) {
+	 	                workbook = new XSSFWorkbook(inputStream); // For newer Excel files (.xlsx)
+	 	            } else {
+	 	                throw new IllegalArgumentException("Invalid file format. Only .xls and .xlsx files are supported.");
+	 	            }
 
 	                Sheet sheet = workbook.getSheetAt(0);
 
@@ -63,8 +63,8 @@ public class SalesOrderUploadService {
 
 	                // DUPLICATE CHECK: same client PO already uploaded -> stop here, nothing is saved
 	                if (salesOrderRepository.existsByClientPoNumberIgnoreCase(clientPoNo)) {
-	              	workbook.close();
-	              	throw new IllegalStateException("Client PO " + clientPoNo + " is already uploaded. Duplicate upload is not allowed.");
+	             	workbook.close();
+	             	throw new IllegalStateException("Client PO " + clientPoNo + " is already uploaded. Duplicate upload is not allowed.");
 	                }
 	                order.setClientPoNumber(clientPoNo);
 	                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -76,16 +76,16 @@ public class SalesOrderUploadService {
 
 	                order.setClientPoDate(clientPoDate);
 	                }else {
-	              	order.setClientPoDate(null);
+	             	order.setClientPoDate(null);
 	                }
 	                String partyName=sheet.getRow(3).getCell(0).getStringCellValue().split(":")[1].trim();
 	                Party party=partyrepo.findByName(partyName);
 	                order.setParty(party);
 	                String shippingAddrName= sheet.getRow(4).getCell(0).getStringCellValue().split(":")[1].trim().split("-")[0].trim();
-   	            Party shippingParty=partyrepo.findByName(shippingAddrName);
+  	            Party shippingParty=partyrepo.findByName(shippingAddrName);
 	               // order.setShippingAddress("");
 	                String billingAddrName= sheet.getRow(5).getCell(0).getStringCellValue().split(":")[1].trim().split("-")[0].trim();
-   	            Party billingParty=partyrepo.findByName(billingAddrName);
+  	            Party billingParty=partyrepo.findByName(billingAddrName);
 
 	                order.setBillingAddress("");
 	                order.setRegion(sheet.getRow(6).getCell(0).getStringCellValue().split(":")[1].trim());
@@ -102,11 +102,11 @@ public class SalesOrderUploadService {
 	                for (int i = 9; i <= sheet.getLastRowNum(); i++) {
 	                    Row row = sheet.getRow(i);
 	                    /*if(row.getCell(9).getStringCellValue()=="Total") {
-	                  	break;
+	                 	break;
 	                    }else {*/
 	                    if (row == null || row.getCell(0) == null|| row.getCell(1).getStringCellValue().equals("")|| row.getCell(1).getStringCellValue().trim().isEmpty()) {
-	                  	 rowNum=row.getRowNum();
-	                  	break; // Skip empty rows
+	                 	 rowNum=row.getRowNum();
+	                 	break; // Skip empty rows
 	                    }
 
 	                    SalesItem item = new SalesItem();
@@ -156,7 +156,7 @@ public class SalesOrderUploadService {
 
 	                order.setProjectClosureDate(projectClosureDate);
 	                }else {
-	              	order.setProjectClosureDate(null);
+	             	order.setProjectClosureDate(null);
 	                }
 
 	                order.setArchive(false);

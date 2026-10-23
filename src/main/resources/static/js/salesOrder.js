@@ -154,7 +154,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	    success  : function(response){
 
 			$("#partyDropDown option:not(:first)").remove();
-	  	$.each(response, function( key, value ) {
+	 	$.each(response, function( key, value ) {
 				var clientList = value.partyName;
 				clientList = clientList.split(' ');
 				if (clientList.length > 100) {
@@ -166,7 +166,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					clientList = $.trim(clientList).substring(0, 30) + "....";
 				}
 				$('#clientsDropdown').append('<option value=' + value.id + '>' + clientList + '</option>');
-	  		});
+	 		});
 	    },
 		complete:function(resp){
 			if(resp.status==500){
@@ -203,7 +203,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 		}
 		else{
-      	$.error("only digits are allowed for qty");
+     	$.error("only digits are allowed for qty");
 		}
     });*/
 
@@ -249,19 +249,19 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         $(document).off('keyup keypress input', '.description');
         $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
 
-      		/*unitName = unitsList.map(({ name }) => name);
-  		$(".unit").autocomplete({
-  		       source: unitName
-  		     });*/
-   		if(!bulkLoading){ $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
-  		//display unit list in dropdown
-  		if(unitOptionsHtml === null){
-  			unitOptionsHtml = "";
-  			$.each(unitsList,function(index,value){
-  				unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
-  			});
-  		}
-  		$("#unit"+ arraycount).append(unitOptionsHtml);
+     		/*unitName = unitsList.map(({ name }) => name);
+ 		$(".unit").autocomplete({
+ 		       source: unitName
+ 		     });*/
+  		if(!bulkLoading){ $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
+ 		//display unit list in dropdown
+ 		if(unitOptionsHtml === null){
+ 			unitOptionsHtml = "";
+ 			$.each(unitsList,function(index,value){
+ 				unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
+ 			});
+ 		}
+ 		$("#unit"+ arraycount).append(unitOptionsHtml);
 	}
 
 	$(document).on("change",".unit",function(){
@@ -297,15 +297,15 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		//className String is used to differentiate. since this api is used many places
 		var className="so";
 		var partyId=salesOrderObj.party.id;
- 		if(partyId=="C1143"){
- 			$("#gstRow").css("display","none");
- 			$("#taxDropDownRow").css("display","none");
- 			}else{
- 				$("#gstRow").show();
- 				$("#taxDropDownRow").show();
- 			}
- 	 $("#soId").val(soId);
- 	$("#saveSalesOrder").html("Update");
+		if(partyId=="C1143"){
+			$("#gstRow").css("display","none");
+			$("#taxDropDownRow").css("display","none");
+			}else{
+				$("#gstRow").show();
+				$("#taxDropDownRow").show();
+			}
+	 $("#soId").val(soId);
+	$("#saveSalesOrder").html("Update");
 
 	$('#party').val(salesOrderObj.party.id);
 
@@ -341,11 +341,11 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    url : api.GET_SALES_ITEMS_LIST_BY_SALES_ORDER_ID+"?id="+soId+"&&className="+className,
 		    dataType:'json',
 		    success  : function(response){
-		  	//$(".add").hide();
-		  	$("#resetSalesOrder").hide();
-		  	bulkLoading = true;
-		  	$.each(response,function( key, value ){
-				  	addSalesOrder();
+		 	//$(".add").hide();
+		 	$("#resetSalesOrder").hide();
+		 	bulkLoading = true;
+		 	$.each(response,function( key, value ){
+				 	addSalesOrder();
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
 
 				var unitName=value.item_units.name;
@@ -358,12 +358,12 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 				$("#salesItemId"+key).val(value.id)
 				$("#slNo"+key).val(value.slNo);
-		  	$("#description"+key).val(value.description);
-		  	$("#descriptionDiv"+key). addClass('CellComment');
-		  	$("#descriptionDiv"+key).html(value.description);
-		  	$("#total").val(commaSeparateNumber(salesOrderObj.total));
-		  	$("#gst").val(commaSeparateNumber(salesOrderObj.gst));
-		  	$("#grandTotal").val(commaSeparateNumber(salesOrderObj.grandTotal));
+		 	$("#description"+key).val(value.description);
+		 	$("#descriptionDiv"+key). addClass('CellComment');
+		 	$("#descriptionDiv"+key).html(value.description);
+		 	$("#total").val(commaSeparateNumber(salesOrderObj.total));
+		 	$("#gst").val(commaSeparateNumber(salesOrderObj.gst));
+		 	$("#grandTotal").val(commaSeparateNumber(salesOrderObj.grandTotal));
 				$("#modelNo"+key).val(value.modelNo);
 				$("#hsnCode"+key).val(value.hsnCode);
 				$("#servicehsnCode"+key).val(value.servicehsnCode);
@@ -407,22 +407,22 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					 $("#designTd"+key).show();
 				 }
 				//$(".deleteButton").hide();
-		  	});
-		  	bulkLoading = false;
-		  	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
-		  	$('#partyDropDown').val(salesOrderObj.party.id);
-		  	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
-		  	$('#partyDropDown').attr("disabled",true);
-		  	$("#taxDropDown").attr("disabled",true);
-		  	$("#salesTable >tbody>tr:last").remove();
-		  	$("#taxDropDown").trigger('change');
-		  	// Show expand all header since data is loaded
-		  	showExpandAllHeader();
-		  	$('input:not(:button,:submit),textarea,select').change(function () {
-		  		isDirty = true;
+		 	});
+		 	bulkLoading = false;
+		 	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
+		 	$('#partyDropDown').val(salesOrderObj.party.id);
+		 	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
+		 	$('#partyDropDown').attr("disabled",true);
+		 	$("#taxDropDown").attr("disabled",true);
+		 	$("#salesTable >tbody>tr:last").remove();
+		 	$("#taxDropDown").trigger('change');
+		 	// Show expand all header since data is loaded
+		 	showExpandAllHeader();
+		 	$('input:not(:button,:submit),textarea,select').change(function () {
+		 		isDirty = true;
 
-		  		});
-		  	initUnitSelect2InChunks(0);
+		 		});
+		 	initUnitSelect2InChunks(0);
 		    },
 			complete:function(resp){
 				hideLoader();
@@ -547,10 +547,10 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		if($(this).is(':checked')) {
 
             $("#descriptionDiv"+index).addClass('CellComment');
-	  	$("#descriptionDiv"+index).html(inputText).show();
-	  	 $('#descriptionDiv'+index).css('display','block');
+	 	$("#descriptionDiv"+index).html(inputText).show();
+	 	 $('#descriptionDiv'+index).css('display','block');
         } else {
-      	$("#descriptionDiv"+index).addClass('CellComment');
+     	$("#descriptionDiv"+index).addClass('CellComment');
           //  $('#descriptionDiv'+index).removeAttr('style');
             $("#descriptionDiv"+index).html(inputText).hide();
         }
@@ -578,8 +578,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		getDesignItemList(salesItemId);
 	})
 	$(document).on("change","[id^='itemModel']",function(){
-      	let arraycount = this.id.replace("itemModel","");
-      	var itemId=$(this).val();
+     	let arraycount = this.id.replace("itemModel","");
+     	var itemId=$(this).val();
 	          $.ajax({
 				type : "GET",
 				url : api.ITEM_LIST_BYID +"?id="+itemId,
@@ -659,8 +659,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 
 					}
 					else{
-			      	$.error("only digits are allowed for qty at row " + row);
-			      	return false;
+			     	$.error("only digits are allowed for qty at row " + row);
+			     	return false;
 					}*/
 
 				}
@@ -677,7 +677,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				var dupItemArray = [];
 				for (var i = 0; i < itemListArray.length - 1; i++) {
 				    if (itemListArray[i + 1] == itemListArray[i]) {
-				  	dupItemArray.push(itemListArray[i]);
+				 	dupItemArray.push(itemListArray[i]);
 				    }
 				}
 				if(dupItemArray.length>0){
@@ -728,15 +728,15 @@ function designTable2Json(){
         $(this).find('td').each(function (i) {
             var rowName = header[i];
             if(rowName == 'Model No') {
-          	row["itemId"] = $(this).find("select").val();
+         	row["itemId"] = $(this).find("select").val();
             }else if(rowName=='Unit'){
-          	 row["unit"] = $(this).find("input").val();
+         	 row["unit"] = $(this).find("input").val();
             } else if(rowName=='Quantity'){
-          	 row["quantity"] = $(this).find("input").val();
-          	}
-      	});
-      	return row;
-  	}).get();
+         	 row["quantity"] = $(this).find("input").val();
+         	}
+     	});
+     	return row;
+ 	}).get();
     return tableObj;
 	}
 
@@ -888,9 +888,9 @@ function designTable2Json(){
 			getDesignList(salesItemId,salesItemIdTd);
 
 		}else{
-		 	 $(this).closest("tr").remove();
-		 	adjustIndex();
-		 	recalculateTotals();
+			 $(this).closest("tr").remove();
+			adjustIndex();
+			recalculateTotals();
 		}
 	});
 	}
@@ -1100,7 +1100,7 @@ function designTable2Json(){
 			}
 		});
 
-  	});
+ 	});
 
 	}
 
@@ -1164,13 +1164,13 @@ function designTable2Json(){
 
 	//use already-loaded customerPartyList to populate clients dropdown (no AJAX needed)
 	function getAllPartyList(){
-	  	$('#clientsDropdown').empty();
-	  	$('#billingClientsDropdown').empty();
-	  	$.each(customerPartyList, function( key, value ) {
-	  		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
-	  		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
-	  		});
-	  	if(salesOrderObj!=""){
+	 	$('#clientsDropdown').empty();
+	 	$('#billingClientsDropdown').empty();
+	 	$.each(customerPartyList, function( key, value ) {
+	 		  $('#clientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
+	 		  $('#billingClientsDropdown').append('<option value='+value.id+'>'+value.partyName+'</option>');
+	 		});
+	 	if(salesOrderObj!=""){
 
 				$("#clientsDropdown").val(salesOrderObj.shippingAddress);
 				$('#clientsDropdown').select2(salesOrderObj, {id: salesOrderObj.shippingAddress, a_key:salesOrderObj.shippingAddress});
@@ -1219,7 +1219,7 @@ function designTable2Json(){
 			success:function(response){
 				console.log(response);
 				billingAddressObj=response;
-		  	   //populate main party address for billing address dropdown.
+		 	   //populate main party address for billing address dropdown.
 				   $("#billingAddressDropdown").empty();
 				   var billingMainPartyAddress = response.mainParty.addr1;
 					billingMainPartyAddress = billingMainPartyAddress.split(' ');
@@ -1237,10 +1237,10 @@ function designTable2Json(){
 			       $("#billingAddressPartyId").val(response.mainParty.id)
 
 
-		  	   //populate other alternative addresses for billing address dropdown.
-		  	   var alternateAddressArr = response.addresses;
+		 	   //populate other alternative addresses for billing address dropdown.
+		 	   var alternateAddressArr = response.addresses;
 		           for(var i=0; i< alternateAddressArr.length; i++){
-		       	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+		      	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
 
 
@@ -1275,7 +1275,7 @@ if(salesOrderObj!=""){
 			success:function(response){
 				console.log(response);
 				shippingAddressObj=response;
-		  	   //populate main party address for billing address dropdown.
+		 	   //populate main party address for billing address dropdown.
 				   $("#shippingAddressDropdown").empty();
 				   var shiipingMainPartyAddress = response.shippingAddr.addr1;
 					shiipingMainPartyAddress = shiipingMainPartyAddress.split(' ');
@@ -1293,12 +1293,12 @@ if(salesOrderObj!=""){
 			       $("#shippingAddressPartyId").val(response.shippingAddr.id)
 
 			       if(response.shippingAddr.id!=response.mainParty.id){
-			  	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
+			 	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
 			       }
-		  	   //populate other alternative addresses for billing address dropdown.
-		  	   var alternateAddressArr = response.addresses;
+		 	   //populate other alternative addresses for billing address dropdown.
+		 	   var alternateAddressArr = response.addresses;
 		           for(var i=0; i< alternateAddressArr.length; i++){
-		       	  $("#shippingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+		      	  $("#shippingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
 
 		           //Display auto selected address
@@ -1342,36 +1342,36 @@ $("#shippingAddressDropdown").change();
 				pincode = ' ';
 			}
 			$("#shippingAddressContent").append(
-			        			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
-			        			"<span class=''>"+shippingAddressObj.mainParty.addr1+" ,</span>" +
-			        			"<span class=''>"+addr2+"</span>" +
-			        			"<span class=''>"+shippingAddressObj.mainParty.party_city.name+" ,</span>"+
-			        			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.name+" ,</span>"+
-			        			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.country.name+" -</span>"+
-			        			"<span class=''>"+pincode+" </span>");
+			       			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+shippingAddressObj.mainParty.addr1+" ,</span>" +
+			       			"<span class=''>"+addr2+"</span>" +
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.name+" ,</span>"+
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.name+" ,</span>"+
+			       			"<span class=''>"+shippingAddressObj.mainParty.party_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+pincode+" </span>");
 		   }else {
 			   var alternateAddressArr = shippingAddressObj.addresses;
 		          for(var i=0; i< alternateAddressArr.length; i++){
-		      	  if(addressId == alternateAddressArr[i].id) {
-		      		  var addr2=alternateAddressArr[i].addr2;
-		      			if(addr2==null || addr2 == undefined) {
-		      				addr2=' ';
-		      				}
+		     	  if(addressId == alternateAddressArr[i].id) {
+		     		  var addr2=alternateAddressArr[i].addr2;
+		     			if(addr2==null || addr2 == undefined) {
+		     				addr2=' ';
+		     				}
 
 
-		      			var altpincode = alternateAddressArr[i].pin;
-		      			if(altpincode==null || altpincode == undefined){
-		      				altpincode = '';
-		      			}
-		      	  $("#shippingAddressContent").append(
-			        			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
-			        			"<span class=''>"+altpincode+" </span>");
-		      	  }
+		     			var altpincode = alternateAddressArr[i].pin;
+		     			if(altpincode==null || altpincode == undefined){
+		     				altpincode = '';
+		     			}
+		     	  $("#shippingAddressContent").append(
+			       			"<span class=''>"+shippingAddressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+altpincode+" </span>");
+		     	  }
 		          }
 		   }
 		}
@@ -1395,35 +1395,35 @@ $("#shippingAddressDropdown").change();
 			}
 
 			$("#billingAddressContent").append(
-			        			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
-			        			"<span class=''>"+addressObj.mainParty.addr1+" ,</span>" +
-			        			"<span class=''>"+addr2+"</span>" +
-			        			"<span class=''>"+addressObj.mainParty.party_city.name+" ,</span>"+
-			        			"<span class=''>"+addressObj.mainParty.party_city.state.name+" ,</span>"+
-			        			"<span class=''>"+addressObj.mainParty.party_city.state.country.name+" -</span>"+
-			        			"<span class=''>"+pincode+" </span>");
+			       			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+addressObj.mainParty.addr1+" ,</span>" +
+			       			"<span class=''>"+addr2+"</span>" +
+			       			"<span class=''>"+addressObj.mainParty.party_city.name+" ,</span>"+
+			       			"<span class=''>"+addressObj.mainParty.party_city.state.name+" ,</span>"+
+			       			"<span class=''>"+addressObj.mainParty.party_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+pincode+" </span>");
 		   }else {
 			   var alternateAddressArr = addressObj.addresses;
 		          for(var i=0; i< alternateAddressArr.length; i++){
-		      	  if(addressId == alternateAddressArr[i].id) {
-		      		  var addr2=alternateAddressArr[i].addr2;
-		      			if(addr2==null || addr2 == undefined) {
-		      				addr2=' ';
-		      				}
+		     	  if(addressId == alternateAddressArr[i].id) {
+		     		  var addr2=alternateAddressArr[i].addr2;
+		     			if(addr2==null || addr2 == undefined) {
+		     				addr2=' ';
+		     				}
 
-		      			var altpincode = alternateAddressArr[i].pin;
-		      			if(altpincode==null || altpincode == undefined){
-		      				altpincode = '';
-		      			}
-		      	  $("#billingAddressContent").append(
-			        			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
-			        			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
-			        			"<span class=''>"+altpincode+" </span>");
-		      	  }
+		     			var altpincode = alternateAddressArr[i].pin;
+		     			if(altpincode==null || altpincode == undefined){
+		     				altpincode = '';
+		     			}
+		     	  $("#billingAddressContent").append(
+			       			"<span class=''>"+addressObj.mainParty.partyName+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.name+" ,</span>"+
+			       			"<span class=''>"+alternateAddressArr[i].partyaddr_city.state.country.name+" -</span>"+
+			       			"<span class=''>"+altpincode+" </span>");
+		     	  }
 		          }
 		   }
 		});
@@ -1435,10 +1435,10 @@ $("#shippingAddressDropdown").change();
 		    success  : function(response){
 
 				$("#respPersonDropdown option:not(:first)").remove();
-		  	$.each(response, function( key, value ) {
+		 	$.each(response, function( key, value ) {
 
 					$('#respPersonDropdown').append('<option value=' + value.id + '>' + value.username + '</option>');
-		  		});
+		 		});
 		    },
 			complete:function(resp){
 				if(resp.status==500){
@@ -1460,9 +1460,9 @@ $("#shippingAddressDropdown").change();
 	       type:'GET',
 	       success:function(response) {
 
-	  	   addressObj = response;
+	 	   addressObj = response;
 
-	  	   //populate main party address for billing address dropdown.
+	 	   //populate main party address for billing address dropdown.
 			   $("#billingAddressDropdown").empty();
 			   var billingMainAddress = response.mainParty.addr1;
 
@@ -1479,10 +1479,10 @@ $("#shippingAddressDropdown").change();
 			   $("#billingAddressDropdown").append('<option value=' + response.mainParty.id + '>' + billingMainAddress + '</option>');
 
 
-	  	   //populate other alternative addresses for billing address dropdown.
-	  	   var alternateAddressArr = response.addresses;
+	 	   //populate other alternative addresses for billing address dropdown.
+	 	   var alternateAddressArr = response.addresses;
 	           for(var i=0; i< alternateAddressArr.length; i++){
-	       	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
+	      	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 	           }
 
 	           //Display auto selected address
@@ -1495,11 +1495,11 @@ $("#shippingAddressDropdown").change();
 	          var str =  modeOfPaymentArr[modeOfPaymentArr.length -1 ].split('&&')[0];
 	          var str1 =  modeOfPaymentArr1[modeOfPaymentArr1.length -1 ];//This contains "days PDC from the date of delivery"
 	          for(var i=0; i< modeOfPaymentArr.length-1; i++){
-	      	  if(i==0) {
-	      		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i], modeOfPaymentArr[i]));
-	      	  }else{
-	      		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
-	      	  }
+	     	  if(i==0) {
+	     		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i], modeOfPaymentArr[i]));
+	     	  }else{
+	     		  $("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
+	     	  }
 	          }
 	          $("#modeOfPaymentDropdown").append(new Option(str1, str1));
 
@@ -1508,29 +1508,29 @@ $("#shippingAddressDropdown").change();
 	          $("#jurisdictionDropdown").empty();
 	          $("#regionDropdown").empty();
 	          for(var i=0; i< jursidictionArr.length; i++){
-	      	  $("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
-	      	  $("#regionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	     	  $("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
+	     	  $("#regionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
 	          }
 
 	          //Populate frieght drop downs
 	          var frieghtArr = response.frieght.split('$$');
 	          $("#freightDropdown").empty();
 	          for(var i=0; i< frieghtArr.length; i++){
-	      	  $("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
+	     	  $("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
 	          }
 
 	        //Populate delivery drop downs
 	          var deliveryArr = response.delivery.split('$$');
 	          $("#deliveryDropdown").empty();
 	          for(var i=0; i< deliveryArr.length -1 ; i++){
-	      	  var val;
-	      	  if(i  == 0 ){
-	      		  val = deliveryArr[i];
+	     	  var val;
+	     	  if(i  == 0 ){
+	     		  val = deliveryArr[i];
 
-	      	  }else {
-	      		  val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
-	      	  }
-	      	  $("#deliveryDropdown").append(new Option(val, val));
+	     	  }else {
+	     		  val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
+	     	  }
+	     	  $("#deliveryDropdown").append(new Option(val, val));
 	          }
 
 	        //Populate warranty drop downs
@@ -1538,7 +1538,7 @@ $("#shippingAddressDropdown").change();
 	          var strMonths =  warrantyArr[warrantyArr.length -1 ]; //This contains "months"
 	          $("#warrantyDropdown").empty();
 	          for(var i=0; i< warrantyArr.length -1; i++){
-	      	  $("#warrantyDropdown").append(new Option(warrantyArr[i]+' '+strMonths, warrantyArr[i]+' '+strMonths));
+	     	  $("#warrantyDropdown").append(new Option(warrantyArr[i]+' '+strMonths, warrantyArr[i]+' '+strMonths));
 	          }
 	          isDirty = false;
 	        },
@@ -1715,7 +1715,7 @@ $("#shippingAddressDropdown").change();
 					 $("#unitPrice"+index).addClass('border-color');
 					 $("#servicePrice"+index).addClass('border-color');
 						e.preventDefault(e);
-		      	$.error("Please enter price more than 0 at row "+ row);
+		     	$.error("Please enter price more than 0 at row "+ row);
 				}
 			}
 			$('input').change(function(){
@@ -1737,13 +1737,13 @@ $("#shippingAddressDropdown").change();
 				}else{
 					 $("#qty"+index).addClass('border-color');
 						e.preventDefault(e);
-		      	$.error("Qty limit exceeded at row "+ row);
+		     	$.error("Qty limit exceeded at row "+ row);
 				}
 
 			}else{
 				 $("#qty"+index).addClass('border-color');
 					e.preventDefault(e);
-	      	$.error("only digits are allowed for qty at row "+ row);
+	     	$.error("only digits are allowed for qty at row "+ row);
 			}
 			$('input').change(function(){
 				$("#qty"+index).removeClass('border-color');
@@ -1761,7 +1761,7 @@ $("#shippingAddressDropdown").change();
 				}else{
 					 $("#qty"+index).addClass('border-color');
 						e.preventDefault(e);
-		      	$.error("Qty limit exceeded at row "+ row);
+		     	$.error("Qty limit exceeded at row "+ row);
 				}
 
 
@@ -1849,9 +1849,9 @@ $("#shippingAddressDropdown").change();
 	 function recalculateTotals(){
 		 var sum=0;
 	    $('.amount').each(function(index,value) {
-	  	var c = $("#amount"+index).val();
-	  	c = c.replace(/,/g,"");
-	  	var amount=parseFloat(c);
+	 	var c = $("#amount"+index).val();
+	 	c = c.replace(/,/g,"");
+	 	var amount=parseFloat(c);
 		    sum+=amount;
 		    });
 	    var sumWithComma = commaSeparateNumber(sum);
@@ -1868,7 +1868,7 @@ $("#shippingAddressDropdown").change();
 	      $(".gst").attr("value", gstWithComma);
 	      $("#gst").val(gstWithComma);
 	    }else{
-	  	gst=0;
+	 	gst=0;
 	    }
 	    var grandTotal=sum+gst;
 	    grandTotal = Math.round(grandTotal * 100) / 100;
