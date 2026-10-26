@@ -50,6 +50,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 .antMatchers("/css/**", "/js/**", "/images/**", "/resources/**", "/login/**").permitAll()
 		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").hasAnyAuthority("ADMIN","SUPER ADMIN")
 		 .antMatchers(HttpMethod.POST, "/po_list/tally", "/po_list/tally/import").hasAuthority("PURCHASE_EDIT")
+		 .antMatchers(HttpMethod.POST, "/api/purchase/upload").hasAuthority("PURCHASE_EDIT")   // NEW (#95): PO upload needs PURCHASE_EDIT
 		 .antMatchers("/sales_report/**").hasAuthority("REPORTS_VIEW")
 		 .antMatchers("/itemMaster/**").hasAuthority("ITEM_MASTER_VIEW")
 		 .antMatchers("/user-management/**", "/role-management/**").hasAnyAuthority("ADMIN","SUPER ADMIN","USER_MANAGEMENT_VIEW","USER_MANAGEMENT_EDIT")
