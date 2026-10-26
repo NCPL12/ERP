@@ -152,6 +152,12 @@ public class PartyService {
 		
 		if(party==null) {
 			Optional<PartyAddress> partyaddr=addressService.getAddressByAddressId(partyId);
+			// The id is neither a party nor an address (e.g. a sales order saved without billing / shipping address).
+			// Return an empty result instead of crashing the page with "No value present".
+			if (!partyaddr.isPresent()) {
+				addressMap.put("addresses", new ArrayList<PartyAddress>());
+				return addressMap;
+			}
 			partyId=partyaddr.get().getParty().getId();
 			party= partyRepo.findById(partyId);
 			addressMap.put("shippingAddr", partyaddr.get());
