@@ -105,9 +105,10 @@ if (vendorName.isEmpty()) {
             /* ---------------- Item Rows ---------------- */
 
             // NEW: state used across rows
-            String lastClientPo = "";                                            // for fill-down of blank Client PO
             java.util.Map<String, Float> enteredInFile = new java.util.HashMap<>(); // qty already accepted in this file
             int cntFullyOrdered = 0, cntInvalidPo = 0, cntMissingPo = 0;         // for summary
+            int processedRows = 0, cntOnlyFullyOrdered = 0;                      // NEW: duplicate-file check
+            java.util.Set<String> allOrderedPos = new java.util.LinkedHashSet<>(); // NEW: POs that already hold these lines
 
             for (int rowNum = ITEM_START_ROW; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
@@ -123,11 +124,17 @@ if (vendorName.isEmpty()) {
                 String hsn = getStringCellValue(row.getCell(6));
 
                 // NEW: skip fully blank rows
-                if (clientPoRaw.isEmpty() && description.isEmpty() && modelNo.isEmpty() && hsn.isEmpty()) continue;
+                if (clientPoRaw.isEmpty() && description.isEmpty() && modelNo.isEmpty() && hsn.isEmpty()
+                        && getStringCellValue(row.getCell(7)).isEmpty()) continue;
+                processedRows++;   // NEW
 
-                // NEW: blank Client PO = same as row above (remove this if blank must stay an error)
-                String clientPoNum = clientPoRaw.isEmpty() ? lastClientPo : clientPoRaw;
-                if (!clientPoRaw.isEmpty()) lastClientPo = clientPoRaw;
+                // FIXED (#90): a blank Client PO is NOT copied from the row above.
+                // Only if the cell is part of a merged Excel region, take the value of the merged cell's top-left cell.
+                // Any other blank cell stays blank and gives "Client PO Number is mandatory."
+                if (clientPoRaw.isEmpty()) {
+                    clientPoRaw = normPo(getMergedAnchorValue(sheet, rowNum, 0));
+                }
+                String clientPoNum = clientPoRaw;
 
                 if (clientPoNum.isEmpty()) { rowErrors.add("Client PO Number is mandatory."); cntMissingPo++; }
                 if (description.isEmpty()) rowErrors.add("Description is mandatory.");
@@ -162,6 +169,8 @@ if (vendorName.isEmpty()) {
                 float salesQty = 0;
                 float orderedQty = 0;
                 java.util.Set<String> orderedInPos = new java.util.LinkedHashSet<>();   // NEW: which POs already used the qty
+                boolean fullyOrderedThisRow = false;                                     // NEW
+                String resolvedSalesItemId = null;                                       // NEW (#91): id of the Sales Item the description resolved to
 
                 if (item != null && salesOrder != null) {
 
@@ -173,6 +182,7 @@ if (vendorName.isEmpty()) {
                     } else {
 
                         poItem.setDescription(salesItem.getId());
+                        resolvedSalesItemId = String.valueOf(salesItem.getId());   // NEW (#91)
 
                         List<DesignItems> designs =
                                 purchaseService.getDesignListOfItemBySalesItemId(salesItem.getId());
@@ -202,8 +212,10 @@ if (vendorName.isEmpty()) {
                 if (qty == null) qty = 0f;
 
                 // NEW: same Client PO + item + description repeated in the file (e.g. amended rows)
-                String qtyKey = clientPoNum + "|" + (item != null ? item.getId() : "") + "|" + description;
-                float alreadyInFile = enteredInFile.containsKey(qtyKey) ? enteredInFile.get(qtyKey) : 0f;
+                // CHANGED (#91): key = resolved Sales Item id + item id (NOT the description text),
+                // so differently-typed descriptions that match the same Sales Item share one running total
+                String qtyKey = (resolvedSalesItemId != null && item != null) ? resolvedSalesItemId + "|" + item.getId() : null;
+                float alreadyInFile = (qtyKey != null && enteredInFile.containsKey(qtyKey)) ? enteredInFile.get(qtyKey) : 0f;
                 remainingQty = remainingQty - alreadyInFile;
 
                 if (qty < 0) {
@@ -212,14 +224,12 @@ if (vendorName.isEmpty()) {
                     if (qty > salesQty) {
                         rowErrors.add("Entered quantity exceeds Design Quantity.");
                     } else if (qty > remainingQty + 0.0001f) {
-                        if (remainingQty <= 0) cntFullyOrdered++;
+                        if (remainingQty <= 0) { cntFullyOrdered++; fullyOrderedThisRow = true; }
                        //rowErrors.add("Remaining Quantity available: " + remainingQty);
 rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
         + " (Design qty: " + salesQty + ", already ordered: " + orderedQty
         + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))   // NEW
         + ", in this file: " + alreadyInFile + ", you entered: " + qty + ")");
-                    } else {
-                        enteredInFile.put(qtyKey, alreadyInFile + qty);   // NEW: count only accepted rows
                     }
                 }
 
@@ -232,10 +242,20 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
                 poItem.setHsnCode(hsn);
                 poItem.setAmount(qty * unitPrice);
 
+                // NEW: row failed ONLY because it is fully ordered already
+                if (fullyOrderedThisRow && rowErrors.size() == 1) {
+                    cntOnlyFullyOrdered++;
+                    allOrderedPos.addAll(orderedInPos);
+                }
+
                 if (!rowErrors.isEmpty()) {
                     errors.add("Row " + (rowNum + 1) + ": " + String.join(" | ", rowErrors));
                     continue;
                 }
+
+                // FIXED (#92): count this row's quantity only now, when the WHOLE row passed every check,
+                // so a rejected row never reduces the quantity available to later rows
+                if (qtyKey != null) enteredInFile.put(qtyKey, alreadyInFile + qty);
 
                 poItem.setPurchaseOrder(purchaseOrder);
                 purchaseItems.add(poItem);
@@ -243,8 +263,15 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
 
             purchaseOrder.setItems(purchaseItems);
 
+            // NEW: whole file already uploaded -> one clear message instead of one error per row
+            if (processedRows > 0 && cntOnlyFullyOrdered == processedRows) {
+                errors.clear();
+                errors.add("This file is already uploaded: all " + processedRows + " lines are fully ordered"
+                        + (allOrderedPos.isEmpty() ? "." : " in PO " + String.join(", ", allOrderedPos) + "."));
+                errors.add("Please do not upload it again. To order more, increase the design quantity first.");
+            }
             // NEW: summary line at the top of the error list
-            if (!errors.isEmpty()) {
+            else if (!errors.isEmpty()) {
                 errors.add(0, "SUMMARY: " + errors.size() + " row(s) failed - "
                         + cntFullyOrdered + " fully ordered, "
                         + cntInvalidPo + " invalid Client PO, "
@@ -263,6 +290,19 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
     }
 
     /* ---------------- Helper Methods ---------------- */
+
+    // NEW (#90): value of the top-left cell of the merged region that contains (rowIdx, colIdx); "" if the cell is not merged
+    private String getMergedAnchorValue(Sheet sheet, int rowIdx, int colIdx) {
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            org.apache.poi.ss.util.CellRangeAddress region = sheet.getMergedRegion(i);
+            if (region.isInRange(rowIdx, colIdx)) {
+                Row anchorRow = sheet.getRow(region.getFirstRow());
+                if (anchorRow == null) return "";
+                return getStringCellValue(anchorRow.getCell(region.getFirstColumn()));
+            }
+        }
+        return "";
+    }
 
     // NEW: trim, collapse repeated spaces, fix " / " -> "/" (no case change, so DB lookup is unaffected)
     private String normPo(String s) {
