@@ -47,8 +47,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 http.csrf().disable();
 		 http
 		 .authorizeRequests()
-		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/api/**", "/login/**", "/audit/**", "/audit-test.html").permitAll()
-		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+		 .antMatchers("/css/**", "/js/**", "/images/**", "/resources/**", "/login/**").permitAll()
+		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").hasAnyAuthority("ADMIN","SUPER ADMIN")
 		 .antMatchers(HttpMethod.POST, "/po_list/tally", "/po_list/tally/import").hasAuthority("PURCHASE_EDIT")
 		 .antMatchers("/sales_report/**").hasAuthority("REPORTS_VIEW")
 		 .antMatchers("/itemMaster/**").hasAuthority("ITEM_MASTER_VIEW")
