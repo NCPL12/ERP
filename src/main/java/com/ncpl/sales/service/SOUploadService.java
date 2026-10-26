@@ -128,6 +128,11 @@ public class SOUploadService {
 	    	              //  salesOrder.setProjectClosureDate(projectClosureDate);
 	    	                // Old layout: Mode of Payment in F. New layout: shifted one column right (G). Detected, not assumed.
 	    	                int pc = findPaymentColumn(sheet, row);
+	    	                if (pc < 0) {
+	    	                	errors.add("Unrecognised layout for Payment/Jurisdiction/Freight/Delivery/Warranty/Other Terms (columns F-L). Please use the standard template.");
+	    	                	workbook.close();
+	    	                	return errors;
+	    	                }
 	    	                salesOrder.setModeOfPayment(getStringCellValue(row.getCell(pc)));
 	    	                salesOrder.setJurisdiction(getStringCellValue(row.getCell(pc + 1)));
 	    	                salesOrder.setFreight(getStringCellValue(row.getCell(pc + 2)));
@@ -301,24 +306,45 @@ public class SOUploadService {
 	         return errors;
 	     }
 	  
+	  // Expected header labels, in order, for the six term columns (Payment ... Other Terms)
+	  private static final String[] TERM_HEADERS = {"payment", "jurisdiction", "freight", "delivery", "warranty", "other"};
+
 	  // Finds the "Mode of Payment" column so both header layouts work (F = old layout, G = shifted layout)
+	  // Returns 5 (F) or 6 (G), or -1 if the layout cannot be determined (caller must reject the file)
 	  private int findPaymentColumn(Sheet sheet, Row dataRow) {
-	        // 1) header text: look in the first two rows for a cell containing "payment"
+	        // 1) header text: look in the first two rows for all six labels in sequence starting at F or G
 	        for (int r = 0; r <= 1; r++) {
 	            Row header = sheet.getRow(r);
 	            if (header == null) continue;
-	            for (int c = 4; c <= 8; c++) {
-	                if (getStringCellValue(header.getCell(c)).toLowerCase().contains("payment")) {
-	                    return c;
+	            for (int start : new int[]{5, 6}) {
+	                if (headersMatchAt(header, start)) {
+	                    return start;
 	                }
 	            }
 	        }
-	        // 2) no header found: F empty but G filled means the shifted layout
-	        if (getStringCellValue(dataRow.getCell(5)).isEmpty() && !getStringCellValue(dataRow.getCell(6)).isEmpty()) {
-	            return 6;
+	        // 2) no usable header: use the far edge of the block, not F/G emptiness.
+	        //    Old layout ends at K (L empty); shifted layout ends at L (F unused).
+	        boolean fFilled = !getStringCellValue(dataRow.getCell(5)).isEmpty();
+	        boolean lFilled = !getStringCellValue(dataRow.getCell(11)).isEmpty();
+	        if (lFilled && !fFilled) {
+	            return 6; // shifted layout
 	        }
-	        // 3) default: original layout
-	        return 5;
+	        if (!lFilled) {
+	            return 5; // original layout (F may legitimately be blank)
+	        }
+	        // 3) F and L both filled: ambiguous, reject
+	        return -1;
+	    }
+
+	  // True if the six term headers appear consecutively starting at column 'start'
+	  private boolean headersMatchAt(Row header, int start) {
+	        for (int i = 0; i < TERM_HEADERS.length; i++) {
+	            String h = getStringCellValue(header.getCell(start + i)).toLowerCase();
+	            if (!h.contains(TERM_HEADERS[i])) {
+	                return false;
+	            }
+	        }
+	        return true;
 	    }
 
 	  // Unit lookup that tolerates Excel typos: hidden non-breaking spaces, extra spaces, and "Nos" vs "Nos."
