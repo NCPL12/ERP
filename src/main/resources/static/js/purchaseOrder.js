@@ -1473,7 +1473,7 @@ function editPoTable() {
 				"title": '<i class="add fa fa-plus-square fa-2x text-center mx-auto" aria-hidden="true"></i>',
 				"class": "styleOfSlNo",
 				render: function (mData, type, row, meta) {
-					return '<i class="deleteButton purchaseDeleteButton fa fa-trash " aria-hidden="true"></i>';
+					return canDeletePurchase ? '<i class="deleteButton purchaseDeleteButton fa fa-trash " aria-hidden="true"></i>' : '';
 				}
 			}
 			

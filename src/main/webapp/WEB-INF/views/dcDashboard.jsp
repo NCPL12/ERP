@@ -42,6 +42,7 @@ var isArchivedPage = false;
 							<th width="8%">Date</th>
 							<th width="8%">DC</th>
 							<th width="3%">View</th>
+							<th width="2%">Returnable</th>
 							<th width="4%">Archive</th>
 
 						</tr>

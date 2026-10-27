@@ -5,6 +5,8 @@ var itemName;
 var unitName;
 var designTable
 var getAmountBound = false;
+var bulkLoading = false;
+var unitOptionsHtml = null;
 $(document).ready(function () {
 	// Show loader immediately on page init for new_salesOrder and tie to global AJAX
 	if (typeof showLoader === 'function') { try { showLoader(); } catch(e) {} }
@@ -92,8 +94,8 @@ $(document).ready(function () {
             $desc.autocomplete('destroy');
         }
     }
-    $(document).off('keyup keypress input', '.description');
-    $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
+		$(document).off('keyup keypress input', '.description');
+		$(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
 	/* $(document).on("mouseover",".description",function(){
 		 var description=$(this).val();
 		 $(".description").tooltip({
@@ -232,7 +234,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         newRow.append(columns);
          $("#table-body").append(newRow);
          // Check if expand all header should be shown/hidden after adding new row
-         toggleExpandAllHeader();
+         if (!bulkLoading) { toggleExpandAllHeader(); }
         // Ensure no suggestions/autocomplete on description for new row as well
         var $desc2 = newRow.find(".description");
         $desc2.attr("autocomplete","off");
@@ -244,18 +246,21 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
                 $desc2.autocomplete('destroy');
             }
         }
-        $(document).off('keyup keypress input', '.description');
-        $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
+			$(document).off('keyup keypress input', '.description');
+			$(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
         
         		/*unitName = unitsList.map(({ name }) => name);
     		$(".unit").autocomplete({
     		       source: unitName
     		     });*/
-     		$("#unit" + arraycount).select2({ dropdownAutoWidth: true });
-    		//display unit list in dropdown
-    		$.each(unitsList,function(index,value){
-    			$("#unit"+ arraycount).append('<option value='+value.id+'>'+value.name+'</option>');
-    		});
+			if (unitOptionsHtml === null) {
+				unitOptionsHtml = "";
+				$.each(unitsList,function(index,value){
+					unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
+				});
+			}
+			$("#unit" + arraycount).append(unitOptionsHtml);
+			if (!bulkLoading) { $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
 	}
 	
 	$(document).on("change",".unit",function(){
@@ -337,6 +342,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    success  : function(response){
 		    	//$(".add").hide();
 		    	$("#resetSalesOrder").hide();
+		    bulkLoading = true;
 		    	$.each(response,function( key, value ){
 				    	addSalesOrder();
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
@@ -374,7 +380,6 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				//$('#unitVal'+key).attr("disabled",true);
 				
 				$("#unit"+key).val(value.item_units.id)
-				$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name});
 				
 				
 				if(unitName=="Heading"){
@@ -401,6 +406,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				 }
 				//$(".deleteButton").hide();
 		    	});
+		    bulkLoading = false;
 		    	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
 		    	$('#partyDropDown').val(salesOrderObj.party.id);
 		    	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
@@ -414,6 +420,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    		isDirty = true;
 		    		
 		    		});
+		    initUnitSelect2InChunks(0);
 		    },  
 			complete:function(resp){
 				hideLoader();
@@ -426,6 +433,17 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				console.log(e);
 			}
 		  });
+	}
+
+	function initUnitSelect2InChunks(start) {
+		var total = document.getElementById('table-body').rows.length;
+		var end = Math.min(start + 40, total);
+		for (var i = start; i < end; i++) {
+			$("#unit" + i).select2({ dropdownAutoWidth: true });
+		}
+		if (end < total) {
+			setTimeout(function () { initUnitSelect2InChunks(end); }, 0);
+		}
 	}
 	
 	
