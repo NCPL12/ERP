@@ -4,6 +4,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="security"%>
+<security:authorize access="hasAuthority('PURCHASE_DELETE')" var="canDeletePurchase" />
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="/resources/"></c:url>
@@ -30,6 +32,7 @@ var SalesOrder=${salesOrderList};
 var itemList=${itemList};
 var unitsList=${unitsList};
 var role=${role};
+var canDeletePurchase = ${canDeletePurchase};
 
 $(document).ready(function () {
 	

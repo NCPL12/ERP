@@ -1828,9 +1828,12 @@ public class SalesController {
 		}
 
 	 @GetMapping("/returnable/{dcId}")
-		public String returnableItems(@PathVariable("dcId") int dcId) {
-			// Legacy per-DC entry from DC list — redirect to standalone create page (DC -> DC Items pattern)
-			return "redirect:/returnable/create?dcId=" + dcId;
+		public String returnableItems(Model model, @PathVariable("dcId") int dcId) throws JsonProcessingException {
+			ObjectMapper mapper = utilService.getObjectMapper();
+			List<DeliveryChallanItems> dcItemList = dcService.getDcItemList(dcId);
+			model.addAttribute("pageHeader", "Returnable Items");
+			model.addAttribute("dcItemList", mapper.writeValueAsString(dcItemList));
+			return "returnable";
 		}
 	 @PostMapping("/add/returned_items")
 		public String saveReturnableDc( Model model,Returnable returnable,HttpServletRequest req) {

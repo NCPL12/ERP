@@ -21,9 +21,10 @@
 
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
-<script type="text/javascript" src="resources/js/deliveryChallan.js"></script>
+<script type="text/javascript" src="<c:url value="/resources/js/deliveryChallan.js" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
+<meta id="dcPageData" data-dc="<c:out value='${dcObj}'/>">
 
 <c:if test="${!canDeleteDeliveryChallan}">
 <style type="text/css">
@@ -34,13 +35,7 @@
 <script type="text/javascript">
 var clientList=${clientList};
 var clientPoOptions=${clientPoOptions};
-var obj = '${dcObj}';
-obj = obj.replace(/\&/g, "\'");
-obj = obj.replace(/\&/g, "\"");
-var dcObj = "";
-if ('${dcObj}' != null && '${dcObj}' != "") {
-	dcObj= $.parseJSON(obj);
-}
+var dcObj = JSON.parse(document.getElementById("dcPageData").getAttribute("data-dc") || "null") || "";
 </script>
 
 <style type="text/css">

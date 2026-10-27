@@ -5,9 +5,14 @@ import java.io.InputStream;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -62,12 +67,11 @@ public class PurchaseUploadExcel {
 
             /* ---------------- Vendor Validation ---------------- */
             Row vendorRow = sheet.getRow(VENDOR_ROW);
-            if (vendorRow == null) {
-                errors.add("Supplier row is missing.");
-                return errors;
+            String vendorName = vendorRow == null ? "" : getStringCellValue(vendorRow.getCell(0));
+            if (vendorName.isEmpty()) {
+                Row firstRow = sheet.getRow(0);
+                vendorName = firstRow == null ? "" : getStringCellValue(firstRow.getCell(1));
             }
-
-            String vendorName = getStringCellValue(vendorRow.getCell(0));
             if (vendorName.isEmpty()) {
                 errors.add("Supplier Name is mandatory.");
                 return errors;
@@ -81,26 +85,39 @@ public class PurchaseUploadExcel {
             purchaseOrder.setParty(party);
 
             /* ---------------- Item Rows ---------------- */
+            Map<String, Float> enteredInFile = new HashMap<>();
+            int fullyOrdered = 0;
+            int invalidPo = 0;
+            int missingPo = 0;
             for (int rowNum = ITEM_START_ROW; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
                 Row row = sheet.getRow(rowNum);
-                if (row == null) continue;
+                if (isBlankRow(row)) continue;
 
                 List<String> rowErrors = new ArrayList<>();
                 PurchaseItem poItem = new PurchaseItem();
 
-                String clientPoNum = getStringCellValue(row.getCell(0));
+                String clientPoNum = normalizePo(getStringCellValue(row.getCell(0)));
+                if (clientPoNum.isEmpty()) {
+                    clientPoNum = normalizePo(getMergedPoNumber(sheet, rowNum));
+                }
                 String description = getStringCellValue(row.getCell(1));
                 String modelNo = getStringCellValue(row.getCell(5));
                 String hsn = getStringCellValue(row.getCell(6));
 
-                if (clientPoNum.isEmpty()) rowErrors.add("Client PO Number is mandatory.");
+                if (clientPoNum.isEmpty()) {
+                    rowErrors.add("Client PO Number is mandatory.");
+                    missingPo++;
+                }
                 if (description.isEmpty()) rowErrors.add("Description is mandatory.");
                 if (modelNo.isEmpty()) rowErrors.add("Model Number is mandatory.");
                 if (hsn.isEmpty()) rowErrors.add("HSN is mandatory.");
 
-                SalesOrder salesOrder = salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
-                if (salesOrder == null) rowErrors.add("Invalid Client PO Number.");
+                SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
+                if (salesOrder == null && !clientPoNum.isEmpty()) {
+                    rowErrors.add("Invalid Client PO Number: " + clientPoNum);
+                    invalidPo++;
+                }
 
                 ItemMaster item = itemService.getItemByModelNo(modelNo);
                 if (item == null) {
@@ -112,10 +129,12 @@ public class PurchaseUploadExcel {
 
                 float salesQty = 0;
                 float orderedQty = 0;
+                Set<String> orderedInPos = new LinkedHashSet<>();
+                SalesItem salesItem = null;
 
                 if (item != null && salesOrder != null) {
 
-                    SalesItem salesItem =
+                    salesItem =
                             salesService.getSalesItemByName(description, clientPoNum, item.getId());
 
                     if (salesItem == null) {
@@ -139,21 +158,31 @@ public class PurchaseUploadExcel {
 
                         for (PurchaseItem p : existingItems) {
                             orderedQty += p.getQuantity();
+                            if (p.getPurchaseOrder() != null && p.getPurchaseOrder().getPoNumber() != null) {
+                                orderedInPos.add(p.getPurchaseOrder().getPoNumber());
+                            }
                         }
                     }
                 }
 
-                float remainingQty = salesQty - orderedQty;
+                String quantityKey = salesItem == null || item == null ? "" : salesItem.getId() + "|" + item.getId();
+                float alreadyInFile = enteredInFile.getOrDefault(quantityKey, 0f);
+                float remainingQty = salesQty - orderedQty - alreadyInFile;
 
                 Float qty = getFloatCellValue(row.getCell(7), rowErrors, "Quantity");
                 if (qty == null) qty = 0f;
 
                 if (qty < 0) {
                     rowErrors.add("Quantity cannot be negative.");
-                } else if (qty > salesQty) {
-                    rowErrors.add("Entered quantity exceeds Design Quantity.");
-                } else if (qty > remainingQty) {
-                    rowErrors.add("Remaining Quantity available: " + remainingQty);
+                } else if (salesItem != null) {
+                    if (qty > salesQty) rowErrors.add("Entered quantity exceeds Design Quantity.");
+                    if (qty > remainingQty + 0.0001f) {
+                        if (remainingQty <= 0) fullyOrdered++;
+                        rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
+                                + " (Design qty: " + salesQty + ", already ordered: " + orderedQty
+                                + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))
+                                + ", in this file: " + alreadyInFile + ", you entered: " + qty + ")");
+                    }
                 }
 
                 Float unitPrice = getFloatCellValue(row.getCell(8), rowErrors, "Unit Price");
@@ -172,9 +201,21 @@ public class PurchaseUploadExcel {
 
                 poItem.setPurchaseOrder(purchaseOrder);
                 purchaseItems.add(poItem);
+                enteredInFile.put(quantityKey, alreadyInFile + qty);
             }
 
             purchaseOrder.setItems(purchaseItems);
+
+            if (purchaseItems.isEmpty() && errors.isEmpty()) {
+                errors.add("No purchase items found in the Excel file.");
+                return errors;
+            }
+
+            if (!errors.isEmpty()) {
+                errors.add(0, "SUMMARY: " + errors.size() + " row(s) failed - "
+                        + fullyOrdered + " fully ordered, " + invalidPo + " invalid Client PO, "
+                        + missingPo + " missing Client PO.");
+            }
 
             if (errors.isEmpty()) {
                 purchaseService.savePurchaseOrder(purchaseOrder, "", party.getId());
@@ -188,6 +229,29 @@ public class PurchaseUploadExcel {
     }
 
     /* ---------------- Helper Methods ---------------- */
+
+    private boolean isBlankRow(Row row) {
+        if (row == null) return true;
+        for (int column = 0; column < row.getLastCellNum(); column++) {
+            if (!getStringCellValue(row.getCell(column)).isEmpty()) return false;
+        }
+        return true;
+    }
+
+    private String getMergedPoNumber(Sheet sheet, int rowNum) {
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            CellRangeAddress region = sheet.getMergedRegion(i);
+            if (region.isInRange(rowNum, 0)) {
+                Row anchor = sheet.getRow(region.getFirstRow());
+                return anchor == null ? "" : getStringCellValue(anchor.getCell(region.getFirstColumn()));
+            }
+        }
+        return "";
+    }
+
+    private String normalizePo(String po) {
+        return po.trim().replaceAll("\\s+", " ").replaceAll("\\s*/\\s*", "/");
+    }
 
     private String getStringCellValue(Cell cell) {
         if (cell == null) return "";

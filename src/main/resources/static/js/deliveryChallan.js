@@ -9,22 +9,6 @@ var designLengthCheckFlag=false;
 var inputFlag=false;
 var clientPOTable;
 $(document).ready(function() {
-	// Tie global loader to AJAX lifecycle so users see feedback while items load
-	if (typeof showLoader === 'function') {
-		try { showLoader(); } catch (e) {}
-	}
-	if (typeof $(document).ajaxStart === 'function') {
-		$(document).ajaxStart(function () {
-			if (typeof showLoader === 'function') {
-				try { showLoader(); } catch (e) {}
-			}
-		});
-		$(document).ajaxStop(function () {
-			if (typeof hideLoader === 'function') {
-				try { hideLoader(); } catch (e) {}
-			}
-		});
-	}
 	
 	$.each(clientList || [], function(index, value) {
 		$("#partyName").append($('<option>', {
