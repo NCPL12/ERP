@@ -211,7 +211,8 @@ window.hasUserManagementEdit = ${canEditUserMgmt};
 	color: #d1d5db;
 	font-weight: 700;
 }
-.dashboard-tiles-row td {
+.dashboard-tiles-row td,
+.reports-items-row td {
 	background: #f9fafb;
 	height: auto;
 	padding: 12px 16px;

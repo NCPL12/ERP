@@ -22,6 +22,8 @@ public class UserService implements UserDetailsService{
 	EncryptedPasswordUtils encryptPasswd;
 	@Autowired
 	private com.ncpl.sales.repository.RolePermissionRepo rolePermissionRepo;
+	@Autowired
+	private com.ncpl.sales.repository.RoleRepo roleRepo;   // NEW
 
 	//validating user using database
 		@Override
@@ -41,6 +43,14 @@ public class UserService implements UserDetailsService{
 					if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
 					if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
 					if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+				}
+
+				// NEW: one REPORT_<KEY> authority per report this role may open
+				com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
+				if (roleObj != null) {
+					for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
+						grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
+					}
 				}
 			}
 
