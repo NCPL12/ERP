@@ -1,7 +1,7 @@
 # Neptune ERP release notes — Unreleased draft
 
-**Status:** Draft; no version tag or GitHub release has been created.  
-**Target:** `main`, after the selected `development` changes are merged.  
+**Status:** Draft; no version tag or GitHub release has been created.
+**Target:** `main`, after the selected `development` changes are merged.
 **Comparison:** `main` `5858317` to committed `development` `f94d723` (27 October 2026).
 
 ## Changes in committed `development`
