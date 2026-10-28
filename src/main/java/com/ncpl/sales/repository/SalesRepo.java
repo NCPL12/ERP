@@ -132,6 +132,8 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	
 	@Query(" from SalesOrder where client_po_number=?1 ")
 	public Optional<SalesOrder> getSalesOrderByClientPoNo(String clientPoNO);
+
+	boolean existsByClientPoNumberIgnoreCase(String clientPoNumber);
 	
 	long countByArchiveFalse();
 	
