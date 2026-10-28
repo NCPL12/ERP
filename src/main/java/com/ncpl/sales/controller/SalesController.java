@@ -148,6 +148,7 @@ import com.ncpl.sales.service.PurchaseExcel;
 import com.ncpl.sales.service.PurchaseItemService;
 import com.ncpl.sales.service.PurchaseOrderCustomProperty;
 import com.ncpl.sales.service.PurchaseOrderService;
+import com.ncpl.sales.service.TallyPurchaseOrderService;
 import com.ncpl.sales.service.ReturnableService;
 import com.ncpl.sales.service.SOUploadService;
 import com.ncpl.sales.service.SalesOrderDesignService;
@@ -305,6 +306,8 @@ public class SalesController {
 	@Autowired
 	PurchaseOrderService purchaseOrderService;
 	@Autowired
+	TallyPurchaseOrderService tallyPurchaseOrderService;
+	@Autowired
 	PurchaseItemService purchaseItemService;
 	@Autowired
 	UserService userService;
@@ -345,6 +348,8 @@ public class SalesController {
 	
 	@Autowired
 	ReturnableService returnableService;
+	@Autowired
+	com.ncpl.sales.repository.ReturnableRepo returnableRepo;
 	@Autowired
 	WorkOrderService workOrderService;
 	
@@ -501,7 +506,7 @@ public class SalesController {
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
 		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
-		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
 		User userObj  = userService.getCurrentUser();
 		String userName = userObj.getUsername();
 		ObjectMapper mapper = new ObjectMapper();
@@ -552,7 +557,7 @@ public class SalesController {
 		model.addAttribute("salesOrder", new SalesOrder());
 		List<Units> unitsList = itemMasterService.getUnitList();
 		List<PartyDropdownProjection> customerpartyList = partyService.getPartyDropdownList();
-		List<Map<String, Object>> itemList = itemMasterService.getItemIdModelNameList();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
 		User userObj = userService.getCurrentUser();
 		String userName = userObj.getUsername();
 		ObjectMapper mapper = new ObjectMapper();
@@ -1421,6 +1426,12 @@ public class SalesController {
 		return new ResponseEntity<>(designList, HttpStatus.OK);
 	}
 
+	@GetMapping("/dashboard/lists-ready")
+	@ResponseBody
+	public boolean dashboardListsReady() {
+		return dashboardService.isListsReady();
+	}
+
 	@GetMapping("/dashboard")
 	public String dashboard(Model model) throws JsonProcessingException {
 		DashboardCountDto counts = dashboardService.getDashboardCounts();
@@ -1439,7 +1450,9 @@ public class SalesController {
 
 		// Dashboard list cards rendered straight from the same cached snapshot the counts
 		// use, so the page ships with data already on it - no per-card AJAX round-trip.
-		DashboardListsDto lists = dashboardService.getDashboardLists();
+		boolean listsReady = dashboardService.isListsReady();
+		DashboardListsDto lists = dashboardService.getDashboardListsIfReady();
+		model.addAttribute("listsLoading", !listsReady);
 		ObjectMapper mapper = new ObjectMapper();
 		model.addAttribute("pendingSalesListDashboard", mapper.writeValueAsString(lists.getPendingSalesList()));
 		model.addAttribute("pendingPurchaseListDashboard", mapper.writeValueAsString(lists.getPendingPurchaseList()));
@@ -1624,6 +1637,108 @@ public class SalesController {
 		return "pendingPOReportbyPoNum";
 
 	}
+@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
+	@GetMapping("/po_list/tally/options")
+	@ResponseBody
+	public ResponseEntity<?> tallyPurchaseOrderOptions() {
+		try {
+			return ResponseEntity.ok(tallyPurchaseOrderService.loadOptions());
+		} catch (Exception error) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", "Unable to load Tally purchase ledgers: " + error.getMessage());
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+		}
+	}
+
+	@PreAuthorize("hasAuthority('PURCHASE_EDIT')")
+	@PostMapping("/po_list/tally")
+	@ResponseBody
+	public ResponseEntity<?> sendPurchaseOrdersToTally(
+			@RequestParam("poListByFromDate") String fromDateString,
+			@RequestParam("poListByToDate") String toDateString) {
+		try {
+			List<PurchaseOrder> purchaseOrders = purchaseOrdersForDateRange(fromDateString, toDateString);
+			return ResponseEntity.ok(tallyPurchaseOrderService.exportAllPending(purchaseOrders));
+		} catch (IllegalArgumentException | ParseException error) {
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", error.getMessage());
+			return ResponseEntity.badRequest().body(response);
+		} catch (Exception error) {
+			log.error("Unable to export ERP purchase orders to Tally", error);
+			Map<String, Object> response = new HashMap<>();
+			response.put("message", "Unable to communicate with Tally: " + error.getMessage());
+			return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
+		}
+	}
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ncpl.sales.service.TallyPurchaseOrderAutoSync tallyPoAutoSync;
+
+    @GetMapping("/po_list/tally/sync-status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
+    public Map<String,Object> tallyPoSyncStatus() {
+        // Return a plain map, NOT the TallyPurchaseOrderAutoSync bean.
+        // The bean is a CGLIB proxy (the class is @Transactional/@Scheduled), so returning it
+        // forced Jackson to serialise Spring's AOP internals (advisors -> TransactionInterceptor
+        // -> AnnotationTransactionAttributeSource) and fail with a 500:
+        //   InvalidDefinitionException: No serializer found for class ...AnnotationTransactionAttributeSource
+        // This map exposes only what the Sales Reports page reads (salesReport.jsp:698-700).
+        Map<String,Object> status = new HashMap<>();
+        status.put("enabled", tallyPoAutoSync.isEnabled());
+        status.put("configured", tallyPoAutoSync.isConfigured());
+        status.put("configurationError", tallyPoAutoSync.getConfigurationError());
+        status.put("running", tallyPoAutoSync.isRunning());
+        status.put("lastCompleted", tallyPoAutoSync.getLastCompleted());
+        status.put("lastError", tallyPoAutoSync.getLastError());
+        status.put("lastResult", tallyPoAutoSync.getLastResult());
+        return status;
+    }
+
+	@PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
+	@GetMapping("/po_list/tally/progress")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public java.util.Map<String,Object> tallyPoProgress() { return tallyPurchaseOrderService.getProgress(); }
+
+    @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
+    @PostMapping("/po_list/tally/import")
+	public String importPurchaseOrdersToTally(
+			@RequestParam("poListByFromDate") String fromDateString,
+			@RequestParam("poListByToDate") String toDateString,
+			RedirectAttributes redirectAttributes) {
+		try {
+			redirectAttributes.addFlashAttribute("tallyPoImportResult",
+					tallyPurchaseOrderService.exportAllPending(
+							purchaseOrdersForDateRange(fromDateString, toDateString)));
+		} catch (Exception error) {
+			log.error("Unable to export ERP purchase orders to Tally", error);
+			redirectAttributes.addFlashAttribute("tallyPoImportError", error.getMessage());
+		}
+		return "redirect:/sales_report";
+	}
+
+	private List<PurchaseOrder> purchaseOrdersForDateRange(String fromDateString, String toDateString)
+			throws ParseException {
+		SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+		format.setLenient(false);
+        format.setTimeZone(tallyPurchaseOrderService.getBusinessTimeZone());
+		Date fromDate = format.parse(fromDateString.replace('/', '-'));
+		Date toDate = format.parse(toDateString.replace('/', '-'));
+		if (fromDate.after(toDate)) {
+			throw new IllegalArgumentException("From date cannot be after To date.");
+		}
+		Calendar end = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
+		end.setTime(toDate);
+		end.set(Calendar.HOUR_OF_DAY, 23);
+		end.set(Calendar.MINUTE, 59);
+		end.set(Calendar.SECOND, 59);
+        end.set(Calendar.MILLISECOND, 999);
+		return purchaseOrderService.getPurchaseOrderListByDate(
+				convertDate.convertJavaDateToSqlDate(fromDate),
+				convertDate.convertJavaDateToSqlDate(end.getTime()));
+	}
+
+
 	 @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
 		@GetMapping("/sales/details/{salesOrderNo}")
 		 public ModelAndView salesDetails(HttpServletRequest request,Model model
@@ -1701,12 +1816,23 @@ public class SalesController {
 			
 		 }
 	 
-	 @GetMapping("/returnable/{dcId}")
-		public String returnableItems(Model model,@PathVariable("dcId") int dcId) throws JsonProcessingException {
+	 @GetMapping("/returnable/create")
+		public String returnableCreate(Model model, @RequestParam(value="dcId", required=false) Integer preselectedDcId) throws JsonProcessingException {
 			ObjectMapper mapper = utilService.getObjectMapper();
-			List<DeliveryChallanItems> dcItemList= dcService.getDcItemList(dcId);
+			// was getDeliveryChallanLists() — N+1 over dc+so+party+items = 2.2min; picker map is one SQL = ms
+			List<java.util.Map<String, Object>> dcLists = dcService.getDcPickerList();
+			model.addAttribute("pageHeader", "Create Returnable");
+			model.addAttribute("dcListJson", mapper.writeValueAsString(dcLists));
+			model.addAttribute("preselectedDcIdJson", preselectedDcId == null ? "null" : String.valueOf(preselectedDcId));
+			return "returnableCreate";
+		}
+
+	 @GetMapping("/returnable/{dcId}")
+		public String returnableItems(Model model, @PathVariable("dcId") int dcId) throws JsonProcessingException {
+			ObjectMapper mapper = utilService.getObjectMapper();
+			List<DeliveryChallanItems> dcItemList = dcService.getDcItemList(dcId);
 			model.addAttribute("pageHeader", "Returnable Items");
-			model.addAttribute("dcItemList",mapper.writeValueAsString(dcItemList));
+			model.addAttribute("dcItemList", mapper.writeValueAsString(dcItemList));
 			return "returnable";
 		}
 	 @PostMapping("/add/returned_items")
@@ -1731,6 +1857,42 @@ public class SalesController {
 				@RequestParam(defaultValue = "10") int size,
 				@RequestParam(defaultValue = "") String keyword) {
 			return returnableService.getReturnableItemsListPage(page, size, keyword);
+		}
+
+	 @GetMapping("/api/returnable/items")
+		@ResponseBody
+		public List<ReturnableItems> getReturnableItemsByReturnableId(@RequestParam("returnableId") int returnableId) {
+			return returnableService.getReturnableItemsByReturnableId(returnableId);
+		}
+
+	 // View like /api/dc/view -> /deliveryChallan (flash): double-click on Returnables navigates here
+	 @GetMapping("/api/returnable/view")
+		public String displayReturnableView(@RequestParam("returnableId") int returnableId, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttr){
+			Optional<Returnable> rb = returnableRepo.findById(returnableId);
+			if(rb.isPresent()){
+				List<ReturnableItems> items = returnableService.getReturnableItemsByReturnableId(returnableId);
+				redirectAttr.addFlashAttribute("returnableObj", rb.get());
+				redirectAttr.addFlashAttribute("returnableItems", items);
+				return "redirect:/returnable/view";
+			}
+			return "redirect:/returnableList";
+		}
+
+	 @GetMapping("/returnable/view")
+		public String returnableViewPage(Model model, HttpServletRequest req) throws JsonProcessingException {
+			Map<String, ?> flashMap = org.springframework.web.servlet.support.RequestContextUtils.getInputFlashMap(req);
+			ObjectMapper mapper = utilService.getObjectMapper();
+			if(flashMap != null && flashMap.get("returnableObj") != null){
+				Returnable rb = (Returnable) flashMap.get("returnableObj");
+				Object items = flashMap.get("returnableItems");
+				model.addAttribute("returnableObjJson", mapper.writeValueAsString(rb));
+				model.addAttribute("returnableItemsJson", mapper.writeValueAsString(items));
+			} else {
+				model.addAttribute("returnableObjJson", "null");
+				model.addAttribute("returnableItemsJson", "[]");
+			}
+			model.addAttribute("pageHeader", "Returnable View");
+			return "returnableView";
 		}
 	 
 	 @GetMapping("/work_order")
@@ -1879,6 +2041,8 @@ public class SalesController {
 			String todateString = request.getParameter("poListByToDate");
 			todateString = todateString.replaceAll("/", "-");
 			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            sdf.setLenient(false);
+            sdf.setTimeZone(tallyPurchaseOrderService.getBusinessTimeZone());
 			Date todaysDate = null;
 			Date fromDate = null;
 			// Parsing date
@@ -1889,8 +2053,8 @@ public class SalesController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Calendar c = Calendar.getInstance();
-			Calendar c1 = Calendar.getInstance();
+			Calendar c = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
+			Calendar c1 = Calendar.getInstance(tallyPurchaseOrderService.getBusinessTimeZone());
 			c.setTime(todaysDate);
 			c1.setTime(fromDate);
 			// c.add(Calendar.DATE, 0);
@@ -1899,6 +2063,8 @@ public class SalesController {
 			fromDate = c1.getTime();
 			c.add(Calendar.HOUR_OF_DAY, +23);
 			c.add(Calendar.MINUTE, 59);
+            c.set(Calendar.SECOND, 59);
+            c.set(Calendar.MILLISECOND, 999);
 			todaysDate = c.getTime();
 			Timestamp sqlToDate = convertDate.convertJavaDateToSqlDate(todaysDate);
 			Timestamp sqlFromDate = convertDate.convertJavaDateToSqlDate(fromDate);

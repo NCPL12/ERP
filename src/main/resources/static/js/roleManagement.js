@@ -2,6 +2,7 @@ var roles = [];
 var selectedRoleId = null;
 var currentGrid = [];
 var currentTiles = [];
+var currentReports = [];   // NEW
 
 var MODULE_URLS = {
 	DASHBOARD: "/dashboard",
@@ -50,15 +51,27 @@ function loadRoles() {
 	});
 }
 
+function escapeHtml(text) {
+	if (text === null || text === undefined) {
+		return "";
+	}
+	var div = document.createElement("div");
+	div.textContent = String(text);
+	return div.innerHTML;
+}
+
 function renderRoleList() {
 	var html = "";
 	$.each(roles, function (i, role) {
 		var activeClass = (String(role.roleId) === String(selectedRoleId)) ? "active" : "";
-		html += '<a href="#" class="role-row ' + activeClass + '" data-role-id="' + role.roleId + '">' +
-			'<span>' + role.name + '</span>' +
+		var roleId = String(role.roleId);
+		var roleNameEsc = escapeHtml(role.name);
+		var userCountEsc = escapeHtml(role.userCount);
+		html += '<a href="#" class="role-row ' + activeClass + '" data-role-id="' + roleId + '">' +
+			'<span>' + roleNameEsc + '</span>' +
 			'<span class="role-row-right">' +
-			'<span class="role-count">' + role.userCount + '</span>' +
-			'<i class="fa fa-trash role-delete-btn" data-role-id="' + role.roleId + '" data-role-name="' + role.name + '" title="Delete role"></i>' +
+			'<span class="role-count" title="users with this role">' + userCountEsc + '</span>' +
+			'<i class="fa fa-trash role-delete-btn" data-role-id="' + roleId + '" data-role-name="' + roleNameEsc + '" title="Delete role"></i>' +
 			'</span>' +
 			'</a>';
 	});
@@ -72,7 +85,7 @@ function renderRoleList() {
 	$(".role-delete-btn").on("click", function (e) {
 		e.preventDefault();
 		e.stopPropagation();
-		deleteRole($(this).data("role-id"), $(this).data("role-name"));
+		deleteRole($(this).data("role-id"), $(this).text() || $(this).attr("data-role-name"));
 	});
 }
 
@@ -102,30 +115,45 @@ function deleteRole(roleId, roleName) {
 function selectRole(roleId) {
 	selectedRoleId = roleId;
 	renderRoleList();
-	$("#savePermissionsBtn").prop("disabled", false);
+	var hasEdit = window && window.hasUserManagementEdit ? window.hasUserManagementEdit : false;
+	$("#savePermissionsBtn").prop("disabled", !hasEdit);
+	$("#newRoleBtn").prop("disabled", !hasEdit);
 
-	$.ajax({
-		url: api.ROLE_API + "/" + roleId + "/permissions",
-		type: "GET",
-		success: function (grid) {
-			currentGrid = grid;
-			renderGrid();
-			updateRoleSummary();
-		},
-		error: function (xhr) {
-			alert("Unable to load permissions. Status: " + xhr.status);
+	var currentRid = selectedRoleId;
+	currentGrid = [];
+	currentTiles = [];
+	currentReports = [];   // NEW
+
+	$.when(
+		$.ajax({
+			url: api.ROLE_API + "/" + roleId + "/permissions",
+			type: "GET",
+			cache: false
+		}),
+		$.ajax({
+			url: api.ROLE_API + "/" + roleId + "/dashboard-tiles",
+			type: "GET",
+			cache: false
+		}),
+		$.ajax({   // NEW
+			url: api.ROLE_API + "/" + roleId + "/report-items",
+			type: "GET",
+			cache: false
+		})
+	).done(function (permResp, tilesResp, reportsResp) {
+		if (String(currentRid) !== String(selectedRoleId)) {
+			return;
 		}
-	});
-
-	$.ajax({
-		url: api.ROLE_API + "/" + roleId + "/dashboard-tiles",
-		type: "GET",
-		success: function (tiles) {
-			currentTiles = tiles;
-			renderDashboardTilesRow();
-		},
-		error: function (xhr) {
-			alert("Unable to load dashboard tiles. Status: " + xhr.status);
+		currentGrid = permResp[0];
+		currentTiles = tilesResp[0];
+		currentReports = reportsResp[0];   // NEW
+		renderGrid();
+		updateRoleSummary();
+	}).fail(function (xhr) {
+		if (xhr && xhr.status) {
+			alert("Unable to load role details. Status: " + xhr.status);
+		} else {
+			alert("Unable to load role details.");
 		}
 	});
 }
@@ -154,6 +182,7 @@ function renderGrid() {
 	});
 	$("#permissionGridBody").html(rows);
 	renderDashboardTilesRow();
+	renderReportsRow();   // NEW
 }
 
 // No View, or the module has no such permission at all (e.g. DASHBOARD has no
@@ -165,22 +194,55 @@ function editDeleteCell(cssClass, applicable, checked) {
 	return '<td><input type="checkbox" class="' + cssClass + '" ' + (checked ? "checked" : "") + '></td>';
 }
 
-// Which of the 7 /dashboard tiles this role sees — an inline sub-row under the DASHBOARD module row.
+// Which of the 7 /dashboard tiles this role sees — only shown while the
+// DASHBOARD module's View box is ticked.
 function renderDashboardTilesRow() {
 	$("#permissionGridBody .dashboard-tiles-row").remove();
-	if (currentTiles.length === 0) {
+	var dashViewOn = $('#permissionGridBody tr[data-module="DASHBOARD"] .view-box').is(":checked");
+	if (!dashViewOn || currentTiles.length === 0) {
 		return;
 	}
 	var boxes = "";
 	$.each(currentTiles, function (i, tile) {
-		boxes += '<label class="ra-tile-check"><input type="checkbox" class="tile-box" data-tile="' + tile.key + '" ' +
-			(tile.visible ? "checked" : "") + '> ' + tile.label + '</label>';
+		var key = tile && tile.key ? escapeHtml(tile.key) : "";
+		var label = tile && tile.label ? escapeHtml(tile.label) : key;
+		boxes += '<label class="ra-tile-check"><input type="checkbox" class="tile-box" data-tile="' + key + '" ' +
+			(tile.visible ? "checked" : "") + '>&nbsp;' + label + '</label>';
 	});
 	var row = '<tr class="dashboard-tiles-row"><td colspan="4"><div class="ra-tiles-inline">' +
 		'<span class="ra-tiles-label">Dashboard tiles</span>' +
 		'<div class="ra-tiles-checks">' + boxes + '</div></div></td></tr>';
 	$('#permissionGridBody tr[data-module="DASHBOARD"]').after(row);
 }
+
+// NEW: which reports this role can open — only shown while the
+// REPORTS module's View box is ticked.
+function renderReportsRow() {
+	$("#permissionGridBody .reports-items-row").remove();
+	var viewOn = $('#permissionGridBody tr[data-module="REPORTS"] .view-box').is(":checked");
+	if (!viewOn || currentReports.length === 0) {
+		return;
+	}
+	var boxes = "";
+	$.each(currentReports, function (i, rep) {
+		var key = rep && rep.key ? escapeHtml(rep.key) : "";
+		var label = rep && rep.label ? escapeHtml(rep.label) : key;
+		boxes += '<label class="ra-tile-check"><input type="checkbox" class="report-box" data-report="' + key + '" ' +
+			(rep.visible ? "checked" : "") + '>&nbsp;' + label + '</label>';
+	});
+	var row = '<tr class="reports-items-row"><td colspan="4"><div class="ra-tiles-inline">' +
+		'<span class="ra-tiles-label">Report items</span>' +
+		'<div class="ra-tiles-checks">' + boxes + '</div></div></td></tr>';
+	$('#permissionGridBody tr[data-module="REPORTS"]').after(row);
+}
+
+$(document).on("change", "#permissionGridBody .report-box", function () {
+	var key = $(this).data("report");
+	var visible = $(this).is(":checked");
+	$.each(currentReports, function (i, report) {
+		if (report.key === key) report.visible = visible;
+	});
+});
 
 // Ticking Edit or Delete switches View on and locks it.
 $(document).on("change", "#permissionGridBody .edit-box, #permissionGridBody .delete-box", function () {
@@ -195,20 +257,31 @@ $(document).on("change", "#permissionGridBody .view-box", function () {
 	var row = $(this).closest("tr");
 	var checked = $(this).is(":checked");
 	if (checked) {
-		// Was showing dashes — turn them into real, unchecked Edit/Delete boxes,
+		// Was showing dashes — turn them into real boxes,
 		// unless the module doesn't support that permission at all (e.g. DASHBOARD).
 		var editable = row.data("editable") === true || row.data("editable") === "true";
 		var deletable = row.data("deletable") === true || row.data("deletable") === "true";
 		row.find("td.ra-not-applicable").each(function () {
-			var isEditCol = $(this).index() === 2;
+			var $td = $(this);
+			var isEditCol = $td.index() === 2;
 			if (isEditCol ? !editable : !deletable) {
 				return;
 			}
-			$(this).removeClass("ra-not-applicable").html('<input type="checkbox" class="' + (isEditCol ? "edit-box" : "delete-box") + '">');
+			$td.removeClass("ra-not-applicable").html('<input type="checkbox" class="' + (isEditCol ? "edit-box" : "delete-box") + '">');
 		});
+		var stillForced = row.find(".edit-box:checked, .delete-box:checked").length > 0;
+		row.find(".view-box").prop("disabled", stillForced);
 	} else {
-		// No View => Edit/Delete are meaningless again — collapse back to dashes.
+		// No View => Edit/Delete are meaningless again — collapse back to dashes, preserving visual state by clearing checks
+		row.find(".edit-box, .delete-box").prop("checked", false);
 		row.find(".edit-box, .delete-box").closest("td").addClass("ra-not-applicable").html("&ndash;");
+		row.find(".view-box").prop("disabled", false);
+	}
+	if (row.data("module") === "DASHBOARD") {
+		renderDashboardTilesRow();
+	}
+	if (row.data("module") === "REPORTS") {   // NEW
+		renderReportsRow();
 	}
 });
 
@@ -244,8 +317,12 @@ function savePermissions() {
 	var rows = [];
 	$("#permissionGridBody tr[data-module]").each(function () {
 		var tr = $(this);
+		var module = tr.data("module");
+		if (!module) {
+			return;
+		}
 		rows.push({
-			module: tr.data("module"),
+			module: module,
 			canView: tr.find(".view-box").is(":checked"),
 			canEdit: tr.find(".edit-box").is(":checked"),
 			canDelete: tr.find(".delete-box").is(":checked")
@@ -254,8 +331,36 @@ function savePermissions() {
 
 	var tileKeys = [];
 	$("#permissionGridBody .tile-box:checked").each(function () {
-		tileKeys.push($(this).data("tile"));
+		var t = $(this).data("tile");
+		if (t) {
+			tileKeys.push(String(t));
+		}
 	});
+
+	if ($("#permissionGridBody .dashboard-tiles-row").length && tileKeys.length === 0) {
+		alert("At least one dashboard tile must be enabled.");
+		return;
+	}
+
+	// NEW
+	var reportKeys = [];
+	$("#permissionGridBody .report-box:checked").each(function () {
+		var t = $(this).data("report");
+		if (t) {
+			reportKeys.push(String(t));
+		}
+	});
+
+	// Keep the selection when Reports view is temporarily switched off.
+	if (!$("#permissionGridBody .reports-items-row").length) {
+		reportKeys = currentReports.filter(function (report) { return report.visible; })
+			.map(function (report) { return report.key; });
+	}
+
+	if ($("#permissionGridBody .reports-items-row").length && reportKeys.length === 0) {
+		alert("At least one report must be enabled.");
+		return;
+	}
 
 	$.ajax({
 		url: api.ROLE_API + "/" + selectedRoleId + "/permissions",
@@ -269,12 +374,23 @@ function savePermissions() {
 				contentType: "application/json",
 				data: JSON.stringify(tileKeys),
 				success: function () {
-					alert("Permissions saved. Changes apply the next time affected users log in.");
-					loadRoles();
-					selectRole(selectedRoleId);
+					$.ajax({   // NEW
+						url: api.ROLE_API + "/" + selectedRoleId + "/report-items",
+						type: "PUT",
+						contentType: "application/json",
+						data: JSON.stringify(reportKeys),
+						success: function () {
+							alert("Permissions saved.");
+							loadRoles();
+							selectRole(selectedRoleId);
+						},
+						error: function (xhr) {
+							alert(xhr.responseText || ("Permissions saved, but report items failed. Status: " + xhr.status));
+						}
+					});
 				},
 				error: function (xhr) {
-					alert("Permissions saved, but dashboard tiles failed. Status: " + xhr.status);
+					alert(xhr.responseText || ("Permissions saved, but dashboard tiles failed. Status: " + xhr.status));
 				}
 			});
 		},

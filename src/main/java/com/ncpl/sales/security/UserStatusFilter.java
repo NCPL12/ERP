@@ -26,7 +26,7 @@ public class UserStatusFilter extends OncePerRequestFilter {
     private static final String[] SKIPPED = {
             "/css/", "/js/", "/images/", "/resources/", "/dist/", "/plugins/", "/webjars/",
             "/swagger-ui", "/v3/api-docs", "/swagger-resources",
-            "/login", "/logout"
+            "/login", "/logout", "/access-denied"
     };
 
     @Autowired

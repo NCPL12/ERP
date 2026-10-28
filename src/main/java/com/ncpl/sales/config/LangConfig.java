@@ -28,6 +28,7 @@ public class LangConfig implements WebMvcConfigurer {
 
 		messageResource.setBasename("classpath:lang/messages");
 		messageResource.setDefaultEncoding("UTF-8");
+		messageResource.setUseCodeAsDefaultMessage(true);
 		return messageResource;
 	}
 

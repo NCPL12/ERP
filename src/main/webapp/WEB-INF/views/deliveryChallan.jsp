@@ -21,9 +21,10 @@
 
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
-<script type="text/javascript" src="resources/js/deliveryChallan.js"></script>
+<script type="text/javascript" src="<c:url value="/resources/js/deliveryChallan.js" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
+<meta id="dcPageData" data-dc="<c:out value='${dcObj}'/>">
 
 <c:if test="${!canDeleteDeliveryChallan}">
 <style type="text/css">
@@ -32,17 +33,9 @@
 </c:if>
 
 <script type="text/javascript">
-var salesList = ${salesOrderList};
-var partyList = ${partyList};
 var clientList=${clientList};
-var itemList =${itemList};
-var obj = '${dcObj}';
-obj = obj.replace(/\&/g, "\'");
-obj = obj.replace(/\&/g, "\"");
-var dcObj = "";
-if ('${dcObj}' != null && '${dcObj}' != "") {
-	dcObj= $.parseJSON(obj);
-}
+var clientPoOptions=${clientPoOptions};
+var dcObj = JSON.parse(document.getElementById("dcPageData").getAttribute("data-dc") || "null") || "";
 </script>
 
 <style type="text/css">
@@ -189,7 +182,7 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 							<span class="dc-field-colon">:</span>
 							<div class="dc-field-value">
 								<select class="form-control select2 select2-hidden-accessible dropdownwidth150"
-									name="soNumber" id="clientPoDropdown">
+									id="clientPoDropdown">
 									<option value="">Select Client PO No.</option>
 								</select>
 							</div>

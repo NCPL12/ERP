@@ -1,1 +1,14 @@
 /bin/
+/target/
+
+# Generated output, local caches, runtime data and handoff copies
+/.m2-cache/
+/.sts4-cache/
+/backups/
+/logs/
+/data/
+/deployment/output/
+/.codex-staging/
+/handoff/
+*.log
+/cashflow-local-classpath.txt

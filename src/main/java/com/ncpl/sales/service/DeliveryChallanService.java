@@ -57,6 +57,10 @@ import com.ncpl.sales.security.UserService;
 
 @Service
 public class DeliveryChallanService {
+ private static String blankToNull(String value) {
+        return value == null || value.trim().isEmpty() ? null : value.trim();
+    }
+
 	@Autowired
 	DeliveryChallanRepo dcRepo;
 	@Autowired
@@ -93,6 +97,9 @@ public class DeliveryChallanService {
 	ItemMasterRepo itemMasterRepo;
 	@Autowired
 	SupplierRepo supplierRepo;
+	// ADDED: used only by getDcItemListByDate to load PO prices in a few batch queries
+	@javax.persistence.PersistenceContext
+	private javax.persistence.EntityManager entityManager;
 	
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "dc_.xlsx";
@@ -240,6 +247,11 @@ public class DeliveryChallanService {
 	public List<DeliveryChallan> getAllDcList(){
 		List<DeliveryChallan> dcList = dcRepo.findAllDc();
 		return dcList;
+	}
+
+	// ms picker for /returnable/create — single query, no items
+	public List<java.util.Map<String, Object>> getDcPickerList(){
+		return dcRepo.findPickerMaps();
 	}
 	
 	//code to get list of delivery challan
@@ -405,7 +417,7 @@ public class DeliveryChallanService {
 		}
 		return dcItemsBySalesItemId;
 	}
-	
+
 	public List<DeliveryChallanItems> getDcItemListBySoItemIdWhereDcQtyNotZero(String soItemId){
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItemId);
 		return dcItemList;
@@ -419,11 +431,14 @@ public class DeliveryChallanService {
 	//get dc object by dc id
 	public Optional<DeliveryChallan> getDcById(int dcId) {
 		 Optional<DeliveryChallan> dcObj=dcRepo.findById(dcId);
-		 String soNumber=dcObj.get().getSoNumber();
-		 Optional<SalesOrder> soObj=salesService.getSalesOrderById(soNumber);
-		 
-		 dcObj.get().set("clientPoNumber",soObj.get().getClientPoNumber());
-		 dcObj.get().set("clientName",soObj.get().getParty().getPartyName()); 
+		 if (!dcObj.isPresent()) {
+			 return dcObj;
+		 }
+		 Optional<SalesOrder> soObj=salesService.getSalesOrderById(dcObj.get().getSoNumber());
+		 if (soObj.isPresent() && soObj.get().getParty() != null) {
+			 dcObj.get().set("clientPoNumber",soObj.get().getClientPoNumber());
+			 dcObj.get().set("clientName",soObj.get().getParty().getPartyName());
+		 }
 		return dcObj;
 	}
 	
@@ -599,6 +614,8 @@ public class DeliveryChallanService {
 		return itemList;
 	}
 	
+	// ===================== OLD VERSION (commented out - slow: for every design item it re-loads the design, the sales item (with its extra DC queries), and then for every DC item again the DC, sales order and shipping address) =====================
+	/*
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<DeliveryChallan> getDcListBysalesItemId(String itemId){
 		List<DesignItems> designItemList = designService.getDesignItemListByItemId(itemId);
@@ -624,19 +641,7 @@ public class DeliveryChallanService {
 			
 		}
 		
-			/*
-			 * for (SalesOrderDesign salesOrderDesign : designList) { String salesItemId =
-			 * salesOrderDesign.getSalesItemId(); boolean value = false; Optional<SalesItem>
-			 * soItem =salesService.getSalesItemById(salesItemId, value);
-			 * List<DeliveryChallanItems> dcItemList =
-			 * dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItem.get().getId());
-			 * for (DeliveryChallanItems dcItem : dcItemList) { if(dcItem.getTodaysQty()>0
-			 * || dcItem.getDeliveredQuantity()>0) { deliveryChallanItemList.add(dcItem);
-			 * System.out.println(dcItem.getDcItemId()); } }
-			 * 
-			 * }
-			 */
-		for (DeliveryChallanItems deliveryChallanItems : deliveryChallanItemList) {
+			for (DeliveryChallanItems deliveryChallanItems : deliveryChallanItemList) {
 			System.out.println(deliveryChallanItems.getDescription()+"dcId : "+deliveryChallanItems.getDeliveryChallan().getDcId());
 			int dcId=deliveryChallanItems.getDeliveryChallan().getDcId();
 			Optional<DeliveryChallan> deliveryChallan = dcRepo.findById(dcId);
@@ -665,6 +670,83 @@ public class DeliveryChallanService {
 		
 		return dc;
 	}
+	*/
+	// ===================== END OLD VERSION =====================
+
+	// ===================== NEW VERSION (same result; each design / DC / sales order / shipping address is looked up only ONCE instead of once per DC item) =====================
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DeliveryChallan> getDcListBysalesItemId(String itemId){
+		long t0 = System.currentTimeMillis();
+		List<DesignItems> designItemList = designService.getDesignItemListByItemId(itemId);
+		Set set = new HashSet();
+		if(designItemList.size()>0) {
+			// distinct designs that use this item, then the distinct sales items of those designs
+			Set<Long> designIds = new java.util.LinkedHashSet<Long>();
+			for (DesignItems designItem : designItemList) {
+				designIds.add(designItem.getSalesOrderDesign().getId());
+			}
+			Set<String> salesItemIds = new java.util.LinkedHashSet<String>();
+			for (Long designId : designIds) {
+				Optional<SalesOrderDesign> soDesign = designService.findSalesOrderDesignById(designId);
+				salesItemIds.add(soDesign.get().getSalesItemId());
+			}
+
+			ArrayList<DeliveryChallanItems> deliveryChallanItemList = new ArrayList<DeliveryChallanItems>();
+			for (String salesItemId : salesItemIds) {
+				List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(salesItemId);
+				for (DeliveryChallanItems dcItem : dcItemList) {
+					if(dcItem.getTodaysQty()>0) {
+						deliveryChallanItemList.add(dcItem);
+					}
+				}
+			}
+
+			Set<Integer> doneDcIds = new HashSet<Integer>();
+			Map<String, SalesOrder> soCache = new HashMap<String, SalesOrder>();
+			Map<String, String> addrCache = new HashMap<String, String>();
+			for (DeliveryChallanItems deliveryChallanItems : deliveryChallanItemList) {
+				int dcId=deliveryChallanItems.getDeliveryChallan().getDcId();
+				if (doneDcIds.contains(dcId)) {
+					continue;
+				}
+				doneDcIds.add(dcId);
+				Optional<DeliveryChallan> deliveryChallan = dcRepo.findById(dcId);
+				String salesOrderId = deliveryChallan.get().getSoNumber();
+				SalesOrder so = soCache.get(salesOrderId);
+				if (so == null) {
+					so = salesService.getSalesOrderById(salesOrderId).get();
+					soCache.put(salesOrderId, so);
+				}
+				String shippingAddrId=so.getShippingAddress();
+				if(shippingAddrId!=null) {
+					if(!shippingAddrId.isEmpty()) {
+						//if the shipping address id is party id then get the party object by id else get party address obj by id
+						String addr = addrCache.get(shippingAddrId);
+						if (addr == null) {
+							Party partyObj =partyRepo.findById(shippingAddrId);
+							if(partyObj!=null) {
+								addr = partyObj.getAddr1();
+							}else {
+								Optional<PartyAddress> partyAddressobj =partyAddressService.getAddressByAddressId(shippingAddrId);
+								addr = partyAddressobj.get().getAddr1();
+							}
+							addrCache.put(shippingAddrId, addr);
+						}
+						deliveryChallan.get().set("shippingAddress",addr);
+					}
+				}
+				deliveryChallan.get().set("clientPoNumber",so.getClientPoNumber());
+				deliveryChallan.get().set("clientName",so.getParty().getPartyName());
+				set.add(deliveryChallan.get());
+			}
+			System.out.println("DC list by item: " + designItemList.size() + " design items, " + salesItemIds.size() + " sales items, "
+					+ deliveryChallanItemList.size() + " dc items, " + doneDcIds.size() + " DCs in " + (System.currentTimeMillis() - t0) + " ms");
+		}
+		ArrayList<DeliveryChallan> dc = new ArrayList<DeliveryChallan>(set);
+
+		return dc;
+	}
+	// ===================== END NEW VERSION =====================
 
 	public List<DeliveryChallan> getDeliveryChallanListsArchived() {
 		List<DeliveryChallan> dcList = dcRepo.findDcListArchived();
@@ -753,26 +835,22 @@ public class DeliveryChallanService {
 		for (DeliveryChallan dc : dcList) {
 			List<DeliveryChallanItems> dcItemList=dc.getItems();
 			for (DeliveryChallanItems deliveryChallanItems : dcItemList) {
-				System.out.println("not found"+deliveryChallanItems.getDescription());
 				Optional<SalesItem> salesItem=salesService.getSalesItemObjById(deliveryChallanItems.getDescription());
-				if(salesItem.isPresent()) {
-				System.out.println(salesItem.get().getId());
-					List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
-					for (DesignItems designItem : designItemsList) {
-						if(designItem.getDeliveredQty()!=0) {
-							if(designItem.getDeliveredQty()<designItem.getQuantity()) {
-								dcItemLists.add(deliveryChallanItems);
-							
-								break;
-							}
+				if(!salesItem.isPresent()) {
+					continue;
+				}
+				List<DesignItems> designItemsList= designService.getAllDesignItemListBySOItemId(salesItem.get().getId());
+				for (DesignItems designItem : designItemsList) {
+					if(designItem.getDeliveredQty()!=0) {
+						if(designItem.getDeliveredQty()<designItem.getQuantity()) {
+							dcItemLists.add(deliveryChallanItems);
+							break;
 						}
 					}
 				}
 			}
 		}
-		System.out.println("size:" + dcItemLists.size());
 		return dcItemLists;
-		
 	}
 	
 	// Pagination methods for lazy loading
@@ -793,38 +871,81 @@ public class DeliveryChallanService {
 		return dcPage;
 	}
 	
-	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber, 
-			String clientName, String clientPo, String shipping) {
-		
-		Integer dcIdInt = null;
-		if (dcId != null && !dcId.trim().isEmpty()) {
-			try {
-				dcIdInt = Integer.parseInt(dcId);
-			} catch (NumberFormatException e) {
-				// Invalid dcId, will be ignored
-			}
-		}
-		
+	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, boolean archived, String dcId, String soNumber,
+			String clientName, String clientPo, String shipping, String comment, String date) {
+
 		Page<DeliveryChallan> dcPage = dcRepo.searchAdvanced(
-			archived, 
-			dcIdInt, 
-			soNumber, 
-			clientName, 
-			clientPo, 
-			shipping, 
+			archived,
+			emptyToNull(dcId),
+			emptyToNull(soNumber),
+			emptyToNull(clientName),
+			emptyToNull(clientPo),
+			emptyToNull(shipping),
+			emptyToNull(comment),
+			parseDateFrom(date),
+			parseDateTo(date),
 			pageable
 		);
-		
+
 		// Enrich the data with additional fields
 		for (DeliveryChallan dc : dcPage.getContent()) {
 			enrichDeliveryChallanData(dc);
 		}
-		
+
 		return dcPage;
+	}
+
+	private static String emptyToNull(String s) {
+		if (s == null) return null;
+		String t = s.trim();
+		return t.isEmpty() ? null : t;
+	}
+
+	/** Parse the Date column filter (e.g. "29-9-2026", "29-09-2026", "2026-09-29") to a day-start timestamp; null if unparseable. */
+	private static java.util.Date parseDateFrom(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[0];
+	}
+
+	/** Exclusive end of the filtered day (start of next day). */
+	private static java.util.Date parseDateTo(String dateStr) {
+		java.util.Date[] range = parseDateRange(dateStr);
+		return range == null ? null : range[1];
+	}
+
+	private static java.util.Date[] parseDateRange(String dateStr) {
+		if (dateStr == null || dateStr.trim().isEmpty()) {
+			return null;
+		}
+		String s = dateStr.trim();
+		String[] patterns = { "d-M-yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "d/M/yyyy", "dd/MM/yyyy" };
+		for (String p : patterns) {
+			try {
+				java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(p);
+				sdf.setLenient(false);
+				java.util.Date d = sdf.parse(s);
+				java.util.Calendar cal = java.util.Calendar.getInstance();
+				cal.setTime(d);
+				cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+				cal.set(java.util.Calendar.MINUTE, 0);
+				cal.set(java.util.Calendar.SECOND, 0);
+				cal.set(java.util.Calendar.MILLISECOND, 0);
+				java.util.Date from = cal.getTime();
+				cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+				java.util.Date to = cal.getTime();
+				return new java.util.Date[] { from, to };
+			} catch (Exception ignored) {
+			}
+		}
+		return null;
 	}
 	
 	public List<DeliveryChallanItems> getDcItemListByDate(Timestamp fromDate, Timestamp toDate) {
+		long tDcStart = System.currentTimeMillis();
+		long tDcStep = tDcStart;
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.findByCreatedBetween(fromDate, toDate);
+		System.out.println("DC by date: findByCreatedBetween " + dcItemList.size() + " rows in " + (System.currentTimeMillis() - tDcStep) + " ms");
+		tDcStep = System.currentTimeMillis();
 		if (dcItemList.isEmpty()) {
 			return dcItemList;
 		}
@@ -840,9 +961,13 @@ public class DeliveryChallanService {
 			List<SalesItem> salesItems = salesItemRepo.findAllById(soItemIds);
 			salesItemMap = salesItems.stream()
 				.collect(Collectors.toMap(SalesItem::getId, Function.identity()));
+			System.out.println("DC by date: sales items " + salesItems.size() + " loaded in " + (System.currentTimeMillis() - tDcStep) + " ms");
+			tDcStep = System.currentTimeMillis();
 			List<DesignItems> designItemsList = designItemRepo.findBySalesItemIdIn(soItemIds);
 			designItemsBySoItemId = designItemsList.stream()
 				.collect(Collectors.groupingBy(di -> di.getSalesOrderDesign().getSalesItemId()));
+			System.out.println("DC by date: design items " + designItemsList.size() + " loaded + grouped in " + (System.currentTimeMillis() - tDcStep) + " ms");
+			tDcStep = System.currentTimeMillis();
 			List<String> itemMasterIds = designItemsList.stream()
 				.map(DesignItems::getItemId)
 				.filter(Objects::nonNull)
@@ -852,12 +977,46 @@ public class DeliveryChallanService {
 				List<ItemMaster> itemMasters = itemMasterRepo.findByIdIn(itemMasterIds);
 				itemMasterMap = itemMasters.stream()
 					.collect(Collectors.toMap(ItemMaster::getId, Function.identity()));
+				System.out.println("DC by date: item masters " + itemMasters.size() + " loaded in " + (System.currentTimeMillis() - tDcStep) + " ms");
+				tDcStep = System.currentTimeMillis();
 			}
 		}
 		// Price: avg of all PO unit prices per item — same methodology as the
 		// monthly stock movement report, so DC-by-date values tally with its
 		// outward column. Items with no PO history are excluded there too.
 		Map<String, Double> avgPoPriceMap = new HashMap<>();
+		// NEW: load all PO unit prices for all items in a few batch queries (instead of loading
+		// full PO item objects one item at a time). Same result: average of all unit prices per
+		// item; items with no PO items are simply absent from the map (same as the old "continue").
+		// If the batch query fails for any reason, the old per-item loop below is used as a fallback.
+		boolean priceBatchOk = false;
+		try {
+			Map<String, Double> sumByModel = new HashMap<>();
+			Map<String, Integer> cntByModel = new HashMap<>();
+			List<String> priceIds = new ArrayList<>(itemMasterMap.keySet());
+			for (int i = 0; i < priceIds.size(); i += 1000) {
+				List<String> chunk = priceIds.subList(i, Math.min(i + 1000, priceIds.size()));
+				List<Object[]> priceRows = entityManager.createQuery(
+						"SELECT p.modelNo, p.unitPrice FROM PurchaseItem p WHERE p.modelNo IN :ids", Object[].class)
+						.setParameter("ids", chunk)
+						.getResultList();
+				for (Object[] r : priceRows) {
+					String mid = (String) r[0];
+					double price = r[1] == null ? 0d : ((Number) r[1]).doubleValue();
+					sumByModel.merge(mid, price, Double::sum);
+					cntByModel.merge(mid, 1, Integer::sum);
+				}
+			}
+			for (Map.Entry<String, Integer> pe : cntByModel.entrySet()) {
+				avgPoPriceMap.put(pe.getKey(), sumByModel.get(pe.getKey()) / pe.getValue());
+			}
+			priceBatchOk = true;
+		} catch (Exception e) {
+			System.err.println("getDcItemListByDate: batch price query failed, using per-item fallback: " + e.getMessage());
+			avgPoPriceMap.clear();
+		}
+		if (!priceBatchOk) {
+		// OLD per-item version (kept as fallback only)
 		for (String itemMasterId : itemMasterMap.keySet()) {
 			List<com.ncpl.sales.model.PurchaseItem> poItems = purchaseItemService.findByModelNumberWithRecentPoItem(itemMasterId);
 			if (poItems.isEmpty()) {
@@ -869,6 +1028,9 @@ public class DeliveryChallanService {
 			}
 			avgPoPriceMap.put(itemMasterId, priceSum / poItems.size());
 		}
+		}
+		System.out.println("DC by date: prices for " + avgPoPriceMap.size() + " items ready in " + (System.currentTimeMillis() - tDcStep) + " ms (batch ok = " + priceBatchOk + ")");
+		tDcStep = System.currentTimeMillis();
 		List<DeliveryChallanItems> enrichedList = new ArrayList<>();
 		for (DeliveryChallanItems dcItem : dcItemList) {
 			String soItemId = dcItem.getDescription();
@@ -897,9 +1059,11 @@ public class DeliveryChallanService {
 				}
 			}
 		}
-		return enrichedList.stream()
+		List<DeliveryChallanItems> dcResult = enrichedList.stream()
 			.filter(item -> item.getTodaysQty() != 0)
 			.collect(Collectors.toList());
+		System.out.println("DC by date: build rows " + dcResult.size() + " in " + (System.currentTimeMillis() - tDcStep) + " ms | TOTAL " + (System.currentTimeMillis() - tDcStart) + " ms");
+		return dcResult;
 	}
 
 	private void enrichDeliveryChallanData(DeliveryChallan dc) {

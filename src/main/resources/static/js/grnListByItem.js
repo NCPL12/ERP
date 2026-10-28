@@ -19,7 +19,7 @@ function loadGrnTable() {
 			"defaultContent":"",
 			render : function(data, type, row) {
 				  var grnId = row.grnId;
-			 	   url = pageContext+"/grn/"+grnId;
+                    url = pageContext+"/grn/"+encodeURIComponent(grnId);
 			 	  return "<a href='"+url+"'>"+grnId+"</a>";
 			}
 		}, {
@@ -41,7 +41,7 @@ function loadGrnTable() {
 			"data" : "poDate",
 			"defaultContent":"",
 			render : function(data, type, row) {
-				var newdate = moment(new Date(data)).format("YYYY-MM-DD HH:mm:ss") ;
+				var newdate = moment(new Date(data)).format("DD-MM-YYYY HH:mm:ss") ;
 					return  newdate; 
 			}
 		},
@@ -50,7 +50,7 @@ function loadGrnTable() {
 			"data" : "created",
 			"defaultContent":"",
 			render : function(data, type, row) {
-				var newdate = moment(new Date(data)).format("YYYY-MM-DD HH:mm:ss") ;
+				var newdate = moment(new Date(data)).format("DD-MM-YYYY HH:mm:ss") ;
 					return  newdate; 
 			}
 		},{

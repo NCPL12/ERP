@@ -2,14 +2,18 @@ package com.ncpl.sales.service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -69,6 +73,10 @@ public class SOUploadService {
 
 	    	           
 	    	                Row row = sheet.getRow(rowNum);
+					if (row == null) {
+						errors.add("Sales order header row is missing.");
+						return errors;
+					}
 	    	               // if (row == null) continue;
 
 	    	                
@@ -117,19 +125,32 @@ public class SOUploadService {
 	    	               // Date projectClosureDate = getDateCellValue(row.getCell(5), errors, rowNum, dateFormat);
 	    	                //if (projectClosureDate == null) salesOrder.setProjectClosureDate(null);
 	    	              //  salesOrder.setProjectClosureDate(projectClosureDate);
-	    	                salesOrder.setModeOfPayment(getStringCellValue(row.getCell(5)));
-	    	                salesOrder.setJurisdiction(getStringCellValue(row.getCell(6)));
-	    	                salesOrder.setFreight(getStringCellValue(row.getCell(7)));
-	    	                salesOrder.setDelivery(getStringCellValue(row.getCell(8)));
-	    	                salesOrder.setWarranty(getStringCellValue(row.getCell(9)));
-	    	                salesOrder.setOtherTermsAndConditions(getStringCellValue(row.getCell(10)));
+                        int paymentColumn = findPaymentColumn(sheet, row);
+                        if (paymentColumn < 0) {
+                            errors.add("Unrecognised Payment through Other Terms layout (columns F-L).");
+                            return errors;
+                        }
+                        salesOrder.setModeOfPayment(getStringCellValue(row.getCell(paymentColumn)));
+                        salesOrder.setJurisdiction(getStringCellValue(row.getCell(paymentColumn + 1)));
+                        salesOrder.setFreight(getStringCellValue(row.getCell(paymentColumn + 2)));
+                        salesOrder.setDelivery(getStringCellValue(row.getCell(paymentColumn + 3)));
+                        salesOrder.setWarranty(getStringCellValue(row.getCell(paymentColumn + 4)));
+                        salesOrder.setOtherTermsAndConditions(getStringCellValue(row.getCell(paymentColumn + 5)));
 	    	                rowNum=6;
 	    	                float total=0;
 	    	                float gst=0;
 	    	                float grandTotal=0;
+	                Map<String, Units> unitsByName = new HashMap<>();
+	                for (Units unit : itemService.getUnitList()) {
+	                    unitsByName.put(normalizeUnitName(unit.getName()), unit);
+	                }
 	    	                
 	    	                while (rowNum <= sheet.getLastRowNum()) {
 	    	                	 Row itemRow = sheet.getRow(rowNum);
+	                    if (isBlankItemRow(itemRow)) {
+	                        rowNum++;
+	                        continue;
+	                    }
 	    	                	 
 	    	                	 List<String> rowErrors = new ArrayList<>();
 		    	                // ✅ Sales Items (Details) Validations
@@ -144,7 +165,10 @@ public class SOUploadService {
 		    	                salesItem.setHsnCode(getStringCellValue(itemRow.getCell(6)));
 		    	                salesItem.setServicehsnCode(getStringCellValue(itemRow.getCell(7)));
 	
-		    	                Float qty = getFloatCellValue(itemRow.getCell(8), rowErrors, rowNum + 1, "Quantity");
+		                String unitName = normalizeUnitName(getStringCellValue(itemRow.getCell(9)));
+		                boolean heading = "heading".equals(unitName) || "heading.".equals(unitName);
+		                Float qty = heading && isBlankCell(itemRow.getCell(8)) ? 0f
+		                    : getFloatCellValue(itemRow.getCell(8), rowErrors, rowNum + 1, "Quantity");
 		    	                if (qty == null) {
 		    	                	qty=(float) 0.0;
 		    	                	salesItem.setQuantity(0);
@@ -154,7 +178,11 @@ public class SOUploadService {
 		    	                }else {
 		    	                	salesItem.setQuantity(qty);
 		    	                }
-		    	                Units unitObj=itemService.getUnitsByName(getStringCellValue(itemRow.getCell(9)));
+		                Units unitObj=unitsByName.get(unitName);
+		                if (unitObj == null && !unitName.isEmpty()) {
+		                    unitObj = unitsByName.get(unitName.endsWith(".")
+		                            ? unitName.substring(0, unitName.length() - 1) : unitName + ".");
+		                }
 		    	                
 		    	                if (unitObj == null) {
 		    	                    rowErrors.add("Unit is invalid or does not exist.");
@@ -164,7 +192,8 @@ public class SOUploadService {
 		    	                }
 	
 		    	                
-		    	                Float unitPrice = getFloatCellValue(itemRow.getCell(10), rowErrors, rowNum + 1, "Unit Price");
+		                Float unitPrice = heading && isBlankCell(itemRow.getCell(10)) ? 0f
+		                    : getFloatCellValue(itemRow.getCell(10), rowErrors, rowNum + 1, "Unit Price");
 		    	                if (unitPrice == null) {
 		    	                	unitPrice=(float) 0.0;
 		    	                	salesItem.setUnitPrice(0);
@@ -175,7 +204,8 @@ public class SOUploadService {
 		    	                	salesItem.setUnitPrice(unitPrice);
 		    	                }
 		    	                
-		    	                Float servicePrice = getFloatCellValue(itemRow.getCell(11), rowErrors, rowNum + 1, "Service Price");
+		                Float servicePrice = heading && isBlankCell(itemRow.getCell(11)) ? 0f
+		                    : getFloatCellValue(itemRow.getCell(11), rowErrors, rowNum + 1, "Service Price");
 		    	                if (servicePrice == null) {
 		    	                	servicePrice=(float) 0.0;
 		    	                	salesItem.setServicePrice(0);
@@ -187,7 +217,6 @@ public class SOUploadService {
 		    	                }
 		    	                Float amount=(qty*unitPrice)+(qty*servicePrice);
 		    	                salesItem.setAmount(amount);
-		    	                total=total+amount;
 		    	                
 		    	                // ✅ If errors found, add to error list and skip saving
 		    	                if (!rowErrors.isEmpty()) {
@@ -199,9 +228,21 @@ public class SOUploadService {
 		    	                // ✅ Save to Database
 		    	                salesItem.setSalesOrder(salesOrder);
 		    	                salesItems.add(salesItem);
+		                total=total+amount;
 		    	                
 		    	                rowNum++;
 	    	                }
+
+                        if (errors.isEmpty() && salesOrder.getId() != null && !salesOrder.getId().isEmpty()) {
+                            salesItems = newSalesItems(
+                                    salesItemRepository.findSalesItemsBySalesOrderId(salesOrder.getId()), salesItems);
+                            if (salesItems.isEmpty()) {
+                                errors.add("This sales order file is already uploaded. No new items were found.");
+                                return errors;
+                            }
+                            total = 0f;
+                            for (SalesItem item : salesItems) total += item.getAmount();
+                        }
 	    	                
 	    	                
 	    	                
@@ -239,10 +280,6 @@ public class SOUploadService {
 		    	                salesOrder.setGst(gst);
 	    	                	grandTotal=total+gst;
 		    	                salesOrder.setGrandTotal(Math.round(grandTotal * 100.0) / 100.0);
-	    	                	 for (SalesItem item : salesItems) {
-	    	                         item.setSalesOrder(salesOrder);
-	    	                         salesItemRepository.save(item);
-	    	                     }
 	    	                }
 	    	                
 	    	               
@@ -253,6 +290,7 @@ public class SOUploadService {
 	    	                		salesService.savesales(salesOrder, party.getId());
 	    	                	} else {
 	    	                		// Existing sales order - use update method which includes audit logging
+                                salesItemRepository.saveAll(salesItems);
 	    	                		salesOrderRepository.save(salesOrder);
 	    	                		// Log audit for the update
 	    	                		try {
@@ -274,7 +312,77 @@ public class SOUploadService {
 	    	            }
 	         return errors;
 	     }
+
+	  static List<SalesItem> newSalesItems(List<SalesItem> existing, List<SalesItem> uploaded) {
+	      Map<List<Object>, Integer> existingCounts = new HashMap<>();
+	      for (SalesItem item : existing) {
+	          List<Object> key = itemKey(item);
+	          existingCounts.put(key, existingCounts.getOrDefault(key, 0) + 1);
+	      }
+	      List<SalesItem> newItems = new ArrayList<>();
+	      for (SalesItem item : uploaded) {
+	          List<Object> key = itemKey(item);
+	          int count = existingCounts.getOrDefault(key, 0);
+	          if (count > 0) {
+	              existingCounts.put(key, count - 1);
+	          } else {
+	              newItems.add(item);
+	          }
+	      }
+	      return newItems;
+	  }
+
+	  private static List<Object> itemKey(SalesItem item) {
+	      return java.util.Arrays.asList(item.getSlNo(), item.getDescription(), item.getModelNo(),
+	              item.getHsnCode(), item.getServicehsnCode(), item.getUnit(),
+	              item.getQuantity(), item.getUnitPrice(), item.getServicePrice());
+	  }
 	  
+	  private boolean isBlankCell(Cell cell) {
+	      return cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK
+	              || (cell.getCellType() == Cell.CELL_TYPE_STRING && cell.getStringCellValue().trim().isEmpty());
+	  }
+
+	  private boolean isBlankItemRow(Row row) {
+	      if (row == null) return true;
+	      for (int column = 0; column <= 11; column++) {
+	          if (!isBlankCell(row.getCell(column))) return false;
+	      }
+	      return true;
+	  }
+
+	  private String normalizeUnitName(String name) {
+	      return name.replace('\u00a0', ' ').trim().replaceAll("\\s+", " ")
+	              .toLowerCase(Locale.ROOT);
+	  }
+
+	  private static final String[] TERM_HEADERS = {
+	          "payment", "jurisdiction", "freight", "delivery", "warranty", "other"
+	  };
+
+	  private int findPaymentColumn(Sheet sheet, Row dataRow) {
+	      for (int rowIndex = 0; rowIndex <= 1; rowIndex++) {
+	          Row header = sheet.getRow(rowIndex);
+	          if (header == null) continue;
+	          for (int start : new int[] {5, 6}) {
+	              boolean matches = true;
+	              for (int offset = 0; offset < TERM_HEADERS.length; offset++) {
+	                  if (!getStringCellValue(header.getCell(start + offset))
+	                          .toLowerCase(Locale.ROOT).contains(TERM_HEADERS[offset])) {
+	                      matches = false;
+	                      break;
+	                  }
+	              }
+	              if (matches) return start;
+	          }
+	      }
+	      boolean fFilled = !getStringCellValue(dataRow.getCell(5)).isEmpty();
+	      boolean lFilled = !getStringCellValue(dataRow.getCell(11)).isEmpty();
+	      if (lFilled && !fFilled) return 6;
+	      if (!lFilled) return 5;
+	      return -1;
+	  }
+
 	  private String getStringCellValue(Cell cell) {
 	        if (cell == null) return "";
 	        
@@ -287,7 +395,7 @@ public class SOUploadService {
 	                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	                    return dateFormat.format(cell.getDateCellValue());
 	                } else {
-	                    return String.valueOf((long) cell.getNumericCellValue()); // Convert to String if numeric
+	                    return BigDecimal.valueOf(cell.getNumericCellValue()).stripTrailingZeros().toPlainString();
 	                }
 	            case Cell.CELL_TYPE_BOOLEAN:
 	                return String.valueOf(cell.getBooleanCellValue());
@@ -345,6 +453,13 @@ public class SOUploadService {
 
 	    	    if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
 	    	        return (float) cell.getNumericCellValue(); // Convert to Float
+		    } else if (cell.getCellType() == Cell.CELL_TYPE_STRING) {
+		        try {
+		            return Float.parseFloat(cell.getStringCellValue().trim());
+		        } catch (NumberFormatException e) {
+		            errors.add("Row " + rowNum + ": " + columnName + " must be a numeric value.");
+		            return null;
+		        }
 	    	    } else {
 	    	        errors.add("Row " + rowNum + ": " + columnName + " must be a numeric value.");
 	    	        return null;

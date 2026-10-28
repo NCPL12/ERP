@@ -28,7 +28,7 @@
 		ISSUE_TYPE_LIST:parentApi+"/issue/team/",
 		ISSUE_TYPE_ADD:parentApi+"/issue/save",
         ITEM_LIST_BYID:parentApi+"/items/byId",
-        
+
         TIP_SAVE:parentApi+"/tipstricks/save",
 		TIPS_LIST:parentApi+"/tipstricks/issue/",
 
@@ -39,11 +39,11 @@
 		ACCESSORY_LIST_BYTEAM:parentApi+"/accessory/team/",
 		ACCESSORY_BYID:parentApi+"/accessory/byid/",
 		ACCESSORY_LIST:parentApi+"/accessory/list",
-		
+
 
 		UNASSIGNED_HARDWARE:parentApi+"/device/unassigned/",
 		UNASSIGNED_DEVICE_LIST:parentApi+"/device/unassigned/device/",
-		
+
 		LOCATION_LOOKUP:parentApi+"/location/random?number=",
 		DEVICE_MAKE:parentApi+"/device/make",
 		CHECK_DEV_MAKE:parentApi+"/device/makename/",
@@ -58,7 +58,7 @@
 		UNASSIGN_OWNER:parentApi+"/devices/unassign/owner",
 		ANALYZE_AUTO_ASSIGN:parentApi+"/device/list/autoassign/",
 		DO_AUTOASSIGN:parentApi+"/devices/analyse-assign/",
-		
+
 		ORGANIZATION_LIST:parentApi+"/organization/list/",
 		DIV_OWNER_SAVE:parentApi+"/divisionOwner/save/",
 		OWNER_LIST:parentApi+"/divisionOwner/list/",
@@ -72,28 +72,28 @@
 		DEVICES_ALL:parentApi+"/device/list",
 		DEVICE_EDIT_UPDATE:parentApi+"/device/update",
 		COMPANIES_LIST:parentApi+"/companies/list",
-		
+
 		DEVICE_HISTORY:parentApi+"/device/history/",
 		DEVICEOWNER_BY_ID:parentApi+"/owner/by/",
 		GET_DEV_MAKE :parentApi+"/make/",
 		GET_DEV_MODEL :parentApi+"/model/",
-		
+
 		INVENTORY_SAVE:parentApi+"/inventory/save",
 		INVENTORY_LIST_BY_ORGID:parentApi+"/inventory/list/",
-		
+
 		DEVIVE_BULKUPLOAD:parentApi+"/device/upload/",
 		COMPANIES_SAVE:parentApi+"/companies/save",
 		PARTNERS_SAVE:parentApi+"/partners/save",
 		PARTNERS_LIST:parentApi+"/partners/list",
-		
+
 	//device software
 		//device software->deployment dashaboard
-		 SEND_APPDEPLOYMENT_EMAILS:parentApi+"/app-deployment/email", 
+		 SEND_APPDEPLOYMENT_EMAILS:parentApi+"/app-deployment/email",
 		 SEND_APPDEPLOYMENT_SMS:parentApi+"/app-deployment/sms",
-		
+
 		 //device software->App configuration
 		 SAVE_APP_CONFIG_SETTINGS:parentApi+"/config-setting/save/",
-		
+
 		 //account setup
 		ACCSETUPCONTACTS_SAVE:parentApi+"/accountsetup/contacts/save",
 		ACCSETUPCONTACTS_LIST:parentApi+"/accountsetup/contacts/list/",
@@ -101,18 +101,18 @@
 		TASKASSIGN_SAVE:parentApi+"/taskassign/save",
 		PROCUREMENT_SAVE:parentApi+"/procurement/save",
 		PROC_STD_SAVE:parentApi+"/prostandard/save",
-		PROC_STD_LIST:parentApi+"/prostandard/list/",		
+		PROC_STD_LIST:parentApi+"/prostandard/list/",
 		GENERAL_SAVE:parentApi+"/general/save/",
 		GENERAL_LIST:parentApi+"/general/list/",
 		SHIPPING_ACCOUTNS_SAVE:parentApi+"/shpng-accounts/save/",
 		MDM_CONFIGURATION:parentApi+"/mdm/configure/",
-		EXCHANGE_ACCNTS:parentApi+"/exchng-acc/save/", 
+		EXCHANGE_ACCNTS:parentApi+"/exchng-acc/save/",
 		BILLING_INFO_SAVE:parentApi+"/bill-info/save/",
 		BILLING_INFO_LIST:parentApi+"/bill-info/list/",
 		DELETE_CONTACTS : parentApi+"/delete/contacts/",
 
-		
-		
+
+
 		CUSTOMERNOTES_SAVE:parentApi+"/customerNotes/save",
 		ACCOUNT_BULKUPLOAD:parentApi+"/account/upload",
 		DEVICE_OWNER_BULKUPLOAD:parentApi+"/devOwner/upload/",
@@ -121,13 +121,13 @@
 		TICKET_TYP_LIST:parentApi+"/ticket/type/all",
 		SAVEDEVICE_NOTES:parentApi+"/deviceNotes/save",
 		CHECK_DUPLICATE_LOGIN_CEMAIL:parentApi+"/checkduplicate/Logincontactemail/",
-		
+
 		//Ticketing URL's
 		GET_ALL_TICKET			:	parentApi + "/ticket/get",
 		CREATE_TICKET:parentApi+"/ticket/new",
 		DELETE_TICKET:parentApi+"/ticket/delete/",
 		TICKET_BY_DEVICEID:parentApi+"/get/ticketBy/",
-		
+
 		// Tickets Comments URL
 		GET_ALL_TICKET_BY_ID	:	parentApi + "/ticket/comments/get",
 		POST_COMMENT_OF_TICKET	:	parentApi + "/ticket/comments/post",
@@ -139,17 +139,17 @@
 		TICKET_PROCURE          :	parentApi + "/ticket/update/procurement",
 		TICKET_REASSIGN         :   parentApi +"/ticket/reassign",
 		TICKET_TRANSFER       :   parentApi +"/ticket/transfer",
-		
+
 		TICKET_PROCURE_TRANSIT  :   parentApi + "/ticket/update/procurement/transit/",
 		TICKET_PROCURE_CLOSE  :   parentApi + "/ticket/update/procurement/close/",
 		TICKET_SUBMIT_FEEDBACK  :   parentApi + "/ticket/feedbackSubmit",
-		
-		//Employee Left 
+
+		//Employee Left
 		TICKET_CLOSE_EMPLOYEE_LEFT  : parentApi + "/ticket/EmployeeLeft/close",
-		
+
 		TICKET_DELETE_REQUEST	:	parentApi + "/ticket/delete/emailrequest/",
 		TICKET_BY_TKTNO			:	parentApi + "/ticket/byticketno/",
-		
+
 		LOCATION_SAVE           :   parentApi + "/location/save",
 		LOCATION_LIST           :   parentApi + "/location/list/",
 		LOCATION_DEL			:    parentApi + "/shipinLocation/delete/",
@@ -180,7 +180,7 @@
 		GLCODE_VALIDATE : parentApi+"/glCode/validate/",
 		SUBACCOUNT_VALIDATE : parentApi+"/subAccount/validate/",
 		GET_CARRIER_BY_ID: parentApi+"/carrier/byid/",
-		
+
 		//invoice analysis
 		SAVEINVOICE             : parentApi + "/invoice/save/" ,
 		DELETE_INVOICE          : parentApi + "/invoice/delete/" ,
@@ -391,10 +391,10 @@
 		EMPLOYEE_MANAGEMENT_SAVE:parentApi+"/employees",
 		DELETE_COMPANY_ASSET:contextRoot+"companyAssets/",
 
-		
 
-		
-		
+
+
+
 	}
 
 	// Method for Get absolute Url

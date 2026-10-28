@@ -20,7 +20,8 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	public Optional<PurchaseOrder> findPurchaseOrderByNoAndVersion(String poNumber, String version);
 	@Query(" from PurchaseOrder where party_id=?1")
 	public List<PurchaseOrder> getPurchaseListByPartyId(String partyId);
-	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2")
+	// archive=0 excludes deleted/archived POs so they are not sent to Tally or listed by date
+	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2 and archive=0")
 	public List<PurchaseOrder> findPurchaseOrderListByDate(Timestamp d1, Timestamp d2);
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=0 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllPO();
@@ -31,9 +32,12 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	public List<Map<String, Object>> findAllPoNumbersAndDates();
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=1 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllArchivedPOList();
-	@Query(value = "SELECT * FROM  tbl_purchase_order WHERE po_number NOT IN (SELECT po_number from tbl_grn) and archive=0",nativeQuery = true)
+	/*@Query(value = "SELECT * FROM  tbl_purchase_order WHERE po_number NOT IN (SELECT po_number from tbl_grn) and archive=0",nativeQuery = true)
+	public List<PurchaseOrder> getPurchaseListWhereGrnNotDone();*/
+	// NOT EXISTS instead of NOT IN: lets MySQL stop at the first matching grn per PO (needs an index on tbl_grn.po_number)
+	@Query(value = "SELECT po.* FROM tbl_purchase_order po WHERE po.archive=0 AND NOT EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number)",nativeQuery = true)
 	public List<PurchaseOrder> getPurchaseListWhereGrnNotDone();
-	@Query(value="SELECT distinct po.*, \r\n" + 
+	/*@Query(value="SELECT distinct po.*, \r\n" +
 			"    ( SELECT sum(pi.quantity)\r\n" + 
 			"      FROM tbl_purchase_items pi \r\n" + 
 			"      WHERE po.po_number=pi.po_number and po.archive=0) poQty,\r\n" + 
@@ -43,7 +47,33 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 			"FROM tbl_purchase_order po \r\n" + 
 			"group by po.po_number\r\n" + 
 			"having poQty>grnQty;",nativeQuery = true)
+	public List<PurchaseOrder> getpendingPoList();*/
+	// Same result as before, but the PO qty and GRN qty are summed once per PO in two grouped
+	// derived tables and joined, instead of two correlated subqueries run for every PO row.
+	@Query(value="SELECT po.* " +
+			"FROM tbl_purchase_order po " +
+			"INNER JOIN (SELECT pi.po_number, SUM(pi.quantity) AS poQty " +
+			"            FROM tbl_purchase_items pi " +
+			"            GROUP BY pi.po_number) pq ON pq.po_number = po.po_number " +
+			"INNER JOIN (SELECT g.po_number, SUM(gi.received_quantity) AS grnQty " +
+			"            FROM tbl_grn g INNER JOIN tbl_grn_items gi ON g.grn_id = gi.grn_id " +
+			"            GROUP BY g.po_number) gq ON gq.po_number = po.po_number " +
+			"WHERE po.archive = 0 AND pq.poQty > gq.grnQty",nativeQuery = true)
 	public List<PurchaseOrder> getpendingPoList();
+	// po_number-only variants of the two queries above, so the dashboard can load the matching
+	// POs afterwards through findByPoNumberIn (party join-fetched) instead of po.* + one party select per row
+	@Query(value = "SELECT po.po_number FROM tbl_purchase_order po WHERE po.archive=0 AND NOT EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number) ORDER BY po.created DESC",nativeQuery = true)
+	public List<String> getPoNumbersWhereGrnNotDone();
+	@Query(value="SELECT po.po_number " +
+			"FROM tbl_purchase_order po " +
+			"INNER JOIN (SELECT pi.po_number, SUM(pi.quantity) AS poQty " +
+			"            FROM tbl_purchase_items pi " +
+			"            GROUP BY pi.po_number) pq ON pq.po_number = po.po_number " +
+			"INNER JOIN (SELECT g.po_number, SUM(gi.received_quantity) AS grnQty " +
+			"            FROM tbl_grn g INNER JOIN tbl_grn_items gi ON g.grn_id = gi.grn_id " +
+			"            GROUP BY g.po_number) gq ON gq.po_number = po.po_number " +
+			"WHERE po.archive = 0 AND pq.poQty > gq.grnQty ORDER BY po.created DESC",nativeQuery = true)
+	public List<String> getPendingPoNumbers();
 	
 	@Query("SELECT DISTINCT po FROM PurchaseOrder po LEFT JOIN FETCH po.party WHERE po.poNumber IN :poNumbers")
 	List<PurchaseOrder> findByPoNumberIn(@Param("poNumbers") List<String> poNumbers);

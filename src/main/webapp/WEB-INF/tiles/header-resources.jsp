@@ -50,6 +50,31 @@
 <%@ include file="urls_js.jsp"%>
 <%@ include file="utility_js.jsp"%>
 
+<script>
+// Remove the service worker left by the retired offline feature.
+if ('serviceWorker' in navigator) {
+  var legacyScope = new URL('${pageContext.request.contextPath}/', window.location.href).href;
+  var legacyScript = new URL('${pageContext.request.contextPath}/sw.js', window.location.href).href;
+  navigator.serviceWorker.getRegistration(legacyScope).then(function (registration) {
+    var worker = registration && (registration.active || registration.waiting || registration.installing);
+    if (!worker || registration.scope !== legacyScope || worker.scriptURL !== legacyScript) {
+      return;
+    }
+    return registration.unregister().then(function (removed) {
+      if (removed && 'caches' in window) {
+        return caches.keys().then(function (names) {
+          return Promise.all(names.filter(function (name) {
+            return name.indexOf('ncpl-erp-offline-') === 0;
+          }).map(function (name) {
+            return caches.delete(name);
+          }));
+        });
+      }
+    });
+  }).catch(function () {});
+}
+</script>
+
 <!-- js -->
 
 

@@ -2,10 +2,41 @@ var userTable;
 var selectedUserId = null;
 var employeeOptionsCache = [];
 
+function escapeHtml(text) {
+	if (text === null || text === undefined) {
+		return "";
+	}
+	var div = document.createElement("div");
+	div.textContent = String(text);
+	return div.innerHTML;
+}
+
 $(document).ready(function () {
 	loadUsers();
 	loadEmployeesForNameDropdown();
+	loadRolesForDropdown();
 });
+
+/** Role dropdown in Add/Edit User - sourced from the same roles Role Management manages,
+ *  instead of a hardcoded list that drifts from whatever roles actually exist. */
+function loadRolesForDropdown() {
+	$.ajax({
+		url: api.ROLE_API,
+		type: "GET",
+		success: function (roles) {
+			var options = '<option value="">Select Role</option>';
+			$.each(roles, function (i, role) {
+				var rn = role && role.name ? String(role.name) : '';
+				if (rn === '') return;
+				options += '<option value="' + escapeHtml(rn) + '">' + escapeHtml(rn) + '</option>';
+			});
+			$("#editRole").html(options);
+		},
+		error: function (xhr) {
+			console.log("Unable to load roles for dropdown.", xhr);
+		}
+	});
+}
 
 /** Employee dropdown for the Name field - picking one auto-fills Mobile from the Employee table. */
 function loadEmployeesForNameDropdown() {

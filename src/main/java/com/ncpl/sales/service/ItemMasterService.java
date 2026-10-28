@@ -81,6 +81,17 @@ public class ItemMasterService {
 	PurchaseItemService purchaseItemService;
 										 
 
+    public List<Map<String,Object>> getPoLookupItems() {
+        List<Map<String,Object>> result = new ArrayList<>();
+        for (Map<String,Object> source : itemMasterRepo.findPoLookupItems()) {
+            Map<String,Object> row = new HashMap<>(source);
+            Map<String,Object> unit = new HashMap<>();
+            unit.put("name", row.remove("unitName")); unit.put("id", row.remove("unitId"));
+            row.put("item_units", unit); result.add(row);
+        }
+        return result;
+    }
+
 	public List<ItemMaster> getItemList() {
 		List<ItemMaster> itemList = itemMasterRepo.findAll();
 		//trimSpacesFromModelNo();
@@ -366,6 +377,7 @@ public class ItemMasterService {
 			Optional<ItemMaster> persistedItem = getItemById(itemMaster.getId());
 			Date createdDate = persistedItem.get().getCreated();
 			itemMaster.setCreated(createdDate);
+			itemMaster.setCreatedBy(persistedItem.get().getCreatedBy());
 			ItemMaster updatedItem= itemMasterRepo.save(itemMaster);
 			return updatedItem;
 		}	
@@ -515,6 +527,7 @@ public class ItemMasterService {
 			Optional<Supplier> persistedStock = getSupplierById(supplierId);
 			Date createdDate = persistedStock.get().getCreated();
 			supplier.setCreated(createdDate);
+			supplier.setCreatedBy(persistedStock.get().getCreatedBy());
 			supplier.setItemMaster(itemMasterObject.get());
 			Supplier updatedSupplier=supplierRepo.save(supplier);
 			return updatedSupplier;

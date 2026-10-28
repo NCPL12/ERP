@@ -204,15 +204,6 @@ var pageContext = '${pageContext.request.contextPath}';
 								<label for="editRole">Role <span class="text-danger">*</span></label>
 								<select id="editRole" name="role" class="form-control" required>
 									<option value="">Select Role</option>
-									<option value="ADMIN">ADMIN</option>
-									<option value="SUPER ADMIN">SUPER ADMIN</option>
-									<option value="NORMAL USER">NORMAL USER</option>
-									<option value="PURCHASE">PURCHASE</option>
-									<option value="STORE">STORE</option>
-									<option value="STORE USER">STORE USER</option>
-									<option value="ITEMMASTER">ITEMMASTER</option>
-									<option value="PURCHASE STORE">PURCHASE STORE</option>
-									<option value="SALES">SALES</option>
 								</select>
 							</div>
 						</div>

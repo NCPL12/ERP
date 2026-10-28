@@ -1,159 +1,48 @@
-# ERP — Change Log
+# Neptune ERP
 
-This file lists what was changed recently, in plain words.
+[ERP wiki](wiki/Home.md) · [Getting started](wiki/Getting-Started.md) · [User workflows](wiki/User-Workflows.md) · [Architecture](wiki/Architecture.md)
 
----
+[Draft release notes](RELEASE_NOTES.md)
 
-## @D0014 — Returnable Items page loads faster
+This README lists the features present on `main`, the committed differences on `development`, and work currently saved only in this local checkout. It compares `main` at `5858317` with `development` at `f94d723` (27 October 2026). Update the comparison when either branch moves.
 
-**Issue:** This page was loading every single item from every order all
-at once, so it got slower as more data piled up.
+## Features on `main`
 
-**What changed:** Implemented lazy loading to load only the items required for the current page and fetch additional results as the user scrolls or searches.
+- **Core ERP workflows:** sales orders, purchase orders, delivery challans, goods receipt notes (GRNs), invoices, returnables, stock, reports, TDS, and company assets.
+- **Faster lists:** paginated Returnable Items and Party List pages load records as needed rather than loading the whole list at once.
+- **Access control:** roles have module-level view, edit, and delete permissions. Role and User Management pages support administration, disabled users lose access during an active session, and dashboard tile visibility follows the role.
+- **Purchase order audit tracking:** purchase order and line-item changes are recorded by the audit service. An audit JSP exists, but the advertised `/audit/purchase-order` page route is not mapped in this snapshot.
+- **Asset assignments:** company assets can record the employee holding an asset, returns, assignment history, and configurable asset types.
+- **Returnables by delivery challan:** `/returnable/{dcId}` loads the selected challan's items.
 
-**Files changed:**
-- `ReturnableItemsRepo.java`
-- `ReturnableService.java`
-- `SalesController.java`
-- `returnableItemList.js`
-- `returnableItemsList.jsp`
+The previous `main` README also described direct GRN editing at `/grn/{grnId}` and purchase-order-only item loading. Those changes are **not in the `main` source at this snapshot**: `/api/grn/view` redirects to `/new_grn`, and the edit page calls `getAllPurchaseItems()`. Its purchase-order audit page URL is likewise not wired to a controller. The table below describes where the GRN implementations stand.
 
----
+## Committed `development` changes compared with `main`
 
-## @D0015 — Party List page loads faster
+| Area | Difference in `development` |
+| --- | --- |
+| Returnables | Adds creation and detail pages, a separate Returnable DC list, and expanded returnable permissions. |
+| Dashboard | Adds cached counts and lists, background refresh, and faster dashboard data loading. |
+| GRN and reports | Limits GRN edit-page purchase items to the selected PO, adds a `/grn/{grnId}` route that still redirects to `/new_grn`, and batches monthly stock movement and other report lookups. |
+| Delivery challans | Updates DC item loading and dashboard behavior, including query and display improvements. |
+| Purchase orders and Tally | Adds PO-to-Tally export, automatic sync support, validation, configurable connection settings, and related tests. See [PO-to-Tally deployment](docs/README-PO-TALLY.md). |
+| Access and navigation | Extends permission checks and menu behavior for the new pages and workflows. |
+| Other fixes | Includes purchase descriptions, timestamps, billing addresses, TDS processing, and single-click navigation fixes. |
+| Build checks | Adds Maven CI and Java code-quality workflows. Generated `target/` output is removed from version control, which accounts for most of the raw file diff. |
 
-**Issue:** It loaded every party in the
-system plus ran an extra database check for each one, every time you
-opened the page.
+`main` and `development` have diverged. At these snapshots, the commits unique to `main` do not introduce additional source-file changes; the feature differences above are on `development`. For implementation details, see [development feature consolidation](docs/feature-consolidation.md).
 
-**What changed:** Implemented lazy loading to load only the items required for the current page and fetch additional results as the user scrolls or searches.
+## Local changes not yet committed to either branch
 
-**Files changed:**
-- `PartyRepo.java`
-- `PartyService.java`
-- `SalesController.java`
-- `partyList.js`
-- `partyList.jsp`
+The current working tree also contains these changes. They are **not** part of the committed `development` snapshot above:
 
----
+- DC pages open directly by DC ID, and the DC dashboard links to the selected challan's returnables.
+- Existing GRNs render directly at `/grn/{grnId}`; old `/api/grn/view` links still redirect there. The page continues to load only the selected PO's items.
+- A JavaScript syntax workflow checks application scripts.
+- The shared page header unregisters the retired `/sw.js` service worker from browsers that still have it.
+- HTTP 5xx responses trigger rate-limited, asynchronous email alerts in the `dev` and `prod` profiles. See [error alerts](docs/error-alerts.md).
+- `application-dev.properties` contains local environment edits; review them separately before deployment.
 
-## @D0010 — Item Master – Role Access
+## Recheck the comparison
 
-**Issue:** Some normal users are unable to add items because role
-validation is hardcoded. If your role said you should have
-access but your name wasn't on that list, you were still blocked.
-
-**What changed:** Removed that hardcoded list. Access is now based only
-on your role (ITEMMASTER or STORE) as set in the database — change the
-role in the DB and access changes automatically, no code change needed.
-
-**Files changed:**
-- `itemMaster.js`
-
----
-
-## @D0017 — Purchase Order audit log
-
-**Issue:** Added an audit log for Purchase Orders to track who created, updated,
-a PO and when the changes happened. It also tracks when PO line items are added,
-updated, or removed.
-
-**What changed:** Added a matching audit log for Purchase Orders
-(`tbl_purchase_order_audit`), and whenever a line item is added, changed, or removed.
-
-
-**Files changed:**
-- `PurchaseOrderAudit.java` (new)
-- `PurchaseOrderAuditRepo.java` (new)
-- `PurchaseOrderAuditService.java` (new)
-- `PurchaseOrderService.java`
-- `PurchaseController.java`
-- `purchase-order-audit.jsp` (new)
-
-**Where to view it:** `/audit/purchase-order`
-
----
-
-## @D0045 — Role Based Access Control
-
-**Issue:** Access was only ever checked by a handful of hardcoded role names
-(`ADMIN`, `SALES`, `PURCHASE`, ...) spread across the security config. There
-was no way to give one role view-only on a module and edit on another
-without a code change and a redeploy, and disabling a user didn't kick them
-out of a session they already had open.
-
-**What changed:** Added a `Role` → `RolePermission` model (per role, per
-module: view/edit/delete) and a Role Management page to edit that grid from
-the UI. Login now builds each user's authorities from their role's
-permissions instead of one fixed role name, and every request re-derives
-those authorities from the DB (`UserStatusFilter`) so a permission change or
-a disabled account takes effect immediately, not just on next login. Also
-added a User Management page for creating/editing/deleting users and
-resetting passwords without touching the database directly, and made which
-dashboard tiles a role sees configurable (`Role.dashboardTiles`) instead of
-everyone seeing all 7.
-
-**Files changed:**
-- `Role.java`, `RolePermission.java`, `RolePermissionDto.java`, `Module.java`, `DashboardTile.java` (new)
-- `RoleRepo.java`, `RolePermissionRepo.java` (new)
-- `RolePermissionSeeder.java` (new — seeds default grid for existing roles)
-- `RoleController.java`, `UserManagementController.java`, `AccessDeniedController.java` (new)
-- `UserStatusFilter.java` (new)
-- `SecurityConfig.java`, `LoginSuccessHandler.java`, `UserService.java`, `UserRepo.java`, `UserController.java`
-- `roleManagement.js`, `userManagement.js` (new)
-- `roleManagement.jsp`, `userManagement.jsp`, `access-denied.jsp` (new)
-
-**Where to view it:** `/role-management`, `/user-management`
-
----
-
-## @D0043 — GRN routing fix
-
-**Issue:** `/new_grn` was used for both creating a new GRN and opening an
-existing one for editing (via a flash attribute), so the URL never actually
-pointed at the GRN you were looking at.
-
-**What changed:** Editing a GRN now goes to `/grn/{grnId}`, a proper
-per-record URL, while `/new_grn` stays create-only.
-
-**Files changed:**
-- `PurchaseController.java`
-- `SecurityConfig.java`
-
----
-
-## @D0044 — Edit GRN loads faster
-
-**Issue:** Opening a GRN for editing loaded every purchase item in the
-database to repopulate the form, regardless of which PO the GRN was for.
-
-**What changed:** Only the purchase items belonging to that GRN's PO are
-fetched now.
-
-**Files changed:**
-- `PurchaseController.java`
-- `PurchaseItemService.java`
-
----
-
-## @D0032 — Asset tracking now tracks who has each asset
-
-**Issue:** Company assets (laptops etc.) had no record of which employee
-they were currently issued to, or history of past assignments/returns.
-
-**What changed:** Added asset assignment tracking (issue to an employee,
-record location/issued-by, mark returned) with per-asset history, plus an
-asset details page and configurable asset types.
-
-**Files changed:**
-- `LaptopAssignment.java`, `AssetType.java` (new)
-- `LaptopAssignmentRepo.java`, `AssetTypeRepo.java` (new)
-- `AssetTypeService.java` (new)
-- `CompanyAssets.java`, `CompanyAssetsRepo.java`, `CompanyAssetService.java`
-- `PurchaseController.java`
-- `companyAsset.js`, `companyAssets.jsp`, `companyAssetDetails.jsp` (new)
-
-**Where to view it:** `/companyAssets`, `/companyAssets/view/{id}`
-
----
-
+Run `git diff --name-status main development -- src/main .github docs` to inspect committed source and documentation changes. Run `git status --short` to see local work that the branch comparison does not include.

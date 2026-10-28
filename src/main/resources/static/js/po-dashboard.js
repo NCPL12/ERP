@@ -21,6 +21,12 @@
 			} );
 		var purchaseListColumns = [ {
 				"mData" : "poNumber",
+				render : function(data, type, row) {
+					if (type === 'display') {
+						return "<a href='#' class='poLink'>" + data + "</a>";
+					}
+					return data;
+				}
 			}, {
 				"mData" : "party",
 
@@ -65,17 +71,20 @@
 				render : function(datam, type, row) {
 					var date=datam.split("-");
 					var formattedDate = date[1]+"-"+date[0]+"-"+date[2];
-					var newdate = moment(new Date(formattedDate)).format("YYYY-MM-DD HH:mm:ss") ;
+					var newdate = moment(new Date(formattedDate)).format("DD-MM-YYYY HH:mm:ss") ;
 						return  newdate; 
 				}
 			},
 			{
-				"mData" : "created",
-				
-			},{
-				"mData" : "version",
-				"visible": false,
-			},
+	"mData" : "created",
+	render : function(data, type, row) {
+		if (!data) return "";
+		return moment(data, "YYYY-MM-DD").format("DD/MM/YYYY");
+	}
+},{
+	"mData" : "version",
+	"visible": false,
+},
 			
 			
 			{
@@ -126,14 +135,14 @@
 			});
 		var purchaseOrderId;
 		var  version;
-		//On double click of row navigate to edit page
-	$('#purchaseList tbody').on('dblclick', 'tr', function () {
+	function openPurchaseOrderRow(row) {
 		if (!canEditPurchase) {
 			return;
 		}
-		var data1 = table.row(this).data();
+		var data1 = table.row(row).data();
+		if (!data1 || !data1.poNumber) return;
 		var poNumber = data1.poNumber;
-			purchaseOrderId = data1.poNumber;
+		purchaseOrderId = data1.poNumber;
 		getPurchasecopy(poNumber,purchaseOrderId);
 		//getPurchasecopyItems(poNumber);
 		// getVendorAddressForPreview(poNumber);
@@ -144,7 +153,15 @@
 		var version = data1.version;
 		$('#poNumber').val(purchaseOrderId);
 		window.location = pageContext+"/purchase/view?poNumber="+purchaseOrderId+"&&version="+version;*/
-		});
+	}
+	$('#purchaseList tbody').on('click', 'a.poLink', function (e) {
+		e.preventDefault();
+		openPurchaseOrderRow($(this).closest('tr'));
+	});
+	$('#purchaseList tbody').on('dblclick', 'tr', function (e) {
+		if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
+		openPurchaseOrderRow(this);
+	});
 	
 	if(role=="STORE USER"){
 		$(".addPO").on("click", function (event) {

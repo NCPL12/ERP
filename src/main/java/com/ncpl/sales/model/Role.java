@@ -27,12 +27,23 @@ public class Role extends TimeStampEntity {
 	@Column(name = "dashboard_tiles", length = 255)
 	private String dashboardTiles;
 
+	@Column(name = "report_items", length = 1000)
+	private String reportItems;
+
 	public String getDashboardTiles() {
 		return dashboardTiles;
 	}
 
 	public void setDashboardTiles(String dashboardTiles) {
 		this.dashboardTiles = dashboardTiles;
+	}
+
+	public String getReportItems() {
+		return reportItems;
+	}
+
+	public void setReportItems(String reportItems) {
+		this.reportItems = reportItems;
 	}
 
 	public Long getRoleId() {

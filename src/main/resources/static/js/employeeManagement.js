@@ -79,6 +79,15 @@ function editEmployee(id) {
 }
 
 function saveEmployee() {
+	// The Save button is type="button", so the browser never runs the form's
+	// required/pattern checks on its own - ask for them explicitly so Emp ID,
+	// Name and Contact No get the standard inline "Please fill out..." tooltip.
+	var form = $("#editEmployeeForm")[0];
+	if (!form.checkValidity()) {
+		form.reportValidity();
+		return;
+	}
+
 	var empId = $("#editEmpId").val().trim();
 	var name = $("#editEmpName").val().trim();
 	var contactNo = $("#editEmpContactNo").val().trim();
@@ -87,8 +96,16 @@ function saveEmployee() {
 		alert("Emp ID is required.");
 		return;
 	}
+	if (empId.length < 2) {
+		alert("Emp ID must be at least 2 characters long.");
+		return;
+	}
 	if (!name) {
 		alert("Name is required.");
+		return;
+	}
+	if (!isValidName(name)) {
+		alert("Name must be at least 3 characters long and contain only letters and spaces.");
 		return;
 	}
 	if (contactNo && !/^[0-9]{10}$/.test(contactNo)) {

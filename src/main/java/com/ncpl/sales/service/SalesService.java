@@ -53,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ncpl.common.Constants;
@@ -186,6 +187,10 @@ public class SalesService {
 	public List<SalesOrder> getSalesListByParty(String partyId) {
 		List<SalesOrder> salesOrderList = salesrepo.getSalesListByParty(partyId);
 		return salesOrderList;
+	}
+
+	public List<Object[]> getDcClientPoOptions() {
+		return salesrepo.findDcClientPoOptions();
 	}
 
 	// Saving SalesOrder to a repository
@@ -1091,18 +1096,12 @@ public class SalesService {
 	}*/
 
 	public List<SalesOrder> getPendingSalesList() {
-		long startTime = System.currentTimeMillis();
-		List<SalesOrder> pendingSoList = new ArrayList();
-		List<SalesOrder> soWhereDcNotDone = salesrepo.getSalesListWhereDCNotDone();
-		pendingSoList.addAll(soWhereDcNotDone);
-		List<SalesOrder> pendingList = salesrepo.getpendingSoList();
-		pendingSoList.addAll(pendingList);
-		long stopTime = System.currentTimeMillis();
-	    long elapsedTime = stopTime - startTime;
-	    System.out.println(elapsedTime);
-	    System.out.println("time to loop each item of Sales list"+startTime+"&"+ stopTime);
-		return pendingSoList;
-	}
+    long start = System.currentTimeMillis();
+    List<SalesOrder> pendingSoList = salesrepo.getPendingSoListOptimized();
+    log.info("getPendingSalesList: {} orders in {} ms",
+             pendingSoList.size(), System.currentTimeMillis() - start);
+    return pendingSoList;
+}
 	
 	public boolean checkForDcExists(String salesItemId) {
 		boolean dcExists = false;
@@ -1137,6 +1136,8 @@ public class SalesService {
 		return d < 0 ? ("-" + s) : s;
 	}
 
+	// ===================== OLD VERSION (commented out - slow, kept for reference) =====================
+	/*
 	public Map getStockByRegionBetweenDates(Timestamp sqlFromDate, Timestamp sqlToDate, String region) {
 		// TODO Auto-generated method stub
 		List<SalesOrder> salesOrderList = salesrepo.findByRegion(region, sqlFromDate, sqlToDate);
@@ -1217,6 +1218,117 @@ public class SalesService {
 		}
 		return stockMap;
 	}
+	*/
+	// ===================== END OLD VERSION =====================
+
+	// ===================== NEW VERSION (same results, far fewer DB calls, no console prints) =====================
+	public Map getStockByRegionBetweenDates(Timestamp sqlFromDate, Timestamp sqlToDate, String region) {
+		long t0 = System.currentTimeMillis();
+		List<SalesOrder> salesOrderList = salesrepo.findByRegion(region, sqlFromDate, sqlToDate);
+		log.info("Region report: findByRegion returned {} orders in {} ms",
+				salesOrderList.size(), System.currentTimeMillis() - t0);
+
+		Map<String, Map> stockMap = new HashMap<String, Map>();
+		// Caches so repeated lookups of the same thing hit the database only once
+		Map<String, ItemMaster> itemCache = new HashMap<>();
+		Map<String, SalesOrderDesign> designCache = new HashMap<>();
+		Map<String, DesignItems> designItemCache = new HashMap<>();
+		int queryRounds = 0;
+
+		String itemId = "";
+		String itemName = "";
+		float currQty = 0;
+		float grnQty = 0;
+		float dcQty = 0;
+		for (SalesOrder salesOrder : salesOrderList) {
+			List<SalesItem> soItemList = salesOrder.getItems();
+
+			for (SalesItem salesItem : soItemList) {
+				currQty = 0;
+				grnQty = 0;
+				dcQty = 0;
+				String salesItemId = salesItem.getId();
+				List<DeliveryChallanItems> dcItemList = dcItemRepo.findByBetweenDateAndSoItem(sqlFromDate, sqlToDate,
+						salesItemId);
+
+				List<PurchaseItem> poItemList = poItemRepo.findBySalesItemId(salesItemId);
+				queryRounds += 2;
+				for (PurchaseItem poItem : poItemList) {
+					String poModelNo = poItem.getModelNo();
+					if (poModelNo != null && !poModelNo.equalsIgnoreCase("")
+							&& poModelNo.isEmpty() == false) {
+						ItemMaster item = itemCache.get(poModelNo);
+						if (item == null) {
+							item = itemService.getItemById(poModelNo).get();
+							itemCache.put(poModelNo, item);
+							queryRounds++;
+						}
+						itemId = item.getId();
+						itemName = item.getItemName();
+					}
+
+					List<GrnItems> grnItems = grnItemRepo
+							.findByPoItemId(Integer.toString(poItem.getPurchase_item_id()));
+					queryRounds++;
+					for (GrnItems grnItem : grnItems) {
+						grnQty = grnQty + grnItem.getReceivedQuantity();
+					}
+				} // Purchase Item list loop..
+
+				for (DeliveryChallanItems dcItem : dcItemList) {
+					String descKey = dcItem.getDescription();
+					SalesOrderDesign designObj;
+					if (designCache.containsKey(descKey)) {
+						designObj = designCache.get(descKey);
+					} else {
+						designObj = soDesignService.findSalesOrderDesignObjBysalesItemId(descKey);
+						designCache.put(descKey, designObj);
+						queryRounds++;
+					}
+
+					if (designObj != null) {
+						String diKey = itemId + "|" + designObj.getId();
+						DesignItems designItemsList;
+						if (designItemCache.containsKey(diKey)) {
+							designItemsList = designItemCache.get(diKey);
+						} else {
+							designItemsList = designItemRepo.findDesignItemListByItemIdAndDesignId(itemId,
+									designObj.getId()).stream().findFirst().orElse(null);
+							designItemCache.put(diKey, designItemsList);
+							queryRounds++;
+						}
+
+						if (designItemsList != null) {
+							if (itemId.equalsIgnoreCase(designItemsList.getItemId())
+									&& designItemsList.getDeliveredQty() > 0) {
+								dcQty = dcQty + designItemsList.getDeliveredQty();
+							} else {
+								if (dcItem.getTodaysQty() > dcItem.getDeliveredQuantity()) {
+									dcQty = dcQty + dcItem.getTodaysQty();
+								} else {
+									dcQty = dcQty + dcItem.getDeliveredQuantity();
+								}
+
+							}
+
+						}// design item not equal to null..
+					}// Design object not equal to null
+				} // For each of delivery items list..
+
+			}
+			currQty = grnQty - dcQty;
+			Map<String, Object> itemMap = new HashMap();
+			itemMap.put("itemId", itemName + "/" + itemId);
+			itemMap.put("qty", currQty);
+			if (currQty > 0 && (itemId != null || itemId != "")) {
+				stockMap.put(itemName + "/" + itemId, itemMap);
+			}
+		}
+		log.info("Region report: total {} ms, ~{} DB calls, {} result rows",
+				System.currentTimeMillis() - t0, queryRounds, stockMap.size());
+		return stockMap;
+	}
+	// ===================== END NEW VERSION =====================
 
 	public List<SalesItem> getSalesItemListWithoutDesign(String salesOrderId) {
 		Optional<SalesOrder> salesObj = getSalesOrderById(salesOrderId);
@@ -1236,13 +1348,19 @@ public class SalesService {
 	}
 
 	public List<SalesOrder> getSalesOrderByItemId(String itemId) {
+		long tSlStart = System.currentTimeMillis();
+		long tSlStep = tSlStart;
 		List<DesignItems> designItemList = soDesignService.getDesignItemListByItemId(itemId);
+		log.info("Sales list by item: design items for item {} = {} rows in {} ms", itemId, designItemList.size(), System.currentTimeMillis() - tSlStep);
+		tSlStep = System.currentTimeMillis();
 		ArrayList<SalesOrderDesign> designList = new ArrayList<SalesOrderDesign>();
 		for (DesignItems designItem : designItemList) {
 			long designId = designItem.getSalesOrderDesign().getId();
 			Optional<SalesOrderDesign> soDesign = soDesignService.findSalesOrderDesignById(designId);
 			designList.add(soDesign.get());
 		}
+		log.info("Sales list by item: loaded {} designs (one query each) in {} ms", designList.size(), System.currentTimeMillis() - tSlStep);
+		tSlStep = System.currentTimeMillis();
 		Set set = new HashSet();
 		for (SalesOrderDesign salesOrderDesign : designList) {
 			String salesItemId = salesOrderDesign.getSalesItemId();
@@ -1252,7 +1370,9 @@ public class SalesService {
 			Optional<SalesOrder> salesOrder =salesrepo.findById(soNumber);
 			set.add(salesOrder.get());
 		}
+		log.info("Sales list by item: resolved sales items + sales orders in {} ms ({} distinct sales orders)", System.currentTimeMillis() - tSlStep, set.size());
 		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
+		log.info("Sales list by item: TOTAL service time {} ms", System.currentTimeMillis() - tSlStart);
 		return soList;
 	}
 	
@@ -1346,7 +1466,7 @@ public class SalesService {
 	
 	public List<SalesOrder> getAllSalesOrderQithDesignAndPoNotDoneForDashboard(){
 		List<SalesOrder> salesOrderList = salesrepo.getSalesOrderWithDesign();
-		System.out.println("so with design and PO not done : "+salesOrderList.size());
+		log.debug("so with design and PO not done : {}", salesOrderList.size());
 		return salesOrderList;
 	}
 	
@@ -1424,6 +1544,7 @@ public class SalesService {
 		return salesItemList;
 	}
 
+	@Transactional(readOnly = true)
 	public List<SalesOrder> getPendingSalesListPartial() {
 		long startTime = System.currentTimeMillis();
 		List<SalesOrder> pendingSoList = new ArrayList();
