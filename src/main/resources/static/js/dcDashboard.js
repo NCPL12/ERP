@@ -23,7 +23,7 @@ $(document).ready(function(){
 	    dcTable= $('#dcList').DataTable({
 	    	orderCellsTop: true,
 		    fixedHeader: true,
-		    processing: true,
+		    processing: false,
 		    serverSide: true,
 		    pageLength: 100,
 		    lengthMenu: [[50, 100, 250, 500, 1000], [50, 100, 250, 500, 1000]],
@@ -86,7 +86,7 @@ $(document).ready(function(){
 	    			}
 	    		});
 	    	},
-	    	"columns": [ {
+            "columns": [ {
 			"data" : "dcId",
 			"defaultContent":"",
 			render : function(data, type, row) {
@@ -177,6 +177,13 @@ $(document).ready(function(){
 			},
 
 			{
+				"mData": "dcId",
+				render: function(datam, type, row) {
+					var url = pageContext + "/returnable/" + encodeURIComponent(row.dcId);
+					return "<a class='btn btn-default btn-flat btn-xs text-info' href='" + url + "'>Returnable</a>";
+				}
+			},
+			{
 				"mData" : "archive"	,
 				"visible": archivedPage,
 				render : function(datam, type, row) {
@@ -202,7 +209,7 @@ $(document).ready(function(){
 	    function openDcRow(row) {
 	        var data = dcTable.row(row).data();
 	        if (!data || !data.dcId) return;
-	        window.location = pageContext+"/api/dc/view?dcId="+data.dcId;
+	        window.location = pageContext + "/dc/" + encodeURIComponent(data.dcId) + "/";
 	    }
 	    $('#dcList tbody').on('click', 'a.dcLink', function (e) {
 	        e.preventDefault();
@@ -307,9 +314,9 @@ $(document).on("click",".dcView",function(){
 
 	    	});
 
-				$("#dcViewBtn").on("click",function(){
-				 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
-				})
+				$("#dcViewBtn").off("click.dcView").on("click.dcView", function(){
+					window.location = pageContext + "/dc/" + encodeURIComponent(dcId) + "/";
+				});
 	    },
 		complete:function(resp){
 			if(resp.status==500){

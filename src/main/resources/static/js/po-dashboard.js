@@ -1,8 +1,12 @@
+// FIX: safe copies of page globals. A missing 'user' / 'role' no longer throws a ReferenceError.
+	var currentUser = (typeof user !== 'undefined') ? user : "";
+	var currentRole = (typeof role !== 'undefined') ? role : "";
+
 	var table;
 	var popreviewitemstable;
 	var vendorState;
 	$(document).ready( function () {
-		
+
 		var id ="sunil";
 		var hasArchiveColumn = $('#purchaseList thead tr:eq(0) th').length > 8;
 			// Setup - add a text input to each footer cell
@@ -36,7 +40,7 @@
 						company = "";
 					} else {
 						company = aaData.partyName;
-					
+
 					}
 					return company.length > 35 ?
 					company.substr( 0, 35 ) +'...' :
@@ -53,7 +57,7 @@
 					render : function(aaData, type, row) {
 						//return "";
 						return row.party.party_city.name;
-						
+
 					}
 			}, {
 				"mData" : "grandTotal",
@@ -72,7 +76,7 @@
 					var date=datam.split("-");
 					var formattedDate = date[1]+"-"+date[0]+"-"+date[2];
 					var newdate = moment(new Date(formattedDate)).format("DD-MM-YYYY HH:mm:ss") ;
-						return  newdate; 
+						return  newdate;
 				}
 			},
 			{
@@ -85,8 +89,8 @@
 	"mData" : "version",
 	"visible": false,
 },
-			
-			
+
+
 			{
 				"mData" : "pdf"	,
 				render : function(datam, type, row) {
@@ -101,7 +105,7 @@
 				"mData" : "archive"	,
 				render : function(datam, type, row) {
 					var archive;
-					if(role=="SUPER ADMIN"){
+					if(currentRole=="SUPER ADMIN"){
 						if(row.archive==true){
 							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
 						}else{
@@ -162,31 +166,31 @@
 		if ($(e.target).closest('a, button, input, select, textarea, label').length) return;
 		openPurchaseOrderRow(this);
 	});
-	
-	if(role=="STORE USER"){
+
+	if(currentRole=="STORE USER"){
 		$(".addPO").on("click", function (event) {
 				event.preventDefault();
 			});
-			
+
 		}
-	if(user=="admin"){
+	if(currentUser=="admin"){
 			$(document).on('click',".poUploadButton",function(){
 				$("#poUploadForm")[0].reset();
 				$('#response').empty();
 				$("#poUploadModal").modal('show');
 			});
 		}else{
-			
+
 			$(".poUploadButton").on("click", function (event) {
 					event.preventDefault();
 				});
-				
+
 		}
-	
+
 	/*  $(document).on("click","#generatePrevPoBtn",function(){
 		$('#generatePreviousPurchaseOrder').attr("href", "/ncpl-sales/prevpurchaseOrder/file/"+purchaseOrderId);
 	});
-	
+
 	if(poExist == false){
 		$.error("PO Not generated Yet");
 	}*/
@@ -200,20 +204,20 @@
 	//   $(".btnGeneratePo").click(function (){
 	//	   var poNumber = this.id;
 	//	   getAddresses(poNumber);
-	//	  
+	//
 	//   })
-	
-	
+
+
 	function checkPoGenerated(poNumber){
 		$.ajax({
 				type:'GET',
 				url : api.PO_PURCHASECOPY  + poNumber,
 				success : function(response) {
 					if(response == undefined || response.poNumber == undefined || response ==""){
-						
+
 						getAddresses(poNumber);
 					}else{
-						
+
 						getAddresses(poNumber);
 						if(response.quoteRefNo==null || response.quoteRefNo==""){
 							$("#quoteRefNoInput").val("");
@@ -225,13 +229,13 @@
 						}else{
 							$("#quoteDateInput").val(response.quoteDate.replaceAll("/","-"));
 						}
-						
+
 						$("#modeOfPaymentDropdown").val(response.modeOfPayment.split(":")[1].trim());
-					
-					
-					
+
+
+
 					}
-				},  
+				},
 				complete:function(resp){
 					if(resp.status==500){
 						$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -239,13 +243,13 @@
 				},
 				error : function(e) {
 					console.log(e);
-				}  	 
-			});  
+				}
+			});
 	}
-	
+
 	$("#vendorAddressDropdown").change(function (){
-		
-		
+
+
 		var addressId = $(this).val();
 		$("#vendorAddressContent").empty();
 		//Party main address
@@ -255,7 +259,7 @@
 			if(addr2==null || addr2 == undefined) {
 				addr2=' ';
 				}
-			$("#vendorAddressContent").append( 
+			$("#vendorAddressContent").append(
 								"<span class=''>"+addressObj.vendor.partyName+" ,</span>" +
 								"<span class=''>"+addressObj.vendor.addr1+" ,</span>" +
 								"<span class=''>"+addr2+"</span>" +
@@ -269,7 +273,7 @@
 							if(addr2==null || addr2 == undefined) {
 								addr2=' ';
 								}
-					$("#vendorAddressContent").append( 
+					$("#vendorAddressContent").append(
 								"<span class=''>"+addressObj.vendor.partyName+" ,</span>" +
 								"<span class=''>"+alternateAddressArr[i].addr1+" ,</span>" +
 								"<span class=''>"+alternateAddressArr[i].addr2+" ,</span>" +
@@ -280,18 +284,18 @@
 		setGstRegion();
 		});
 
-	
+
 	$("#shippingAddressDropdown").change(function (){
 		var addressId = $(this).val();
 		$("#shippingAddressContent").empty();
 		if(addressId.includes("key")){
-			
+
 			var shippingAddress = addressObj.shippingAddress;
 			var shippingAddressArr = shippingAddress.split('^^');
 			for(var i=0; i< shippingAddressArr.length; i++){
 				var shippingAddrArr = shippingAddressArr[i].split('$$');
 				if(addressId == shippingAddrArr[0]){
-				$("#shippingAddressContent").append( 
+				$("#shippingAddressContent").append(
 						"<span class=''>"+shippingAddrArr[1]+" ,</span>" +
 						"<span class=''>"+shippingAddrArr[2]+" ,</span>" +
 						"<span class=''>"+shippingAddrArr[3]+" ,</span>" +
@@ -299,7 +303,7 @@
 						"<span class=''>"+shippingAddrArr[7]+" </span>");
 				}
 			}
-				
+
 		}else{
 			for(var i=0; i< addressObj.alternateShippingAdrress.length; i++){
 				if(addressId==addressObj.alternateShippingAdrress[i].id){
@@ -307,7 +311,7 @@
 					if(addr2==null || addr2 == undefined) {
 						addr2=' ';
 						}
-					$("#shippingAddressContent").append( 
+					$("#shippingAddressContent").append(
 										"<span class=''>"+addressObj.alternateShippingAdrress[i].partyName+" ,</span>" +
 										"<span class=''>"+addressObj.alternateShippingAdrress[i].addr1+" ,</span>" +
 										"<span class=''>"+addr2+"</span>" +
@@ -315,20 +319,20 @@
 					}
 			}
 		}
-			
-		
+
+
 		});
-	
+
 	$("#billingAddressDropdown").change(function (){
 		var addressId = $(this).val();
 		$("#billingAddressContent").empty();
-		
+
 		var billingAddress = addressObj.billingAddress;
 		var billingAddressArr = billingAddress.split('^^');
 		for(var i=0; i< billingAddressArr.length; i++){
 			var billingAddrArr = billingAddressArr[i].split('$$');
 			if(addressId == billingAddrArr[0]){
-			$("#billingAddressContent").append( 
+			$("#billingAddressContent").append(
 					"<span class=''>"+billingAddrArr[1]+" ,</span>" +
 					"<span class=''>"+billingAddrArr[2]+" ,</span>" +
 					"<span class=''>"+billingAddrArr[3]+" ,</span>" +
@@ -337,10 +341,10 @@
 					"<span class='billingState'>"+billingAddrArr[5]+" </span>");
 			}
 		}
-			
-		
+
+
 		});
-	
+
 	$(document).on("click","#generatePoBtn",function(e){
 		if( $("#modeOfPaymentDropdown").val()==""){
 			$.error("Please select mode of payment");
@@ -350,7 +354,7 @@
 			$("#poAddressSlectionPopup").modal("hide");
 			window.location.reload();
 		}
-			
+
 	});
 	$(document).on("click","#generatePoPdfBtn",function(e){
 		if( $("#modeOfPaymentDropdown").val()==""){
@@ -361,10 +365,10 @@
 			$("#poAddressSlectionPopup").modal("hide");
 			window.location.reload();
 		}
-			
+
 	});
 	$( "#quoteDateInput" ).datepicker({ dateFormat: 'dd-mm-yy' });
-	} );  
+	} );
 
 
 	var addressObj;
@@ -377,7 +381,7 @@
 			addressObj = response;
 			//set po number on popup header
 			$('#poNumberOnBillingPopup').html(poNumber);
-			
+
 			//Populate vendor drop down
 			$("#vendorAddressDropdown").empty();
 			$("#vendorAddressDropdown").append(new Option(response.vendor.addr1, response.vendor.id));
@@ -387,7 +391,7 @@
 			}
 			//Display auto selected address
 			$("#vendorAddressDropdown").change();
-			
+
 			//Populate shipping drop down
 			$("#shippingAddressDropdown").empty();
 			var shippingAddress = response.shippingAddress;
@@ -403,7 +407,7 @@
 				}
 			}
 			$("#shippingAddressDropdown").change();
-			
+
 			//Populate billin drop down
 			$("#billingAddressDropdown").empty();
 			var billingAddress = response.billingAddress;
@@ -413,7 +417,7 @@
 				$("#billingAddressDropdown").append(new Option(billingAddrArr[2], billingAddrArr[0]));
 			}
 			$("#billingAddressDropdown").change();
-			
+
 			//Populate mode of payment drop downs
 			var modeOfPaymentArr = response.modeOfPayment.split('$$');
 			/*$("#modeOfPaymentDropdown").empty();
@@ -424,23 +428,23 @@
 				}else{
 					$("#modeOfPaymentDropdown").append(new Option(modeOfPaymentArr[i]+' '+str, modeOfPaymentArr[i]+' '+str));
 				}
-				
+
 			}*/
-			
+
 			//Populate jurisdictionDropdown drop downs
 			var jursidictionArr = response.jurisdiction.split('$$');
 			$("#jurisdictionDropdown").empty();
 			for(var i=0; i< jursidictionArr.length; i++){
 				$("#jurisdictionDropdown").append(new Option(jursidictionArr[i], jursidictionArr[i]));
 			}
-			
+
 			//Populate frieght drop downs
 			var frieghtArr = response.frieght.split('$$');
 			$("#freightDropdown").empty();
 			for(var i=0; i< frieghtArr.length; i++){
 				$("#freightDropdown").append(new Option(frieghtArr[i], frieghtArr[i]));
 			}
-			
+
 			//Populate delivery drop downs
 			var deliveryArr = response.delivery.split('$$');
 			$("#deliveryDropdown").empty();
@@ -448,13 +452,13 @@
 				var val;
 				if(i  == 0 ){
 					val = deliveryArr[i];
-					
+
 				}else {
 					val = deliveryArr[i]+' '+deliveryArr[deliveryArr.length -1];
 				}
 				$("#deliveryDropdown").append(new Option(val, val));
 			}
-			
+
 			//Populate warranty drop downs
 			var warrantyArr = response.warranty.split('$$');
 			var strMonths =  warrantyArr[warrantyArr.length -1 ]; //This contains "months"
@@ -462,17 +466,17 @@
 			for(var i=0; i< warrantyArr.length -1; i++){
 				$("#warrantyDropdown").append(new Option(warrantyArr[i]+' '+strMonths, warrantyArr[i]+' '+strMonths));
 			}
-			
-			
+
+
 			setGstRegion();
-			
+
 			//Open popup jurisdictionDropdown
 				$('#poAddressSlectionPopup').modal({
 					'show': true
 				});
-				
-			
-			},  
+
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -480,18 +484,18 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  	
+			}
 		})
 	}
 	function setGstRegion(){
 		var billingState = $('.billingState').html();
-		
+
 		if((billingState!= undefined) && (vendorState.trim() == billingState.trim())){
 			$('#gstRegion').html("State / Center GST");
 		}else {
 			$('#gstRegion').html("Interstate GST");
 		}
-	
+
 	}
 	function sendingPoAddress(){
 		var gstRegion = $("#gstRegion").text();
@@ -517,7 +521,7 @@
 		var jsonObj = '{"poNumber": "'+poNumber+'" ,"gstRegion":"'+gstRegion+'","vendorAddressId":"'+vendorAddressId+'","shippingAddressId":"'+shippingAddressId+'","billingAddressId":"'+billingAddressId+'","modeOfPayment":"'+mop+'","jurisdiction":"'+jurisdiction+'","freight":"'+freight+'","delivery":"'+delivery+'","warranty":"'+warranty+'","quoteRefNo":"'+quoteRefNo+'","quoteDate":"'+quoteDate+'"}';
 		JSON.stringify(jsonObj);
 		$('#generatePurchaseOrder').attr("href", "/ncpl-sales/purchaseOrder/details/"+jsonObj);
-		
+
 	}
 	function sendingPoPdfAddress(){
 		var gstRegion = $("#gstRegion").text();
@@ -534,18 +538,18 @@
 		var quoteRefNo = $("#generatePoBtn").parents("div").find("#quoteRefNoInput").val();
 		var quoteDate = $("#generatePoBtn").parents("div").find("#quoteDateInput").val();
 		var mop=modeOfPayment.replaceAll("%","$").replaceAll("/","|");
-		
+
 		if(vendorAddressId.indexOf('/') > -1) {
 			vendorAddressId = vendorAddressId.replace('/', '$');
 		}
 		if(shippingAddressId.indexOf('/') > -1) {
 			shippingAddressId = shippingAddressId.replace('/', '$');
 		}
-		
+
 		var jsonObj = '{"poNumber": "'+poNumber+'" ,"gstRegion":"'+gstRegion+'","vendorAddressId":"'+vendorAddressId+'","shippingAddressId":"'+shippingAddressId+'","billingAddressId":"'+billingAddressId+'","modeOfPayment":"'+mop+'","jurisdiction":"'+jurisdiction+'","freight":"'+freight+'","delivery":"'+delivery+'","warranty":"'+warranty+'","quoteRefNo":"'+quoteRefNo+'","quoteDate":"'+quoteDate+'"}';
 		JSON.stringify(jsonObj);
 		$('#generatePurchaseOrder').attr("href", "/ncpl-sales/purchaseOrder_pdf/details/"+jsonObj);
-		
+
 	}
 
 
@@ -572,7 +576,7 @@
 				}else{
 					$("#quoteDateInPreview").html("Quote Date: "+response.quoteDate);
 				}
-				
+
 				$("#billingaddressinPreview").html(response.billingAddress+"<br>"+"PAN : AADCN5426F"
 						+"<br>"+"GSTIN : 29AADCN5426F1ZG");
 				if(response.deliveryAddress.includes("Email")){
@@ -592,15 +596,15 @@
 				$("#paymentpreview").html(response.modeOfPayment);
 				$("#taxpreview").html(response.taxesTerm);
 				$("#jurisdictionpreview").html(response.restrictions);
-				
+
 				getPurchasecopyItems(poNumber);
 				getCurrentVersion(poNumber);
 				// $("#poPreviewModal").modal("show");
-				
-				
-				
+
+
+
 				}
-			},  
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -608,9 +612,9 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  	 
-		});  
-		
+			}
+		});
+
 	}
 
 
@@ -642,20 +646,20 @@
 								//return "";
 								slno++;
 								return slno;
-								
-								
+
+
 							}
-							
+
 						}, {
 							"mData" : "poDescription",
 							"width": "320px",
-							
+
 						}, {
 							"mData" : "modelNo",
 
 						}, {
 							"mData" : "hsnCode",
-							
+
 						},{
 							"defaultContent":"18%",
 						},{
@@ -678,8 +682,8 @@
 								//return "";
 								var up = commaSeparateNumber(row.unitPrice);
 								return up;
-								
-								
+
+
 							}
 						},{
 							"mData" : "amount",
@@ -687,18 +691,18 @@
 								//return "";
 								var ap = commaSeparateNumber(row.amount);
 								return ap;
-								
-								
+
+
 							}
 						}
 						]
 					});
-				
-				
-				
-				
-				
-			},  
+
+
+
+
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -706,9 +710,9 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  	
-		});  
-		
+			}
+		});
+
 	}
 
 	function getCurrentVersion(poNumber){
@@ -719,8 +723,8 @@
 				console.log(response);
 				version=response.version;
 				purchaseOrderId=poNumber;
-				
-			},  
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -728,7 +732,7 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  	
+			}
 		})
 	}
 
@@ -755,7 +759,7 @@
 				callback: function (result) {
 					result ? archivePurchaseOrder(poNum):window.location.reload();;
 				}
-			});	
+			});
 		}else{
 			bootbox.confirm({
 				message: "Do you want to remove this PO from archive?",
@@ -770,18 +774,18 @@
 				callback: function (result) {
 					result ? unArchivePurchaseOrder(poNum):window.location.reload();;
 				}
-			});	
+			});
 		}
 	});
 
 	function archivePurchaseOrder(poNum){
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.UPDATE_PO_ARCHIVE +"?poNum="+poNum,
 			success : function(response) {
 					window.location.reload();
-				
-			},  
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -789,18 +793,18 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  
+			}
 		});
 	}
 
 	function unArchivePurchaseOrder(poNum){
 		$.ajax({
-			type : "POST",  
+			type : "POST",
 			url : api.UPDATE_PO_UNARCHIVE +"?poNum="+poNum,
 			success : function(response) {
 					window.location.reload();
-				
-			},  
+
+			},
 			complete:function(resp){
 				if(resp.status==500){
 					$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -808,7 +812,7 @@
 			},
 			error : function(e) {
 				console.log(e);
-			}  
+			}
 		});
 	}
 

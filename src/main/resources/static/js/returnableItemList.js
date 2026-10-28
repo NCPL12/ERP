@@ -56,7 +56,7 @@ $(document).ready( function () {
 		  render: function(d){ if(!d) return ""; var dt=new Date(d); if(isNaN(dt.getTime())) return d; var dd=("0"+dt.getDate()).slice(-2); var m=dt.getMonth()+1; var yyyy=dt.getFullYear(); var hh=("0"+dt.getHours()).slice(-2); var mm=("0"+dt.getMinutes()).slice(-2); return dd+"-"+m+"-"+yyyy+" "+hh+":"+mm; }
 		},
 		{ "title":"Returned Qty", "data":"returnedQty", "width":"8%", "className":"text-center text-nowrap" }
-    	]
+        ]
     });
 
     // double-click → view page like DC: /api/dc/view?dcId= → /deliveryChallan (read-only)
@@ -78,9 +78,35 @@ $(document).ready( function () {
     $filter.find("label").css({ margin:0, "white-space":"nowrap" });
 
     // AdminLTE sidebar collapse/expand and window resize: recalc widths so table fills full content width (no blank on right)
-    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust().draw(false); } }
-    $(document).on('collapsed.lte.pushmenu expanded.lte.pushmenu collapsed.pushMenu expanded.pushMenu', function(){ setTimeout(adjustReturnableTable, 350); });
-    $(window).on('resize', adjustReturnableTable);
-    // also after initial draw
-    returnableTable.on('draw', function(){ adjustReturnableTable(); });
+    // FIX: only adjust column widths here. Calling .draw() inside this function re-fired the 'draw'
+    // event, which called this function again -> infinite recursion (RangeError: Maximum call stack).
+    var adjustReturnableTimer = null;
+    var adjustingReturnableTable = false;
+
+    function adjustReturnableTable(){
+        if(adjustingReturnableTable || !returnableTable) { return; }   // re-entry guard
+        adjustingReturnableTable = true;
+        try {
+            returnableTable.columns.adjust();                          // no .draw() => no new draw event / AJAX call
+        } finally {
+            adjustingReturnableTable = false;
+        }
+    }
+
+    // Debounced trigger so rapid resize / sidebar events run the adjust only once
+    function scheduleAdjustReturnableTable(delay){
+        clearTimeout(adjustReturnableTimer);
+        adjustReturnableTimer = setTimeout(adjustReturnableTable, delay || 150);
+    }
+
+    // Namespaced + off() so handlers are never bound twice
+    $(document).off('.returnable').on('collapsed.lte.pushmenu.returnable expanded.lte.pushmenu.returnable collapsed.pushMenu.returnable expanded.pushMenu.returnable', function(){
+        scheduleAdjustReturnableTable(350);
+    });
+    $(window).off('resize.returnable').on('resize.returnable', function(){
+        scheduleAdjustReturnableTable(150);
+    });
+
+    // one adjustment after the first draw only (not on every draw)
+    returnableTable.one('draw', function(){ scheduleAdjustReturnableTable(0); });
 } );

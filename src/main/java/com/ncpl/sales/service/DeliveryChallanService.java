@@ -431,11 +431,14 @@ public class DeliveryChallanService {
 	//get dc object by dc id
 	public Optional<DeliveryChallan> getDcById(int dcId) {
 		 Optional<DeliveryChallan> dcObj=dcRepo.findById(dcId);
-		 String soNumber=dcObj.get().getSoNumber();
-		 Optional<SalesOrder> soObj=salesService.getSalesOrderById(soNumber);
-		 
-		 dcObj.get().set("clientPoNumber",soObj.get().getClientPoNumber());
-		 dcObj.get().set("clientName",soObj.get().getParty().getPartyName()); 
+		 if (!dcObj.isPresent()) {
+			 return dcObj;
+		 }
+		 Optional<SalesOrder> soObj=salesService.getSalesOrderById(dcObj.get().getSoNumber());
+		 if (soObj.isPresent() && soObj.get().getParty() != null) {
+			 dcObj.get().set("clientPoNumber",soObj.get().getClientPoNumber());
+			 dcObj.get().set("clientName",soObj.get().getParty().getPartyName());
+		 }
 		return dcObj;
 	}
 	
@@ -740,7 +743,7 @@ public class DeliveryChallanService {
 					+ deliveryChallanItemList.size() + " dc items, " + doneDcIds.size() + " DCs in " + (System.currentTimeMillis() - t0) + " ms");
 		}
 		ArrayList<DeliveryChallan> dc = new ArrayList<DeliveryChallan>(set);
-		
+
 		return dc;
 	}
 	// ===================== END NEW VERSION =====================

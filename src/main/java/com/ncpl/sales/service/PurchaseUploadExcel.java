@@ -5,9 +5,14 @@ import java.io.InputStream;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -73,27 +78,16 @@ public class PurchaseUploadExcel {
             //     return errors;
             // }
             /* ---------------- Vendor Validation ---------------- */
-//Row vendorRow = sheet.getRow(VENDOR_ROW);
-//if (vendorRow == null) {
-//    errors.add("Supplier row is missing.");
-//    return errors;
-//}
-//String vendorName = getStringCellValue(vendorRow.getCell(0));
-String vendorName = "";
-Row vendorRow = sheet.getRow(VENDOR_ROW);              // purana format: row 2, column A
-if (vendorRow != null) {
-    vendorName = getStringCellValue(vendorRow.getCell(0));
-}
-if (vendorName.isEmpty()) {
-    Row firstRow = sheet.getRow(0);                    // naya format: A1 = "Vendor Name", B1 = naam
-    if (firstRow != null) {
-        vendorName = getStringCellValue(firstRow.getCell(1));
-    }
-}
-if (vendorName.isEmpty()) {
-    errors.add("Supplier Name is mandatory.");
-    return errors;
-}
+            Row vendorRow = sheet.getRow(VENDOR_ROW);
+            String vendorName = vendorRow == null ? "" : getStringCellValue(vendorRow.getCell(0));
+            if (vendorName.isEmpty()) {
+                Row firstRow = sheet.getRow(0);
+                vendorName = firstRow == null ? "" : getStringCellValue(firstRow.getCell(1));
+            }
+            if (vendorName.isEmpty()) {
+                errors.add("Supplier Name is mandatory.");
+                return errors;
+            }
 
             Party party = partyRepo.findByName(vendorName.trim());
             if (party == null) {
@@ -103,59 +97,49 @@ if (vendorName.isEmpty()) {
             purchaseOrder.setParty(party);
 
             /* ---------------- Item Rows ---------------- */
-
-            // NEW: state used across rows
-            java.util.Map<String, Float> enteredInFile = new java.util.HashMap<>(); // qty already accepted in this file
-            int cntFullyOrdered = 0, cntInvalidPo = 0, cntMissingPo = 0;         // for summary
-            int processedRows = 0, cntOnlyFullyOrdered = 0;                      // NEW: duplicate-file check
-            java.util.Set<String> allOrderedPos = new java.util.LinkedHashSet<>(); // NEW: POs that already hold these lines
-
+            Map<String, Float> enteredInFile = new HashMap<>();
+            int fullyOrdered = 0;
+            int invalidPo = 0;
+            int missingPo = 0;
+            int processedRows = 0;
+            int onlyFullyOrdered = 0;
+            Set<String> priorPoNumbers = new LinkedHashSet<>();
             for (int rowNum = ITEM_START_ROW; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
                 Row row = sheet.getRow(rowNum);
-                if (row == null) continue;
+                if (isBlankRow(row)) continue;
+                processedRows++;
 
                 List<String> rowErrors = new ArrayList<>();
                 PurchaseItem poItem = new PurchaseItem();
 
-                String clientPoRaw = normPo(getStringCellValue(row.getCell(0)));   // CHANGED: normalised
+                String clientPoNum = normalizePo(getStringCellValue(row.getCell(0)));
+                if (clientPoNum.isEmpty()) {
+                    clientPoNum = normalizePo(getMergedPoNumber(sheet, rowNum));
+                }
                 String description = getStringCellValue(row.getCell(1));
                 String modelNo = getStringCellValue(row.getCell(5));
                 String hsn = getStringCellValue(row.getCell(6));
 
-                // NEW: skip fully blank rows
-                if (clientPoRaw.isEmpty() && description.isEmpty() && modelNo.isEmpty() && hsn.isEmpty()
-                        && getStringCellValue(row.getCell(7)).isEmpty()) continue;
-                processedRows++;   // NEW
-
-                // FIXED (#90): a blank Client PO is NOT copied from the row above.
-                // Only if the cell is part of a merged Excel region, take the value of the merged cell's top-left cell.
-                // Any other blank cell stays blank and gives "Client PO Number is mandatory."
-                if (clientPoRaw.isEmpty()) {
-                    clientPoRaw = normPo(getMergedAnchorValue(sheet, rowNum, 0));
+                if (clientPoNum.isEmpty()) {
+                    rowErrors.add("Client PO Number is mandatory.");
+                    missingPo++;
                 }
-                String clientPoNum = clientPoRaw;
-
-                if (clientPoNum.isEmpty()) { rowErrors.add("Client PO Number is mandatory."); cntMissingPo++; }
                 if (description.isEmpty()) rowErrors.add("Description is mandatory.");
                 if (modelNo.isEmpty()) rowErrors.add("Model Number is mandatory.");
                 if (hsn.isEmpty()) rowErrors.add("HSN is mandatory.");
 
-                // CHANGED: try exact value first, then without "-Amendend" suffix
-                SalesOrder salesOrder = null;
-                if (!clientPoNum.isEmpty()) {
-                    salesOrder = salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
-                    if (salesOrder == null) {
-                        String basePo = stripAmend(clientPoNum);
-                        if (!basePo.equals(clientPoNum)) {
-                            salesOrder = salesRepo.getSalesOrderByClientPoNumber(basePo);
-                            if (salesOrder != null) clientPoNum = basePo;
-                        }
-                    }
-                    if (salesOrder == null) {
-                        rowErrors.add("Invalid Client PO Number: " + clientPoNum);   // CHANGED: shows the value searched
-                        cntInvalidPo++;
-                    }
+				SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
+				if (salesOrder == null && !clientPoNum.isEmpty()) {
+					String basePo = clientPoNum.replaceAll("(?i)[-\\s]*AMEND\\w*$", "");
+					if (!basePo.equals(clientPoNum)) {
+						salesOrder = salesRepo.getSalesOrderByClientPoNumber(basePo);
+						if (salesOrder != null) clientPoNum = basePo;
+					}
+				}
+                if (salesOrder == null && !clientPoNum.isEmpty()) {
+                    rowErrors.add("Invalid Client PO Number: " + clientPoNum);
+                    invalidPo++;
                 }
 
                 ItemMaster item = itemService.getItemByModelNo(modelNo);
@@ -168,13 +152,12 @@ if (vendorName.isEmpty()) {
 
                 float salesQty = 0;
                 float orderedQty = 0;
-                java.util.Set<String> orderedInPos = new java.util.LinkedHashSet<>();   // NEW: which POs already used the qty
-                boolean fullyOrderedThisRow = false;                                     // NEW
-                String resolvedSalesItemId = null;                                       // NEW (#91): id of the Sales Item the description resolved to
+                Set<String> orderedInPos = new LinkedHashSet<>();
+                SalesItem salesItem = null;
 
                 if (item != null && salesOrder != null) {
 
-                    SalesItem salesItem =
+                    salesItem =
                             salesService.getSalesItemByName(description, clientPoNum, item.getId());
 
                     if (salesItem == null) {
@@ -199,14 +182,16 @@ if (vendorName.isEmpty()) {
 
                         for (PurchaseItem p : existingItems) {
                             orderedQty += p.getQuantity();
-                            if (p.getPurchaseOrder() != null && p.getPurchaseOrder().getPoNumber() != null) {   // NEW
-                                orderedInPos.add(p.getPurchaseOrder().getPoNumber());                            // NEW
+                            if (p.getPurchaseOrder() != null && p.getPurchaseOrder().getPoNumber() != null) {
+                                orderedInPos.add(p.getPurchaseOrder().getPoNumber());
                             }
                         }
                     }
                 }
 
-                float remainingQty = salesQty - orderedQty;
+                String quantityKey = salesItem == null || item == null ? "" : salesItem.getId() + "|" + item.getId();
+                float alreadyInFile = enteredInFile.getOrDefault(quantityKey, 0f);
+                float remainingQty = salesQty - orderedQty - alreadyInFile;
 
                 Float qty = getFloatCellValue(row.getCell(7), rowErrors, "Quantity");
                 if (qty == null) qty = 0f;
@@ -220,16 +205,14 @@ if (vendorName.isEmpty()) {
 
                 if (qty < 0) {
                     rowErrors.add("Quantity cannot be negative.");
-                } else if (salesOrder != null && item != null) {   // CHANGED: no quantity noise when PO / model is invalid
-                    if (qty > salesQty) {
-                        rowErrors.add("Entered quantity exceeds Design Quantity.");
-                    } else if (qty > remainingQty + 0.0001f) {
-                        if (remainingQty <= 0) { cntFullyOrdered++; fullyOrderedThisRow = true; }
-                       //rowErrors.add("Remaining Quantity available: " + remainingQty);
-rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
-        + " (Design qty: " + salesQty + ", already ordered: " + orderedQty
-        + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))   // NEW
-        + ", in this file: " + alreadyInFile + ", you entered: " + qty + ")");
+                } else if (salesItem != null) {
+                    if (qty > salesQty) rowErrors.add("Entered quantity exceeds Design Quantity.");
+                    if (qty > remainingQty + 0.0001f) {
+                        if (remainingQty <= 0) fullyOrdered++;
+                        rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
+                                + " (Design qty: " + salesQty + ", already ordered: " + orderedQty
+                                + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))
+                                + ", in this file: " + alreadyInFile + ", you entered: " + qty + ")");
                     }
                 }
 
@@ -249,6 +232,11 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
                 }
 
                 if (!rowErrors.isEmpty()) {
+                    if (remainingQty <= 0 && rowErrors.size() == 1
+                            && rowErrors.get(0).startsWith("Remaining Quantity available:")) {
+                        onlyFullyOrdered++;
+                        priorPoNumbers.addAll(orderedInPos);
+                    }
                     errors.add("Row " + (rowNum + 1) + ": " + String.join(" | ", rowErrors));
                     continue;
                 }
@@ -259,23 +247,25 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
 
                 poItem.setPurchaseOrder(purchaseOrder);
                 purchaseItems.add(poItem);
+                enteredInFile.put(quantityKey, alreadyInFile + qty);
             }
 
             purchaseOrder.setItems(purchaseItems);
 
-            // NEW: whole file already uploaded -> one clear message instead of one error per row
-            if (processedRows > 0 && cntOnlyFullyOrdered == processedRows) {
+            if (purchaseItems.isEmpty() && errors.isEmpty()) {
+                errors.add("No purchase items found in the Excel file.");
+                return errors;
+            }
+
+            if (processedRows > 0 && onlyFullyOrdered == processedRows) {
                 errors.clear();
                 errors.add("This file is already uploaded: all " + processedRows + " lines are fully ordered"
-                        + (allOrderedPos.isEmpty() ? "." : " in PO " + String.join(", ", allOrderedPos) + "."));
-                errors.add("Please do not upload it again. To order more, increase the design quantity first.");
-            }
-            // NEW: summary line at the top of the error list
-            else if (!errors.isEmpty()) {
+                        + (priorPoNumbers.isEmpty() ? "." : " in PO " + String.join(", ", priorPoNumbers) + "."));
+                errors.add("To order more, increase the design quantity first.");
+            } else if (!errors.isEmpty()) {
                 errors.add(0, "SUMMARY: " + errors.size() + " row(s) failed - "
-                        + cntFullyOrdered + " fully ordered, "
-                        + cntInvalidPo + " invalid Client PO, "
-                        + cntMissingPo + " missing Client PO.");
+                        + fullyOrdered + " fully ordered, " + invalidPo + " invalid Client PO, "
+                        + missingPo + " missing Client PO.");
             }
 
             if (errors.isEmpty()) {
@@ -291,30 +281,27 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
 
     /* ---------------- Helper Methods ---------------- */
 
-    // NEW (#90): value of the top-left cell of the merged region that contains (rowIdx, colIdx); "" if the cell is not merged
-    private String getMergedAnchorValue(Sheet sheet, int rowIdx, int colIdx) {
+    private boolean isBlankRow(Row row) {
+        if (row == null) return true;
+        for (int column = 0; column < row.getLastCellNum(); column++) {
+            if (!getStringCellValue(row.getCell(column)).isEmpty()) return false;
+        }
+        return true;
+    }
+
+    private String getMergedPoNumber(Sheet sheet, int rowNum) {
         for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
-            org.apache.poi.ss.util.CellRangeAddress region = sheet.getMergedRegion(i);
-            if (region.isInRange(rowIdx, colIdx)) {
-                Row anchorRow = sheet.getRow(region.getFirstRow());
-                if (anchorRow == null) return "";
-                return getStringCellValue(anchorRow.getCell(region.getFirstColumn()));
+            CellRangeAddress region = sheet.getMergedRegion(i);
+            if (region.isInRange(rowNum, 0)) {
+                Row anchor = sheet.getRow(region.getFirstRow());
+                return anchor == null ? "" : getStringCellValue(anchor.getCell(region.getFirstColumn()));
             }
         }
         return "";
     }
 
-    // NEW: trim, collapse repeated spaces, fix " / " -> "/" (no case change, so DB lookup is unaffected)
-    private String normPo(String s) {
-        if (s == null) return "";
-        return s.trim()
-                .replaceAll("\\s+", " ")
-                .replaceAll("\\s*/\\s*", "/");
-    }
-
-    // NEW: "UHP/sp/WO/14/2024-25-Amendend" -> "UHP/sp/WO/14/2024-25"
-    private String stripAmend(String po) {
-        return po.replaceAll("(?i)[-\\s]*AMEND\\w*$", "");
+    private String normalizePo(String po) {
+        return po.trim().replaceAll("\\s+", " ").replaceAll("\\s*/\\s*", "/");
     }
 
     private String getStringCellValue(Cell cell) {
@@ -330,7 +317,8 @@ rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
                     return new SimpleDateFormat("yyyy-MM-dd")
                             .format(cell.getDateCellValue());
                 }
-                return String.valueOf((long) cell.getNumericCellValue());
+                return java.math.BigDecimal.valueOf(cell.getNumericCellValue())
+                        .stripTrailingZeros().toPlainString();
 
             case Cell.CELL_TYPE_BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());

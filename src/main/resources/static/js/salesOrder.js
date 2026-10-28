@@ -94,8 +94,8 @@ $(document).ready(function () {
             $desc.autocomplete('destroy');
         }
     }
-    $(document).off('keyup keypress input', '.description');
-    $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
+		$(document).off('keyup keypress input', '.description');
+		$(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
 	/* $(document).on("mouseover",".description",function(){
 		 var description=$(this).val();
 		 $(".description").tooltip({
@@ -234,7 +234,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         newRow.append(columns);
          $("#table-body").append(newRow);
          // Check if expand all header should be shown/hidden after adding new row
-         if(!bulkLoading){ toggleExpandAllHeader(); }
+         if (!bulkLoading) { toggleExpandAllHeader(); }
         // Ensure no suggestions/autocomplete on description for new row as well
         var $desc2 = newRow.find(".description");
         $desc2.attr("autocomplete","off");
@@ -246,22 +246,21 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
                 $desc2.autocomplete('destroy');
             }
         }
-        $(document).off('keyup keypress input', '.description');
-        $(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
-
-     		/*unitName = unitsList.map(({ name }) => name);
- 		$(".unit").autocomplete({
- 		       source: unitName
- 		     });*/
-  		if(!bulkLoading){ $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
- 		//display unit list in dropdown
- 		if(unitOptionsHtml === null){
- 			unitOptionsHtml = "";
- 			$.each(unitsList,function(index,value){
- 				unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
- 			});
- 		}
- 		$("#unit"+ arraycount).append(unitOptionsHtml);
+			$(document).off('keyup keypress input', '.description');
+			$(document).on('keyup keypress input', '.description', function(e){ e.stopImmediatePropagation(); });
+        
+        		/*unitName = unitsList.map(({ name }) => name);
+    		$(".unit").autocomplete({
+    		       source: unitName
+    		     });*/
+			if (unitOptionsHtml === null) {
+				unitOptionsHtml = "";
+				$.each(unitsList,function(index,value){
+					unitOptionsHtml += '<option value='+value.id+'>'+value.name+'</option>';
+				});
+			}
+			$("#unit" + arraycount).append(unitOptionsHtml);
+			if (!bulkLoading) { $("#unit" + arraycount).select2({ dropdownAutoWidth: true }); }
 	}
 
 	$(document).on("change",".unit",function(){
@@ -341,11 +340,11 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		    url : api.GET_SALES_ITEMS_LIST_BY_SALES_ORDER_ID+"?id="+soId+"&&className="+className,
 		    dataType:'json',
 		    success  : function(response){
-		 	//$(".add").hide();
-		 	$("#resetSalesOrder").hide();
-		 	bulkLoading = true;
-		 	$.each(response,function( key, value ){
-				 	addSalesOrder();
+		    	//$(".add").hide();
+		    	$("#resetSalesOrder").hide();
+		    bulkLoading = true;
+		    	$.each(response,function( key, value ){
+				    	addSalesOrder();
 				//$("#salesTable >tbody>tr>td").find("input").attr("readOnly","readOnly");
 
 				var unitName=value.item_units.name;
@@ -381,9 +380,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				//$('#unitVal'+key).attr("disabled",true);
 
 				$("#unit"+key).val(value.item_units.id)
-				//$("#unit"+key).select2(value, {id: value.item_units.id, a_key:value.item_units.name}); // now done in chunks after the loop
-
-
+				
+				
 				if(unitName=="Heading"){
 					$("#servicePrice"+key).attr("readonly",true);
 					$("#unitPrice"+key).attr("readonly",true);
@@ -407,23 +405,23 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					 $("#designTd"+key).show();
 				 }
 				//$(".deleteButton").hide();
-		 	});
-		 	bulkLoading = false;
-		 	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
-		 	$('#partyDropDown').val(salesOrderObj.party.id);
-		 	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
-		 	$('#partyDropDown').attr("disabled",true);
-		 	$("#taxDropDown").attr("disabled",true);
-		 	$("#salesTable >tbody>tr:last").remove();
-		 	$("#taxDropDown").trigger('change');
-		 	// Show expand all header since data is loaded
-		 	showExpandAllHeader();
-		 	$('input:not(:button,:submit),textarea,select').change(function () {
-		 		isDirty = true;
-
-		 		});
-		 	initUnitSelect2InChunks(0);
-		    },
+		    	});
+		    bulkLoading = false;
+		    	checkForDcExistsBulk(response.map(function(v){ return v.id; }));
+		    	$('#partyDropDown').val(salesOrderObj.party.id);
+		    	$('#partyDropDown').select2(salesOrderObj, {id: salesOrderObj.party.id, a_key:salesOrderObj.party.name});
+		    	$('#partyDropDown').attr("disabled",true);
+		    	$("#taxDropDown").attr("disabled",true);
+		    	$("#salesTable >tbody>tr:last").remove();
+		    	$("#taxDropDown").trigger('change');
+		    	// Show expand all header since data is loaded
+		    	showExpandAllHeader();
+		    	$('input:not(:button,:submit),textarea,select').change(function () {
+		    		isDirty = true;
+		    		
+		    		});
+		    initUnitSelect2InChunks(0);
+		    },  
 			complete:function(resp){
 				hideLoader();
 				if(resp.status==500){
@@ -437,18 +435,18 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 		  });
 	}
 
-
-	function initUnitSelect2InChunks(start){
+	function initUnitSelect2InChunks(start) {
 		var total = document.getElementById('table-body').rows.length;
 		var end = Math.min(start + 40, total);
-		for(var i = start; i < end; i++){
+		for (var i = start; i < end; i++) {
 			$("#unit" + i).select2({ dropdownAutoWidth: true });
 		}
-		if(end < total){
-			setTimeout(function(){ initUnitSelect2InChunks(end); }, 0);
+		if (end < total) {
+			setTimeout(function () { initUnitSelect2InChunks(end); }, 0);
 		}
 	}
-
+	
+	
 	//bulk version of checkForDcExists: one request for all rows instead of one per row
 	function checkForDcExistsBulk(salesItemIds){
 		if(salesItemIds.length == 0){
@@ -1242,7 +1240,7 @@ function designTable2Json(){
 		           for(var i=0; i< alternateAddressArr.length; i++){
 		      	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
-
+		           
 
 		         //Restore saved billing address when editing
 if(salesOrderObj!="" && salesOrderObj.billingAddress && $("#billingAddressDropdown option[value='"+salesOrderObj.billingAddress+"']").length){
@@ -1293,7 +1291,7 @@ if(salesOrderObj!=""){
 			       $("#shippingAddressPartyId").val(response.shippingAddr.id)
 
 			       if(response.shippingAddr.id!=response.mainParty.id){
-			 	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
+                    $("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
 			       }
 		 	   //populate other alternative addresses for billing address dropdown.
 		 	   var alternateAddressArr = response.addresses;

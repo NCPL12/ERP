@@ -37,7 +37,7 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	// NOT EXISTS instead of NOT IN: lets MySQL stop at the first matching grn per PO (needs an index on tbl_grn.po_number)
 	@Query(value = "SELECT po.* FROM tbl_purchase_order po WHERE po.archive=0 AND NOT EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number)",nativeQuery = true)
 	public List<PurchaseOrder> getPurchaseListWhereGrnNotDone();
-	/*@Query(value="SELECT distinct po.*, \r\n" + 
+	/*@Query(value="SELECT distinct po.*, \r\n" +
 			"    ( SELECT sum(pi.quantity)\r\n" + 
 			"      FROM tbl_purchase_items pi \r\n" + 
 			"      WHERE po.po_number=pi.po_number and po.archive=0) poQty,\r\n" + 

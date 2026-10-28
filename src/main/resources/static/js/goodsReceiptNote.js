@@ -182,7 +182,7 @@ $(document).ready(function(){
 	        if (!canEditGrn) return;
 	        var data = grnDataTable.row(row).data();
 	        if (!data || !data.grnId) return;
-	        window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(data.grnId);
+	        window.location = pageContext+"/grn/"+encodeURIComponent(data.grnId);
 	    }
 	    $('#grnList tbody').on('click', 'a.grnLink', function (e) {
 	        e.preventDefault();
@@ -329,7 +329,7 @@ $(document).on("click",".grnView",function(){
 					if (!canEditGrn) {
 						return;
 					}
-                        window.location = pageContext+"/api/grn/view?grnId="+encodeURIComponent(grnId);
+                        window.location = pageContext+"/grn/"+encodeURIComponent(grnId);
 				})
 	    },
 		complete:function(resp){

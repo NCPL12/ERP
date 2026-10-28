@@ -133,9 +133,8 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	@Query(" from SalesOrder where client_po_number=?1 ")
 	public Optional<SalesOrder> getSalesOrderByClientPoNo(String clientPoNO);
 
-	// Used by SalesOrderUploadService to block a second upload of the same client PO number
 	boolean existsByClientPoNumberIgnoreCase(String clientPoNumber);
-
+	
 	long countByArchiveFalse();
 
 	@Query(value = "SELECT COUNT(*) FROM tbl_sales_order WHERE archive = 0", nativeQuery = true)
