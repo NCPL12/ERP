@@ -25,6 +25,10 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	@Query("select so.id, so.clientPoNumber, p.id from SalesOrder so join so.party p " +
 			"where so.clientPoNumber is not null and trim(so.clientPoNumber) <> ''")
 	List<Object[]> findDcClientPoOptions();
+
+	@Query("select so.id, so.clientPoNumber, p.partyName, so.shippingAddress " +
+			"from SalesOrder so left join so.party p where so.id in :ids")
+	List<Object[]> findDcListHeaders(@Param("ids") List<String> ids);
 	
 	@Query(" from SalesOrder where party_id=?1")
 	public List<SalesOrder> getSalesListByClientId(String partyId);

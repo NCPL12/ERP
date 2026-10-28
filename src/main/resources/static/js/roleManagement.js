@@ -4,24 +4,6 @@ var currentGrid = [];
 var currentTiles = [];
 var currentReports = [];   // NEW
 
-var MODULE_URLS = {
-	DASHBOARD: "/dashboard",
-	PARTY: "/partyList",
-	ITEM_MASTER: "/itemMaster",
-	COMPANY_ASSETS: "/companyAssets",
-	SALES_ORDER: "/salesList",
-	DELIVERY_CHALLAN: "/dcList",
-	RETURNABLE: "/returnableList",
-	INVOICE: "/invoiceList",
-	WORK_ORDER: "/workOrderList",
-	PURCHASE: "/purchase",
-	GRN: "/grnLists",
-	NON_BILLABLE: "/nonBillableList",
-	REPORTS: "/sales_report",
-	ARCHIVES: "/salesList_archived",
-	USER_MANAGEMENT: "/user-management"
-};
-
 $(document).ready(function () {
 	loadRoles();
 
@@ -172,7 +154,7 @@ function updateRoleSummary() {
 function renderGrid() {
 	var rows = "";
 	$.each(currentGrid, function (i, row) {
-		var url = MODULE_URLS[row.module] || "";
+		var url = row.url || "";
 		rows += '<tr data-module="' + row.module + '" data-editable="' + row.editable + '" data-deletable="' + row.deletable + '">' +
 			'<td><span class="ra-module-name">' + row.label + '</span><span class="ra-module-url">' + url + '</span></td>' +
 			'<td><input type="checkbox" class="view-box" ' + (row.canView ? "checked" : "") + '></td>' +

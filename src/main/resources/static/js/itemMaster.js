@@ -9,10 +9,8 @@ var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
 
-// @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
 function hasItemMasterAccess() {
-	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
-		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
+	return typeof canEditItemMaster !== "undefined" && canEditItemMaster === true;
 }
 
 function precomputeItemMasterAggregations() {
@@ -83,6 +81,7 @@ function precomputeItemMasterAggregations() {
 }
 //var userName;
 $(document).ready(function () {
+	$("#saveStock, #saveSupplier").prop("disabled", !hasItemMasterAccess());
 	$("#SalesVal").hide();
 	$(".amount").attr("readonly", "readonly");
 	$(".total").attr("readonly", "readonly");

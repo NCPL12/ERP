@@ -6,7 +6,8 @@ var returnableTable;
 
 $(document).ready( function () {
 	returnableTable = $('#returnableItemsList').DataTable({
-		processing: true,
+		processing: false,
+		language: { processing: "", loadingRecords: "" },
 		serverSide: true,
 		autoWidth: false,
 		responsive: false,
@@ -77,8 +78,9 @@ $(document).ready( function () {
     // keep filter input compact
     $filter.find("label").css({ margin:0, "white-space":"nowrap" });
 
-    // AdminLTE sidebar collapse/expand and window resize: recalc widths so table fills full content width (no blank on right)
-    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust().draw(false); } }
+    // Recalculate widths without drawing: a draw makes another server request and
+    // would cause an endless request loop when called from the draw event below.
+    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust(); } }
     $(document).on('collapsed.lte.pushmenu expanded.lte.pushmenu collapsed.pushMenu expanded.pushMenu', function(){ setTimeout(adjustReturnableTable, 350); });
     $(window).on('resize', adjustReturnableTable);
     // also after initial draw

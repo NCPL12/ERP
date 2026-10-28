@@ -49,6 +49,7 @@ import com.ncpl.sales.repository.ItemMasterRepo;
 import com.ncpl.sales.repository.SalesItemRepo;
 import com.ncpl.sales.repository.InvoiceRepo;
 import com.ncpl.sales.repository.PartyRepo;
+import com.ncpl.sales.repository.PartyAddressRepo;
 import com.ncpl.sales.repository.SalesOrderDesignItemsRepo;
 import com.ncpl.sales.repository.SalesRepo;
 import com.ncpl.sales.repository.StockRepo;
@@ -67,6 +68,8 @@ public class DeliveryChallanService {
 	SalesService salesService;
 	@Autowired
 	PartyRepo partyRepo;
+	@Autowired
+	PartyAddressRepo partyAddressRepo;
 	@Autowired
 	PartyAddressService partyAddressService;
 	@Autowired
@@ -863,10 +866,7 @@ public class DeliveryChallanService {
 			dcPage = dcRepo.findByArchive(archived, pageable);
 		}
 		
-		// Enrich the data with additional fields
-		for (DeliveryChallan dc : dcPage.getContent()) {
-			enrichDeliveryChallanData(dc);
-		}
+		enrichDeliveryChallanPage(dcPage);
 		
 		return dcPage;
 	}
@@ -887,10 +887,7 @@ public class DeliveryChallanService {
 			pageable
 		);
 
-		// Enrich the data with additional fields
-		for (DeliveryChallan dc : dcPage.getContent()) {
-			enrichDeliveryChallanData(dc);
-		}
+		enrichDeliveryChallanPage(dcPage);
 
 		return dcPage;
 	}
@@ -1064,6 +1061,54 @@ public class DeliveryChallanService {
 			.collect(Collectors.toList());
 		System.out.println("DC by date: build rows " + dcResult.size() + " in " + (System.currentTimeMillis() - tDcStep) + " ms | TOTAL " + (System.currentTimeMillis() - tDcStart) + " ms");
 		return dcResult;
+	}
+
+	private void enrichDeliveryChallanPage(Page<DeliveryChallan> page) {
+		List<DeliveryChallan> dcs = page.getContent();
+		if (dcs.isEmpty()) return;
+
+		List<Integer> dcIds = dcs.stream().map(DeliveryChallan::getDcId).collect(Collectors.toList());
+		List<String> soIds = dcs.stream().map(DeliveryChallan::getSoNumber)
+				.filter(Objects::nonNull).distinct().collect(Collectors.toList());
+		Map<String, Object[]> headers = new HashMap<>();
+		Set<String> shippingIds = new HashSet<>();
+		if (!soIds.isEmpty()) {
+			for (Object[] row : salesRepo.findDcListHeaders(soIds)) {
+				headers.put((String) row[0], row);
+				if (row[3] != null && !((String) row[3]).isEmpty()) shippingIds.add((String) row[3]);
+			}
+		}
+
+		Map<String, String> partyAddresses = new HashMap<>();
+		Map<String, String> alternateAddresses = new HashMap<>();
+		if (!shippingIds.isEmpty()) {
+			List<String> ids = new ArrayList<>(shippingIds);
+			for (Object[] row : partyRepo.findDcShippingAddresses(ids)) {
+				partyAddresses.put((String) row[0], (String) row[1]);
+			}
+			for (Object[] row : partyAddressRepo.findDcShippingAddresses(ids)) {
+				alternateAddresses.put((String) row[0], (String) row[1]);
+			}
+		}
+
+		Map<Integer, java.util.Date> createdDates = new HashMap<>();
+		for (Object[] row : dcItemRepo.findFirstCreatedDates(dcIds)) {
+			createdDates.put(((Number) row[0]).intValue(), (java.util.Date) row[1]);
+		}
+		for (DeliveryChallan dc : dcs) {
+			Object[] header = headers.get(dc.getSoNumber());
+			if (header == null) continue;
+			dc.set("clientPoNumber", header[1]);
+			dc.set("clientName", header[2]);
+			String shippingId = (String) header[3];
+			if (shippingId != null && !shippingId.isEmpty()) {
+				String address = partyAddresses.containsKey(shippingId)
+						? partyAddresses.get(shippingId) : alternateAddresses.get(shippingId);
+				if (address != null) dc.set("shippingAddress", address);
+			}
+			java.util.Date createdDate = createdDates.get(dc.getDcId());
+			if (createdDate != null) dc.set("createdDate", createdDate);
+		}
 	}
 
 	private void enrichDeliveryChallanData(DeliveryChallan dc) {

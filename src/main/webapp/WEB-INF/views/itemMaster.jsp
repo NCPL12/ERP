@@ -6,6 +6,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 
 
 <c:url var="ROOT" value="/"></c:url>
@@ -33,9 +34,13 @@
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 <script type="text/javascript">
+<security:authorize access="hasAuthority('ITEM_MASTER_EDIT')" var="canEditItemMaster" />
+<security:authorize access="hasAuthority('ITEM_MASTER_DELETE')" var="canDeleteItemMaster" />
+var canEditItemMaster = ${canEditItemMaster};
+var canDeleteItemMaster = ${canDeleteItemMaster};
 var itemList = [];
-// var customerPartyList=${customerPartyList};
-// var supplierPartyList=${supplierPartyList};
+var customerPartyList=${customerPartyList};
+var supplierPartyList=${supplierPartyList};
 var allSupplierslist = [];
 var allStocksList = [];
 var makeList=${makeList};

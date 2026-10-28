@@ -14,6 +14,8 @@ import com.ncpl.sales.repository.projection.PartyDropdownProjection;
 
 @Repository
 public interface PartyRepo extends JpaRepository<Party, Long>{
+	@Query("select p.id, p.addr1 from Party p where p.id in :ids")
+	List<Object[]> findDcShippingAddresses(@Param("ids") List<String> ids);
  @Query("select p.id as id, p.partyName as partyName from Party p order by p.partyName")
  List<com.ncpl.sales.repository.projection.PartyDropdownProjection> findPartyDropdown();
  @Query("select p from Party p where lower(p.partyName) like lower(concat('%', :keyword, '%'))")

@@ -22,7 +22,7 @@ public interface ReturnableItemsRepo extends JpaRepository<ReturnableItems, Inte
 	List<ReturnableItems> findAllNonZeroReturned();
 
 	// @D0014 lazy-loaded, paginated Returnables list (see README.md)
-	@Query(value = "SELECT ri FROM ReturnableItems ri JOIN ri.returnable r WHERE ri.returnedQty <> 0 "
+	@Query(value = "SELECT ri FROM ReturnableItems ri JOIN FETCH ri.returnable r WHERE ri.returnedQty <> 0 "
 			+ "AND (:orderNo = '' OR CAST(r.dcId AS string) LIKE CONCAT('%', :orderNo, '%'))",
 			countQuery = "SELECT COUNT(ri) FROM ReturnableItems ri JOIN ri.returnable r WHERE ri.returnedQty <> 0 "
 			+ "AND (:orderNo = '' OR CAST(r.dcId AS string) LIKE CONCAT('%', :orderNo, '%'))")

@@ -12,6 +12,9 @@ import com.ncpl.sales.model.DeliveryChallanItems;
 
 @Repository
 public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanItems,Integer>{
+	@Query("select i.deliveryChallan.dcId, min(i.created) from DeliveryChallanItems i " +
+			"where i.deliveryChallan.dcId in :dcIds group by i.deliveryChallan.dcId")
+	List<Object[]> findFirstCreatedDates(@Param("dcIds") List<Integer> dcIds);
 	@Query( value = "SELECT * FROM  tbl_dc_items WHERE description IN (:soItemId)",nativeQuery = true)
 	List<DeliveryChallanItems> getDcItemListBySalesItemId(@Param("soItemId") String soItemId);
 	

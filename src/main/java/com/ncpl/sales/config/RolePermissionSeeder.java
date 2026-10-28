@@ -92,7 +92,7 @@ public class RolePermissionSeeder implements CommandLineRunner {
 			role = roleRepo.save(role);
 
 			Set<Module> accessible = TODAYS_ACCESS.getOrDefault(roleName, EnumSet.noneOf(Module.class));
-			for (Module module : Module.values()) {
+			for (Module module : Module.menuModules()) {
 				RolePermission p = new RolePermission();
 				p.setRole(role);
 				p.setModule(module.name());
