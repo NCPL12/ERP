@@ -89,14 +89,10 @@ public class PurchaseUploadExcel {
             int fullyOrdered = 0;
             int invalidPo = 0;
             int missingPo = 0;
-            int processedRows = 0;
-            int onlyFullyOrdered = 0;
-            Set<String> priorPoNumbers = new LinkedHashSet<>();
             for (int rowNum = ITEM_START_ROW; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
                 Row row = sheet.getRow(rowNum);
                 if (isBlankRow(row)) continue;
-                processedRows++;
 
                 List<String> rowErrors = new ArrayList<>();
                 PurchaseItem poItem = new PurchaseItem();
@@ -117,14 +113,7 @@ public class PurchaseUploadExcel {
                 if (modelNo.isEmpty()) rowErrors.add("Model Number is mandatory.");
                 if (hsn.isEmpty()) rowErrors.add("HSN is mandatory.");
 
-				SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
-				if (salesOrder == null && !clientPoNum.isEmpty()) {
-					String basePo = clientPoNum.replaceAll("(?i)[-\\s]*AMEND\\w*$", "");
-					if (!basePo.equals(clientPoNum)) {
-						salesOrder = salesRepo.getSalesOrderByClientPoNumber(basePo);
-						if (salesOrder != null) clientPoNum = basePo;
-					}
-				}
+                SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
                 if (salesOrder == null && !clientPoNum.isEmpty()) {
                     rowErrors.add("Invalid Client PO Number: " + clientPoNum);
                     invalidPo++;
@@ -206,11 +195,6 @@ public class PurchaseUploadExcel {
                 poItem.setAmount(qty * unitPrice);
 
                 if (!rowErrors.isEmpty()) {
-                    if (remainingQty <= 0 && rowErrors.size() == 1
-                            && rowErrors.get(0).startsWith("Remaining Quantity available:")) {
-                        onlyFullyOrdered++;
-                        priorPoNumbers.addAll(orderedInPos);
-                    }
                     errors.add("Row " + (rowNum + 1) + ": " + String.join(" | ", rowErrors));
                     continue;
                 }
@@ -227,12 +211,7 @@ public class PurchaseUploadExcel {
                 return errors;
             }
 
-            if (processedRows > 0 && onlyFullyOrdered == processedRows) {
-                errors.clear();
-                errors.add("This file is already uploaded: all " + processedRows + " lines are fully ordered"
-                        + (priorPoNumbers.isEmpty() ? "." : " in PO " + String.join(", ", priorPoNumbers) + "."));
-                errors.add("To order more, increase the design quantity first.");
-            } else if (!errors.isEmpty()) {
+            if (!errors.isEmpty()) {
                 errors.add(0, "SUMMARY: " + errors.size() + " row(s) failed - "
                         + fullyOrdered + " fully ordered, " + invalidPo + " invalid Client PO, "
                         + missingPo + " missing Client PO.");
@@ -287,8 +266,7 @@ public class PurchaseUploadExcel {
                     return new SimpleDateFormat("yyyy-MM-dd")
                             .format(cell.getDateCellValue());
                 }
-                return java.math.BigDecimal.valueOf(cell.getNumericCellValue())
-                        .stripTrailingZeros().toPlainString();
+                return String.valueOf((long) cell.getNumericCellValue());
 
             case Cell.CELL_TYPE_BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
