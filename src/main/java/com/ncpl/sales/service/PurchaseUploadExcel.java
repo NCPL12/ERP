@@ -65,18 +65,6 @@ public class PurchaseUploadExcel {
             PurchaseOrder purchaseOrder = new PurchaseOrder();
             List<PurchaseItem> purchaseItems = new ArrayList<>();
 
-            // /* ---------------- Vendor Validation ---------------- */
-            // Row vendorRow = sheet.getRow(VENDOR_ROW);
-            // if (vendorRow == null) {
-            //     errors.add("Supplier row is missing.");
-            //     return errors;
-            // }
-
-            // String vendorName = getStringCellValue(vendorRow.getCell(0));
-            // if (vendorName.isEmpty()) {
-            //     errors.add("Supplier Name is mandatory.");
-            //     return errors;
-            // }
             /* ---------------- Vendor Validation ---------------- */
             Row vendorRow = sheet.getRow(VENDOR_ROW);
             String vendorName = vendorRow == null ? "" : getStringCellValue(vendorRow.getCell(0));
@@ -101,14 +89,10 @@ public class PurchaseUploadExcel {
             int fullyOrdered = 0;
             int invalidPo = 0;
             int missingPo = 0;
-            int processedRows = 0;
-            int onlyFullyOrdered = 0;
-            Set<String> priorPoNumbers = new LinkedHashSet<>();
             for (int rowNum = ITEM_START_ROW; rowNum <= sheet.getLastRowNum(); rowNum++) {
 
                 Row row = sheet.getRow(rowNum);
                 if (isBlankRow(row)) continue;
-                processedRows++;
 
                 List<String> rowErrors = new ArrayList<>();
                 PurchaseItem poItem = new PurchaseItem();
@@ -129,14 +113,7 @@ public class PurchaseUploadExcel {
                 if (modelNo.isEmpty()) rowErrors.add("Model Number is mandatory.");
                 if (hsn.isEmpty()) rowErrors.add("HSN is mandatory.");
 
-				SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
-				if (salesOrder == null && !clientPoNum.isEmpty()) {
-					String basePo = clientPoNum.replaceAll("(?i)[-\\s]*AMEND\\w*$", "");
-					if (!basePo.equals(clientPoNum)) {
-						salesOrder = salesRepo.getSalesOrderByClientPoNumber(basePo);
-						if (salesOrder != null) clientPoNum = basePo;
-					}
-				}
+                SalesOrder salesOrder = clientPoNum.isEmpty() ? null : salesRepo.getSalesOrderByClientPoNumber(clientPoNum);
                 if (salesOrder == null && !clientPoNum.isEmpty()) {
                     rowErrors.add("Invalid Client PO Number: " + clientPoNum);
                     invalidPo++;
@@ -165,7 +142,6 @@ public class PurchaseUploadExcel {
                     } else {
 
                         poItem.setDescription(salesItem.getId());
-                        resolvedSalesItemId = String.valueOf(salesItem.getId());   // NEW (#91)
 
                         List<DesignItems> designs =
                                 purchaseService.getDesignListOfItemBySalesItemId(salesItem.getId());
@@ -196,13 +172,6 @@ public class PurchaseUploadExcel {
                 Float qty = getFloatCellValue(row.getCell(7), rowErrors, "Quantity");
                 if (qty == null) qty = 0f;
 
-                // NEW: same Client PO + item + description repeated in the file (e.g. amended rows)
-                // CHANGED (#91): key = resolved Sales Item id + item id (NOT the description text),
-                // so differently-typed descriptions that match the same Sales Item share one running total
-                String qtyKey = (resolvedSalesItemId != null && item != null) ? resolvedSalesItemId + "|" + item.getId() : null;
-                float alreadyInFile = (qtyKey != null && enteredInFile.containsKey(qtyKey)) ? enteredInFile.get(qtyKey) : 0f;
-                remainingQty = remainingQty - alreadyInFile;
-
                 if (qty < 0) {
                     rowErrors.add("Quantity cannot be negative.");
                 } else if (salesItem != null) {
@@ -225,25 +194,10 @@ public class PurchaseUploadExcel {
                 poItem.setHsnCode(hsn);
                 poItem.setAmount(qty * unitPrice);
 
-                // NEW: row failed ONLY because it is fully ordered already
-                if (fullyOrderedThisRow && rowErrors.size() == 1) {
-                    cntOnlyFullyOrdered++;
-                    allOrderedPos.addAll(orderedInPos);
-                }
-
                 if (!rowErrors.isEmpty()) {
-                    if (remainingQty <= 0 && rowErrors.size() == 1
-                            && rowErrors.get(0).startsWith("Remaining Quantity available:")) {
-                        onlyFullyOrdered++;
-                        priorPoNumbers.addAll(orderedInPos);
-                    }
                     errors.add("Row " + (rowNum + 1) + ": " + String.join(" | ", rowErrors));
                     continue;
                 }
-
-                // FIXED (#92): count this row's quantity only now, when the WHOLE row passed every check,
-                // so a rejected row never reduces the quantity available to later rows
-                if (qtyKey != null) enteredInFile.put(qtyKey, alreadyInFile + qty);
 
                 poItem.setPurchaseOrder(purchaseOrder);
                 purchaseItems.add(poItem);
@@ -257,12 +211,7 @@ public class PurchaseUploadExcel {
                 return errors;
             }
 
-            if (processedRows > 0 && onlyFullyOrdered == processedRows) {
-                errors.clear();
-                errors.add("This file is already uploaded: all " + processedRows + " lines are fully ordered"
-                        + (priorPoNumbers.isEmpty() ? "." : " in PO " + String.join(", ", priorPoNumbers) + "."));
-                errors.add("To order more, increase the design quantity first.");
-            } else if (!errors.isEmpty()) {
+            if (!errors.isEmpty()) {
                 errors.add(0, "SUMMARY: " + errors.size() + " row(s) failed - "
                         + fullyOrdered + " fully ordered, " + invalidPo + " invalid Client PO, "
                         + missingPo + " missing Client PO.");
@@ -317,8 +266,7 @@ public class PurchaseUploadExcel {
                     return new SimpleDateFormat("yyyy-MM-dd")
                             .format(cell.getDateCellValue());
                 }
-                return java.math.BigDecimal.valueOf(cell.getNumericCellValue())
-                        .stripTrailingZeros().toPlainString();
+                return String.valueOf((long) cell.getNumericCellValue());
 
             case Cell.CELL_TYPE_BOOLEAN:
                 return String.valueOf(cell.getBooleanCellValue());
