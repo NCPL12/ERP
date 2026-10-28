@@ -46,7 +46,7 @@ public class PurchaseItemService {
 	// ADDED: used only by getPoHistory to load PO + vendor together in one query
 	@javax.persistence.PersistenceContext
 	private javax.persistence.EntityManager entityManager;
-	
+
 
 	@Autowired
 	PurchaseOrderAuditService purchaseOrderAuditService;

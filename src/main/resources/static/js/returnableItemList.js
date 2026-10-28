@@ -56,7 +56,7 @@ $(document).ready( function () {
 		  render: function(d){ if(!d) return ""; var dt=new Date(d); if(isNaN(dt.getTime())) return d; var dd=("0"+dt.getDate()).slice(-2); var m=dt.getMonth()+1; var yyyy=dt.getFullYear(); var hh=("0"+dt.getHours()).slice(-2); var mm=("0"+dt.getMinutes()).slice(-2); return dd+"-"+m+"-"+yyyy+" "+hh+":"+mm; }
 		},
 		{ "title":"Returned Qty", "data":"returnedQty", "width":"8%", "className":"text-center text-nowrap" }
-    	]
+        ]
     });
 
     // double-click → view page like DC: /api/dc/view?dcId= → /deliveryChallan (read-only)
