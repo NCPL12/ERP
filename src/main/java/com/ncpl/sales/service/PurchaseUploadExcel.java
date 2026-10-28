@@ -177,12 +177,29 @@ public class PurchaseUploadExcel {
                 } else if (salesItem != null) {
                     if (qty > salesQty) rowErrors.add("Entered quantity exceeds Design Quantity.");
                     if (qty > remainingQty + 0.0001f) {
-                        if (remainingQty <= 0) fullyOrdered++;
-                        rowErrors.add("Remaining Quantity available: " + Math.max(remainingQty, 0f)
-                                + " (Design qty: " + salesQty + ", already ordered: " + orderedQty
-                                + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))
-                                + ", in this file: " + alreadyInFile + ", you entered: " + qty + ")");
-                    }
+    if (remainingQty <= 0) {
+        fullyOrdered++;
+
+        String previousPo = orderedInPos.isEmpty()
+                ? ""
+                : " in PO " + String.join(", ", orderedInPos);
+
+        rowErrors.add("Item already uploaded/fully ordered" + previousPo
+                + ". Remaining Quantity available: " + Math.max(remainingQty, 0f)
+                + " (Design qty: " + salesQty
+                + ", already ordered: " + orderedQty
+                + previousPo
+                + ", in this file: " + alreadyInFile
+                + ", you entered: " + qty + ")");
+    } else {
+        rowErrors.add("Remaining Quantity available: " + remainingQty
+                + " (Design qty: " + salesQty
+                + ", already ordered: " + orderedQty
+                + (orderedInPos.isEmpty() ? "" : " in PO " + String.join(", ", orderedInPos))
+                + ", in this file: " + alreadyInFile
+                + ", you entered: " + qty + ")");
+    }
+}
                 }
 
                 Float unitPrice = getFloatCellValue(row.getCell(8), rowErrors, "Unit Price");
