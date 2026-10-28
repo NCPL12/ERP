@@ -1,5 +1,7 @@
 # Neptune ERP
 
+[ERP wiki](wiki/Home.md) · [Getting started](wiki/Getting-Started.md) · [User workflows](wiki/User-Workflows.md) · [Architecture](wiki/Architecture.md)
+
 [Draft release notes](RELEASE_NOTES.md)
 
 This README lists the features present on `main`, the committed differences on `development`, and work currently saved only in this local checkout. It compares `main` at `5858317` with `development` at `f94d723` (27 October 2026). Update the comparison when either branch moves.

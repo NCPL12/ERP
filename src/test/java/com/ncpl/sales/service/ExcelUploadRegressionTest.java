@@ -140,6 +140,46 @@ public class ExcelUploadRegressionTest {
     }
 
     @Test
+    public void poReportsAnAlreadyUploadedFileWithoutSavingIt() throws Exception {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet();
+        sheet.createRow(1).createCell(0).setCellValue("Vendor");
+        poRow(sheet, 5, "PO-1", 2);
+        PurchaseUploadExcel upload = new PurchaseUploadExcel();
+        PartyRepo parties = mock(PartyRepo.class);
+        SalesRepo salesOrders = mock(SalesRepo.class);
+        ItemMasterService items = mock(ItemMasterService.class);
+        SalesService sales = mock(SalesService.class);
+        PurchaseOrderService purchases = mock(PurchaseOrderService.class);
+        PurchaseItemService purchaseItems = mock(PurchaseItemService.class);
+        ReflectionTestUtils.setField(upload, "partyRepo", parties);
+        ReflectionTestUtils.setField(upload, "salesRepo", salesOrders);
+        ReflectionTestUtils.setField(upload, "itemService", items);
+        ReflectionTestUtils.setField(upload, "salesService", sales);
+        ReflectionTestUtils.setField(upload, "purchaseService", purchases);
+        ReflectionTestUtils.setField(upload, "purchaseItemService", purchaseItems);
+        Party party = new Party(); party.setId("V1");
+        ItemMaster item = new ItemMaster(); item.setId("I1");
+        SalesItem salesItem = new SalesItem(); salesItem.setId("S1");
+        DesignItems design = new DesignItems(); design.setItemId("I1"); design.setQuantity(2);
+        PurchaseOrder prior = new PurchaseOrder(); prior.setPoNumber("PO-OLD");
+        PurchaseItem priorItem = new PurchaseItem(); priorItem.setQuantity(2); priorItem.setPurchaseOrder(prior);
+        when(parties.findByName("Vendor")).thenReturn(party);
+        when(salesOrders.getSalesOrderByClientPoNumber("PO-1")).thenReturn(new SalesOrder());
+        when(items.getItemByModelNo("M1")).thenReturn(item);
+        when(sales.getSalesItemByName("Widget", "PO-1", "I1")).thenReturn(salesItem);
+        when(purchases.getDesignListOfItemBySalesItemId("S1")).thenReturn(Collections.singletonList(design));
+        when(purchaseItems.getPurchaseItemListBySalesItemIdAndItemId("S1", "I1"))
+                .thenReturn(Collections.singletonList(priorItem));
+
+        List<String> errors = upload.processExcelFile(excel(workbook, "po.xlsx"));
+        assertEquals(2, errors.size());
+        assertTrue(errors.get(0).contains("already uploaded"));
+        assertTrue(errors.get(0).contains("PO-OLD"));
+        verify(purchases, never()).savePurchaseOrder(any(PurchaseOrder.class), anyString(), anyString());
+    }
+
+    @Test
     public void soSkipsBlankRowsAndReadsHeadingUnitsAndDecimals() throws Exception {
         XSSFWorkbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet();
@@ -191,5 +231,97 @@ public class ExcelUploadRegressionTest {
         assertEquals(2.25f, saved.get(0).getUnitPrice(), 0.001f);
         assertEquals(0f, saved.get(1).getQuantity(), 0.001f);
         assertEquals(headingUnit, saved.get(1).getItem_units());
+    }
+
+    @Test
+    public void soUploadKeepsNewLinesWhenAClientPoAlreadyExists() {
+        SalesItem oldLine = new SalesItem();
+        oldLine.setSlNo("1");
+        oldLine.setDescription("Widget");
+        oldLine.setModelNo("M1");
+        oldLine.setUnit("1");
+        oldLine.setQuantity(2);
+        oldLine.setUnitPrice(10);
+
+        SalesItem repeatedLine = new SalesItem();
+        repeatedLine.setSlNo("1");
+        repeatedLine.setDescription("Widget");
+        repeatedLine.setModelNo("M1");
+        repeatedLine.setUnit("1");
+        repeatedLine.setQuantity(2);
+        repeatedLine.setUnitPrice(10);
+
+        SalesItem newLine = new SalesItem();
+        newLine.setSlNo("2");
+        newLine.setDescription("Gadget");
+        newLine.setModelNo("M2");
+        newLine.setUnit("1");
+        newLine.setQuantity(1);
+        newLine.setUnitPrice(20);
+
+        assertTrue(SOUploadService.newSalesItems(
+                Collections.singletonList(oldLine), Collections.singletonList(repeatedLine)).isEmpty());
+        assertEquals(Collections.singletonList(newLine), SOUploadService.newSalesItems(
+                Collections.singletonList(oldLine), Arrays.asList(repeatedLine, newLine)));
+    }
+
+    @Test
+    public void soAcceptsTermsShiftedFromFToG() throws Exception {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet();
+        Row header = sheet.createRow(2);
+        header.createCell(0).setCellValue("CLIENT-2");
+        header.createCell(1).setCellValue(new java.util.Date());
+        CellStyle dateStyle = workbook.createCellStyle();
+        dateStyle.setDataFormat(workbook.getCreationHelper().createDataFormat().getFormat("mm/dd/yyyy"));
+        header.getCell(1).setCellStyle(dateStyle);
+        header.createCell(2).setCellValue("Customer");
+        header.createCell(4).setCellValue(0);
+        header.createCell(6).setCellValue("Net 30");
+        header.createCell(11).setCellValue("Other terms");
+        Row item = sheet.createRow(6);
+        item.createCell(1).setCellValue("Widget");
+        item.createCell(8).setCellValue(1);
+        item.createCell(9).setCellValue("Nos");
+        item.createCell(10).setCellValue(2);
+        item.createCell(11).setCellValue(0);
+
+        SOUploadService upload = new SOUploadService();
+        SalesRepo salesOrders = mock(SalesRepo.class);
+        PartyRepo parties = mock(PartyRepo.class);
+        ItemMasterService items = mock(ItemMasterService.class);
+        SalesService sales = mock(SalesService.class);
+        ReflectionTestUtils.setField(upload, "salesOrderRepository", salesOrders);
+        ReflectionTestUtils.setField(upload, "partyrepo", parties);
+        ReflectionTestUtils.setField(upload, "itemService", items);
+        ReflectionTestUtils.setField(upload, "salesService", sales);
+        Party party = new Party(); party.setId("C1");
+        Units nos = new Units(); nos.setId(1L); nos.setName("Nos");
+        when(salesOrders.getSalesOrderByClientPoNo("CLIENT-2")).thenReturn(Optional.empty());
+        when(parties.findByName("Customer")).thenReturn(party);
+        when(items.getUnitList()).thenReturn(Collections.singletonList(nos));
+
+        assertTrue(upload.parseExcelFile(excel(workbook, "so.xlsx")).isEmpty());
+        ArgumentCaptor<SalesOrder> captured = ArgumentCaptor.forClass(SalesOrder.class);
+        verify(sales).savesales(captured.capture(), eq("C1"));
+        assertEquals("Net 30", captured.getValue().getModeOfPayment());
+        assertEquals("Other terms", captured.getValue().getOtherTermsAndConditions());
+    }
+
+    @Test
+    public void alternateSoUploadRejectsAnExistingClientPo() throws Exception {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        workbook.createSheet().createRow(1).createCell(0).setCellValue("Client PO: PO-1");
+        SalesOrderUploadService upload = new SalesOrderUploadService();
+        SalesRepo salesOrders = mock(SalesRepo.class);
+        ReflectionTestUtils.setField(upload, "salesOrderRepository", salesOrders);
+        when(salesOrders.existsByClientPoNumberIgnoreCase("PO-1")).thenReturn(true);
+
+        try {
+            upload.uploadExcelFile(excel(workbook, "so.xlsx"));
+            fail("Expected the duplicate upload to be rejected");
+        } catch (RuntimeException expected) {
+            assertTrue(expected.getMessage().contains("already uploaded"));
+        }
     }
 }

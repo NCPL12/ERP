@@ -37,61 +37,6 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 		<div class="content-wrapper">
 		<div class="card-body">
 		<section class="content">
-		<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE')">
-			<div class="row">
-
-				<div class="col-md-6">
-						<div class="card w-100">
-							  <h5 class="card-header  bg-light" style="font-size: inherit;">
-							  		<spring:message code="stock.history.by.date" /><small>&nbsp;Last 30 days from the selected date</small>
-							  </h5>
-						  	<form action="${pageContext.request.contextPath}/stock_history/Download" id="stockHistoryForm" method="get">
-							  <div class="card-body cardHeight">
-								   <div class="form-group row">
-									    <label for="staticEmail" class="col-sm-2 ">Date</label>
-									    <div class="col-sm-10">
-									     <input type="text" id="reportDate" name="reportDate" class="form-control PositionofTextbox" autocomplete="off">
-									    </div>
-									  </div>
-							  </div>
-							  <div  class="card-footer">
-							  <button type=submit id="downLoadStockHistoryReportBtn"
-														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
-							  </div>
-						  </form>
-						</div>
-				</div>
-
-				<div class="col-md-6">
-					<div class="card w-100">
-							  <h5 class="card-header  bg-light" style="font-size: inherit;">
-							  		<spring:message code="stock.summary.report.by.date" />
-							  </h5>
-						  	<form action="${pageContext.request.contextPath}/stock/summary_details/" id="stockSummaryForm" method="get" target="_blank">
-							  <div class="card-body">
-								   <div class="form-group row mb-1">
-									    <label for="reportFromDate" class="col-sm-2 col-form-label">From</label>
-									    <div class="col-sm-10">
-									     <input type="text" autocomplete="off" name="reportFromDate" id="reportFromDate" class="form-control PositionofTextbox">
-									    </div>
-								   </div>
-								   <div class="form-group row mb-1">
-									    <label for="reportToDate" class="col-sm-2 col-form-label">To</label>
-									    <div class="col-sm-10">
-									     <input type="text" autocomplete="off" name="reportToDate" id="reportToDate" class="form-control PositionofTextbox">
-									    </div>
-								   </div>
-							 </div>
-							<div  class="card-footer">
-								    <button type="submit" id="downLoadStockSummaryReportBtn"
-														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
-							  </div>
-						  </form>
-						</div>
-
-				</div>
-			</div>
-			</security:authorize>
 			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
 			<%-- Emergency Finance correction tool. Keep hidden during normal operation;
 				 remove display:none when an approved snapshot must be imported. --%>
@@ -131,10 +76,68 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 			</div>
 			</security:authorize>
-			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE')">
-			<div class="row" style="padding-top:10px">
 
-				<div class="col-md-6">
+			<%-- NEW: every report card is now in ONE row, each card with its own role + report check,
+				 so a hidden card leaves no empty gap (visible cards fill left to right). --%>
+			<div class="row">
+
+				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_STOCK_HISTORY_BY_DATE')">
+				<div class="col-md-6" style="padding-bottom:10px">
+						<div class="card w-100">
+							  <h5 class="card-header  bg-light" style="font-size: inherit;">
+							  		<spring:message code="stock.history.by.date" /><small>&nbsp;Last 30 days from the selected date</small>
+							  </h5>
+						  	<form action="${pageContext.request.contextPath}/stock_history/Download" id="stockHistoryForm" method="get">
+							  <div class="card-body cardHeight">
+								   <div class="form-group row">
+									    <label for="staticEmail" class="col-sm-2 ">Date</label>
+									    <div class="col-sm-10">
+									     <input type="text" id="reportDate" name="reportDate" class="form-control PositionofTextbox" autocomplete="off">
+									    </div>
+									  </div>
+							  </div>
+							  <div  class="card-footer">
+							  <button type=submit id="downLoadStockHistoryReportBtn"
+														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
+							  </div>
+						  </form>
+						</div>
+				</div>
+				</security:authorize>
+
+				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_MONTHLY_REPORT')">
+				<div class="col-md-6" style="padding-bottom:10px">
+					<div class="card w-100">
+							  <h5 class="card-header  bg-light" style="font-size: inherit;">
+							  		<spring:message code="stock.summary.report.by.date" />
+							  </h5>
+						  	<form action="${pageContext.request.contextPath}/stock/summary_details/" id="stockSummaryForm" method="get" target="_blank">
+							  <div class="card-body">
+								   <div class="form-group row mb-1">
+									    <label for="reportFromDate" class="col-sm-2 col-form-label">From</label>
+									    <div class="col-sm-10">
+									     <input type="text" autocomplete="off" name="reportFromDate" id="reportFromDate" class="form-control PositionofTextbox">
+									    </div>
+								   </div>
+								   <div class="form-group row mb-1">
+									    <label for="reportToDate" class="col-sm-2 col-form-label">To</label>
+									    <div class="col-sm-10">
+									     <input type="text" autocomplete="off" name="reportToDate" id="reportToDate" class="form-control PositionofTextbox">
+									    </div>
+								   </div>
+							 </div>
+							<div  class="card-footer">
+								    <button type="submit" id="downLoadStockSummaryReportBtn"
+														class="btn btn-primary btn-sm btn-inline pull-right"><i class='fa fa-fw fa-download'></i> Download</button>
+							  </div>
+						  </form>
+						</div>
+
+				</div>
+				</security:authorize>
+
+				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_STOCK_REPORT_BY_REGION')">
+				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="stock.report.by.region" />
@@ -171,7 +174,10 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						  </form>
 						</div>
 				</div>
-				<div class="col-md-6">
+				</security:authorize>
+
+				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DAILY_REPORT')">
+				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		Daily Report
@@ -192,11 +198,10 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						  </form>
 						</div>
 				</div>
-				</div>
 				</security:authorize>
-			<div class="row" style="padding-top:10px">
-			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','PURCHASE','SALES','PURCHASE STORE')">
-			<div class="col-md-6">
+
+			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','PURCHASE','SALES','PURCHASE STORE') and hasAuthority('REPORT_OUTSTANDING_STOCK_REPORT')">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="outstanding.stock.report" />
@@ -230,8 +235,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				 <security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
-					<div class="col-md-6">
+				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PENDING_PO_REPORT')">
+					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="pending.report" />
@@ -265,12 +270,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-			</div>
-			
-			 
-			<div class="row" style="padding-top:10px">
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-			<div class="col-md-6">
+
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_PENDING_DC_REPORT')">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="pending.dc.report" />
@@ -304,9 +306,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
+				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PURCHASE_ITEM_HISTORY')">
 				
-					<div class="col-md-6">
+					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="poitem.history" />
@@ -332,14 +334,13 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-			</div>
+
 			
 			
 			
 			<!-- SO list by item report starts -->
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
-			<div class="row" style="padding-top:10px">
-			<div class="col-md-6">
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_SALES_LIST_BY_ITEM')">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="sales.list.by.item.id" />
@@ -364,7 +365,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						  </form>
 						</div>
 				</div>
-					<div class="col-md-6">
+			</security:authorize>
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PENDING_PO_REPORT_BY_PONUMBER')">
+					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="pending.report.by.ponumber" />
@@ -389,15 +392,13 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						  </form>
 						</div>
 				</div>
-			</div>
 			</security:authorize>
 			<!-- /SO list by item report ends -->
 			
 			<!-- Dc List By Item Report Starts -->
 			
-			<div class="row" style="padding-top:10px">
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-			<div class="col-md-6">
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DC_LIST_BY_ITEM')">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="dc.list.by.item" />
@@ -423,9 +424,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 			</security:authorize>		
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PO_LIST_BY_DATE')">
 			
-			<div class="col-md-6">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="po.list.by.date" />
@@ -472,11 +473,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				</div>	
 			
-			<div class="row" style="padding-top:10px">
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES')">
-			<div class="col-md-6">
+			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_ACTIVE_SALES_ORDER_BY_CUSTOMER')">
+			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="active.sales.order.by.customer" />
@@ -502,8 +501,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-				<div class="col-md-6">
+				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_GRN_REPORT_BY_DATE')">
+				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="itemwise.grn.report" />
@@ -531,15 +530,13 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				</div>
 			
 		<!-- Dc List By Item Report ends -->
 			
 			
 		<!-- DC Report By Date + GRN and PO Details by Model Report -->
-		<div class="row" style="padding-top:10px">
-		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-		<div class="col-md-6">
+		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DC_REPORT_BY_DATE')">
+		<div class="col-md-6" style="padding-bottom:10px">
 				<div class="card w-100">
 						  <h5 class="card-header  bg-light" style="font-size: inherit;">
 						  		<spring:message code="dc.report.by.date" />
@@ -567,8 +564,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 					</div>
 			</div>
 		</security:authorize>
-		<security:authorize access="hasAnyAuthority('ADMIN','SALES','PURCHASE','PURCHASE STORE')">
-		<div class="col-md-6">
+		<security:authorize access="hasAnyAuthority('ADMIN','SALES','PURCHASE','PURCHASE STORE') and hasAuthority('REPORT_GRN_AND_PONUMBER_BY_MODELS')">
+		<div class="col-md-6" style="padding-bottom:10px">
 				<div class="card w-100">
 						  <h5 class="card-header  bg-light" style="font-size: inherit;">
 						  		GRN and PONumber by Models
@@ -592,15 +589,13 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 					</div>
 			</div>
 		</security:authorize>
-		</div>
 		
 		<!-- DC Report By Date + GRN and PO Details by Model Report ends -->
 
 
 		<!-- Monthly Stock Movement Report -->
-		<div class="row" style="padding-top:10px">
-		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE')">
-		<div class="col-md-6">
+		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_MONTHLY_STOCK_MOVEMENT_REPORT')">
+		<div class="col-md-6" style="padding-bottom:10px">
 			<div class="card w-100">
 				<h5 class="card-header bg-light" style="font-size: inherit;">
 					Monthly Stock Movement Report
@@ -627,9 +622,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			</div>
 		</div>
 		</security:authorize>
-		</div>
 		<!-- Monthly Stock Movement Report ends -->
 
+			</div> <%-- NEW: end of the single report row --%>
 
 		</section>
 		</div>
@@ -691,6 +686,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				<div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div>
 			</div></div>
 		</div>
+    <%-- NEW: this Tally script needs the PO List By Date card on the page, so it only renders when that card renders --%>
+    <security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PO_LIST_BY_DATE')">
     <script>
     function refreshPoTallyConnection() {
         var button = document.getElementById('checkTallyPo');
@@ -731,6 +728,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         setTimeout(function() { button.disabled = true; }, 0);
     });
     </script>
+    </security:authorize>
 	</body>
 
 </html>

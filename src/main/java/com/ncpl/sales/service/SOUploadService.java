@@ -125,12 +125,17 @@ public class SOUploadService {
 	    	               // Date projectClosureDate = getDateCellValue(row.getCell(5), errors, rowNum, dateFormat);
 	    	                //if (projectClosureDate == null) salesOrder.setProjectClosureDate(null);
 	    	              //  salesOrder.setProjectClosureDate(projectClosureDate);
-	    	                salesOrder.setModeOfPayment(getStringCellValue(row.getCell(5)));
-	    	                salesOrder.setJurisdiction(getStringCellValue(row.getCell(6)));
-	    	                salesOrder.setFreight(getStringCellValue(row.getCell(7)));
-	    	                salesOrder.setDelivery(getStringCellValue(row.getCell(8)));
-	    	                salesOrder.setWarranty(getStringCellValue(row.getCell(9)));
-	    	                salesOrder.setOtherTermsAndConditions(getStringCellValue(row.getCell(10)));
+                        int paymentColumn = findPaymentColumn(sheet, row);
+                        if (paymentColumn < 0) {
+                            errors.add("Unrecognised Payment through Other Terms layout (columns F-L).");
+                            return errors;
+                        }
+                        salesOrder.setModeOfPayment(getStringCellValue(row.getCell(paymentColumn)));
+                        salesOrder.setJurisdiction(getStringCellValue(row.getCell(paymentColumn + 1)));
+                        salesOrder.setFreight(getStringCellValue(row.getCell(paymentColumn + 2)));
+                        salesOrder.setDelivery(getStringCellValue(row.getCell(paymentColumn + 3)));
+                        salesOrder.setWarranty(getStringCellValue(row.getCell(paymentColumn + 4)));
+                        salesOrder.setOtherTermsAndConditions(getStringCellValue(row.getCell(paymentColumn + 5)));
 	    	                rowNum=6;
 	    	                float total=0;
 	    	                float gst=0;
@@ -227,6 +232,17 @@ public class SOUploadService {
 		    	                
 		    	                rowNum++;
 	    	                }
+
+                        if (errors.isEmpty() && salesOrder.getId() != null && !salesOrder.getId().isEmpty()) {
+                            salesItems = newSalesItems(
+                                    salesItemRepository.findSalesItemsBySalesOrderId(salesOrder.getId()), salesItems);
+                            if (salesItems.isEmpty()) {
+                                errors.add("This sales order file is already uploaded. No new items were found.");
+                                return errors;
+                            }
+                            total = 0f;
+                            for (SalesItem item : salesItems) total += item.getAmount();
+                        }
 	    	                
 	    	                
 	    	                
@@ -264,10 +280,6 @@ public class SOUploadService {
 		    	                salesOrder.setGst(gst);
 	    	                	grandTotal=total+gst;
 		    	                salesOrder.setGrandTotal(Math.round(grandTotal * 100.0) / 100.0);
-	    	                	 for (SalesItem item : salesItems) {
-	    	                         item.setSalesOrder(salesOrder);
-	    	                         salesItemRepository.save(item);
-	    	                     }
 	    	                }
 	    	                
 	    	               
@@ -278,6 +290,7 @@ public class SOUploadService {
 	    	                		salesService.savesales(salesOrder, party.getId());
 	    	                	} else {
 	    	                		// Existing sales order - use update method which includes audit logging
+                                salesItemRepository.saveAll(salesItems);
 	    	                		salesOrderRepository.save(salesOrder);
 	    	                		// Log audit for the update
 	    	                		try {
@@ -299,6 +312,31 @@ public class SOUploadService {
 	    	            }
 	         return errors;
 	     }
+
+	  static List<SalesItem> newSalesItems(List<SalesItem> existing, List<SalesItem> uploaded) {
+	      Map<List<Object>, Integer> existingCounts = new HashMap<>();
+	      for (SalesItem item : existing) {
+	          List<Object> key = itemKey(item);
+	          existingCounts.put(key, existingCounts.getOrDefault(key, 0) + 1);
+	      }
+	      List<SalesItem> newItems = new ArrayList<>();
+	      for (SalesItem item : uploaded) {
+	          List<Object> key = itemKey(item);
+	          int count = existingCounts.getOrDefault(key, 0);
+	          if (count > 0) {
+	              existingCounts.put(key, count - 1);
+	          } else {
+	              newItems.add(item);
+	          }
+	      }
+	      return newItems;
+	  }
+
+	  private static List<Object> itemKey(SalesItem item) {
+	      return java.util.Arrays.asList(item.getSlNo(), item.getDescription(), item.getModelNo(),
+	              item.getHsnCode(), item.getServicehsnCode(), item.getUnit(),
+	              item.getQuantity(), item.getUnitPrice(), item.getServicePrice());
+	  }
 	  
 	  private boolean isBlankCell(Cell cell) {
 	      return cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK
@@ -316,6 +354,33 @@ public class SOUploadService {
 	  private String normalizeUnitName(String name) {
 	      return name.replace('\u00a0', ' ').trim().replaceAll("\\s+", " ")
 	              .toLowerCase(Locale.ROOT);
+	  }
+
+	  private static final String[] TERM_HEADERS = {
+	          "payment", "jurisdiction", "freight", "delivery", "warranty", "other"
+	  };
+
+	  private int findPaymentColumn(Sheet sheet, Row dataRow) {
+	      for (int rowIndex = 0; rowIndex <= 1; rowIndex++) {
+	          Row header = sheet.getRow(rowIndex);
+	          if (header == null) continue;
+	          for (int start : new int[] {5, 6}) {
+	              boolean matches = true;
+	              for (int offset = 0; offset < TERM_HEADERS.length; offset++) {
+	                  if (!getStringCellValue(header.getCell(start + offset))
+	                          .toLowerCase(Locale.ROOT).contains(TERM_HEADERS[offset])) {
+	                      matches = false;
+	                      break;
+	                  }
+	              }
+	              if (matches) return start;
+	          }
+	      }
+	      boolean fFilled = !getStringCellValue(dataRow.getCell(5)).isEmpty();
+	      boolean lFilled = !getStringCellValue(dataRow.getCell(11)).isEmpty();
+	      if (lFilled && !fFilled) return 6;
+	      if (!lFilled) return 5;
+	      return -1;
 	  }
 
 	  private String getStringCellValue(Cell cell) {
