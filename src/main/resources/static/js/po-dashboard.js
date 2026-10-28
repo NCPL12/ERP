@@ -1,3 +1,7 @@
+// FIX: safe copies of page globals. A missing 'user' / 'role' no longer throws a ReferenceError.
+	var currentUser = (typeof user !== 'undefined') ? user : "";
+	var currentRole = (typeof role !== 'undefined') ? role : "";
+
 	var table;
 	var popreviewitemstable;
 	var vendorState;
@@ -101,7 +105,7 @@
 				"mData" : "archive"	,
 				render : function(datam, type, row) {
 					var archive;
-					if(role=="SUPER ADMIN"){
+					if(currentRole=="SUPER ADMIN"){
 						if(row.archive==true){
 							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
 						}else{
@@ -163,13 +167,13 @@
 		openPurchaseOrderRow(this);
 	});
 	
-	if(role=="STORE USER"){
+	if(currentRole=="STORE USER"){
 		$(".addPO").on("click", function (event) {
 				event.preventDefault();
 			});
 			
 		}
-	if(user=="admin"){
+	if(currentUser=="admin"){
 			$(document).on('click',".poUploadButton",function(){
 				$("#poUploadForm")[0].reset();
 				$('#response').empty();
@@ -861,3 +865,4 @@
 		return res;
 
 		}
+		
