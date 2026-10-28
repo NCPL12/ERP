@@ -34,8 +34,8 @@
 
 <script type="text/javascript">
 var itemList = [];
-// var customerPartyList=${customerPartyList};
-// var supplierPartyList=${supplierPartyList};
+var customerPartyList=${customerPartyList};
+var supplierPartyList=${supplierPartyList};
 var allSupplierslist = [];
 var allStocksList = [];
 var makeList=${makeList};
