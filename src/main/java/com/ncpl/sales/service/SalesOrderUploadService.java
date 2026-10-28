@@ -40,7 +40,7 @@ public class SalesOrderUploadService {
 	 	SalesService salesService;
 	 @Autowired
 	 	ItemMasterService itemService;
-	 
+
 	    public String uploadExcelFile(MultipartFile file) {
 	    	 Workbook workbook;
 	    	 try (InputStream inputStream = file.getInputStream()){
@@ -53,7 +53,7 @@ public class SalesOrderUploadService {
 	    	            }
 
 	                Sheet sheet = workbook.getSheetAt(0);
-	                
+
 	                SalesOrder order = new SalesOrder();
 	                List<SalesItem> items = new ArrayList<SalesItem>();
 
@@ -64,12 +64,12 @@ public class SalesOrderUploadService {
 	                }
 	                order.setClientPoNumber(clientPoNumber);
 	                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-	                
+
 	                String clientPoDateStr = sheet.getRow(2).getCell(0).getStringCellValue().split(":")[1].trim();
 	                if (clientPoDateStr != null && !clientPoDateStr.trim().isEmpty()) {
 	                LocalDate localDate1 = LocalDate.parse(clientPoDateStr, inputFormatter);
 	                Date clientPoDate = Date.valueOf(localDate1);
-	                
+
 	                order.setClientPoDate(clientPoDate);
 	                }else {
 	                	order.setClientPoDate(null);
@@ -85,13 +85,13 @@ public class SalesOrderUploadService {
 
 	                order.setBillingAddress("");
 	                order.setRegion(sheet.getRow(6).getCell(0).getStringCellValue().split(":")[1].trim());
-	                
+
 	                order.setBillingAddress(billingParty.getId());
 	                order.setShippingAddress(shippingParty.getId());
-	               
+
 	                order.setId("");
 	                // Save SalesOrder to DB
-	                
+
 
 	                // Parse tabular data (row 9 onwards)
 	                int rowNum = 0;
@@ -104,16 +104,16 @@ public class SalesOrderUploadService {
 	                    	 rowNum=row.getRowNum();
 	                    	break; // Skip empty rows
 	                    }
-	                    
+
 	                    SalesItem item = new SalesItem();
 	                    item.setSlNo(row.getCell(0).getStringCellValue());
 	                    item.setDescription(row.getCell(1).getStringCellValue());
 	                    item.setModelNo(row.getCell(5).getStringCellValue());
 	                    item.setHsnCode(row.getCell(6).getStringCellValue());
 	                    float quantity=(float) row.getCell(8).getNumericCellValue();
-	                    
+
 	                    item.setQuantity((float) (Math.round(quantity * 100.0) / 100.0));
-	                    
+
 	                    Units unitObj=itemService.getUnitsByName(row.getCell(9).getStringCellValue());
 	                    item.setUnit(unitObj.getId().toString());
 	                    float unitPrice=(float) row.getCell(10).getNumericCellValue();
@@ -126,8 +126,8 @@ public class SalesOrderUploadService {
 	                    item.setArchive(false);
 
 	                    items.add(item);
-	                   
-	                    
+
+
 	                }
 	                float total=(float)sheet.getRow(rowNum).getCell(12).getNumericCellValue();
 	                order.setTotal((float) (Math.round(total * 100.0) / 100.0));
@@ -141,7 +141,7 @@ public class SalesOrderUploadService {
 	                order.setGrandTotal((float) (Math.round(grandTotal * 100.0) / 100.0));
 	                rowNum=rowNum+1;
 	                String projectclosureDateStr = sheet.getRow(rowNum).getCell(0).getStringCellValue().split(":")[1].trim();
-	                
+
 	                if (projectclosureDateStr != null && !projectclosureDateStr.trim().isEmpty()) {
 	                // Parse date string
 	                LocalDate localDate = LocalDate.parse(projectclosureDateStr, inputFormatter);
@@ -149,12 +149,12 @@ public class SalesOrderUploadService {
 	                // Convert to java.sql.Date
 	                Date projectClosureDate = Date.valueOf(localDate);
 
-	                
+
 	                order.setProjectClosureDate(projectClosureDate);
 	                }else {
 	                	order.setProjectClosureDate(null);
 	                }
-	                
+
 	                order.setArchive(false);
 	                rowNum=rowNum+2;
 	                order.setModeOfPayment(sheet.getRow(rowNum).getCell(0).getStringCellValue().split(":")[1].trim());
@@ -177,7 +177,7 @@ public class SalesOrderUploadService {
 	            } catch (Exception e) {
 	                throw new RuntimeException("Failed to process file: " + e.getMessage(), e);
 	            }
-	            
+
 	    }
-	        
+
 }
