@@ -12,7 +12,7 @@ var costSummaryByItem = {};
 // @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
 function hasItemMasterAccess() {
 	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
-		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
+		|| role == "ADMIN" || role == "SUPER ADMIN" || (typeof itemMasterAccess !== "undefined" && itemMasterAccess === true);
 }
 
 function precomputeItemMasterAggregations() {
@@ -83,6 +83,13 @@ function precomputeItemMasterAggregations() {
 }
 //var userName;
 $(document).ready(function () {
+	// @D0010 permission flags - defined only if the JSP hasn't already defined them
+	if (typeof canEditItemMaster === "undefined") {
+		window.canEditItemMaster = hasItemMasterAccess();
+	}
+	if (typeof canDeleteItemMaster === "undefined") {
+		window.canDeleteItemMaster = (role == "ADMIN" || role == "SUPER ADMIN");
+	}
 	$("#SalesVal").hide();
 	$(".amount").attr("readonly", "readonly");
 	$(".total").attr("readonly", "readonly");
