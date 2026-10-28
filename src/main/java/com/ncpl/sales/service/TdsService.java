@@ -63,7 +63,7 @@ public class TdsService {
 	PurchaseItemService purchaseItemService;
 	@Autowired
 	SalesRepo salesrepo;
-	
+
 	@Autowired
 	ItemMasterService itemService;
 
@@ -382,7 +382,7 @@ public class TdsService {
 			tdsItemList.add(tdsItem);
 		}
 		return tdsItemList;
-		
+
 	}
 	
 	/*@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -398,19 +398,19 @@ public class TdsService {
 				if(poItemList.size()==0) {
 					set.add(salesItemObj.get().getSalesOrder());
 				}
-				
+
 			}
 		}
 		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);
 		return soList;
-		
+
 	}*/
-	
+
 	public List<SalesOrder> getTdsItemsListWhereTdsApprovedAndPoNotDoneForDashboard(){
-		
+
 		ArrayList<SalesOrder> soList = salesrepo.getTdsApprovedAndPoNotDoneListDashboard();
 		return soList;
-		
+
 	}
 
 	public List<TdsItems> getTdsItemsListWhereTdsApprovedAndPoNotDonePartial() {
@@ -436,7 +436,7 @@ public class TdsService {
 					set.add(salesItemObj.get().getSalesOrder());
 				}
 			}
-				
+
 			}
 		}
 		ArrayList<SalesOrder> soList = new ArrayList<SalesOrder>(set);

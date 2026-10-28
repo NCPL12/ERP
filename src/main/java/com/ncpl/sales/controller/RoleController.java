@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ncpl.sales.model.DashboardTile;
 import com.ncpl.sales.model.Module;
+import com.ncpl.sales.model.ReportItem;
 import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.RolePermission;
 import com.ncpl.sales.model.RolePermissionDto;
@@ -245,6 +246,57 @@ public class RoleController {
 			return ResponseEntity.badRequest().body("At least one dashboard tile must be enabled.");
 		}
 		role.setDashboardTiles(String.join(",", filtered));
+		roleRepo.save(role);
+		return ResponseEntity.ok().build();
+	}
+
+	/** Which reports this role's users can open. */
+	@GetMapping("/api/roles/{id}/report-items")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
+	public ResponseEntity<?> getReportItems(@PathVariable Long id) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		Set<String> visible = ReportItem.visible(role.getReportItems());
+
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (ReportItem r : ReportItem.values()) {
+			Map<String, Object> row = new HashMap<>();
+			row.put("key", r.name());
+			row.put("label", r.label());
+			row.put("visible", visible.contains(r.name()));
+			items.add(row);
+		}
+		return ResponseEntity.ok(items);
+	}
+
+	@PutMapping("/api/roles/{id}/report-items")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
+	public ResponseEntity<?> saveReportItems(@PathVariable Long id, @RequestBody List<String> keys) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		java.util.Set<String> valid = new java.util.HashSet<>();
+		for (ReportItem r : ReportItem.values()) {
+			valid.add(r.name());
+		}
+		Set<String> filtered = new java.util.LinkedHashSet<>();
+		if (keys != null) {
+			for (String k : keys) {
+				if (k != null && valid.contains(k.trim())) {
+					filtered.add(k.trim());
+				}
+			}
+		}
+		// Same rule as dashboard tiles: Reports view on needs at least one report.
+		if (filtered.isEmpty() && hasModuleView(id, Module.REPORTS.name())) {
+			return ResponseEntity.badRequest().body("At least one report must be enabled.");
+		}
+		role.setReportItems(String.join(",", filtered));
 		roleRepo.save(role);
 		return ResponseEntity.ok().build();
 	}

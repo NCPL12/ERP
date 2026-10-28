@@ -743,7 +743,7 @@ public class DeliveryChallanService {
 					+ deliveryChallanItemList.size() + " dc items, " + doneDcIds.size() + " DCs in " + (System.currentTimeMillis() - t0) + " ms");
 		}
 		ArrayList<DeliveryChallan> dc = new ArrayList<DeliveryChallan>(set);
-		
+
 		return dc;
 	}
 	// ===================== END NEW VERSION =====================

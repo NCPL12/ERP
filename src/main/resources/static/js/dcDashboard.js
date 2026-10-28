@@ -86,7 +86,7 @@ $(document).ready(function(){
 	    			}
 	    		});
 	    	},
-	    	"columns": [ {
+            "columns": [ {
 			"data" : "dcId",
 			"defaultContent":"",
 			render : function(data, type, row) {

@@ -1240,7 +1240,7 @@ function designTable2Json(){
 		         	  $("#billingAddressDropdown").append(new Option(alternateAddressArr[i].addr1, alternateAddressArr[i].id));
 		           }
 		           
-		   
+
 		         //Restore saved billing address when editing
 if(salesOrderObj!="" && salesOrderObj.billingAddress && $("#billingAddressDropdown option[value='"+salesOrderObj.billingAddress+"']").length){
 	$("#billingAddressDropdown").val(salesOrderObj.billingAddress);
@@ -1290,7 +1290,7 @@ if(salesOrderObj!=""){
 			       $("#shippingAddressPartyId").val(response.shippingAddr.id)
 			       
 			       if(response.shippingAddr.id!=response.mainParty.id){
-			    	$("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
+                    $("#shippingAddressDropdown").append(new Option(response.mainParty.addr1, response.mainParty.id));
 			       }
 		    	   //populate other alternative addresses for billing address dropdown.
 		    	   var alternateAddressArr = response.addresses;

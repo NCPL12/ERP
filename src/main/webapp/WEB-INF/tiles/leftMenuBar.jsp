@@ -168,9 +168,9 @@
                     </security:authorize>
 
                     <c:set var="salesOpen"
-                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri.startsWith('/returnable/') or uri == '/invoiceList' or uri == '/workOrderList'}" />
+                      value="${uri == '/salesList' or uri == '/dcList' or uri == '/returnableList' or uri.startsWith('/returnable/') or uri == '/invoiceList'}" />
                     <security:authorize
-                      access="hasAnyAuthority('SALES_ORDER_VIEW','DELIVERY_CHALLAN_VIEW','RETURNABLE_VIEW','INVOICE_VIEW','WORK_ORDER_VIEW')">
+                      access="hasAnyAuthority('SALES_ORDER_VIEW','DELIVERY_CHALLAN_VIEW','RETURNABLE_VIEW','INVOICE_VIEW')">
                     <li class="nav-item has-treeview ${salesOpen ? 'menu-open' : ''}">
                       <a href="#" class="nav-link ${salesOpen ? 'active' : ''}">
                         <i class="nav-icon fas fa-shopping-cart"></i>
@@ -239,27 +239,15 @@
                             </a>
                           </li>
                         </security:authorize>
-                        <security:authorize access="hasAuthority('WORK_ORDER_VIEW')">
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/workOrderList"
-                              class="nav-link ${uri == '/workOrderList' ? 'active' : ''}">
-                              <i class="nav-icon fas fa-clipboard-list"></i>
-                              <p>
-                                <spring:message code="work.order" />
-                              </p>
-                            </a>
-                          </li>
-                        </security:authorize>
-
                       </ul>
                     </li>
                     </security:authorize>
 
                     <!-- Purchase section started here -->
                     <c:set var="purchaseOpen"
-                      value="${uri == '/purchase' or uri == '/grnLists' or uri == '/nonBillableList'}" />
+                      value="${uri == '/purchase' or uri == '/grnLists'}" />
                     <security:authorize
-                      access="hasAnyAuthority('PURCHASE_VIEW','GRN_VIEW','NON_BILLABLE_VIEW')">
+                      access="hasAnyAuthority('PURCHASE_VIEW','GRN_VIEW')">
                     <li class="nav-item has-treeview ${purchaseOpen ? 'menu-open' : ''}">
                       <a href="#" class="nav-link ${purchaseOpen ? 'active' : ''}">
                         <i class="nav-icon fas fa-shopping-basket"></i>
@@ -289,18 +277,6 @@
                               <i class="nav-icon fas fa-clipboard-check"></i>
                               <p>
                                 <spring:message code="sales.grn" />
-                              </p>
-                            </a>
-                          </li>
-                        </security:authorize>
-                        <security:authorize
-                          access="hasAuthority('NON_BILLABLE_VIEW')">
-                          <li class="nav-item">
-                            <a href="${pageContext.request.contextPath}/nonBillableList"
-                              class="nav-link ${uri == '/nonBillableList' ? 'active' : ''}">
-                              <i class="nav-icon fas fa-ban"></i>
-                              <p>
-                                <spring:message code="non.billable" />
                               </p>
                             </a>
                           </li>

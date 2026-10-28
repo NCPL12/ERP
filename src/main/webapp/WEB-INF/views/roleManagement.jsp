@@ -211,7 +211,8 @@ window.hasUserManagementEdit = ${canEditUserMgmt};
 	color: #d1d5db;
 	font-weight: 700;
 }
-.dashboard-tiles-row td {
+.dashboard-tiles-row td,
+.reports-items-row td {
 	background: #f9fafb;
 	height: auto;
 	padding: 12px 16px;
@@ -229,30 +230,30 @@ window.hasUserManagementEdit = ${canEditUserMgmt};
 	letter-spacing: 0.05em;
 }
   .ra-tiles-checks {
-  	display: flex;
-  	flex-wrap: wrap;
-  	column-gap: 18px;
-  	row-gap: 10px;
-  	max-width: 100%;
-  	align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 18px;
+      row-gap: 10px;
+      max-width: 100%;
+      align-items: center;
   }
   .ra-tile-check {
-  	display: inline-flex;
-  	align-items: center;
-  	gap: 6px;
-  	font-weight: 400;
-  	font-size: 0.82rem;
-  	color: #374151;
-  	margin: 0;
-  	white-space: nowrap;
-  	line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 400;
+      font-size: 0.82rem;
+      color: #374151;
+      margin: 0;
+      white-space: nowrap;
+      line-height: 1;
   }
   .ra-tile-check input {
-  	accent-color: #2563eb;
-  	margin: 0;
-  	vertical-align: middle;
-  	position: relative;
-  	top: 0;
+      accent-color: #2563eb;
+      margin: 0;
+      vertical-align: middle;
+      position: relative;
+      top: 0;
   }
 .ra-legend {
 	display: flex;
