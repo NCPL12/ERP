@@ -431,7 +431,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
 							  		<spring:message code="po.list.by.date" />
 							  </h5>
-						  	<form id="poLostByDateForm" action="${pageContext.request.contextPath}/po_list/by_date" method="get">
+                              <form id="poLostByDateForm" action="${pageContext.request.contextPath}/po_list/by_date" method="get">
 								 <div class="card-body">
 								   <div class="form-group row mb-1">
 								    <label for="poListByFromDate" class="col-sm-2 col-form-label">From</label>

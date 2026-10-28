@@ -366,7 +366,7 @@ public class StockService {
 				}
 			}
 		}
-		return stockList;	
+		return stockList;
 	}
 	public Map<String, Object> stockInfoEmail(String fileName) {
 		Map<String, Object> emailContents = new HashMap<String, Object>();
@@ -437,11 +437,11 @@ public class StockService {
 	}
 
 	//update stock on adding grn and dc
-	public Stock updateStockQuantityFromGrn(String itemId, String clientId, float qty,String className,SalesOrder soObj) {		
+	public Stock updateStockQuantityFromGrn(String itemId, String clientId, float qty,String className,SalesOrder soObj) {
 		//Optional<SalesItem> salesItemObj = salesService.getSalesItemById(soItemId);
 		//SalesOrder soObj=soObj2.get().getSalesOrder();
 		Party party=partyService.getPartyById(clientId);
-		Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);		
+		Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
 		if(className=="grn") {
 			if(stock == null) {
 				Stock new_stock = new Stock();
@@ -473,9 +473,9 @@ public class StockService {
 				stockRepo.save(stock);
 			}
 		}
-		return stock;	
+		return stock;
 	}
-	
+
 
 	public List<Stock> findByFromAndToDate(Timestamp sqlFromDate, Timestamp sqlToDate) {
 		List<Stock> stockList = stockRepo.findStockByDateUpdated(sqlFromDate, sqlToDate);

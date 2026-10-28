@@ -8,13 +8,13 @@
 <head>
 <meta charset="ISO-8859-1">
 <title><tiles:insertAttribute name="title" /></title>
-<tiles:insertAttribute name="header-resources" />   
+<tiles:insertAttribute name="header-resources" />
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 <script src="<c:url value="/resources/js/returnableCreate.js" />"></script>
 <script src="${RESOURCES}js/common.js"></script>
 <script type="text/javascript">
-var dcList = ${dcListJson}; 
+var dcList = ${dcListJson};
 var preselectedDcId = ${preselectedDcIdJson};
 var pageContextPath = '${pageContext.request.contextPath}';
 </script>

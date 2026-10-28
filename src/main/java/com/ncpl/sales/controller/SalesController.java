@@ -1738,7 +1738,7 @@ public class SalesController {
 				convertDate.convertJavaDateToSqlDate(end.getTime()));
 	}
 
-	 
+
 	 @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
 		@GetMapping("/sales/details/{salesOrderNo}")
 		 public ModelAndView salesDetails(HttpServletRequest request,Model model
