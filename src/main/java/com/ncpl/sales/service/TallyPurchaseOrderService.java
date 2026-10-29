@@ -57,6 +57,7 @@ public class TallyPurchaseOrderService {
     private final Map<String, String> canonicalLedgerNames = new HashMap<>();
     private final java.util.Properties verifiedStates = new java.util.Properties();
     private final java.util.concurrent.atomic.AtomicBoolean exportRunning = new java.util.concurrent.atomic.AtomicBoolean();
+    private TallyPoSyncJournal autoSyncJournal;
 
     @Value("${cashflow.tally.server.url:http://192.168.0.196:9000}")
     private String serverUrl;
@@ -74,6 +75,18 @@ public class TallyPurchaseOrderService {
 
     public TallyPurchaseOrderService(ItemMasterService itemMasterService) {
         this.itemMasterService = itemMasterService;
+    }
+
+    public synchronized List<Map<String,String>> getAutoSyncRecords() {
+        try { return TallyPoSyncJournal.read(syncStatePath().toString(), serverUrl + "|" + companyName); }
+        catch (Exception error) { throw new IllegalStateException("Cannot read saved PO auto-sync history", error); }
+    }
+
+    public synchronized void recordAutoSyncStatus(String poNumber, String status, String message) {
+        try {
+            if (autoSyncJournal == null) autoSyncJournal = new TallyPoSyncJournal(syncStatePath().toString(), serverUrl + "|" + companyName);
+            autoSyncJournal.recordAutoReview(poNumber, status, message);
+        } catch (Exception error) { throw new IllegalStateException("Cannot persist PO auto-sync history; automatic export stopped", error); }
     }
 
     public Options loadOptions() throws Exception {

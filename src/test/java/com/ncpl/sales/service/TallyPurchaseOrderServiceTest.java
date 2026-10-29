@@ -71,6 +71,7 @@ class TallyPurchaseOrderServiceTest {
     @Test
     void targetsStoredTallyDateWhenErpDateChanges() {
         TallyPurchaseOrderService service = new TallyPurchaseOrderService(null);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "companyName", "Test Company");
         TallyPurchaseOrderService.PreparedOrder order = new TallyPurchaseOrderService.PreparedOrder(
                 "PO-CHANGED", LocalDate.of(2026, 10, 7), "VENDOR", BigDecimal.ZERO,
                 java.util.Collections.emptyList(), java.util.Collections.emptyMap());
@@ -143,6 +144,7 @@ class TallyPurchaseOrderServiceTest {
     @Test
     void buildsPurchaseOrderWithAutomaticPurchaseLedgerHsnAndGstBreakdown() {
         TallyPurchaseOrderService service = new TallyPurchaseOrderService(null);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "companyName", "Test Company");
         TallyPurchaseOrderService.PreparedItem first = new TallyPurchaseOrderService.PreparedItem(
                 "ITEM-18", "Nos", new BigDecimal("2"), new BigDecimal("100.00"),
                 new BigDecimal("200.00"), LocalDate.of(2026, 10, 15),

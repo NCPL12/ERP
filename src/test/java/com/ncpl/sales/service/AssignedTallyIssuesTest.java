@@ -35,6 +35,7 @@ class AssignedTallyIssuesTest {
     }
     @Test void savedPurchaseLedgerAndAllocatedAmountMustMatch() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(service,"companyName","Company A");
         String saved=savedVoucher();service.verifySavedOrder(order(),xml(saved));
         String allocation="<ACCOUNTINGALLOCATIONS.LIST><LEDGERNAME>State Purchase@0%</LEDGERNAME><AMOUNT>-12.34</AMOUNT></ACCOUNTINGALLOCATIONS.LIST>";
         for(String wrong:Arrays.asList(saved.replace("State Purchase@0%","Wrong Purchase"),
@@ -58,9 +59,11 @@ class AssignedTallyIssuesTest {
         assertThat(alter).contains("TAGNAME=\"MASTER ID\" TAGVALUE=\"123\"").contains("DATE=\"30-Sep-2026\"");
     }
     @Test void fractionalQuantitiesAreNotRoundedLikeMoney() {
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(service,"companyName","Company A");
         assertThat(TallyPurchaseOrderService.quantityDecimal(1.234f)).isEqualByComparingTo("1.234");
         assertThat(TallyPurchaseOrderService.quantityDecimal(0.004f)).isEqualByComparingTo("0.004");
-        assertThat(new TallyPurchaseOrderService(null).buildImportRequest(order())).contains("<BILLEDQTY>1.234 Mtr</BILLEDQTY>");
+        assertThat(service.buildImportRequest(order())).contains("<BILLEDQTY>1.234 Mtr</BILLEDQTY>");
     }
     @Test void mismatchedUnitsRequireAnApprovedFactorAndPreserveLineValue() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);

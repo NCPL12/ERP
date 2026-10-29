@@ -440,7 +440,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 								    <label for="poListByToDate" class="col-sm-2 col-form-label">To</label>
 								    <div class="col-sm-10"><input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" required class="form-control PositionofTextbox"></div>
 								   </div>
-								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p>
+								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p><div id="tallyPoSavedIssues" class="table-responsive" style="max-height:260px" aria-live="polite"></div>
                                    <p class="text-muted mb-2">Tally purchase and GST ledgers are selected automatically from each ERP PO and item master.</p>
 								   <small id="tallyPoConnectionStatus" class="form-text text-info">Checking Tally connection...</small>
 								 </div>
@@ -711,11 +711,22 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         fetch('${pageContext.request.contextPath}/po_list/tally/sync-status', {credentials:'same-origin'})
         .then(function(response) { if (!response.ok) throw new Error('Status unavailable'); return response.json(); })
         .then(function(status) {
-            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync checks every 5 minutes.';
+            var intervalMs = status.intervalMs || 86400000;
+            var intervalText = intervalMs >= 86400000 ? Math.round(intervalMs / 86400000) + ' day(s)' : Math.round(intervalMs / 60000) + ' minutes';
+            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync runs every ' + intervalText + '.';
             if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
             if (status.lastError) message += ' ' + status.lastError;
             document.getElementById('tallyPoAutoSyncStatus').textContent = message;
             document.getElementById('tallyPoAutoSyncStatus').className = status.configurationError || status.lastError || (status.lastResult && status.lastResult.failed) ? 'text-danger mb-2' : 'text-info mb-2';
+            var host = document.getElementById('tallyPoSavedIssues');
+            while (host.firstChild) host.removeChild(host.firstChild);
+            var issues = (status.records || []).filter(function(row) { return ['NEEDS_REVIEW','FAILED','UNCERTAIN','SENDING','RETRY_PENDING','CANCELLATION_REVIEW'].indexOf(row.status) >= 0; });
+            if (issues.length) {
+                var title = document.createElement('strong'); title.textContent = issues.length + ' saved PO issues need attention'; host.appendChild(title);
+                var table = document.createElement('table'); table.className = 'table table-sm table-bordered';
+                var head = document.createElement('tr'); ['PO number','Status','Reason','Status recorded'].forEach(function(label) { var th = document.createElement('th'); th.textContent = label; head.appendChild(th); }); table.appendChild(head);
+                issues.forEach(function(row) { var tr = document.createElement('tr'); ['poNumber','status','message','updatedAt'].forEach(function(key) { var td = document.createElement('td'); td.textContent = row[key] || ''; tr.appendChild(td); }); table.appendChild(tr); }); host.appendChild(table);
+            }
         }).catch(function() { var label = document.getElementById('tallyPoAutoSyncStatus'); label.textContent = 'Automatic PO sync status is unavailable. Check ERP logs or retry.'; label.className = 'text-danger mb-2'; });
     }
     refreshPoAutoSyncStatus();
