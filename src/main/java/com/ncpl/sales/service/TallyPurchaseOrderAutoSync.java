@@ -80,7 +80,9 @@ public class TallyPurchaseOrderAutoSync {
                     lastResult.getTotal(), lastResult.getImported(), lastResult.getSkipped(), lastResult.getFailed());
             for (TallyPurchaseOrderService.ExportLine line : lastResult.getRecords()) {
                 String status = "FAILED".equals(line.getStatus()) ? "NEEDS_REVIEW" : line.getStatus();
-                exporter.recordAutoSyncStatus(line.getPoNumber(), status, line.getMessage());
+                if ("NEEDS_REVIEW".equals(status) || "CANCELLATION_REVIEW".equals(status)
+                        || "FAILED".equals(status) || "UNCERTAIN".equals(status))
+                    exporter.recordAutoSyncStatus(line.getPoNumber(), status, line.getMessage());
                 if ("FAILED".equals(line.getStatus())) log.warn("Automatic PO sync failed: {}: {}", line.getPoNumber(), line.getMessage());
             }
         } catch (Exception error) {

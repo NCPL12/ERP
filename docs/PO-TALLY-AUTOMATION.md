@@ -6,6 +6,15 @@ The opt-in `po-tally` profile can run a PO sync once a day. It uses a fixed dela
 
 Archived or missing ERP POs are recorded as `CANCELLATION_REVIEW`. The scheduler never deletes or cancels Tally vouchers. Finance must investigate and decide separately, including any downstream references.
 
+Before an existing ERP-origin PO is altered, the exporter compares Tally's current `ALTERID` with the last verified value. A changed ID, changed ERP-import narration, or absent legacy baseline stops the update and records `NEEDS_REVIEW`. It also rereads the Tally voucher immediately before writing to catch edits made during a run. Existing v3 state entries remain readable; new verified state uses separate ERP-content and Tally-change values in the v4 format.
+
+Users with `PURCHASE_EDIT` can resolve a review from the status table:
+
+- **Accept Tally version** stores the current Tally version as the baseline without writing a voucher.
+- **Force ERP version** requires typing `FORCE ERP VERSION`, then performs one ERP-to-Tally overwrite after rechecking the current Tally change ID. The action is recorded in the sync journal.
+
+An empty date range reports zero totals and a neutral no-PO message. Progress counts are maintained incrementally; updates are published no more often than once per 25 POs or once per second. Verified PO state checkpoints are written every 1,000 POs and once when an export ends.
+
 ## One-line on/off switch
 
 In `application-po-tally.properties`:

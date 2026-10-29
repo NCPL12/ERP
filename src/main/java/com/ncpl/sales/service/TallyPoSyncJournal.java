@@ -37,6 +37,10 @@ final class TallyPoSyncJournal {
         Map<String,String> entry=entries.get(destination + "|" + number);
         return entry != null && ("SENDING".equals(entry.get("status")) || "UNCERTAIN".equals(entry.get("status")));
     }
+    synchronized String status(String number) {
+        Map<String,String> entry=entries.get(destination + "|" + number);
+        return entry == null ? "" : entry.getOrDefault("status", "");
+    }
     void record(String number, String status, String message) {
         Map<String,String> entry=new LinkedHashMap<>();
         entry.put("destination",destination); entry.put("poNumber",number); entry.put("status",status);

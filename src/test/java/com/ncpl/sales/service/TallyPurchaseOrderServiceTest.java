@@ -48,25 +48,59 @@ class TallyPurchaseOrderServiceTest {
     @Test
     void progressCountsAllBatchesAndKeepsSnapshotsStable() throws Exception {
         TallyPurchaseOrderService service = new TallyPurchaseOrderService(null);
-        java.lang.reflect.Field previous = TallyPurchaseOrderService.class.getDeclaredField("completedProgress");
-        previous.setAccessible(true);
-        previous.set(service, Arrays.asList(new TallyPurchaseOrderService.ExportLine("A", "UPDATED", "")));
+        java.lang.reflect.Field updated = TallyPurchaseOrderService.class.getDeclaredField("progressUpdated");
+        updated.setAccessible(true); updated.setInt(service,1);
         java.lang.reflect.Field offset = TallyPurchaseOrderService.class.getDeclaredField("progressOffset");
         offset.setAccessible(true); offset.setInt(service, 1);
         java.lang.reflect.Method publish = TallyPurchaseOrderService.class.getDeclaredMethod("publishProgress", String.class, int.class, java.util.List.class);
         publish.setAccessible(true);
-        publish.invoke(service, "Sending", 4, Arrays.asList(
+        java.lang.reflect.Field imported = TallyPurchaseOrderService.class.getDeclaredField("progressImported"); imported.setAccessible(true); imported.setInt(service,1);
+        java.lang.reflect.Field skipped = TallyPurchaseOrderService.class.getDeclaredField("progressSkipped"); skipped.setAccessible(true); skipped.setInt(service,1);
+        publish.invoke(service, "Verifying Tally results", 4, Arrays.asList(
             new TallyPurchaseOrderService.ExportLine("B", "IMPORTED", ""),
             new TallyPurchaseOrderService.ExportLine("C", "UNCHANGED", "")));
         Map<String,Object> snapshot = service.getProgress();
         assertThat(snapshot).containsEntry("processed",3).containsEntry("total",4)
             .containsEntry("updated",1).containsEntry("imported",1).containsEntry("skipped",1).containsEntry("failed",0);
-        publish.invoke(service, "Verified", 4, Arrays.asList(
+        java.lang.reflect.Field failed = TallyPurchaseOrderService.class.getDeclaredField("progressFailed"); failed.setAccessible(true); failed.setInt(service,1);
+        imported.setInt(service,0);
+        publish.invoke(service, "Verifying Tally results", 4, Arrays.asList(
             new TallyPurchaseOrderService.ExportLine("B", "FAILED", "verification failed"),
             new TallyPurchaseOrderService.ExportLine("C", "UNCHANGED", ""),
             new TallyPurchaseOrderService.ExportLine("D", "SKIPPED", "protected")));
         assertThat(service.getProgress()).containsEntry("processed",4).containsEntry("failed",1).containsEntry("imported",0);
         assertThat(snapshot).containsEntry("processed",3).containsEntry("imported",1);
+    }
+    @Test void emptyPurchaseOrderRangeReturnsNoFailureRowAndKeepsCountersAtZero() throws Exception {
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        org.springframework.test.util.ReflectionTestUtils.setField(service,"companyName","Test Company");
+        TallyPurchaseOrderService.ExportResult result=service.exportAllPending(java.util.Collections.emptyList());
+        assertThat(result.getTotal()).isZero();
+        assertThat(result.getImported()).isZero();
+        assertThat(result.getSkipped()).isZero();
+        assertThat(result.getFailed()).isZero();
+        assertThat(result.getRecords()).isEmpty();
+        assertThat(service.getProgress()).containsEntry("processed",0).containsEntry("imported",0).containsEntry("skipped",0).containsEntry("failed",0);
+    }
+    @Test void readsLegacyAndSplitVerifiedStateFieldsForSafeTallyEditDetection() throws Exception {
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        java.lang.reflect.Method hash=TallyPurchaseOrderService.class.getDeclaredMethod("erpHashFromState",String.class); hash.setAccessible(true);
+        java.lang.reflect.Method alter=TallyPurchaseOrderService.class.getDeclaredMethod("alterIdFromState",String.class); alter.setAccessible(true);
+        String legacy="inventory-ledger-v3:old-hash:17";
+        String current="inventory-ledger-v4:new-hash:21";
+        assertThat(hash.invoke(service,legacy)).isEqualTo("old-hash");
+        assertThat(alter.invoke(service,legacy)).isEqualTo("17");
+        assertThat(hash.invoke(service,current)).isEqualTo("new-hash");
+        assertThat(alter.invoke(service,current)).isEqualTo("21");
+        assertThat(hash.invoke(service,"corrupt-state")).isEqualTo("");
+        assertThat(alter.invoke(service,"corrupt-state")).isEqualTo("");
+    }
+    @Test void detectsChangedTallyAlterIdAndTreatsUnknownBaselineAsReviewRequired() {
+        TallyPurchaseOrderService.ExistingVoucher unchanged=new TallyPurchaseOrderService.ExistingVoucher("","","","1","17","Imported from ERP",LocalDate.now());
+        TallyPurchaseOrderService.ExistingVoucher edited=new TallyPurchaseOrderService.ExistingVoucher("","","","1","18","Imported from ERP",LocalDate.now());
+        assertThat(TallyPurchaseOrderService.tallyVersionChanged("inventory-ledger-v3:hash:17",unchanged)).isFalse();
+        assertThat(TallyPurchaseOrderService.tallyVersionChanged("inventory-ledger-v4:hash:17",edited)).isTrue();
+        assertThat(TallyPurchaseOrderService.tallyVersionChanged("corrupt-state",unchanged)).isTrue();
     }
     @Test
     void targetsStoredTallyDateWhenErpDateChanges() {

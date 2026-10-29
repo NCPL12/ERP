@@ -46,7 +46,7 @@ class AssignedTallyIssuesTest {
         service.verifySavedOrder(order(),xml(saved.replace(allocation,
                 allocation.replace("-12.34","-6.00")+allocation.replace("-12.34","-6.34"))));
         java.lang.reflect.Method checkpoint=TallyPurchaseOrderService.class.getDeclaredMethod("verifiedState",TallyPurchaseOrderService.PreparedOrder.class,String.class);
-        checkpoint.setAccessible(true);assertThat((String)checkpoint.invoke(service,order(),"1")).startsWith("inventory-ledger-v3:");
+        checkpoint.setAccessible(true);assertThat((String)checkpoint.invoke(service,order(),"1")).startsWith("inventory-ledger-v4:");
     }
     @Test void createAndAlterAlwaysSelectConfiguredCompanyAndStableId() {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
