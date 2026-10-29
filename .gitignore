@@ -1,6 +1,30 @@
 /bin/
 /target/
 
+# Build output that must never be committed
+*.war
+*.war.original
+*.ear
+*.class
+
+# IDE and workspace files
+/.settings/
+/.classpath
+/.project
+/.idea/
+*.iml
+*.ipr
+*.iws
+*.code-workspace
+
+# Local environment, credentials and secrets
+.env
+.env.*
+!.env.example
+
+# Vendor source maps are build artefacts
+*.map
+
 # Generated output, local caches, runtime data and handoff copies
 /.m2-cache/
 /.sts4-cache/

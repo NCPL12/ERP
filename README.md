@@ -1,8 +1,24 @@
 # Neptune ERP
 
-[ERP wiki](wiki/Home.md) · [Getting started](wiki/Getting-Started.md) · [User workflows](wiki/User-Workflows.md) · [Architecture](wiki/Architecture.md)
+[![Maven CI](https://github.com/NCPL12/ERP/actions/workflows/ci.yml/badge.svg?branch=development)](https://github.com/NCPL12/ERP/actions/workflows/ci.yml)
 
-[Draft release notes](RELEASE_NOTES.md)
+Neptune ERP is a Spring Boot web application for sales, purchasing, stock, delivery challans, GRNs, invoicing, returns, reporting, and administration.
+
+## Documentation
+
+| Guide | Location |
+| --- | --- |
+| Overview and navigation | [Wiki home](https://github.com/NCPL12/ERP/wiki) |
+| Run the application locally | [Getting started](https://github.com/NCPL12/ERP/wiki/Getting-Started) |
+| Business tasks and page routes | [User workflows](https://github.com/NCPL12/ERP/wiki/User-Workflows) |
+| Code and data flow | [Architecture](https://github.com/NCPL12/ERP/wiki/Architecture) |
+| Roles and module access | [Reports and permissions](https://github.com/NCPL12/ERP/wiki/Reports-and-Permissions) |
+| Deployment and integrations | [Configuration and operations](https://github.com/NCPL12/ERP/wiki/Configuration-and-Operations) |
+| Startup and access problems | [Troubleshooting](https://github.com/NCPL12/ERP/wiki/Troubleshooting) |
+
+In-repository references: [PO-to-Tally deployment](docs/README-PO-TALLY.md) · [Tally auto-sync](docs/tally-po-auto-sync.md) · [Development consolidation](docs/feature-consolidation.md) · [ER diagram](docs/er-diagram.html) · [Draft release notes](RELEASE_NOTES.md)
+
+## Branch comparison
 
 This README lists the features present on `main`, the committed differences on `development`, and work currently saved only in this local checkout. It compares `main` at `5858317` with `development` at `f94d723` (27 October 2026). Update the comparison when either branch moves.
 
@@ -40,7 +56,7 @@ The current working tree also contains these changes. They are **not** part of t
 - Existing GRNs render directly at `/grn/{grnId}`; old `/api/grn/view` links still redirect there. The page continues to load only the selected PO's items.
 - A JavaScript syntax workflow checks application scripts.
 - The shared page header unregisters the retired `/sw.js` service worker from browsers that still have it.
-- HTTP 5xx responses trigger rate-limited, asynchronous email alerts in the `dev` and `prod` profiles. See [error alerts](docs/error-alerts.md).
+- HTTP 5xx responses trigger rate-limited, asynchronous email alerts in the `dev` and `prod` profiles.
 - `application-dev.properties` contains local environment edits; review them separately before deployment.
 
 ## Recheck the comparison
