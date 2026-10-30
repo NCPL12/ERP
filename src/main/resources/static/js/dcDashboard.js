@@ -25,7 +25,7 @@ $(document).ready(function(){
 		    fixedHeader: true,
 		    processing: false,
 		    serverSide: true,
-		    pageLength: 100,
+		    pageLength: 50,
 		    lengthMenu: [[50, 100, 250, 500, 1000], [50, 100, 250, 500, 1000]],
 	    	"order": [[ 0, "desc" ]],
 	    	ajax: function (data, callback, settings) {

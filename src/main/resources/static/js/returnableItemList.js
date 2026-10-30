@@ -6,7 +6,8 @@ var returnableTable;
 
 $(document).ready( function () {
 	returnableTable = $('#returnableItemsList').DataTable({
-		processing: true,
+		processing: false,
+		language: { processing: "", loadingRecords: "" },
 		serverSide: true,
 		autoWidth: false,
 		responsive: false,
@@ -77,36 +78,11 @@ $(document).ready( function () {
     // keep filter input compact
     $filter.find("label").css({ margin:0, "white-space":"nowrap" });
 
-    // AdminLTE sidebar collapse/expand and window resize: recalc widths so table fills full content width (no blank on right)
-    // FIX: only adjust column widths here. Calling .draw() inside this function re-fired the 'draw'
-    // event, which called this function again -> infinite recursion (RangeError: Maximum call stack).
-    var adjustReturnableTimer = null;
-    var adjustingReturnableTable = false;
-
-    function adjustReturnableTable(){
-        if(adjustingReturnableTable || !returnableTable) { return; }   // re-entry guard
-        adjustingReturnableTable = true;
-        try {
-            returnableTable.columns.adjust();                          // no .draw() => no new draw event / AJAX call
-        } finally {
-            adjustingReturnableTable = false;
-        }
-    }
-
-    // Debounced trigger so rapid resize / sidebar events run the adjust only once
-    function scheduleAdjustReturnableTable(delay){
-        clearTimeout(adjustReturnableTimer);
-        adjustReturnableTimer = setTimeout(adjustReturnableTable, delay || 150);
-    }
-
-    // Namespaced + off() so handlers are never bound twice
-    $(document).off('.returnable').on('collapsed.lte.pushmenu.returnable expanded.lte.pushmenu.returnable collapsed.pushMenu.returnable expanded.pushMenu.returnable', function(){
-        scheduleAdjustReturnableTable(350);
-    });
-    $(window).off('resize.returnable').on('resize.returnable', function(){
-        scheduleAdjustReturnableTable(150);
-    });
-
-    // one adjustment after the first draw only (not on every draw)
-    returnableTable.one('draw', function(){ scheduleAdjustReturnableTable(0); });
+    // Recalculate widths without drawing: a draw makes another server request and
+    // would cause an endless request loop when called from the draw event below.
+    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust(); } }
+    $(document).on('collapsed.lte.pushmenu expanded.lte.pushmenu collapsed.pushMenu expanded.pushMenu', function(){ setTimeout(adjustReturnableTable, 350); });
+    $(window).on('resize', adjustReturnableTable);
+    // also after initial draw
+    returnableTable.on('draw', function(){ adjustReturnableTable(); });
 } );

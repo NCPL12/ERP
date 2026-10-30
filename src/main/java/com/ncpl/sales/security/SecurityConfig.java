@@ -61,20 +61,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 http.csrf().disable();
 		 http
 		 .authorizeRequests()
-		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**").permitAll()
-		 .antMatchers("/webjars/**").permitAll()
-		 // API docs show every endpoint, so only admins can open them.
-		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**")
-		         .hasAnyAuthority("ADMIN","SUPER ADMIN")
-		 // Audit logs were open to anyone without login. Admin only now.
-		 // If other roles need them, change this line.
-		 .antMatchers("/audit/**", "/audit-test.html", "/api/audit/**").hasAnyAuthority("ADMIN","SUPER ADMIN")
-		 .antMatchers(HttpMethod.POST, withSlash("/po_list/tally", "/po_list/tally/import")).hasAuthority("PURCHASE_EDIT")
-		 .antMatchers(HttpMethod.POST, withSlash("/save/purchaseOrder", "/api/purchase/upload",
-		         "/api/update_po_archive", "/api/update_po_unarchive")).hasAuthority("PURCHASE_EDIT")
-		 .antMatchers(HttpMethod.POST, withSlash("/api/purchase/delete")).hasAuthority("PURCHASE_DELETE")
-		 .antMatchers(HttpMethod.GET, withSlash("/purchase/view")).hasAuthority("PURCHASE_EDIT")
-		 .antMatchers(HttpMethod.GET, withSlash("/po_list/tally/options", "/po_list/tally/progress")).hasAuthority("PURCHASE_VIEW")
+		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**", "/audit/**", "/audit-test.html").permitAll()
+		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+		 .antMatchers(HttpMethod.POST, "/po_list/tally", "/po_list/tally/import").hasAuthority("PURCHASE_EDIT")
+		 .antMatchers(HttpMethod.POST, "/save/purchaseOrder", "/api/purchase/upload",
+		         "/api/update_po_archive", "/api/update_po_unarchive").hasAuthority("PURCHASE_EDIT")
+		 .antMatchers(HttpMethod.POST, "/api/purchase/delete").hasAuthority("PURCHASE_DELETE")
+		 .antMatchers(HttpMethod.POST, "/add/itemMaster", "/api/add/stock", "/api/add/supplier", "/api/make/add", "/api/items/upload").hasAuthority("ITEM_MASTER_EDIT")
+		 .antMatchers(HttpMethod.POST, "/api/item/delete", "/api/make/delete").hasAuthority("ITEM_MASTER_DELETE")
+		 .antMatchers(HttpMethod.GET, "/purchase/view").hasAuthority("PURCHASE_EDIT")
 		 // A report card being hidden in the JSP is not an access check for its URL.
 		 .antMatchers(HttpMethod.GET, withSlash("/stock_history/Download")).hasAuthority("REPORT_STOCK_HISTORY_BY_DATE")
 		 .antMatchers(HttpMethod.GET, "/stock/summary_details", "/stock/summary_details/**")

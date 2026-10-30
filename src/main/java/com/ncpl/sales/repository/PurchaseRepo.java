@@ -15,6 +15,9 @@ import com.ncpl.sales.model.PurchaseOrder;
 
 @Repository
 public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
+	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=false AND po.created>=:fromDate AND po.created<=:toDate ORDER BY po.created ASC")
+	List<PurchaseOrder> findActiveOrdersForTally(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
+
 	
 	@Query("SELECT po FROM PurchaseOrder po where po.poNumber = ?1 AND po.version = ?2")
 	public Optional<PurchaseOrder> findPurchaseOrderByNoAndVersion(String poNumber, String version);

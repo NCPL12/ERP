@@ -41,7 +41,7 @@ function loadRolesForDropdown() {
 /** Employee dropdown for the Name field - picking one auto-fills Mobile from the Employee table. */
 function loadEmployeesForNameDropdown() {
 	$.ajax({
-		url: api.EMPLOYEE_MANAGEMENT_LIST,
+		url: api.EMPLOYEE_OPTIONS,
 		type: 'GET',
 		success: function (employees) {
 			employeeOptionsCache = employees || [];

@@ -1688,10 +1688,12 @@ public class SalesController {
         status.put("enabled", tallyPoAutoSync.isEnabled());
         status.put("configured", tallyPoAutoSync.isConfigured());
         status.put("configurationError", tallyPoAutoSync.getConfigurationError());
+        status.put("intervalMs", tallyPoAutoSync.getIntervalMs());
         status.put("running", tallyPoAutoSync.isRunning());
         status.put("lastCompleted", tallyPoAutoSync.getLastCompleted());
         status.put("lastError", tallyPoAutoSync.getLastError());
         status.put("lastResult", tallyPoAutoSync.getLastResult());
+        status.put("records", tallyPoAutoSync.getRecords());
         return status;
     }
 
@@ -1716,6 +1718,35 @@ public class SalesController {
 		}
 		return "redirect:/sales_report";
 	}
+
+    @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
+    @PostMapping("/po_list/tally/review/accept")
+    public String acceptTallyPurchaseOrderVersion(@RequestParam("poNumber") String poNumber, RedirectAttributes redirectAttributes) {
+        try {
+            PurchaseOrder order=purchaseRepo.findById(poNumber).orElseThrow(() -> new IllegalArgumentException("ERP PO was not found: "+poNumber));
+            tallyPurchaseOrderService.acceptTallyVersion(order);
+            redirectAttributes.addFlashAttribute("tallyPoReviewMessage","Accepted Tally's version for "+poNumber+" as the sync baseline.");
+        } catch (Exception error) {
+            redirectAttributes.addFlashAttribute("tallyPoReviewError",error.getMessage());
+        }
+        return "redirect:/sales_report";
+    }
+
+    @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
+    @PostMapping("/po_list/tally/review/force-erp")
+    public String forceErpPurchaseOrderVersion(@RequestParam("poNumber") String poNumber,
+            @RequestParam("confirmation") String confirmation, RedirectAttributes redirectAttributes) {
+        try {
+            if (!"FORCE ERP VERSION".equals(confirmation)) throw new IllegalArgumentException("Confirmation did not match. No Tally voucher was changed.");
+            PurchaseOrder order=purchaseRepo.findById(poNumber).orElseThrow(() -> new IllegalArgumentException("ERP PO was not found: "+poNumber));
+            TallyPurchaseOrderService.ExportResult result=tallyPurchaseOrderService.forceErpVersion(order);
+            redirectAttributes.addFlashAttribute("tallyPoImportResult",result);
+            redirectAttributes.addFlashAttribute("tallyPoReviewMessage","One-time ERP version export completed for "+poNumber+". Verify the result below.");
+        } catch (Exception error) {
+            redirectAttributes.addFlashAttribute("tallyPoReviewError",error.getMessage());
+        }
+        return "redirect:/sales_report";
+    }
 
 	private List<PurchaseOrder> purchaseOrdersForDateRange(String fromDateString, String toDateString)
 			throws ParseException {
