@@ -29,7 +29,7 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	@Query("select so.id, so.clientPoNumber, p.partyName, so.shippingAddress " +
 			"from SalesOrder so left join so.party p where so.id in :ids")
 	List<Object[]> findDcListHeaders(@Param("ids") List<String> ids);
-	
+
 	@Query(" from SalesOrder where party_id=?1")
 	public List<SalesOrder> getSalesListByClientId(String partyId);
 
@@ -138,7 +138,7 @@ public interface SalesRepo extends JpaRepository<SalesOrder, String> {
 	public Optional<SalesOrder> getSalesOrderByClientPoNo(String clientPoNO);
 
 	boolean existsByClientPoNumberIgnoreCase(String clientPoNumber);
-	
+
 	long countByArchiveFalse();
 
 	@Query(value = "SELECT COUNT(*) FROM tbl_sales_order WHERE archive = 0", nativeQuery = true)
