@@ -53,6 +53,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 .antMatchers(HttpMethod.POST, "/save/purchaseOrder", "/api/purchase/upload",
 		         "/api/update_po_archive", "/api/update_po_unarchive").hasAuthority("PURCHASE_EDIT")
 		 .antMatchers(HttpMethod.POST, "/api/purchase/delete").hasAuthority("PURCHASE_DELETE")
+		 .antMatchers(HttpMethod.POST, "/add/itemMaster", "/api/add/stock", "/api/add/supplier", "/api/make/add", "/api/items/upload").hasAuthority("ITEM_MASTER_EDIT")
+		 .antMatchers(HttpMethod.POST, "/api/item/delete", "/api/make/delete").hasAuthority("ITEM_MASTER_DELETE")
 		 .antMatchers(HttpMethod.GET, "/purchase/view").hasAuthority("PURCHASE_EDIT")
 		 // A report card being hidden in the JSP is not an access check for its URL.
 		 .antMatchers(HttpMethod.GET, "/stock_history/Download").hasAuthority("REPORT_STOCK_HISTORY_BY_DATE")
