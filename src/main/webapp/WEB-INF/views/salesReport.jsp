@@ -441,7 +441,9 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 								    <label for="poListByToDate" class="col-sm-2 col-form-label">To</label>
 								    <div class="col-sm-10"><input type="text" autocomplete="off" name="poListByToDate" id="poListByToDate" required class="form-control PositionofTextbox"></div>
 								   </div>
-								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p>
+								   <p id="tallyPoAutoSyncStatus" class="text-info mb-2">Checking automatic PO sync status...</p><div id="tallyPoSavedIssues" class="table-responsive" style="max-height:260px" aria-live="polite"></div>
+                                   <c:if test="${not empty tallyPoReviewMessage}"><div class="alert alert-success py-2"><c:out value="${tallyPoReviewMessage}" /></div></c:if>
+                                   <c:if test="${not empty tallyPoReviewError}"><div class="alert alert-danger py-2"><c:out value="${tallyPoReviewError}" /></div></c:if>
                                    <p class="text-muted mb-2">Tally purchase and GST ledgers are selected automatically from each ERP PO and item master.</p>
 								   <small id="tallyPoConnectionStatus" class="form-text text-info">Checking Tally connection...</small>
 								 </div>
@@ -452,7 +454,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 								  <button type="submit" class="btn btn-primary btn-sm"><i class='fa fa-fw fa-download'></i> Download</button>
 								 </div>
 								 <c:if test="${not empty tallyPoImportResult}">
-								  <div class="alert alert-info m-2">Total: ${tallyPoImportResult.total} | Imported: ${tallyPoImportResult.imported} | Skipped: ${tallyPoImportResult.skipped} | Failed: ${tallyPoImportResult.failed}</div>
+								  <c:choose><c:when test="${tallyPoImportResult.total eq 0 and tallyPoImportResult.failed eq 0}"><div class="alert alert-info m-2">No purchase orders to send for this date range. Total: 0 | Imported: 0 | Skipped: 0 | Failed: 0</div></c:when><c:otherwise><div class="alert alert-info m-2">Total: ${tallyPoImportResult.total} | Imported: ${tallyPoImportResult.imported} | Skipped: ${tallyPoImportResult.skipped} | Failed: ${tallyPoImportResult.failed}</div></c:otherwise></c:choose>
 								  <div class="table-responsive tally-po-result m-2">
 								   <table class="table table-sm table-bordered mb-0">
 								    <thead><tr><th>ERP PO number</th><th>Status</th><th>Details</th></tr></thead>
@@ -708,12 +710,50 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         fetch('${pageContext.request.contextPath}/po_list/tally/sync-status', {credentials:'same-origin'})
         .then(function(response) { if (!response.ok) throw new Error('Status unavailable'); return response.json(); })
         .then(function(status) {
-            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync checks every 5 minutes.';
+            var intervalMs = status.intervalMs || 86400000;
+            var intervalText = intervalMs >= 86400000 ? Math.round(intervalMs / 86400000) + ' day(s)' : Math.round(intervalMs / 60000) + ' minutes';
+            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync runs every ' + intervalText + '.';
             if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
             if (status.lastError) message += ' ' + status.lastError;
             document.getElementById('tallyPoAutoSyncStatus').textContent = message;
             document.getElementById('tallyPoAutoSyncStatus').className = status.configurationError || status.lastError || (status.lastResult && status.lastResult.failed) ? 'text-danger mb-2' : 'text-info mb-2';
+            var host = document.getElementById('tallyPoSavedIssues');
+            while (host.firstChild) host.removeChild(host.firstChild);
+            var issues = (status.records || []).filter(function(row) { return ['NEEDS_REVIEW','FAILED','UNCERTAIN','SENDING','RETRY_PENDING','CANCELLATION_REVIEW'].indexOf(row.status) >= 0; });
+            if (issues.length) {
+                var title = document.createElement('strong'); title.textContent = issues.length + ' saved PO issues need attention'; host.appendChild(title);
+                var table = document.createElement('table'); table.className = 'table table-sm table-bordered';
+                var canEdit = document.querySelector('[data-can-export="true"]') !== null;
+                var labels=['PO number','Status','Reason','Status recorded']; if (canEdit) labels.push('Actions');
+                var head = document.createElement('tr'); labels.forEach(function(label) { var th = document.createElement('th'); th.textContent = label; head.appendChild(th); }); table.appendChild(head);
+                issues.forEach(function(row) {
+                    var tr = document.createElement('tr'); ['poNumber','status','message','updatedAt'].forEach(function(key) { var td = document.createElement('td'); td.textContent = row[key] || ''; tr.appendChild(td); });
+                    if (canEdit && row.status === 'NEEDS_REVIEW') {
+                        var actions=document.createElement('td');
+                        var accept=document.createElement('button'); accept.type='button'; accept.className='btn btn-sm btn-outline-primary mr-1'; accept.textContent='Accept Tally version';
+                        accept.addEventListener('click',function(){ submitTallyReview(row.poNumber,'accept'); }); actions.appendChild(accept);
+                        var force=document.createElement('button'); force.type='button'; force.className='btn btn-sm btn-outline-danger'; force.textContent='Force ERP version';
+                        force.addEventListener('click',function(){ submitTallyReview(row.poNumber,'force-erp'); }); actions.appendChild(force);
+                        tr.appendChild(actions);
+                    }
+                    table.appendChild(tr);
+                }); host.appendChild(table);
+            }
         }).catch(function() { var label = document.getElementById('tallyPoAutoSyncStatus'); label.textContent = 'Automatic PO sync status is unavailable. Check ERP logs or retry.'; label.className = 'text-danger mb-2'; });
+    }
+    function submitTallyReview(poNumber, action) {
+        var confirmation='';
+        if (action === 'accept') {
+            if (!window.confirm('Keep the current Tally version for '+poNumber+' and use it as the new sync baseline?')) return;
+        } else {
+            confirmation=window.prompt('This overwrites the Tally PO with ERP data once. Type FORCE ERP VERSION to confirm:');
+            if (confirmation !== 'FORCE ERP VERSION') return;
+        }
+        var form=document.createElement('form'); form.method='post'; form.action='${pageContext.request.contextPath}/po_list/tally/review/'+action;
+        function hidden(name,value){var input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
+        hidden('poNumber',poNumber); if (action === 'force-erp') hidden('confirmation',confirmation);
+        <c:if test="${not empty _csrf}">hidden('<c:out value="${_csrf.parameterName}"/>','<c:out value="${_csrf.token}"/>');</c:if>
+        document.body.appendChild(form); form.submit();
     }
     refreshPoAutoSyncStatus();
     setInterval(refreshPoAutoSyncStatus, 15000);
