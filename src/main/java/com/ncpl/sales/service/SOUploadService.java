@@ -84,15 +84,19 @@ public class SOUploadService {
 	    	                SalesOrder salesOrder = null;
 	    	                List<SalesItem> salesItems = new ArrayList<>();
 
-	    	                // ✅ Sales Order (Header) Validations
+	    	                //  Sales Order (Header) Validations
 	    	                String clientPoNumber = getStringCellValue(row.getCell(0));
-	    	                Optional<SalesOrder> salesOrderObj = salesOrderRepository.getSalesOrderByClientPoNo(clientPoNumber);
+	    	                //Optional<SalesOrder> salesOrderObj = salesOrderRepository.getSalesOrderByClientPoNo(clientPoNumber);
 	    	                if (clientPoNumber.isEmpty()) {
 	    	                	errors.add("Client PO Number is mandatory.");
+	    	                	workbook.close();
+	    	                	return errors;
 	    	                }
-	    	                else if (salesOrderObj.isPresent()) {
-	    	                	//errors.add("Duplicate Client PO Number: " + clientPoNumber);
-	    	                	salesOrder = salesOrderObj.get();
+	    	                else if (salesOrderRepository.existsByClientPoNumberIgnoreCase(clientPoNumber)) {
+	    	                	errors.add("Duplicate Client PO Number: " + clientPoNumber + " is already uploaded. Duplicate upload is not allowed.");
+	    	                	workbook.close();
+	    	                	return errors;
+	    	                	//salesOrder = salesOrderObj.get();
 	    	                }else {
 	    	                	salesOrder = new SalesOrder();
 	    	                	salesOrder.setId("");
@@ -108,6 +112,9 @@ public class SOUploadService {
 	     	            	  errors.add("Party is invalid or does not exist.");
 	    	                } else {
 	    	                	 salesOrder.setParty(party);
+	    	                	 // SO upload sheet has no address columns: default billing and shipping to the party's main address (party id)
+	    	                	 salesOrder.setBillingAddress(party.getId());
+	    	                	 salesOrder.setShippingAddress(party.getId());
 	    	                }
 	     	               
 	    	                salesOrder.setRegion(getStringCellValue(row.getCell(3)));
@@ -145,6 +152,7 @@ public class SOUploadService {
 	                    unitsByName.put(normalizeUnitName(unit.getName()), unit);
 	                }
 	    	                
+	    	                Map<String, Units> unitCache = new HashMap<>();
 	    	                while (rowNum <= sheet.getLastRowNum()) {
 	    	                	 Row itemRow = sheet.getRow(rowNum);
 	                    if (isBlankItemRow(itemRow)) {
