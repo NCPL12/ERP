@@ -6,6 +6,7 @@ import static com.ncpl.sales.security.AccessUtil.isAdminRole;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,80 +182,95 @@ public class RoleController {
 	 * Save the whole grid at once: delete-and-reinsert inside one transaction.
 	 * A non-admin editor can only switch ON a permission they hold themselves (or one the role already had),
 	 * and cannot touch an admin role. Otherwise they could give a role every permission and use it.
+	 * Everything is checked first; nothing is deleted unless all checks pass.
 	 */
 	@PutMapping("/api/roles/{id}/permissions")
 	@ResponseBody
 	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	@Transactional
-	public ResponseEntity<?> savePermissions(@PathVariable Long id, @RequestBody List<RolePermissionDto> rows) {
+	public ResponseEntity<?> savePermissions(@PathVariable Long id,
+			@RequestBody List<RolePermissionDto> requestedPermissions) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
 		}
-		if (rows == null || rows.isEmpty()) {
+		if (requestedPermissions == null || requestedPermissions.isEmpty()) {
 			// Empty grid would wipe every permission — treat as bad request.
 			return ResponseEntity.badRequest().body("Permission list cannot be empty.");
 		}
-		boolean admin = callerIsAdmin();
-		if (!admin && isAdminRole(role.getName())) {
+		boolean isCallerAdmin = callerIsAdmin();
+		if (!isCallerAdmin && isAdminRole(role.getName())) {
 			return forbidden("Only an admin can change an admin role");
+		}
+
+		// What the role has right now, read before anything is deleted.
+		Map<String, RolePermission> currentPermissionsByModule = new HashMap<>();
+		for (RolePermission existingPermission : rolePermissionRepo.findByRole_RoleId(id)) {
+			currentPermissionsByModule.put(existingPermission.getModule(), existingPermission);
+		}
+
+		// Build the new rows for the modules shown in the menu, and collect anything the caller may not grant.
+		Set<String> processedModules = new HashSet<>();
+		List<RolePermission> permissionsToSave = new ArrayList<>();
+		List<String> deniedPermissions = new ArrayList<>();
+		for (RolePermissionDto requested : requestedPermissions) {
+			if (requested == null || requested.getModule() == null) {
+				continue;
+			}
+			String moduleName = requested.getModule().trim();
+			if (moduleName.isEmpty() || !MENU_MODULE_NAMES.contains(moduleName) || !processedModules.add(moduleName)) {
+				continue;
+			}
+			boolean wantsEdit = requested.isCanEdit();
+			boolean wantsDelete = requested.isCanDelete();
+			boolean wantsView = requested.isCanView() || wantsEdit || wantsDelete;
+
+			if (!isCallerAdmin) {
+				RolePermission currentPermission = currentPermissionsByModule.get(moduleName);
+				boolean roleAlreadyHadView = currentPermission != null && currentPermission.isCanView();
+				boolean roleAlreadyHadEdit = currentPermission != null && currentPermission.isCanEdit();
+				boolean roleAlreadyHadDelete = currentPermission != null && currentPermission.isCanDelete();
+
+				if (wantsView && !(callerHas(moduleName + "_VIEW") || roleAlreadyHadView)) {
+					deniedPermissions.add(moduleName + "_VIEW");
+				}
+				if (wantsEdit && !(callerHas(moduleName + "_EDIT") || roleAlreadyHadEdit)) {
+					deniedPermissions.add(moduleName + "_EDIT");
+				}
+				if (wantsDelete && !(callerHas(moduleName + "_DELETE") || roleAlreadyHadDelete)) {
+					deniedPermissions.add(moduleName + "_DELETE");
+				}
+			}
+
+			RolePermission newPermission = new RolePermission();
+			newPermission.setRole(role);
+			newPermission.setModule(moduleName);
+			newPermission.setCanView(wantsView);
+			newPermission.setCanEdit(wantsEdit);
+			newPermission.setCanDelete(wantsDelete);
+			permissionsToSave.add(newPermission);
+		}
+		if (!deniedPermissions.isEmpty()) {
+			return forbidden("You cannot grant permissions you do not have: " + String.join(", ", deniedPermissions));
 		}
 
 		// Keep permissions for modules outside the current menu when editing a role.
 		// They may be used by another workflow or restored to navigation later.
-		List<RolePermission> retained = new ArrayList<>();
-		for (RolePermission previous : rolePermissionRepo.findByRole_RoleId(id)) {
-			if (!MENU_MODULE_NAMES.contains(previous.getModule())) {
-				RolePermission copy = new RolePermission();
-				copy.setRole(role);
-				copy.setModule(previous.getModule());
-				copy.setCanView(previous.isCanView());
-				copy.setCanEdit(previous.isCanEdit());
-				copy.setCanDelete(previous.isCanDelete());
-				retained.add(copy);
+		for (RolePermission existingPermission : currentPermissionsByModule.values()) {
+			if (!MENU_MODULE_NAMES.contains(existingPermission.getModule())) {
+				RolePermission retainedPermission = new RolePermission();
+				retainedPermission.setRole(role);
+				retainedPermission.setModule(existingPermission.getModule());
+				retainedPermission.setCanView(existingPermission.isCanView());
+				retainedPermission.setCanEdit(existingPermission.isCanEdit());
+				retainedPermission.setCanDelete(existingPermission.isCanDelete());
+				permissionsToSave.add(retainedPermission);
 			}
 		}
+
 		rolePermissionRepo.deleteByRole_RoleId(id);
 		rolePermissionRepo.flush(); // IDENTITY inserts below run immediately — make sure the deletes land first
-
-		java.util.Set<String> seenModules = new java.util.HashSet<>();
-		List<RolePermission> entities = new ArrayList<>();
-		List<String> denied = new ArrayList<>();
-		for (RolePermissionDto row : rows) {
-			if (row == null || row.getModule() == null) {
-				continue;
-			}
-			String mod = row.getModule().trim();
-			if (mod.isEmpty() || !MENU_MODULE_NAMES.contains(mod) || !seenModules.add(mod)) {
-				continue;
-			}
-			boolean edit = row.isCanEdit();
-			boolean del = row.isCanDelete();
-			boolean view = row.isCanView() || edit || del;
-
-			if (!admin) {
-				RolePermission old = before.get(mod);
-				if (view && !(callerHas(mod + "_VIEW") || (old != null && old.isCanView()))) {
-					denied.add(mod + "_VIEW");
-				}
-				if (edit && !(callerHas(mod + "_EDIT") || (old != null && old.isCanEdit()))) {
-					denied.add(mod + "_EDIT");
-				}
-				if (del && !(callerHas(mod + "_DELETE") || (old != null && old.isCanDelete()))) {
-					denied.add(mod + "_DELETE");
-				}
-			}
-
-			RolePermission p = new RolePermission();
-			p.setRole(role);
-			p.setModule(mod);
-			p.setCanView(view);
-			p.setCanEdit(edit);
-			p.setCanDelete(del);
-			entities.add(p);
-		}
-		entities.addAll(retained);
-		rolePermissionRepo.saveAll(entities);
+		rolePermissionRepo.saveAll(permissionsToSave);
 
 		return ResponseEntity.ok().build();
 	}
