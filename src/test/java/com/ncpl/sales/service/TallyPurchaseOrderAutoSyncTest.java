@@ -28,7 +28,7 @@ class TallyPurchaseOrderAutoSyncTest {
     }
 
     @Test
-    void automaticSyncIsDisabledByDefault() {
+    void automaticSyncIsDisabledByDefault() throws Exception {
         PurchaseRepo repo = mock(PurchaseRepo.class);
         TallyPurchaseOrderService exporter = mock(TallyPurchaseOrderService.class);
         TallyPurchaseOrderAutoSync sync = new TallyPurchaseOrderAutoSync(repo, exporter);
