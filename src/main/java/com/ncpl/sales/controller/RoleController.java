@@ -1,5 +1,9 @@
 package com.ncpl.sales.controller;
 
+import static com.ncpl.sales.security.AccessUtil.callerHas;
+import static com.ncpl.sales.security.AccessUtil.callerIsAdmin;
+import static com.ncpl.sales.security.AccessUtil.isAdminRole;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +47,29 @@ public class RoleController {
 	private RolePermissionRepo rolePermissionRepo;
 	@Autowired
 	private UserRepo userRepo;
+
+	private static ResponseEntity<?> forbidden(String message) {
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message);
+	}
+
+	/**
+	 * A user's role name is also one of their authorities (see UserService), so a role named like a
+	 * permission ("PURCHASE_DELETE", "REPORT_...") would hand out that permission without the grid.
+	 */
+	private static boolean isPermissionLikeName(String name) {
+		String n = name.trim().toUpperCase();
+		for (Module m : Module.values()) {
+			if (n.equals(m.name() + "_VIEW") || n.equals(m.name() + "_EDIT") || n.equals(m.name() + "_DELETE")) {
+				return true;
+			}
+		}
+		for (ReportItem r : ReportItem.values()) {
+			if (n.equals("REPORT_" + r.name())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	@GetMapping("/role-management")
 	public String roleManagement(Model model) {
@@ -120,6 +147,12 @@ public class RoleController {
 		if (trimmed.length() > 50) {
 			return ResponseEntity.badRequest().body("Role name cannot exceed 50 characters.");
 		}
+		if (isPermissionLikeName(trimmed)) {
+			return ResponseEntity.badRequest().body("That role name is reserved. Please choose a different name.");
+		}
+		if (isAdminRole(trimmed) && !callerIsAdmin()) {
+			return forbidden("Only an admin can create an admin role");
+		}
 		if (roleRepo.findByName(trimmed) != null) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("Role '" + trimmed + "' already exists.");
 		}
@@ -140,7 +173,11 @@ public class RoleController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(role);
 	}
 
-	/** Save the whole grid at once: delete-and-reinsert inside one transaction. */
+	/**
+	 * Save the whole grid at once: delete-and-reinsert inside one transaction.
+	 * A non-admin editor can only switch ON a permission they hold themselves (or one the role already had),
+	 * and cannot touch an admin role. Otherwise they could give a role every permission and use it.
+	 */
 	@PutMapping("/api/roles/{id}/permissions")
 	@ResponseBody
 	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
@@ -154,9 +191,16 @@ public class RoleController {
 			// Empty grid would wipe every permission — treat as bad request.
 			return ResponseEntity.badRequest().body("Permission list cannot be empty.");
 		}
+		boolean admin = callerIsAdmin();
+		if (!admin && isAdminRole(role.getName())) {
+			return forbidden("Only an admin can change an admin role");
+		}
 
-		rolePermissionRepo.deleteByRole_RoleId(id);
-		rolePermissionRepo.flush(); // IDENTITY inserts below run immediately — make sure the deletes land first
+		// What the role has now, read before anything is deleted.
+		Map<String, RolePermission> before = new HashMap<>();
+		for (RolePermission p : rolePermissionRepo.findByRole_RoleId(id)) {
+			before.put(p.getModule(), p);
+		}
 
 		java.util.Set<String> validModules = new java.util.HashSet<>();
 		for (Module module : Module.values()) {
@@ -164,6 +208,7 @@ public class RoleController {
 		}
 		java.util.Set<String> seenModules = new java.util.HashSet<>();
 		List<RolePermission> entities = new ArrayList<>();
+		List<String> denied = new ArrayList<>();
 		for (RolePermissionDto row : rows) {
 			if (row == null || row.getModule() == null) {
 				continue;
@@ -172,15 +217,37 @@ public class RoleController {
 			if (mod.isEmpty() || !validModules.contains(mod) || !seenModules.add(mod)) {
 				continue;
 			}
+			boolean edit = row.isCanEdit();
+			boolean del = row.isCanDelete();
+			boolean view = row.isCanView() || edit || del;
+
+			if (!admin) {
+				RolePermission old = before.get(mod);
+				if (view && !(callerHas(mod + "_VIEW") || (old != null && old.isCanView()))) {
+					denied.add(mod + "_VIEW");
+				}
+				if (edit && !(callerHas(mod + "_EDIT") || (old != null && old.isCanEdit()))) {
+					denied.add(mod + "_EDIT");
+				}
+				if (del && !(callerHas(mod + "_DELETE") || (old != null && old.isCanDelete()))) {
+					denied.add(mod + "_DELETE");
+				}
+			}
+
 			RolePermission p = new RolePermission();
 			p.setRole(role);
 			p.setModule(mod);
-			boolean view = row.isCanView() || row.isCanEdit() || row.isCanDelete();
 			p.setCanView(view);
-			p.setCanEdit(row.isCanEdit());
-			p.setCanDelete(row.isCanDelete());
+			p.setCanEdit(edit);
+			p.setCanDelete(del);
 			entities.add(p);
 		}
+		if (!denied.isEmpty()) {
+			return forbidden("You cannot grant permissions you do not have: " + String.join(", ", denied));
+		}
+
+		rolePermissionRepo.deleteByRole_RoleId(id);
+		rolePermissionRepo.flush(); // IDENTITY inserts below run immediately — make sure the deletes land first
 		rolePermissionRepo.saveAll(entities);
 
 		return ResponseEntity.ok().build();
@@ -224,6 +291,9 @@ public class RoleController {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		if (isAdminRole(role.getName()) && !callerIsAdmin()) {
+			return forbidden("Only an admin can change an admin role");
 		}
 		java.util.Set<String> valid = new java.util.HashSet<>();
 		for (com.ncpl.sales.model.DashboardTile tile : com.ncpl.sales.model.DashboardTile.values()) {
@@ -280,6 +350,10 @@ public class RoleController {
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
 		}
+		boolean admin = callerIsAdmin();
+		if (!admin && isAdminRole(role.getName())) {
+			return forbidden("Only an admin can change an admin role");
+		}
 		java.util.Set<String> valid = new java.util.HashSet<>();
 		for (ReportItem r : ReportItem.values()) {
 			valid.add(r.name());
@@ -289,6 +363,16 @@ public class RoleController {
 			for (String k : keys) {
 				if (k != null && valid.contains(k.trim())) {
 					filtered.add(k.trim());
+				}
+			}
+		}
+		// Each report key is an authority (REPORT_<key>), so a non-admin editor can only switch on
+		// reports they can open themselves, or ones the role already had.
+		if (!admin) {
+			Set<String> had = ReportItem.visible(role.getReportItems());
+			for (String k : filtered) {
+				if (!had.contains(k) && !callerHas("REPORT_" + k)) {
+					return forbidden("You cannot grant a report you do not have access to: " + k);
 				}
 			}
 		}
@@ -309,6 +393,9 @@ public class RoleController {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		if (isAdminRole(role.getName()) && !callerIsAdmin()) {
+			return forbidden("Only an admin can delete an admin role");
 		}
 		int assignedCount = 0;
 		for (User u : userRepo.findAll()) {
