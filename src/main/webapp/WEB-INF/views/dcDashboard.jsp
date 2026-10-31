@@ -12,11 +12,13 @@
 <tiles:insertAttribute name="header-resources" />
 <link rel="stylesheet" href="<c:url value="/resources/css/salesOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
-<script src="<c:url value="/resources/js/dcDashboard.js" />"></script>
+<script src="<c:url value="/resources/js/dcDashboard.js" />"></script> 
 <script type="text/javascript">
+var dcLists = [];
+var partyList = [];
 var role = ${role};
+var archivePage = false;
 var pageContext = '${pageContext.request.contextPath}';
-var isArchivedPage = false;
 </script>
 </head>
 <body>
@@ -25,7 +27,7 @@ var isArchivedPage = false;
 		<tiles:insertAttribute name="header" />
 		<tiles:insertAttribute name="sideMenu" />
 		<div class="content-wrapper">
-
+			
 			<div id="salesDiv" class="card">
 			<div class="card-body" style="padding-top: 10px;">
 				<table id="dcList" class="table table-bordered table-striped dataTable" style="width: 100%; font-size:13px">
@@ -42,7 +44,7 @@ var isArchivedPage = false;
 							<th width="3%">View</th>
 							<th width="2%">Returnable</th>
 							<th width="4%">Archive</th>
-
+							
 						</tr>
 					</thead>
 					<tbody style="width: 100%;">
@@ -50,7 +52,7 @@ var isArchivedPage = false;
 				</table>
 				</div>
 			</div>
-
+			
 		</div>
 		<tiles:insertAttribute name="footer" />
 		</div>
