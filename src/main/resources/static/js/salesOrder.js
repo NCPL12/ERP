@@ -555,7 +555,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	})
 
 	//on click of design link in sales order edit open design popup
-	$(document).on("click",".design",function(){
+	$(document).on("click",".design",function(event){
+		event.preventDefault();
 		var modalHeaderDesc=$(this).closest("tr").find("td:eq(1)").find("input").val();
 		var slNo=$(this).closest("tr").find("td:eq(0)").find("input").val();
 		if (modalHeaderDesc.length > 35) {
