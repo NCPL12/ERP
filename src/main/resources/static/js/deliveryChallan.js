@@ -28,16 +28,16 @@ $(document).ready(function() {
 		var clientPoNumber=value.clientPoNumber;
 		if(clientPoNumber!=null){
 			if(clientPoNumber!=""){
-		
+
 			$("#clientPoDropdown").append('<option value='+value.id+'>'+value.clientPoNumber+'</option>');
 			}
 		}
 	});
-	
+
 	$.each(clientList,function(index,value){
-		
+
 			$("#partyName").append('<option value='+value.id+'>'+value.partyName+'</option>');
-		
+
 	});
 	
 	//getSalesItemsbySalesItemId();
@@ -1001,29 +1001,29 @@ function  loadClientPoTable(partyId){
 		url:api.SO_LIST_BY_CLIENTID + "?partyId=" + partyId,
 		success:function(response){
 			console.log(response);
-			getClientPOList(response);	
-				
-				/*	
+			getClientPOList(response);
+
+				/*
 					$("#clientPOTable tbody").empty();
 					$.each(response,function(index,value){
-						
+
 						var soObjs = "<tr><td width='60%'> " + value.clientPoNumber + "</td>" +
 								"<td width='20%'> " + value.clientPoDate + "</td>" +
 								"<td width='20%'> " + value.created + "</td></tr>";
 						$("#clientPOTable tbody").append(soObjs);
 					});
 				*/
-			
-		},  
+
+		},
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
-			
+
 		},
 		error : function(e) {
 			console.log(e);
-		}  	
+		}
 	})
 }
 

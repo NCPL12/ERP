@@ -143,7 +143,7 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' class='btn btn-default btn-flat btn-xs generateDc' ><i class='fa fa-fw fa-download'></i> Download DC</button>";				
+					return "<button type='button' class='btn btn-default btn-flat btn-xs generateDc' ><i class='fa fa-fw fa-download'></i> Download DC</button>";
 				}
 			},
 			{
@@ -151,7 +151,7 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";;				
+					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";;
 				}
 			},
 			{
@@ -159,7 +159,7 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					url ="/ncpl-sales/returnable/"+row.dcId;
-					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";				
+					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";
 				}
 			}
 			,
@@ -169,23 +169,23 @@ $(document).ready(function(){
 					var archive;
 					if(role=="SUPER ADMIN"){
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked'/>";
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' />";
 						}
 					}else{
 						if(row.archive==true){
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' checked='checked' disabled='disabled'/>";
 						}else{
-							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";				
+							return "<input style='width: 20%;margin-left:auto;margin-right:auto' type='checkbox' value='"+archive+"' name='archiveCheckbox' id='archiveCheckbox' class='form-control form-control-sm archiveCheckbox' disabled='disabled'/>";
 						}
 					}
-					
+
 				}
 			}
 			]
 	    });
-	    
+
 	    //on double click of list navigate to view page
 	    $('#dcList tbody').on('dblclick', 'tr', function () {
 	 	   var data = dcTable.row(this).data();
@@ -223,10 +223,10 @@ $(document).ready(function(){
 		 					$("#dcPartialItemsTable tbody").append(dcItems);
 		 		    		arrayCount++;
 		 		    		slno++;
-		 				
-		 			
+
+
 		 	    	});
-		 			
+
 		 	    },
 		 		complete:function(resp){
 		 			if(resp.status==500){
@@ -235,11 +235,11 @@ $(document).ready(function(){
 		 		},
 		 		error : function(e) {
 		 			console.log(e);
-		 		} 
-		 	  }); 
-		 	  
+		 		}
+		 	  });
+
 		 	});
-	    
+
 })
 
 $(document).on("click","#dcPartialItemsBtn",function(){
@@ -284,10 +284,10 @@ $(document).on("click",".dcView",function(){
 					$("#dcViewModalTable tbody").append(dcItems);
 		    		arrayCount++;
 		    		slno++;
-				
-			
+
+
 	    	});
-				
+
 				$("#dcViewBtn").on("click",function(){
 				 	   window.location = pageContext+"/api/dc/view?dcId="+dcId;
 				})
@@ -299,9 +299,9 @@ $(document).on("click",".dcView",function(){
 		},
 		error : function(e) {
 			console.log(e);
-		} 
-	  }); 
-	
+		}
+	  });
+
 });
 
 $(document).on("click","#generateDcExcelBtn",function(){
@@ -331,7 +331,7 @@ $(document).on('click',".archiveCheckbox",function(){
 			callback: function (result) {
 				result ? archiveDC(dcNum):window.location.reload();;
 			}
-		});	
+		});
 	}else{
 		bootbox.confirm({
 			message: "Do you want to remove this DC from archive?",
@@ -346,19 +346,19 @@ $(document).on('click',".archiveCheckbox",function(){
 			callback: function (result) {
 				result ? unArchiveDC(dcNum):window.location.reload();;
 			}
-		});	
+		});
 	}
 });
 function archiveDC(dcNum){
 	//window.location.href = pageContext+"/api/update_so_archive?soId="+soId;
 	//window.location=pageContext+"/salesList";
 	$.ajax({
-		type : "POST",  
+		type : "POST",
 		url : api.UPDATE_DC_ARCHIVE +"?dcNum="+dcNum,
 		success : function(response) {
 				window.location.reload();
-			
-		},  
+
+		},
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -366,18 +366,18 @@ function archiveDC(dcNum){
 		},
 		error : function(e) {
 			console.log(e);
-		}  
+		}
 	});
 }
 
 function unArchiveDC(dcNum){
 	$.ajax({
-		type : "POST",  
+		type : "POST",
 		url : api.UPDATE_DC_UNARCHIVE +"?dcNum="+dcNum,
 		success : function(response) {
 				window.location.reload();
-			
-		},  
+
+		},
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
@@ -385,6 +385,6 @@ function unArchiveDC(dcNum){
 		},
 		error : function(e) {
 			console.log(e);
-		}  
+		}
 	});
 }

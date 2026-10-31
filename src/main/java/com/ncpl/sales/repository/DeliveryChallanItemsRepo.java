@@ -46,5 +46,5 @@ public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanI
 
 	@Query(value = "SELECT DISTINCT description FROM tbl_dc_items WHERE description IN (:soItemIds) AND (delivered_quantity<>0 OR todays_qty<>0)", nativeQuery = true)
 	List<String> findSoItemIdsWithNonZeroDcQty(@Param("soItemIds") List<String> soItemIds);
-    
+
 }

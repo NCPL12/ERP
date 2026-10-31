@@ -80,7 +80,7 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 				action="${pageContext.request.contextPath}/add/delivery_challan">
 				<input type="hidden" name="soNumber" id="soNumber">
 				<input type="hidden" name="clientId" id="clientId">
-				
+
 				<!-- DC Comment Box -->
 				<div class="card mb-3">
 					<div class="card-header">
@@ -104,7 +104,7 @@ if ('${dcObj}' != null && '${dcObj}' != "") {
 									<th width="7%">Total Qty</th>
 									<th width="7%">Delivered Qty</th>
 									<th width="7%">Today's Qty</th>
-									
+
 									<!-- <th><i
 										class="add fa fa-plus-square fa-2x text-center mx-auto"
 										aria-hidden="true"></i></th> -->

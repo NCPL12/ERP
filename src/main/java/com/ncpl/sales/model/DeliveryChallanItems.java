@@ -32,7 +32,7 @@ public class DeliveryChallanItems extends TimeStampEntity{
     private float totalQuantity;
     private float deliveredQuantity;
     private float todaysQty;
-	
+
 	@ManyToOne
 	@JsonManagedReference
 	@JoinColumn(name="dc_id")

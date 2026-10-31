@@ -228,7 +228,7 @@ public class DeliveryChallanService {
 		emailContents.put("partyName", partyName);
 		emailContents.put("dcId", dcId);
 		emailContents.put("createdby", userService.getCurrentUser().getName());
-		emailContents.put("attachment", dcFilePath); 
+		emailContents.put("attachment", dcFilePath);
 		return emailContents;
 	}
 
@@ -404,7 +404,7 @@ public class DeliveryChallanService {
 	public List<Map<String, Object>> getDcPickerList() {
 		return dcRepo.findPickerMaps();
 	}
-	
+
 	public List<DeliveryChallanItems> getDcItemListBySoItemIdWhereDcQtyNotZero(String soItemId){
 		List<DeliveryChallanItems> dcItemList = dcItemRepo.getDcItemListBySOItemIdWhereDcQtyNonZero(soItemId);
 		return dcItemList;
@@ -415,9 +415,9 @@ public class DeliveryChallanService {
 		 Optional<DeliveryChallan> dcObj=dcRepo.findById(dcId);
 		 String soNumber=dcObj.get().getSoNumber();
 		 Optional<SalesOrder> soObj=salesService.getSalesOrderById(soNumber);
-		 
+
 		 dcObj.get().set("clientPoNumber",soObj.get().getClientPoNumber());
-		 dcObj.get().set("clientName",soObj.get().getParty().getPartyName()); 
+		 dcObj.get().set("clientName",soObj.get().getParty().getPartyName());
 		return dcObj;
 	}
 	
@@ -627,7 +627,7 @@ public class DeliveryChallanService {
 			 * for (DeliveryChallanItems dcItem : dcItemList) { if(dcItem.getTodaysQty()>0
 			 * || dcItem.getDeliveredQuantity()>0) { deliveryChallanItemList.add(dcItem);
 			 * System.out.println(dcItem.getDcItemId()); } }
-			 * 
+			 *
 			 * }
 			 */
 		for (DeliveryChallanItems deliveryChallanItems : deliveryChallanItemList) {
@@ -681,7 +681,7 @@ public class DeliveryChallanService {
 			dc.set("clientPoNumber",soObj.get().getClientPoNumber());
 			dc.set("clientName",soObj.get().getParty().getPartyName());
 			dc.set("createdDate",dc.getItems().get(0).getCreated());
-			
+
 		}
 		return dcList;
 	}
@@ -750,7 +750,7 @@ public class DeliveryChallanService {
 						if(designItem.getDeliveredQty()!=0) {
 							if(designItem.getDeliveredQty()<designItem.getQuantity()) {
 								dcItemLists.add(deliveryChallanItems);
-							
+
 								break;
 							}
 						}
@@ -760,7 +760,7 @@ public class DeliveryChallanService {
 		}
 		System.out.println("size:" + dcItemLists.size());
 		return dcItemLists;
-		
+
 	}
 	
 	// Pagination methods for lazy loading
@@ -786,10 +786,10 @@ public class DeliveryChallanService {
 		enrichDeliveryChallanPage(dcPage);
 		return dcPage;
 	}
-	
-	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, String dcId, String soNumber, 
+
+	public Page<DeliveryChallan> getDeliveryChallanPageAdvanced(Pageable pageable, String dcId, String soNumber,
 			String clientName, String clientPo, String shipping) {
-		
+
 		Integer dcIdInt = null;
 		if (dcId != null && !dcId.trim().isEmpty()) {
 			try {
@@ -798,19 +798,19 @@ public class DeliveryChallanService {
 				// Invalid dcId, will be ignored
 			}
 		}
-		
+
 		Page<DeliveryChallan> dcPage = dcRepo.searchAdvanced(
-			dcIdInt, 
-			soNumber, 
-			clientName, 
-			clientPo, 
-			shipping, 
+			dcIdInt,
+			soNumber,
+			clientName,
+			clientPo,
+			shipping,
 			pageable
 		);
-		
+
 		// Enrich the data with additional fields
 		enrichDeliveryChallanPage(dcPage);
-		
+
 		return dcPage;
 	}
 

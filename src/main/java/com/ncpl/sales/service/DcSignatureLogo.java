@@ -23,11 +23,11 @@ public class DcSignatureLogo {
 		System.out.println("Inserting logo in the Purchase template" );
 		ServletContext servletContext = request.getSession().getServletContext();
         String imgLoc = servletContext.getRealPath("/WEB-INF/images");
-       
+
         String img;
         if(user.getUsername().equalsIgnoreCase("mani")) {
         	img="/mani_sign.png";
-        	
+
         }else {
         	img="/mani_sign.png";
         }
