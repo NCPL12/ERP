@@ -18,12 +18,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.Module;
+import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.RolePermission;
 import com.ncpl.sales.model.RolePermissionDto;
 import com.ncpl.sales.repository.RolePermissionRepo;
@@ -31,6 +37,26 @@ import com.ncpl.sales.repository.RoleRepo;
 import com.ncpl.sales.security.UserRepo;
 
 public class RoleMenuModulesTest {
+
+	/**
+	 * savePermissions() consults the Spring SecurityContext (callerIsAdmin / callerHas).
+	 * In a plain unit test there is none, so the caller looked like a non-admin without
+	 * PARTY_VIEW and the controller returned 403 before ever calling saveAll().
+	 * Run every test as an admin caller.
+	 */
+	@Before
+	public void asAdmin() {
+		SecurityContextHolder.getContext().setAuthentication(
+				new UsernamePasswordAuthenticationToken("admin", "x", Arrays.asList(
+						new SimpleGrantedAuthority("ADMIN"),
+						new SimpleGrantedAuthority("SUPER ADMIN"))));
+	}
+
+	@After
+	public void clearSecurity() {
+		SecurityContextHolder.clearContext();
+	}
+
 	@Test
 	public void everyManagedModuleHasASidebarLink() throws Exception {
 		String sidebar = new String(Files.readAllBytes(Paths.get(
@@ -91,17 +117,25 @@ public class RoleMenuModulesTest {
 		RolePermissionRepo permissions = mock(RolePermissionRepo.class);
 		set(controller, "roleRepo", roles);
 		set(controller, "rolePermissionRepo", permissions);
+
 		Role role = new Role();
+		role.setRoleId(7L);
+		role.setName("TEST");
 		when(roles.findById(7L)).thenReturn(Optional.of(role));
 		when(permissions.findByRole_RoleId(7L)).thenReturn(Arrays.asList(permission("COMPANY_ASSETS", true)));
 
 		RolePermissionDto party = new RolePermissionDto();
 		party.setModule("PARTY");
 		party.setCanView(true);
+		// Not a sidebar module: the incoming value is ignored and the stored one is kept.
 		RolePermissionDto hidden = new RolePermissionDto();
 		hidden.setModule("COMPANY_ASSETS");
 		hidden.setCanView(false);
-		controller.savePermissions(7L, Arrays.asList(party, hidden));
+
+		ResponseEntity<?> response = controller.savePermissions(7L, Arrays.asList(party, hidden));
+		assertEquals(HttpStatus.OK, response.getStatusCode());
+
+		verify(permissions).deleteByRole_RoleId(7L);
 
 		@SuppressWarnings("unchecked")
 		ArgumentCaptor<Iterable<RolePermission>> saved = ArgumentCaptor.forClass(Iterable.class);
