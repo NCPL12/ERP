@@ -75,11 +75,13 @@ class TallyIssueRegressionTest {
         assertThat(finished.await(2,TimeUnit.SECONDS)).isTrue();
         assertThat(TallyRequestDeadline.call(()->"ready",1000)).isEqualTo("ready");
     }
-    @Test void missingAutoSyncDateIsVisibleBeforeFirstScheduledRun() {
-        TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(mock(PurchaseRepo.class),mock(TallyPurchaseOrderService.class));
+    @Test void missingTallyCompanyIsVisibleBeforeFirstScheduledRun() {
+        TallyPurchaseOrderService exporter=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(exporter,"companyName"," ");
+        TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(mock(PurchaseRepo.class),exporter);
         ReflectionTestUtils.setField(sync,"enabled",true);
         assertThat(sync.isConfigured()).isFalse();
-        assertThat(sync.getConfigurationError()).contains("from-date");
+        assertThat(sync.getConfigurationError()).contains("cashflow.tally.company-name");
     }
     @Test void unitsResolveAliasesAndExplicitMappingsWithoutPackSizeGuessing() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);

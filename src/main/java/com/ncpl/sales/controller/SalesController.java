@@ -1688,7 +1688,7 @@ public class SalesController {
         status.put("enabled", tallyPoAutoSync.isEnabled());
         status.put("configured", tallyPoAutoSync.isConfigured());
         status.put("configurationError", tallyPoAutoSync.getConfigurationError());
-        status.put("intervalMs", tallyPoAutoSync.getIntervalMs());
+        status.put("scheduleDescription", tallyPoAutoSync.getScheduleDescription());
         status.put("running", tallyPoAutoSync.isRunning());
         status.put("lastCompleted", tallyPoAutoSync.getLastCompleted());
         status.put("lastError", tallyPoAutoSync.getLastError());
