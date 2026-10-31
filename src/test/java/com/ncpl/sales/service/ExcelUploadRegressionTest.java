@@ -174,8 +174,9 @@ public class ExcelUploadRegressionTest {
 
         List<String> errors = upload.processExcelFile(excel(workbook, "po.xlsx"));
         assertEquals(2, errors.size());
-        assertTrue(errors.get(0).contains("already uploaded"));
-        assertTrue(errors.get(0).contains("PO-OLD"));
+        assertTrue("errors=" + errors, errors.get(0).contains("1 row(s) failed"));
+        assertTrue("errors=" + errors, errors.get(1).contains("already uploaded"));
+        assertTrue(errors.get(1).contains("PO-OLD"));
         verify(purchases, never()).savePurchaseOrder(any(PurchaseOrder.class), anyString(), anyString());
     }
 

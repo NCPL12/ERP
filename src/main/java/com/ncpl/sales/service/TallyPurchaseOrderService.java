@@ -57,8 +57,9 @@ public class TallyPurchaseOrderService {
     private final Map<String, String> canonicalLedgerNames = new HashMap<>();
     private final java.util.Properties verifiedStates = new java.util.Properties();
     private final java.util.concurrent.atomic.AtomicBoolean exportRunning = new java.util.concurrent.atomic.AtomicBoolean();
+    private TallyPoSyncJournal autoSyncJournal;
 
-    @Value("${cashflow.tally.server.url:http://192.168.0.196:9000}")
+    @Value("${cashflow.tally.server.url:http://192.168.0.174:9000}")
     private String serverUrl;
 
     @Value("${cashflow.tally.company-name:}")
@@ -74,6 +75,25 @@ public class TallyPurchaseOrderService {
 
     public TallyPurchaseOrderService(ItemMasterService itemMasterService) {
         this.itemMasterService = itemMasterService;
+    }
+
+    public synchronized List<Map<String,String>> getAutoSyncRecords() {
+        try { return TallyPoSyncJournal.read(syncStatePath().toString(), serverUrl + "|" + companyName); }
+        catch (Exception error) { throw new IllegalStateException("Cannot read saved PO auto-sync history", error); }
+    }
+
+    public synchronized void recordAutoSyncStatus(String poNumber, String status, String message) {
+        try {
+            if (autoSyncJournal == null) autoSyncJournal = new TallyPoSyncJournal(syncStatePath().toString(), serverUrl + "|" + companyName);
+            autoSyncJournal.recordAutoReview(poNumber, status, message);
+        } catch (Exception error) { throw new IllegalStateException("Cannot persist PO auto-sync history; automatic export stopped", error); }
+    }
+    private String autoSyncStatus(String poNumber) {
+        try {
+            if (autoSyncJournal == null) autoSyncJournal = new TallyPoSyncJournal(syncStatePath().toString(), serverUrl + "|" + companyName);
+            return autoSyncJournal.status(poNumber);
+        }
+        catch (Exception error) { throw new IllegalStateException("Cannot read saved PO review status; export stopped", error); }
     }
 
     public Options loadOptions() throws Exception {
@@ -93,27 +113,83 @@ public class TallyPurchaseOrderService {
         return exportWithLock(purchaseOrders, true);
     }
 
+    public synchronized void acceptTallyVersion(PurchaseOrder order) throws Exception {
+        requireConfiguredCompany();
+        if (order == null || blank(order.getPoNumber())) throw new IllegalArgumentException("A numbered ERP PO is required.");
+        if (!exportRunning.compareAndSet(false,true)) throw new IllegalStateException("A PO export is running; resolve this review after it completes.");
+        if (!TallySyncCoordinator.tryAcquire()) { exportRunning.set(false); throw new IllegalStateException("Tally refresh is running; retry this review after it completes."); }
+        try {
+            loadVerifiedStates();
+            MasterSnapshot snapshot=loadMasterSnapshot(true);
+            ExistingVoucher existing=snapshot.purchaseOrders.get(normalize(order.getPoNumber()));
+            if (existing == null) throw new IllegalStateException("The PO was not found in Tally. Refresh the Tally company and review it again.");
+            PreparedOrder prepared=prepare(order,snapshot);
+            verifiedStates.setProperty(stateKey(prepared.number),verifiedState(prepared,existing.alterId));
+            saveVerifiedStates();
+            recordAutoSyncStatus(prepared.number,"TALLY_VERSION_ACCEPTED","Finance accepted the current Tally version as the new sync baseline. No voucher was written.");
+        } finally { exportRunning.set(false); TallySyncCoordinator.release(); }
+    }
+
+    public synchronized ExportResult forceErpVersion(PurchaseOrder order) throws Exception {
+        requireConfiguredCompany();
+        if (order == null || blank(order.getPoNumber())) throw new IllegalArgumentException("A numbered ERP PO is required.");
+        loadVerifiedStates();
+        MasterSnapshot snapshot=loadMasterSnapshot(true);
+        ExistingVoucher existing=snapshot.purchaseOrders.get(normalize(order.getPoNumber()));
+        if (existing == null) throw new IllegalStateException("The PO was not found in Tally. Refresh the Tally company and review it again.");
+        String key=stateKey(order.getPoNumber());
+        if (blank(verifiedStates.getProperty(key)) && !existing.narration.startsWith("Imported from ERP"))
+            throw new IllegalStateException("This Tally voucher is not verified as an ERP PO. It cannot be force-overwritten by this action.");
+        try {
+            ExportResult result=exportWithLock(Collections.singletonList(order),true,Collections.singleton(order.getPoNumber()));
+            if (result.getFailed() > 0 || result.getRecords().stream().anyMatch(line -> "NEEDS_REVIEW".equals(line.getStatus()))) {
+                recordAutoSyncStatus(order.getPoNumber(),"NEEDS_REVIEW","The confirmed ERP overwrite did not complete. Review the current ERP and Tally versions before retrying.");
+            } else {
+                recordAutoSyncStatus(order.getPoNumber(),"ERP_VERSION_FORCED","Finance confirmed and completed a one-time ERP-to-Tally overwrite.");
+            }
+            return result;
+        } catch (Exception error) {
+            recordAutoSyncStatus(order.getPoNumber(),"NEEDS_REVIEW","The confirmed ERP overwrite failed before successful verification: "+safeMessage(error));
+            throw error;
+        }
+    }
+
     public boolean isExportRunning() { return exportRunning.get(); }
     private volatile Map<String,Object> progress = Collections.emptyMap();
     private int progressOffset;
-    private List<ExportLine> completedProgress = new ArrayList<>();
+    private int progressImported, progressUpdated, progressSkipped, progressFailed;
+    private long lastProgressPublishedAt;
     public Map<String,Object> getProgress() { return progress; }
     private void publishProgress(String stage, int total, List<ExportLine> current) {
+        long now=System.currentTimeMillis();
+        int processed=progressOffset+(current == null ? 0 : current.size());
+        if ("Sending (provisional until verification)".equals(stage) && processed > 0
+                && processed % 25 != 0 && now-lastProgressPublishedAt < 1000) return;
         Map<String,Object> next = new LinkedHashMap<>();
-        int imported=0, updated=0, skipped=0, failed=0;
-        List<ExportLine> all = new ArrayList<>(completedProgress); all.addAll(current);
-        for (ExportLine line:all) {
-            if ("IMPORTED".equals(line.getStatus())) imported++;
-            else if ("UPDATED".equals(line.getStatus())) updated++;
-            else if ("FAILED".equals(line.getStatus())) failed++;
-            else skipped++;
-        }
-        next.put("stage",stage); next.put("total",total); next.put("processed",progressOffset+current.size());
-        next.put("imported",imported); next.put("updated",updated); next.put("skipped",skipped); next.put("failed",failed);
+        next.put("stage",stage); next.put("total",total); next.put("processed",processed);
+        next.put("imported",progressImported); next.put("updated",progressUpdated); next.put("skipped",progressSkipped); next.put("failed",progressFailed);
         next.put("running",exportRunning.get()); progress=Collections.unmodifiableMap(next);
+        lastProgressPublishedAt=now;
+    }
+
+    private void addProgressLine(List<ExportLine> lines, ExportLine line) {
+        lines.add(line); adjustProgress(line.getStatus(),1);
+    }
+    private void replaceProgressLine(List<ExportLine> lines, int index, ExportLine line) {
+        adjustProgress(lines.get(index).getStatus(),-1); lines.set(index,line); adjustProgress(line.getStatus(),1);
+    }
+    private void adjustProgress(String status,int change) {
+        if ("IMPORTED".equals(status)) progressImported+=change;
+        else if ("UPDATED".equals(status)) progressUpdated+=change;
+        else if ("FAILED".equals(status)) progressFailed+=change;
+        else progressSkipped+=change;
     }
 
     private ExportResult exportWithLock(List<PurchaseOrder> purchaseOrders, boolean onlyChanged) throws Exception {
+        return exportWithLock(purchaseOrders,onlyChanged,Collections.emptySet());
+    }
+
+    private ExportResult exportWithLock(List<PurchaseOrder> purchaseOrders, boolean onlyChanged, Set<String> forceNumbers) throws Exception {
         requireConfiguredCompany();
         if (!exportRunning.compareAndSet(false, true)) {
             throw new IllegalStateException("A PO export is already running. Wait for its result before sending again.");
@@ -123,17 +199,20 @@ public class TallyPurchaseOrderService {
             throw new IllegalStateException("Tally refresh is running. PO synchronization will retry after it finishes.");
         }
         try {
-            progressOffset=0; completedProgress=new ArrayList<>(); publishProgress("Preparing Tally masters", purchaseOrders == null ? 0 : purchaseOrders.size(), Collections.emptyList());
+            progressOffset=0; progressImported=0; progressUpdated=0; progressSkipped=0; progressFailed=0; lastProgressPublishedAt=0;
+            publishProgress("Preparing Tally masters", purchaseOrders == null ? 0 : purchaseOrders.size(), Collections.emptyList());
             loadVerifiedStates();
+            for (String number:forceNumbers) recordAutoSyncStatus(number,"FORCE_ERP_EXPORT_CONFIRMED","Finance explicitly confirmed a one-time ERP overwrite. Tally's current ALTERID will be rechecked immediately before writing.");
             canonicalLedgerNames.clear();
-            if (purchaseOrders == null || purchaseOrders.size() <= 250) return exportOrders(purchaseOrders, onlyChanged);
+            if (purchaseOrders == null || purchaseOrders.size() <= 250) return exportOrders(purchaseOrders, onlyChanged,forceNumbers);
             int imported = 0, skipped = 0, failed = 0;
             List<ExportLine> records = new ArrayList<>();
             for (int start = 0; start < purchaseOrders.size(); start += 250) {
                 int end = Math.min(start + 250, purchaseOrders.size());
-                ExportResult chunk = exportOrders(purchaseOrders.subList(start, end), onlyChanged);
+                ExportResult chunk = exportOrders(purchaseOrders.subList(start, end), onlyChanged,forceNumbers);
                 imported += chunk.getImported(); skipped += chunk.getSkipped(); failed += chunk.getFailed();
-                records.addAll(chunk.getRecords()); completedProgress=new ArrayList<>(records); progressOffset=end;
+                records.addAll(chunk.getRecords()); progressOffset=end;
+                if (end % 1000 == 0) saveVerifiedStates();
                 log.info("PO sync checkpoint: checked={}/{}, exported={}, skipped={}, failed={}",
                         end, purchaseOrders.size(), imported, skipped, failed);
             }
@@ -144,21 +223,22 @@ public class TallyPurchaseOrderService {
             progress=Collections.unmodifiableMap(errorProgress);
             throw error;
         } finally {
+            saveVerifiedStates();
             exportRunning.set(false);
             Map<String,Object> finalProgress=new LinkedHashMap<>(progress); finalProgress.put("running",false); if ("Batch verified".equals(finalProgress.get("stage"))) finalProgress.put("stage","Completed"); progress=Collections.unmodifiableMap(finalProgress);
             TallySyncCoordinator.release();
         }
     }
 
-    private ExportResult exportOrders(List<PurchaseOrder> purchaseOrders, boolean onlyChanged) throws Exception {
+    private ExportResult exportOrders(List<PurchaseOrder> purchaseOrders, boolean onlyChanged, Set<String> forceNumbers) throws Exception {
         if (purchaseOrders == null || purchaseOrders.isEmpty()) {
-            return new ExportResult(0, 0, 0, 0,
-                    Collections.singletonList(new ExportLine("", "FAILED", "No active ERP purchase orders were found.")));
+            return new ExportResult(0, 0, 0, 0, Collections.emptyList());
         }
 
         if (purchaseOrders.stream().allMatch(po -> po != null && po.isArchive())) {
             List<ExportLine> archived = new ArrayList<>();
-            for (PurchaseOrder po : purchaseOrders) archived.add(new ExportLine(po.getPoNumber(), "SKIPPED", "Archived ERP PO; nothing sent to Tally."));
+            for (PurchaseOrder po : purchaseOrders) addProgressLine(archived,new ExportLine(po.getPoNumber(), "SKIPPED", "Archived ERP PO; nothing sent to Tally."));
+            publishProgress("Batch verified", ((Number)progress.get("total")).intValue(), archived);
             return new ExportResult(purchaseOrders.size(), 0, purchaseOrders.size(), 0, archived);
         }
         MasterSnapshot snapshot = loadMasterSnapshot(true);
@@ -178,47 +258,98 @@ public class TallyPurchaseOrderService {
             String poNumber = trim(purchaseOrder == null ? null : purchaseOrder.getPoNumber());
             if (blank(poNumber)) {
                 failed++;
-                lines.add(new ExportLine("", "FAILED", "ERP PO number is missing."));
+                addProgressLine(lines,new ExportLine("", "FAILED", "ERP PO number is missing."));
                 continue;
             }
             if (purchaseOrder.isArchive()) {
-                skipped++; lines.add(new ExportLine(poNumber, "SKIPPED", "Archived ERP PO; nothing sent to Tally.")); continue;
+                skipped++; addProgressLine(lines,new ExportLine(poNumber, "SKIPPED", "Archived ERP PO; nothing sent to Tally.")); continue;
             }
             String numberKey = normalize(poNumber);
             if (snapshot.ambiguousNumbers.contains(numberKey)) {
-                failed++; lines.add(new ExportLine(poNumber, "FAILED", "Multiple Tally POs have this number; no master or voucher write was made for this PO. Resolve the duplicate vouchers first.")); continue;
+                failed++; addProgressLine(lines,new ExportLine(poNumber, "FAILED", "Multiple Tally POs have this number; no master or voucher write was made for this PO. Resolve the duplicate vouchers first.")); continue;
             }
             if (!seenNumbers.add(numberKey)) {
                 skipped++;
-                lines.add(new ExportLine(poNumber, "SKIPPED", "Repeated ERP PO number in this batch; already processed."));
+                addProgressLine(lines,new ExportLine(poNumber, "SKIPPED", "Repeated ERP PO number in this batch; already processed."));
                 continue;
             }
             ExistingVoucher existingVoucher = snapshot.purchaseOrders.get(numberKey);
-            boolean updateExistingErpImport = existingVoucher != null
-                    && existingVoucher.narration.startsWith("Imported from ERP");
-            if (existingVoucher != null && !updateExistingErpImport) {
+            boolean forceErp=forceNumbers.contains(poNumber);
+            if (!forceErp && "NEEDS_REVIEW".equals(autoSyncStatus(poNumber))) {
                 skipped++;
-                lines.add(new ExportLine(poNumber, "SKIPPED", "A non-ERP Purchase Order with this number already exists in Tally."));
+                addProgressLine(lines,new ExportLine(poNumber,"NEEDS_REVIEW","This PO is held for review because its Tally version changed. Resolve the review before exporting it again."));
                 continue;
             }
+            String savedState=verifiedStates.getProperty(stateKey(poNumber));
+            boolean previouslyVerified=!blank(savedState);
+            boolean updateExistingErpImport = existingVoucher != null
+                    && (existingVoucher.narration.startsWith("Imported from ERP") || previouslyVerified);
+            if (existingVoucher != null && !updateExistingErpImport) {
+                skipped++;
+                addProgressLine(lines,new ExportLine(poNumber, "SKIPPED", "A non-ERP Purchase Order with this number already exists in Tally."));
+                continue;
+            }
+
 
             PreparedOrder prepared;
             try {
                 prepared = prepare(purchaseOrder, snapshot);
             } catch (IllegalArgumentException validationError) {
                 failed++;
-                lines.add(new ExportLine(poNumber, "FAILED", validationError.getMessage()));
+                addProgressLine(lines,new ExportLine(poNumber, "FAILED", validationError.getMessage()));
                 continue;
             }
 
-            if (onlyChanged && existingVoucher != null
-                    && verifiedState(prepared, existingVoucher.alterId).equals(verifiedStates.getProperty(stateKey(prepared.number)))) {
+            if (existingVoucher != null && updateExistingErpImport && !forceErp) {
+                if (!previouslyVerified) {
+                    skipped++;
+                    String reason="The previous Tally version is not recorded, so this existing PO cannot be safely overwritten. Review it in Tally first.";
+                    recordAutoSyncStatus(poNumber,"NEEDS_REVIEW",reason);
+                    addProgressLine(lines,new ExportLine(poNumber,"NEEDS_REVIEW",reason));
+                    continue;
+                }
+                if (tallyVersionChanged(savedState,existingVoucher)) {
+                    skipped++;
+                    String reason="Tally ALTERID changed since ERP last synchronized this PO. The Tally voucher was left unchanged; review the two versions.";
+                    recordAutoSyncStatus(poNumber,"NEEDS_REVIEW",reason);
+                    addProgressLine(lines,new ExportLine(poNumber,"NEEDS_REVIEW",reason));
+                    continue;
+                }
+                if (!existingVoucher.narration.startsWith("Imported from ERP")) {
+                    skipped++;
+                    String reason="The Tally PO narration no longer identifies it as an ERP import. It was not overwritten; review the Tally version.";
+                    recordAutoSyncStatus(poNumber,"NEEDS_REVIEW",reason);
+                    addProgressLine(lines,new ExportLine(poNumber,"NEEDS_REVIEW",reason));
+                    continue;
+                }
+            }
+
+            if (onlyChanged && !forceErp && existingVoucher != null
+                    && verifiedErpHash(prepared).equals(erpHashFromState(savedState))) {
                 skipped++;
-                lines.add(new ExportLine(poNumber, "UNCHANGED", "Already verified in Tally; no ERP or Tally change."));
+                addProgressLine(lines,new ExportLine(poNumber, "UNCHANGED", "Already verified in Tally; no ERP or Tally change."));
                 continue;
             }
             try {
-                String requestXml = buildImportRequest(prepared, existingVoucher);
+                ExistingVoucher writeTarget=existingVoucher;
+                if (existingVoucher != null) {
+                    // Re-read the Tally change ID immediately before Alter to avoid clobbering a
+                    // finance edit made after the initial collection snapshot was loaded.
+                    Document freshDocument=parseXml(post(buildVerificationRequest(Collections.singletonList(prepared))));
+                    Element fresh=findSavedOrder(prepared.number,freshDocument);
+                    String freshAlterId=firstText(fresh,"ALTERID");
+                    if (!trim(existingVoucher.alterId).equals(trim(freshAlterId))) {
+                        skipped++;
+                        String reason="Tally ALTERID changed during this export. The voucher was not overwritten; review the two versions.";
+                        recordAutoSyncStatus(poNumber,"NEEDS_REVIEW",reason);
+                        addProgressLine(lines,new ExportLine(poNumber,"NEEDS_REVIEW",reason));
+                        continue;
+                    }
+                    writeTarget=new ExistingVoucher(trim(fresh.getAttribute("REMOTEID")),trim(fresh.getAttribute("VCHKEY")),
+                            firstText(fresh,"GUID"),firstText(fresh,"MASTERID"),freshAlterId,
+                            firstNonBlank(firstText(fresh,"NARRATION"),""),LocalDate.parse(firstText(fresh,"DATE"),TALLY_DATE));
+                }
+                String requestXml = buildImportRequest(prepared, writeTarget);
                 String responseXml = post(requestXml);
                 ImportResponse response = parseImportResponse(responseXml);
                 boolean accepted = response.errors == 0 && response.exceptions == 0
@@ -227,13 +358,13 @@ public class TallyPurchaseOrderService {
                     acceptedOrders.put(lines.size(), prepared);
                     imported++;
 
-                    lines.add(new ExportLine(poNumber, updateExistingErpImport ? "UPDATED" : "IMPORTED",
+                    addProgressLine(lines,new ExportLine(poNumber, updateExistingErpImport ? "UPDATED" : "IMPORTED",
                             updateExistingErpImport ? "Existing ERP Purchase Order updated with GST details."
                                     : "Created in Tally with GST details."));
                 } else {
                     log.warn("Tally rejected PO {}: {}", poNumber, responseXml);
                     failed++;
-                    lines.add(new ExportLine(poNumber, "FAILED",
+                    addProgressLine(lines,new ExportLine(poNumber, "FAILED",
                             blank(response.lineError)
                                     ? "Tally rejected the voucher (created " + response.created + ", altered "
                                             + response.altered + ", ignored " + response.ignored
@@ -242,7 +373,7 @@ public class TallyPurchaseOrderService {
                 }
             } catch (Exception importError) {
                 failed++;
-                lines.add(new ExportLine(poNumber, "FAILED", safeMessage(importError)));
+                addProgressLine(lines,new ExportLine(poNumber, "FAILED", safeMessage(importError)));
             }
         }
         publishProgress("Verifying Tally results", ((Number)progress.get("total")).intValue(), lines);
@@ -261,14 +392,13 @@ public class TallyPurchaseOrderService {
                         verifiedStates.setProperty(stateKey(entry.getValue().number),verifiedState(entry.getValue(),firstText(saved,"ALTERID")));
                     } catch(Exception error) {
                         imported--;failed++;
-                        lines.set(entry.getKey(),new ExportLine(entry.getValue().number,"FAILED","Tally accepted this PO, but verification failed: "+safeMessage(error)));
+                        replaceProgressLine(lines,entry.getKey(),new ExportLine(entry.getValue().number,"FAILED","Tally accepted this PO, but verification failed: "+safeMessage(error)));
                     }
                 }
                 publishProgress("Verifying Tally results",((Number)progress.get("total")).intValue(),lines);
             }
         }
         publishProgress("Batch verified", ((Number)progress.get("total")).intValue(), lines);
-        saveVerifiedStates();
         return new ExportResult(purchaseOrders.size(), imported, skipped, failed, lines);
     }
 
@@ -923,11 +1053,36 @@ public class TallyPurchaseOrderService {
     private String stateKey(String number) { return serverUrl + "|" + companyName + "|" + number; }
 
     private String verifiedState(PreparedOrder order, String alterId) throws Exception {
+        return "inventory-ledger-v4:" + verifiedErpHash(order) + ":" + trim(alterId);
+    }
+
+    private String verifiedErpHash(PreparedOrder order) throws Exception {
         byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
                 .digest(buildImportRequest(order).getBytes(StandardCharsets.UTF_8));
         StringBuilder hash = new StringBuilder();
         for (byte value : digest) hash.append(String.format("%02x", value & 255));
-        return "inventory-ledger-v3:" + hash + ":" + trim(alterId);
+        return hash.toString();
+    }
+
+    private String erpHashFromState(String state) {
+        if (blank(state)) return "";
+        String[] parts=state.split(":",3);
+        return parts.length == 3 && ("inventory-ledger-v3".equals(parts[0]) || "inventory-ledger-v4".equals(parts[0])) ? parts[1] : "";
+    }
+
+    private String alterIdFromState(String state) {
+        return alterIdFromStateStatic(state);
+    }
+
+    static boolean tallyVersionChanged(String state, ExistingVoucher current) {
+        String recorded=alterIdFromStateStatic(state);
+        return current == null || blank(recorded) || !recorded.equals(trim(current.alterId));
+    }
+
+    private static String alterIdFromStateStatic(String state) {
+        if (blank(state)) return "";
+        String[] parts=state.split(":",3);
+        return parts.length == 3 && ("inventory-ledger-v3".equals(parts[0]) || "inventory-ledger-v4".equals(parts[0])) ? parts[2] : "";
     }
 
     private void loadVerifiedStates() {
@@ -1167,7 +1322,8 @@ public class TallyPurchaseOrderService {
     }
 
     private String companyVariable() {
-        return blank(companyName) ? "" : tag("SVCURRENTCOMPANY", companyName);
+        requireConfiguredCompany();
+        return tag("SVCURRENTCOMPANY", companyName.trim());
     }
 
     void requireConfiguredCompany() {

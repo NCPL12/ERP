@@ -27,7 +27,7 @@ class AssignedTallyIssuesTest {
             assertThat(service.isExportRunning()).isFalse();assertThat(service.getProgress()).isEmpty();
             com.ncpl.sales.repository.PurchaseRepo repo=mock(com.ncpl.sales.repository.PurchaseRepo.class);
             TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(repo,service);
-            ReflectionTestUtils.setField(sync,"enabled",true);ReflectionTestUtils.setField(sync,"fromDate","2026-04-01");
+            ReflectionTestUtils.setField(sync,"enabled",true);
             sync.synchronize();verifyZeroInteractions(repo);
             assertThat(sync.getLastError()).contains("cashflow.tally.company-name");
             assertThat(sync.getConfigurationError()).contains("cashflow.tally.company-name");
@@ -35,6 +35,7 @@ class AssignedTallyIssuesTest {
     }
     @Test void savedPurchaseLedgerAndAllocatedAmountMustMatch() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(service,"companyName","Company A");
         String saved=savedVoucher();service.verifySavedOrder(order(),xml(saved));
         String allocation="<ACCOUNTINGALLOCATIONS.LIST><LEDGERNAME>State Purchase@0%</LEDGERNAME><AMOUNT>-12.34</AMOUNT></ACCOUNTINGALLOCATIONS.LIST>";
         for(String wrong:Arrays.asList(saved.replace("State Purchase@0%","Wrong Purchase"),
@@ -45,7 +46,7 @@ class AssignedTallyIssuesTest {
         service.verifySavedOrder(order(),xml(saved.replace(allocation,
                 allocation.replace("-12.34","-6.00")+allocation.replace("-12.34","-6.34"))));
         java.lang.reflect.Method checkpoint=TallyPurchaseOrderService.class.getDeclaredMethod("verifiedState",TallyPurchaseOrderService.PreparedOrder.class,String.class);
-        checkpoint.setAccessible(true);assertThat((String)checkpoint.invoke(service,order(),"1")).startsWith("inventory-ledger-v3:");
+        checkpoint.setAccessible(true);assertThat((String)checkpoint.invoke(service,order(),"1")).startsWith("inventory-ledger-v4:");
     }
     @Test void createAndAlterAlwaysSelectConfiguredCompanyAndStableId() {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
@@ -58,9 +59,11 @@ class AssignedTallyIssuesTest {
         assertThat(alter).contains("TAGNAME=\"MASTER ID\" TAGVALUE=\"123\"").contains("DATE=\"30-Sep-2026\"");
     }
     @Test void fractionalQuantitiesAreNotRoundedLikeMoney() {
+        TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(service,"companyName","Company A");
         assertThat(TallyPurchaseOrderService.quantityDecimal(1.234f)).isEqualByComparingTo("1.234");
         assertThat(TallyPurchaseOrderService.quantityDecimal(0.004f)).isEqualByComparingTo("0.004");
-        assertThat(new TallyPurchaseOrderService(null).buildImportRequest(order())).contains("<BILLEDQTY>1.234 Mtr</BILLEDQTY>");
+        assertThat(service.buildImportRequest(order())).contains("<BILLEDQTY>1.234 Mtr</BILLEDQTY>");
     }
     @Test void mismatchedUnitsRequireAnApprovedFactorAndPreserveLineValue() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);

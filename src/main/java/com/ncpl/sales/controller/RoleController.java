@@ -36,6 +36,9 @@ import com.ncpl.sales.security.UserRepo;
 
 @Controller
 public class RoleController {
+	private static final List<Module> MENU_MODULES = Module.menuModules();
+	private static final Set<String> MENU_MODULE_NAMES = MENU_MODULES.stream()
+			.map(Module::name).collect(java.util.stream.Collectors.toSet());
 
 	@Autowired
 	private RoleRepo roleRepo;
@@ -64,14 +67,14 @@ public class RoleController {
 		List<Map<String, Object>> rows = new ArrayList<>();
 		for (Role role : roleRepo.findAll()) {
 			long viewableModules = rolePermissionRepo.findByRole_RoleId(role.getRoleId()).stream()
-					.filter(RolePermission::isCanView).count();
+					.filter(p -> MENU_MODULE_NAMES.contains(p.getModule()) && p.isCanView()).count();
 
 			Map<String, Object> row = new HashMap<>();
 			row.put("roleId", role.getRoleId());
 			row.put("name", role.getName());
 			row.put("userCount", userCountByRole.getOrDefault(role.getName(), 0L));
 			row.put("moduleCount", viewableModules);
-			row.put("totalModules", Module.values().length);
+			row.put("totalModules", MENU_MODULES.size());
 			rows.add(row);
 		}
 		return rows;
@@ -93,11 +96,12 @@ public class RoleController {
 		}
 
 		List<Map<String, Object>> grid = new ArrayList<>();
-		for (Module module : Module.values()) {
+		for (Module module : MENU_MODULES) {
 			RolePermission p = byModule.get(module.name());
 			Map<String, Object> row = new HashMap<>();
 			row.put("module", module.name());
 			row.put("label", module.label());
+			row.put("url", module.menuPath());
 			row.put("editable", module.editable());
 			row.put("deletable", module.deletable());
 			row.put("canView", p != null && p.isCanView());
@@ -129,7 +133,7 @@ public class RoleController {
 		role = roleRepo.save(role);
 
 		List<RolePermission> blankGrid = new ArrayList<>();
-		for (Module module : Module.values()) {
+		for (Module module : MENU_MODULES) {
 			RolePermission p = new RolePermission();
 			p.setRole(role);
 			p.setModule(module.name());
@@ -155,13 +159,23 @@ public class RoleController {
 			return ResponseEntity.badRequest().body("Permission list cannot be empty.");
 		}
 
+		// Keep permissions for modules outside the current menu when editing a role.
+		// They may be used by another workflow or restored to navigation later.
+		List<RolePermission> retained = new ArrayList<>();
+		for (RolePermission previous : rolePermissionRepo.findByRole_RoleId(id)) {
+			if (!MENU_MODULE_NAMES.contains(previous.getModule())) {
+				RolePermission copy = new RolePermission();
+				copy.setRole(role);
+				copy.setModule(previous.getModule());
+				copy.setCanView(previous.isCanView());
+				copy.setCanEdit(previous.isCanEdit());
+				copy.setCanDelete(previous.isCanDelete());
+				retained.add(copy);
+			}
+		}
 		rolePermissionRepo.deleteByRole_RoleId(id);
 		rolePermissionRepo.flush(); // IDENTITY inserts below run immediately — make sure the deletes land first
 
-		java.util.Set<String> validModules = new java.util.HashSet<>();
-		for (Module module : Module.values()) {
-			validModules.add(module.name());
-		}
 		java.util.Set<String> seenModules = new java.util.HashSet<>();
 		List<RolePermission> entities = new ArrayList<>();
 		for (RolePermissionDto row : rows) {
@@ -169,7 +183,7 @@ public class RoleController {
 				continue;
 			}
 			String mod = row.getModule().trim();
-			if (mod.isEmpty() || !validModules.contains(mod) || !seenModules.add(mod)) {
+			if (mod.isEmpty() || !MENU_MODULE_NAMES.contains(mod) || !seenModules.add(mod)) {
 				continue;
 			}
 			RolePermission p = new RolePermission();
@@ -181,6 +195,7 @@ public class RoleController {
 			p.setCanDelete(row.isCanDelete());
 			entities.add(p);
 		}
+		entities.addAll(retained);
 		rolePermissionRepo.saveAll(entities);
 
 		return ResponseEntity.ok().build();

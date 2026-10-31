@@ -1129,12 +1129,10 @@ public class PurchaseController {
 	 
 	 @GetMapping("/dcList")
 	 public String deliveryChallanDashboard(Model model) throws JsonProcessingException {
-	     List<Party> partyList = partyService.getPartyList();
 	     User userObj  = userService.getCurrentUser();
 	     String role = userObj.getRole();
 
 	     ObjectMapper mapper = utilService.getObjectMapper();
-	     model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 	     model.addAttribute("role", mapper.writeValueAsString(role));
 	     model.addAttribute("pageHeader","DC Dashboard");
 
@@ -2000,10 +1998,7 @@ public class PurchaseController {
 			 	User userObj  = userService.getCurrentUser();
 				String role = userObj.getRole();
 				System.out.println("[DC_ARCHIVED] got current user in " + (System.currentTimeMillis()-t0) + "ms");
-				List<Party> partyList = partyService.getPartyList();
-				System.out.println("[DC_ARCHIVED] got partyList (" + partyList.size() + " rows) in " + (System.currentTimeMillis()-t0) + "ms");
 		         ObjectMapper mapper=utilService.getObjectMapper();
-		     	 model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 		     	model.addAttribute("role", mapper.writeValueAsString(role));
 				 model.addAttribute("pageHeader","Archived DC");
 				 System.out.println("[DC_ARCHIVED] request finished in " + (System.currentTimeMillis()-t0) + "ms, returning view");

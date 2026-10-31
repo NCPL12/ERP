@@ -26,6 +26,7 @@ class TallyIssueRegressionTest {
             when(items.getItemById("ITEM-1")).thenReturn(Optional.of(im));
             TallyPurchaseOrderService service=new TallyPurchaseOrderService(items);
             ReflectionTestUtils.setField(service,"serverUrl","http://127.0.0.1:"+server.getAddress().getPort());
+            ReflectionTestUtils.setField(service,"companyName","Test Company");
             Object snapshot=snapshot(Collections.singletonMap("NOS","Nos"));
             ((Map)ReflectionTestUtils.getField(snapshot,"ledgerNames")).put("VENDOR","Vendor");
             Party vendor=new Party();vendor.setPartyName("Vendor");PurchaseOrder order=new PurchaseOrder();order.setParty(vendor);order.setPoNumber("PO-1");order.setCreated(new Date());
@@ -74,11 +75,13 @@ class TallyIssueRegressionTest {
         assertThat(finished.await(2,TimeUnit.SECONDS)).isTrue();
         assertThat(TallyRequestDeadline.call(()->"ready",1000)).isEqualTo("ready");
     }
-    @Test void missingAutoSyncDateIsVisibleBeforeFirstScheduledRun() {
-        TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(mock(PurchaseRepo.class),mock(TallyPurchaseOrderService.class));
+    @Test void missingTallyCompanyIsVisibleBeforeFirstScheduledRun() {
+        TallyPurchaseOrderService exporter=new TallyPurchaseOrderService(null);
+        ReflectionTestUtils.setField(exporter,"companyName"," ");
+        TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(mock(PurchaseRepo.class),exporter);
         ReflectionTestUtils.setField(sync,"enabled",true);
         assertThat(sync.isConfigured()).isFalse();
-        assertThat(sync.getConfigurationError()).contains("from-date");
+        assertThat(sync.getConfigurationError()).contains("cashflow.tally.company-name");
     }
     @Test void unitsResolveAliasesAndExplicitMappingsWithoutPackSizeGuessing() throws Exception {
         TallyPurchaseOrderService service=new TallyPurchaseOrderService(null);
