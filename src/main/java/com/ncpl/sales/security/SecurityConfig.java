@@ -1,9 +1,20 @@
 package com.ncpl.sales.security;
 
+import java.io.IOException;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,7 +22,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
-
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.web.filter.OncePerRequestFilter;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Configuration
 @EnableWebSecurity
@@ -56,9 +68,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		@Override
 		 protected void configure(HttpSecurity http) throws Exception {
 		 http.addFilterAfter(userStatusFilter, SecurityContextPersistenceFilter.class);
-		 // TODO: CSRF is still off. Turn on later (delete this line) after adding the
-		 // token to every POST form and AJAX call. Test on a copy first.
-		 http.csrf().disable();
+		 // Closes the session if the same cookie is used from a different IP or browser.
+		 http.addFilterAfter(new SessionBindingFilter(), UserStatusFilter.class);
+		 // CSRF protection is ON. The token lives in the XSRF-TOKEN cookie (readable by JavaScript).
+		 // header.jsp reads it and sends it with every POST form and AJAX write.
+		 // Old line (CSRF was off): http.csrf().disable();
+		 // If the Tally import breaks with 403, exempt ONLY that path, for example:
+		 // http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).ignoringAntMatchers("/po_list/tally/**");
+		 http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
 		 http
 		 .authorizeRequests()
 		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**", "/audit/**", "/audit-test.html").permitAll()
@@ -179,6 +196,41 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 .and()
 		 .exceptionHandling().accessDeniedPage("/access-denied");
 		 }
+
+		// Ties a logged-in session to the IP address and browser (User-Agent) it was first used from.
+		// If the same JSESSIONID cookie shows up from a different IP or browser, the session is closed
+		// and the user goes back to the login page.
+		// Limit: it cannot stop a copied cookie used on the SAME computer and browser (for example an
+		// incognito window on the same PC), because the IP and User-Agent are identical there.
+		private static class SessionBindingFilter extends OncePerRequestFilter {
+
+			private static final String FINGERPRINT = "SESSION_FINGERPRINT";
+
+			@Override
+			protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+					throws ServletException, IOException {
+				Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+				HttpSession session = request.getSession(false);
+
+				if (session != null && auth != null && auth.isAuthenticated()
+						&& !(auth instanceof AnonymousAuthenticationToken)) {
+					String current = request.getRemoteAddr() + "|" + request.getHeader("User-Agent");
+					Object saved = session.getAttribute(FINGERPRINT);
+
+					if (saved == null) {
+						// first request after login: remember where this session belongs
+						session.setAttribute(FINGERPRINT, current);
+					} else if (!saved.equals(current)) {
+						// same cookie from another IP or browser: close the session
+						session.invalidate();
+						SecurityContextHolder.clearContext();
+						response.sendRedirect(request.getContextPath() + "/login");
+						return;
+					}
+				}
+				chain.doFilter(request, response);
+			}
+		}
 		
 		
 }
