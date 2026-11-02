@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class UserManagementController {
 
     @GetMapping("/user-management")
-    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW','USER_MANAGEMENT_EDIT')")
     public String userManagement() {
         return "userManagement";
     }

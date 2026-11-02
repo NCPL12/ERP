@@ -25,16 +25,7 @@
 </style>
 </c:if>
 
-<script type="text/javascript">
-var poList=${poList};
-var itemList=${itemList};
-var purchaseItemList=${purchaseItemList}; 
-var grnList = ${grnList};
-var grnObj = "";
-if ('${grnObj}' != null && '${grnObj}' != "") {
-	grnObj= $.parseJSON('${grnObj}');
-}
-</script>
+
 <div id="grnErrorMessage" style="display:none;"><c:out value="${errorMessage}"/></div>
 <script type="text/javascript">
 $(function(){
@@ -61,8 +52,21 @@ $(function(){
 }
 </style>
 </head>
-<body>
 <body class="hold-transition sidebar-mini layout-fixed">
+<div id="grnPageData" hidden
+ data-po-list="<c:out value='${poList}'/>"
+ data-item-list="<c:out value='${itemList}'/>"
+ data-purchase-items="<c:out value='${purchaseItemList}'/>"
+ data-invoices="<c:out value='${grnList}'/>"
+ data-grn="<c:out value='${grnObj}'/>"></div>
+<script type="text/javascript">
+var grnPageData = document.getElementById("grnPageData");
+var poList = JSON.parse(grnPageData.getAttribute("data-po-list") || "[]");
+var itemList = JSON.parse(grnPageData.getAttribute("data-item-list") || "[]");
+var purchaseItemList = JSON.parse(grnPageData.getAttribute("data-purchase-items") || "[]");
+var grnList = JSON.parse(grnPageData.getAttribute("data-invoices") || "[]");
+var grnObj = JSON.parse(grnPageData.getAttribute("data-grn") || "null") || "";
+</script>
 	<div class="wrapper">
 			
 		 <tiles:insertAttribute name="header" />

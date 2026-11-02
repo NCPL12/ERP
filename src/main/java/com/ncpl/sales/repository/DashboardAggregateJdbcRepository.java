@@ -73,6 +73,7 @@ public class DashboardAggregateJdbcRepository {
             dto.setSalesOrderCount(rs.getLong("sales_order_count"));
             dto.setPurchaseOrderCount(rs.getLong("purchase_order_count"));
             dto.setInvoiceCount(rs.getLong("invoice_count"));
+            dto.setTdsApprovedPendingCount(rs.getLong("tds_approved_pending_count"));
             dto.setTdsItemsCount(rs.getLong("tds_items_count"));
             dto.setSowithoutDesignCount(rs.getLong("sowithout_design_count"));
             dto.setSowithDesignCount(rs.getLong("sowith_design_count"));

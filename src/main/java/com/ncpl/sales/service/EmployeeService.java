@@ -1,8 +1,6 @@
 package com.ncpl.sales.service;
 
 import java.util.List;
-import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +17,4 @@ public class EmployeeService {
 		return employeeList;
 	}
 	
-	public Optional<EmployeeMaster> getEmployeeById(int empId){
-		Optional<EmployeeMaster> empObj=employeeRepo.findById(empId);
-		return empObj;
-	}
-
-	public EmployeeMaster saveEmployee(EmployeeMaster employee){
-		return employeeRepo.save(employee);
-	}
-
-	public void deleteEmployee(int id){
-		employeeRepo.deleteById(id);
-	}
 }

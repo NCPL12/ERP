@@ -10,9 +10,6 @@ var inputFlag=false;
 var clientPOTable;
 $(document).ready(function() {
 	// Tie global loader to AJAX lifecycle so users see feedback while items load
-	if (typeof showLoader === 'function') {
-		try { showLoader(); } catch (e) {}
-	}
 	if (typeof $(document).ajaxStart === 'function') {
 		$(document).ajaxStart(function () {
 			if (typeof showLoader === 'function') {
@@ -31,16 +28,16 @@ $(document).ready(function() {
 		var clientPoNumber=value.clientPoNumber;
 		if(clientPoNumber!=null){
 			if(clientPoNumber!=""){
-		
+
 			$("#clientPoDropdown").append('<option value='+value.id+'>'+value.clientPoNumber+'</option>');
 			}
 		}
 	});
-	
+
 	$.each(clientList,function(index,value){
-		
+
 			$("#partyName").append('<option value='+value.id+'>'+value.partyName+'</option>');
-		
+
 	});
 	
 	//getSalesItemsbySalesItemId();
@@ -49,7 +46,7 @@ $(document).ready(function() {
 	$("#dcTable").on("click", ".deleteButton", function() {
 		$(this).closest("tr").remove();
 		//Setting name and id to remaining rows
-		$('tbody').find('tr').each(function (index) {
+		$('#dcTable tbody').find('tr').each(function (index) {
 			let prev=index-1;
 			let firstTdElement = $(this).find('td')[0];
 			$(firstTdElement).find('input').attr('name','items['+index+'].slNo');
@@ -61,6 +58,7 @@ $(document).ready(function() {
 			let thirdTdElement=$(this).find('td')[2];
 			$(thirdTdElement).find('input').attr('name','items['+index+'].soModelNo');
 			$(thirdTdElement).find('input').attr('id','modelNo'+ index);
+			let fifthTdElement=$(this).find('td')[4];
 			$(fifthTdElement).find('input').attr('id', 'totalQty'+index);
 			let sixthTdElement=$(this).find('td')[5];
 			$(sixthTdElement).find('input').attr('name', 'items['+index+'].deliveredQuantity');
@@ -183,6 +181,9 @@ $(document).on("focusout",".deliveredQty",function(e) {
 
 //on change of client po dropdown get id and populate description dropdown
 $(document).on("change","#clientPoDropdown",function(){
+	errorFlag = false;
+	modalOpenFlag = false;
+	designLengthCheckFlag = false;
 	if(rowCountofAddeditems>0){
 		bootbox.confirm({
 			   message: "are you sure to change the Client Po No?",
@@ -325,7 +326,7 @@ function getClientNameBySoId(soId){
 		url : api.GET_SALESORDER_BYID  +"?salesOrderId="+soId,
 		success : function(response) {
 		$("#clientId").val(response.party.id);
-		$("#clientName").text(response.party.partyName).attr("title", response.party.partyName);
+		$("#clientName").text(response.party.partyName);
 		},
 		complete:function(resp){
 			if(resp.status==500){
@@ -919,8 +920,7 @@ $(document).on('submit', '#deliveryChallanForm', function(e) {
 	$('input:not(:button,:submit),textarea,select').on("focusout input",function () {
 		$("#saveDeliveryChallan").attr('disabled', false);
 		});
-	 $("#saveDeliveryChallan", this)
-     .attr('disabled', 'disabled');
+	 $("#saveDeliveryChallan", this).prop('disabled', !e.isDefaultPrevented());
 	
 	/*//empty validation for design array on submit
 	$('#dcTable > tbody  > tr > td > input.designArrData').each(function(index, input) { 
@@ -961,7 +961,7 @@ function getDcObjectByDcId(dcId){
 			$('#clientPoDropdown').val(dcObj.soNumber);
 			$('#clientPoDropdown').attr("disabled",true);
 			$('#clientPoDropdown').select2(dcObj, {id: dcObj.soNumber, a_key:dcObj.soNumber});
-			$("#clientName").text(dcObj.clientName).attr("title", dcObj.clientName);
+			$("#clientName").text(dcObj.clientName);
 			$('#clientPoDropdown,#clientName').attr("disabled",true);
             $("#descriptionDropdown" + key).replaceWith('<input type="text" class="form-control PositionofTextbox description" id="description' + key + '" name="items['+key+'].description">');
             $("#description" + key).val(value.description);
@@ -1001,29 +1001,29 @@ function  loadClientPoTable(partyId){
 		url:api.SO_LIST_BY_CLIENTID + "?partyId=" + partyId,
 		success:function(response){
 			console.log(response);
-			getClientPOList(response);	
-				
-				/*	
+			getClientPOList(response);
+
+				/*
 					$("#clientPOTable tbody").empty();
 					$.each(response,function(index,value){
-						
+
 						var soObjs = "<tr><td width='60%'> " + value.clientPoNumber + "</td>" +
 								"<td width='20%'> " + value.clientPoDate + "</td>" +
 								"<td width='20%'> " + value.created + "</td></tr>";
 						$("#clientPOTable tbody").append(soObjs);
 					});
 				*/
-			
-		},  
+
+		},
 		complete:function(resp){
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
-			
+
 		},
 		error : function(e) {
 			console.log(e);
-		}  	
+		}
 	})
 }
 

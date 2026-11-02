@@ -1,23 +1,18 @@
 var dcTable;
+var dcColumnSearchTimer;
 $(document).ready(function(){
-	var archivedPage = (typeof isArchivedPage !== "undefined" && isArchivedPage === true);
-	// How many leading columns are real data (searchable): Dc No, SO, Client, PO, Shipping, Comment, Date.
-	// Action columns (DC download / View / Returnable) and Archive get no search box.
-	var SEARCHABLE_COLS = 7;
 	$('#dcList thead tr').clone(true).appendTo( '#dcList thead' );
 	    $('#dcList thead tr:eq(1) th').each( function (i) {
-	        if (i >= SEARCHABLE_COLS) {
-	            return;
-	        }
 	        var title = $(this).text();
 	        $(this).html( '<input type="text" style="width:100%;" placeholder="Search '+title+'" />' );
 	        $( 'input', this ).on( 'keyup change', function () {
-	            if ( dcTable.column(i).search() !== this.value ) {
-	            	dcTable
-	                    .column(i)
-	                    .search( this.value )
-	                    .draw();
-	            }
+	            var value = this.value;
+	            clearTimeout(dcColumnSearchTimer);
+	            dcColumnSearchTimer = setTimeout(function () {
+	                if (dcTable.column(i).search() !== value) {
+	                    dcTable.column(i).search(value).draw();
+	                }
+	            }, 350);
 	        } );
 	    } );
 	    dcTable= $('#dcList').DataTable({
@@ -25,8 +20,10 @@ $(document).ready(function(){
 		    fixedHeader: true,
 		    processing: true,
 		    serverSide: true,
-		    pageLength: 100,
-		    lengthMenu: [[50, 100, 250, 500, 1000], [50, 100, 250, 500, 1000]],
+		    columnDefs: [{ targets: -1, visible: archivePage, searchable: false, orderable: false }],
+		    pageLength: 25,
+		    searchDelay: 350,
+		    lengthMenu: [[25, 50, 100, 250, 500, 1000], [25, 50, 100, 250, 500, 1000]],
 	    	"order": [[ 0, "desc" ]],
 	    	ajax: function (data, callback, settings) {
 	    		var page = Math.floor(data.start / data.length);
@@ -43,10 +40,10 @@ $(document).ready(function(){
 	    		var clientNameFilter = ($('#dcList thead tr:eq(1) th:eq(2) input').val() || '').trim();
 	    		var clientPoFilter = ($('#dcList thead tr:eq(1) th:eq(3) input').val() || '').trim();
 	    		var shippingFilter = ($('#dcList thead tr:eq(1) th:eq(4) input').val() || '').trim();
-	    		var commentFilter = ($('#dcList thead tr:eq(1) th:eq(5) input').val() || '').trim();
-	    		var dateFilter = ($('#dcList thead tr:eq(1) th:eq(6) input').val() || '').trim();
-	    		// If any column filter is active, suppress global keyword to leverage advanced search on backend
-	    		if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter || commentFilter || dateFilter) {
+				var commentFilter = ($('#dcList thead tr:eq(1) th:eq(5) input').val() || '').trim();
+				var dateFilter = ($('#dcList thead tr:eq(1) th:eq(6) input').val() || '').trim();
+				// If any column filter is active, suppress global keyword to use the advanced search endpoint.
+				if (dcIdFilter || soFilter || clientNameFilter || clientPoFilter || shippingFilter || commentFilter || dateFilter) {
 	    			keyword = "";
 	    		}
 	    		$.ajax({
@@ -57,15 +54,15 @@ $(document).ready(function(){
 	    				keyword: keyword,
 	    				sortField: sortField,
 	    				sortDir: sortDir,
-	    				archive: archivedPage,
+						archive: archivePage,
 	    				// per-column filters expected by backend
 	    				dcId: dcIdFilter,
 	    				soNumber: soFilter,
 	    				clientName: clientNameFilter,
 	    				clientPo: clientPoFilter,
-	    				shipping: shippingFilter,
-	    				comment: commentFilter,
-	    				date: dateFilter
+						shipping: shippingFilter,
+						comment: commentFilter,
+						date: dateFilter
 	    			},
 	    			success: function(resp){
 	    				callback({
@@ -73,15 +70,6 @@ $(document).ready(function(){
 	    					recordsTotal: resp.totalElements,
 	    					recordsFiltered: resp.totalElements,
 	    					data: resp.content
-	    				});
-	    			},
-	    			error: function(xhr){
-	    				console.error("Failed to load DC list", xhr.status, xhr.responseText);
-	    				callback({
-	    					draw: data.draw,
-	    					recordsTotal: 0,
-	    					recordsFiltered: 0,
-	    					data: []
 	    				});
 	    			}
 	    		});
@@ -98,9 +86,6 @@ $(document).ready(function(){
 				"defaultContent":"",
 				"class": "text-field-large-nowrap",
 	    		render: function ( data, type, row ) {
-	    			if(data==undefined || data==null || data==""){
-	    				return "";
-	    			}
 	    		    return data.length > 35 ?
 	    		    		data.substr( 0, 35 ) +'...' :
 	    		    			data;
@@ -166,13 +151,20 @@ $(document).ready(function(){
 				render : function(datam, type, row) {
 					var url = null;
 					//url ="/ncpl-sales/dc/details/"+row.dcId;
-					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";
+					return "<button type='button' id='"+row.dcId+"' class='btn btn-default btn-flat btn-xs dcView'><i class='fa fa-eye'></i></button>";;
 				}
 			},
-			
+			{
+				"mData" : "dcId"	,
+				render : function(datam, type, row) {
+					var url = null;
+					url ="/ncpl-sales/returnable/"+row.dcId;
+					return "<a class='text-info ' href='" + url + "'><button type='button' class='btn btn-default btn-flat btn-xs' >Returnable</button></a>";
+				}
+			}
+			,
 			{
 				"mData" : "archive"	,
-				"visible": archivedPage,
 				render : function(datam, type, row) {
 					var archive;
 					if(role=="SUPER ADMIN"){
@@ -213,7 +205,7 @@ $(document).ready(function(){
 		 	    async: 'false',
 		 	    success  : function(response){
 		 	    	  $("#dcPartialItemsModal").modal({backdrop: 'static',
-							keyboard: false})
+								keyboard: false})
 		 	    	 $("#dcPartialItemsTable tbody").empty();
 		 				var arrayCount=0;
 		 				itemsList = response;
@@ -231,6 +223,7 @@ $(document).ready(function(){
 		 					$("#dcPartialItemsTable tbody").append(dcItems);
 		 		    		arrayCount++;
 		 		    		slno++;
+
 
 		 	    	});
 

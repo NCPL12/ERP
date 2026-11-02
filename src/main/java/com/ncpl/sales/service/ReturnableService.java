@@ -101,11 +101,15 @@ public class ReturnableService {
 		Page<ReturnableItems> returnablePage = returnableItemsRepo.findAllNonZeroReturnedPaged(
 				orderNo == null ? "" : orderNo.trim(),
 				PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id")));
-		return new PageImpl<>(enrich(returnablePage.getContent()), returnablePage.getPageable(),
+		return new PageImpl<>(enrich(returnablePage.getContent(), false), returnablePage.getPageable(),
 				returnablePage.getTotalElements());
 	}
 
 	private List<ReturnableItems> enrich(List<ReturnableItems> returnableItemsList) {
+		return enrich(returnableItemsList, true);
+	}
+
+	private List<ReturnableItems> enrich(List<ReturnableItems> returnableItemsList, boolean includeItemDetails) {
 		if (returnableItemsList.isEmpty()) {
 			return returnableItemsList;
 		}
@@ -150,24 +154,26 @@ public class ReturnableService {
 			SalesOrder so = salesItem.getSalesOrder();
 
 			// item-level (for modal/view) — like DeliveryChallanService.getDcItemList sets soModelNo
-			returnableItems.set("description", salesItem.getDescription());
-			returnableItems.set("unit", salesItem.getItem_units().getName());
-			returnableItems.set("clientId", so.getParty().getId());
-			returnableItems.set("totalQty", salesItem.getQuantity());
-			returnableItems.set("deliveredQty", dcItem.getTodaysQty());
+			if (includeItemDetails) {
+				returnableItems.set("description", salesItem.getDescription());
+				returnableItems.set("unit", salesItem.getItem_units().getName());
+				returnableItems.set("clientId", so.getParty().getId());
+				returnableItems.set("totalQty", salesItem.getQuantity());
+				returnableItems.set("deliveredQty", dcItem.getTodaysQty());
 			// soModelNo from DesignItems -> ItemMaster.model
-			try {
-				List<DesignItems> designItems = soDesignService.getDesignItemListBySOItemId(salesItem.getId());
-				ArrayList<String> models = new ArrayList<>();
-				for (DesignItems di : designItems) {
-					String itemId = di.getItemId();
-					java.util.Optional<com.ncpl.sales.model.ItemMaster> im = itemMasterService.getItemById(itemId);
-					if (im.isPresent() && im.get().getModel() != null) models.add(im.get().getModel());
-					else if (itemId != null) models.add(itemId);
+				try {
+					List<DesignItems> designItems = soDesignService.getDesignItemListBySOItemId(salesItem.getId());
+					ArrayList<String> models = new ArrayList<>();
+					for (DesignItems di : designItems) {
+						String itemId = di.getItemId();
+						java.util.Optional<com.ncpl.sales.model.ItemMaster> im = itemMasterService.getItemById(itemId);
+						if (im.isPresent() && im.get().getModel() != null) models.add(im.get().getModel());
+						else if (itemId != null) models.add(itemId);
+					}
+					returnableItems.set("soModelNo", String.join(", ", models));
+				} catch (Exception e) {
+					returnableItems.set("soModelNo", dcItem.getSoModelNo());
 				}
-				returnableItems.set("soModelNo", String.join(", ", models));
-			} catch (Exception e) {
-				returnableItems.set("soModelNo", dcItem.getSoModelNo());
 			}
 
 			// header-level columns requested for /returnableList: No, returnableId, soNumber, clientName, clientPo, shippingAddress, dcNo, date

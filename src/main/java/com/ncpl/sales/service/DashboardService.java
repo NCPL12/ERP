@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ncpl.sales.model.DashboardCountDto;
 import com.ncpl.sales.model.DashboardListsDto;
@@ -18,6 +20,7 @@ import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.DashboardAggregateJdbcRepository;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Dashboard counts + the 7 dashboard list cards: in-memory snapshots for fast HTTP.
@@ -40,7 +43,10 @@ public class DashboardService {
     private InvoiceService invoiceService;
     @Autowired
     private TdsService tdsService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
+    private volatile boolean shuttingDown;
     private volatile DashboardCountDto snapshot;
     private volatile DashboardListsDto listsSnapshot;
     private final Object snapshotLock = new Object();
@@ -50,6 +56,18 @@ public class DashboardService {
     public void warmupSnapshotAsync() {
         CompletableFuture.runAsync(this::recomputeSnapshotQuietly);
         CompletableFuture.runAsync(this::recomputeListsSnapshotQuietly);
+    }
+
+    /** Wait for active refreshes before Spring closes the JDBC and JPA resources. */
+    @PreDestroy
+    public void stopBackgroundRefreshes() {
+        shuttingDown = true;
+        synchronized (snapshotLock) {
+            // Wait for a count refresh already using the database.
+        }
+        synchronized (listsSnapshotLock) {
+            // Wait for a list refresh already using the database.
+        }
     }
 
     /**
@@ -87,13 +105,39 @@ public class DashboardService {
         }
     }
 
+    public boolean isListsReady() {
+        return listsSnapshot != null;
+    }
+
+    public DashboardListsDto getDashboardListsIfReady() {
+        DashboardListsDto lists = listsSnapshot;
+        if (lists != null) {
+            return lists;
+        }
+        lists = new DashboardListsDto();
+        lists.setPendingSalesList(java.util.Collections.emptyList());
+        lists.setPendingPurchaseList(java.util.Collections.emptyList());
+        lists.setInvoiceList(java.util.Collections.emptyList());
+        lists.setAllSalesList(java.util.Collections.emptyList());
+        lists.setTdsApprovedList(java.util.Collections.emptyList());
+        lists.setSalesItemsWithoutDesignList(java.util.Collections.emptyList());
+        lists.setSalesOrderWithDesignList(java.util.Collections.emptyList());
+        return lists;
+    }
+
     /** Invoked by {@link DashboardCountsRefreshScheduler}. */
     public void scheduledRefreshSnapshot() {
+        if (shuttingDown) {
+            return;
+        }
         recomputeSnapshotQuietly();
         recomputeListsSnapshotQuietly();
     }
 
     private void recomputeSnapshotQuietly() {
+        if (shuttingDown) {
+            return;
+        }
         try {
             recomputeSnapshot();
         } catch (Exception e) {
@@ -103,13 +147,22 @@ public class DashboardService {
 
     private void recomputeSnapshot() {
         synchronized (snapshotLock) {
+            if (shuttingDown) {
+                return;
+            }
             snapshot = loadCounts();
         }
     }
 
     private void recomputeListsSnapshotQuietly() {
+        if (shuttingDown) {
+            return;
+        }
         try {
             synchronized (listsSnapshotLock) {
+                if (shuttingDown) {
+                    return;
+                }
                 listsSnapshot = loadLists();
             }
         } catch (Exception e) {
@@ -122,6 +175,12 @@ public class DashboardService {
     }
 
     private DashboardListsDto loadLists() {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setReadOnly(true);
+        return transaction.execute(status -> loadListsInTransaction());
+    }
+
+    private DashboardListsDto loadListsInTransaction() {
         DashboardListsDto d = new DashboardListsDto();
         d.setPendingSalesList(salesService.getPendingSalesList());
         d.setPendingPurchaseList(purchaseOrderService.getPenidngPoList());

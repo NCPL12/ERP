@@ -28,7 +28,6 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler i
 		LANDING_PAGES.put("SALES_ORDER_VIEW", "/salesList");
 		LANDING_PAGES.put("PARTY_VIEW", "/partyList");
 		LANDING_PAGES.put("ITEM_MASTER_VIEW", "/itemMaster");
-		LANDING_PAGES.put("COMPANY_ASSETS_VIEW", "/companyAssets");
 		LANDING_PAGES.put("DELIVERY_CHALLAN_VIEW", "/dcList");
 		LANDING_PAGES.put("RETURNABLE_VIEW", "/returnableList");
 		LANDING_PAGES.put("INVOICE_VIEW", "/invoiceList");

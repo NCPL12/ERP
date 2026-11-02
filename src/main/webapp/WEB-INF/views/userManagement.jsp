@@ -19,12 +19,6 @@ var pageContext = '${pageContext.request.contextPath}';
 	<div class="content-wrapper">
 		<section class="content">
 			<div class="container-fluid">
-				<ul class="nav nav-tabs" id="userManagementTabs">
-					<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#usersTabPane">Users</a></li>
-					<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#employeesTabPane">Employees</a></li>
-				</ul>
-				<div class="tab-content">
-				<div class="tab-pane fade show active" id="usersTabPane">
 				<div class="card">
 					<div class="card-header">
 						<div class="card-tools">
@@ -50,34 +44,6 @@ var pageContext = '${pageContext.request.contextPath}';
 							</tbody>
 						</table>
 					</div>
-				</div>
-				</div>
-				<div class="tab-pane fade" id="employeesTabPane">
-				<div class="card">
-					<div class="card-header">
-						<div class="card-tools">
-							<button type="button" class="btn btn-primary btn-sm" onclick="addNewEmployee()">
-								<i class="fas fa-plus"></i> Add Employee
-							</button>
-						</div>
-					</div>
-					<div class="card-body">
-						<table id="employeeManagementTable" class="table table-bordered table-striped" style="width:100%">
-							<thead>
-								<tr>
-									<th>S.No.</th>
-									<th>Emp ID</th>
-									<th>Name</th>
-									<th>Contact No</th>
-									<th>Action</th>
-								</tr>
-							</thead>
-							<tbody>
-							</tbody>
-						</table>
-					</div>
-				</div>
-				</div>
 				</div>
 			</div>
 		</section>
@@ -229,61 +195,10 @@ var pageContext = '${pageContext.request.contextPath}';
 	</div>
 </div>
 
-<!-- EDIT EMPLOYEE MODAL -->
-<div class="modal fade" id="editEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="editEmployeeModalLabel" aria-hidden="true">
-	<div class="modal-dialog" role="document">
-		<div class="modal-content">
-			<div class="modal-header bg-light">
-				<h5 class="modal-title" id="editEmployeeModalLabel">Edit Employee</h5>
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-					<span aria-hidden="true">&times;</span>
-				</button>
-			</div>
-			<div class="modal-body">
-				<form id="editEmployeeForm" name="editEmployeeForm">
-					<div class="row">
-						<div class="col-md-12">
-							<div class="form-group">
-								<label for="editEmpId">Emp ID <span class="text-danger">*</span></label>
-								<input type="text" id="editEmpId" name="empId" class="form-control" required
-									placeholder="Enter employee ID">
-							</div>
-						</div>
-						<div class="col-md-12">
-							<div class="form-group">
-								<label for="editEmpName">Name <span class="text-danger">*</span></label>
-								<input type="text" id="editEmpName" name="name" class="form-control" required
-									placeholder="Enter employee name">
-							</div>
-						</div>
-						<div class="col-md-12">
-							<div class="form-group">
-								<label for="editEmpContactNo">Contact No</label>
-								<input type="text" id="editEmpContactNo" name="contactNo" class="form-control" pattern="[0-9]{10}"
-									maxlength="10" placeholder="Enter 10-digit contact number">
-							</div>
-						</div>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer bg-light">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fas fa-times"></i> Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="saveEmployee()"><i class="fas fa-save"></i> Save Employee</button>
-			</div>
-		</div>
-	</div>
-</div>
-
 <script src="${pageContext.request.contextPath}/resources/js/userManagement.js"></script>
-<script src="${pageContext.request.contextPath}/resources/js/employeeManagement.js"></script>
 <script>
 	$(document).ready(function () {
 		$(".pageHeader").text("User Management");
-	});
-	$(document).on('shown.bs.tab', 'a[href="#employeesTabPane"]', function () {
-		if (employeeTable) {
-			employeeTable.columns.adjust();
-		}
 	});
 </script>
 </body>

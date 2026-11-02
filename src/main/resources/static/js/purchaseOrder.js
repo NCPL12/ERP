@@ -202,9 +202,10 @@ $(document).ready(function () {
 		}
 		$("#modelNo0").append('<option value=' + value.id + '>' + modelNo + '</option>');
 	});*/
-	itemName = itemList.map(({ itemName }) => itemName);
+	itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 	$(".poDescription").autocomplete({
-		source: itemName
+		source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 	});
 	/*unitName = unitsList.map(({ name }) => name);
 	$(".unit").autocomplete({
@@ -806,6 +807,9 @@ function getSalesOrdertbySalesOrderId(soId) {
 		populateDescriptionDropdown(row, cachedItems);
 		return;
 	}
+	var $dd = $("#descriptionDropdown" + row);
+	$dd.children("option").filter(":not(:first)").remove();
+	$dd.append('<option value="" disabled data-loading="1">Loading...</option>');
 	$.ajax({
 		type: "GET",
 		url: api.SALES_LIST_BY_SOID + "?id=" + soId+"&&className="+className,
@@ -814,6 +818,7 @@ function getSalesOrdertbySalesOrderId(soId) {
 			populateDescriptionDropdown(row, response);
 		},  
 		complete:function(resp){
+			$("#descriptionDropdown" + row).find("option[data-loading]").remove();
 			if(resp.status==500){
 				$.error("Error occurred with error code : " + resp.responseJSON["errorCode"] + " and error message : "+ resp.responseJSON["errorMessage"])
 			}
@@ -841,6 +846,7 @@ function populateDescriptionDropdown(row, items){
 		optionsHtml += '<option value=' + value.id + '>' + value.slNo + '.' + description + '</option>';
 	});
 	dropdown.append(optionsHtml);
+	dropdown.trigger("change.select2");
 	$('input').removeClass("has-error");
 }
 
@@ -1020,9 +1026,10 @@ function addSalesOrder() {
 		//$("#salesOrderDropdown" + previousRow).attr("disabled", true);
 		//$("#descriptionInput" + previousRow).attr("readonly", "readonly");
 
-		itemName = itemList.map(({ itemName }) => itemName);
+		itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 		$(".poDescription").autocomplete({
-			source: itemName
+			source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 		});
 		/*unitName = unitsList.map(({ name }) => name);
 		$(".unit").autocomplete({
@@ -1128,6 +1135,8 @@ function addSalesOrder() {
 }
 /**on change of description item**/
 function getSalesItemtbySalesItemId() {
+	if (window.descHandlerBound) { return; }
+	window.descHandlerBound = true;
 	    var count =1;
 		var debouncedDescriptionDropdownHandler = debounce(function (target) {
 			var $target = $(target);
@@ -1156,7 +1165,7 @@ function getSalesItemtbySalesItemId() {
 					console.log(e);
 				}  	
 			});
-		}, 250);
+		}, 0);
 		$(document).on("change", '.descriptionDropdown', function () {
 			debouncedDescriptionDropdownHandler(this);
 		});
@@ -1464,7 +1473,7 @@ function editPoTable() {
 				"title": '<i class="add fa fa-plus-square fa-2x text-center mx-auto" aria-hidden="true"></i>',
 				"class": "styleOfSlNo",
 				render: function (mData, type, row, meta) {
-					return '<i class="deleteButton purchaseDeleteButton fa fa-trash " aria-hidden="true"></i>';
+					return canDeletePurchase ? '<i class="deleteButton purchaseDeleteButton fa fa-trash " aria-hidden="true"></i>' : '';
 				}
 			}
 			
@@ -1600,9 +1609,10 @@ $(document).ready(function () {
 		//$("#salesOrderDropdown" + previousRow).attr("disabled", true);
 		//$("#descriptionInput" + previousRow).attr("readonly", "readonly");
 
-		itemName = itemList.map(({ itemName }) => itemName);
+		itemName = itemName || itemList.map(({ itemName }) => itemName).filter(Boolean);
 		$(".poDescription").autocomplete({
-			source: itemName
+			source: function(request, response) { response($.ui.autocomplete.filter(itemName, request.term).slice(0, 50)); },
+        minLength: 2, delay: 150
 		});
 		/*unitName = unitsList.map(({ name }) => name);
 		$(".unit").autocomplete({
@@ -1966,7 +1976,7 @@ function loadTable(response){
 				"data": "Date",
 				"width":"10%",
 				render : function(data, type, row) {
-					var newdate = moment(new Date(row.purchaseOrder.created)).format("YYYY-MM-DD HH:mm:ss") ;
+					var newdate = moment(new Date(row.purchaseOrder.created)).format("DD-MM-YYYY HH:mm:ss") ;
 						return  newdate; 
 				}
 

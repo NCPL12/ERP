@@ -1,0 +1,100 @@
+name: Code Quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Java static analysis (Java 8)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check changed files for whitespace errors
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            git diff --check "$BASE_SHA...HEAD"
+          elif [[ "$GITHUB_EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            git diff --check "$BEFORE_SHA" HEAD
+          fi
+
+      - name: Check changed application JavaScript syntax
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            range="$BASE_SHA...HEAD"
+          elif [[ "$GITHUB_EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            range="$BEFORE_SHA..HEAD"
+          else
+            exit 0
+          fi
+          git diff --name-only --diff-filter=ACM -z "$range" -- src/main/resources/static/js/ | while IFS= read -r -d '' file; do
+            if [[ "$file" == *.js ]]; then
+              node --check "$file"
+            fi
+          done
+
+      - name: Set up Java 8
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+          cache-dependency-path: pom.xml
+
+      # Report existing findings without blocking changes until a baseline is established.
+      - name: Analyze Java with PMD
+        run: mvn --batch-mode --no-transfer-progress -DskipTests -Dpmd.skipPmdError=false org.apache.maven.plugins:maven-pmd-plugin:3.26.0:pmd
+
+      - name: Summarize PMD findings
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          report = Path('target/pmd.xml')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+              summary.write('## Java code quality\n\n')
+              if report.exists():
+                  root = ET.parse(report).getroot()
+                  violations = root.findall('.//{*}violation')
+                  summary.write(f'PMD found **{len(violations)}** findings. Download the PMD report artifact for details.\n')
+              else:
+                  summary.write('PMD did not produce a report; check the analysis step.\n')
+          PY
+
+      - name: Upload PMD report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: pmd-report
+          path: |
+            target/pmd.xml
+            target/reports/pmd.html
+          if-no-files-found: ignore
+          retention-days: 7

@@ -21,6 +21,19 @@ var allSalesListDashboard = ${allSalesListDashboard};
 var tdsApprovedListDashboard = ${tdsApprovedListDashboard};
 var salesItemsWithoutDesignListDashboard = ${salesItemsWithoutDesignListDashboard};
 var salesOrderWithDesignListDashboard = ${salesOrderWithDesignListDashboard};
+var dashboardListsLoading = ${listsLoading};
+if (dashboardListsLoading) {
+    (function waitForDashboardLists(attempt) {
+        if (attempt >= 30) return;
+        setTimeout(function () {
+            $.getJSON(pageContext + '/dashboard/lists-ready')
+                .done(function (ready) {
+                    if (ready) window.location.reload();
+                    else waitForDashboardLists(attempt + 1);
+                });
+        }, 2000);
+    })(0);
+}
 </script>
 <style>
 .hideTd{

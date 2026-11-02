@@ -9,10 +9,8 @@ var supplierSummaryByItem = {};
 var clientSummaryByItem = {};
 var costSummaryByItem = {};
 
-// @D0010 role-driven item master access, replaces hardcoded usernames (see README.md)
 function hasItemMasterAccess() {
-	return role == "ITEMMASTER" || role == "STORE" || role == "NORMAL USER"
-		|| role == "ADMIN" || role == "SUPER ADMIN" || itemMasterAccess === true;
+	return typeof canEditItemMaster !== "undefined" && canEditItemMaster === true;
 }
 
 function precomputeItemMasterAggregations() {
@@ -83,6 +81,7 @@ function precomputeItemMasterAggregations() {
 }
 //var userName;
 $(document).ready(function () {
+	$("#saveStock, #saveSupplier").prop("disabled", !hasItemMasterAccess());
 	$("#SalesVal").hide();
 	$(".amount").attr("readonly", "readonly");
 	$(".total").attr("readonly", "readonly");
@@ -1394,11 +1393,12 @@ function loadSupplierTable(response) {
 					"data": "updated",
 					"defaultContent": "",
 					render : function(datam, type, row) {
-						var newdate = moment(new Date(row.created)).format("YYYY-MM-DD HH:mm:ss") ;
-						var format= newdate.split(" ");
-						var dateFormat = format[0].split("-");
-						dateFormat = dateFormat[2]+"-"+dateFormat[1]+"-"+dateFormat[0]+" "+format[1];
-						return dateFormat;
+						var value = row.updated || row.created;
+						if (!value) { return ""; }
+						var m = (typeof value === "string")
+							? moment(value, ["DD-MM-YYYY HH:mm:ss", "YYYY-MM-DD HH:mm:ss", moment.ISO_8601])
+							: moment(value);
+						return m.isValid() ? m.format("DD-MM-YYYY HH:mm:ss") : "";
 
 					}
 

@@ -1,7 +1,9 @@
 $(document).ready(function () {
-	if (salesOrderObj != "") {
-		getSalesItemListBySoItem(salesOrderObj);
-		$("#soNumber").val(salesOrderObj.id);
+	// FIX: guard against salesOrderObj not being declared on the page
+	var so = (typeof salesOrderObj !== 'undefined') ? salesOrderObj : "";
+	if (so != "") {
+		getSalesItemListBySoItem(so);
+		$("#soNumber").val(so.id);
 	}
 });
 
@@ -145,10 +147,11 @@ function getSalesItemListBySoItem(salesOrderObj) {
 		type: 'GET',
 		url: api.SALES_LIST_BY_SOID + "?id=" + soId + "&&className=" + className,
 		dataType: 'json',
-		async: 'false',
 		success: function (response) {
 			var arrayCount = 0;
 			$.each(response, function (index, value) {
+				// FIX: declare locally so these don't leak into / collide with globals
+				var slNo, description, salesItemId, modelNumber, poQty, unitName, model, tds, siteQty, qty;
 
 				if (value.designItems.length == 0) {
 					if (value.item_units.name == "Heading") {
