@@ -14,6 +14,55 @@
 						<!--bank icon is working for this version only-->
 						<link rel="stylesheet"
 							href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+						<!-- CSRF: token for every POST form and AJAX write (see SecurityConfig) -->
+						<meta name="_csrf" content="${_csrf.token}" />
+						<meta name="_csrf_header" content="${_csrf.headerName}" />
+						<script type="text/javascript">
+							(function ($) {
+								if (!$) { return; }
+								var token = $("meta[name='_csrf']").attr("content");
+								var header = $("meta[name='_csrf_header']").attr("content");
+								var PARAM = "_csrf";
+								if (!token || !header) { return; }
+
+								function sameOrigin(url) {
+									var a = document.createElement("a");
+									a.href = url;
+									return a.host === window.location.host;
+								}
+
+								// 1) Every jQuery AJAX write (POST, PUT, DELETE...) sends the token header.
+								$.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+									if (!options.crossDomain && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.type)) {
+										jqXHR.setRequestHeader(header, token);
+									}
+								});
+
+								// 2) Every POST form gets the token. File-upload forms get it in the URL.
+								function protectForm(form) {
+									var $f = $(form);
+									var action = $f.attr("action") || window.location.href;
+									if (!/^post$/i.test($f.attr("method") || "") || !sameOrigin(action)) { return; }
+									if (/multipart\/form-data/i.test($f.attr("enctype") || "")) {
+										if (action.indexOf(PARAM + "=") === -1) {
+											$f.attr("action", action + (action.indexOf("?") === -1 ? "?" : "&") + PARAM + "=" + encodeURIComponent(token));
+										}
+									} else if (!$f.find("input[name='" + PARAM + "']").length) {
+										$("<input>", { type: "hidden", name: PARAM, value: token }).appendTo($f);
+									}
+								}
+								$(function () { $("form").each(function () { protectForm(this); }); });
+								$(document).on("submit", "form", function () { protectForm(this); });
+
+								// 3) Logout must be a POST when CSRF is on, so turn the logout link into one.
+								$(document).on("click", "a[href$='/logout'], a[href$='/logout/']", function (e) {
+									e.preventDefault();
+									var $f = $("<form>", { method: "post", action: this.href }).appendTo("body");
+									protectForm($f[0]);
+									$f[0].submit();
+								});
+							})(window.jQuery);
+						</script>
 						<style type="text/css">
 							.hideIcon {
 								display: none !important;
