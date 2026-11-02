@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+    <meta name="csrf-token" th:content="${_csrf.token}" />
+    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+    <meta charset="UTF-8">
+    <title>Overdue Payments</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/animations.css}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 28px 32px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #ef4444);
+        }
+        .page-header h4 { 
+            color: #0f172a; 
+            font-weight: 800; 
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Full Page Animation */
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #ef4444 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        #pageAnimation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .page-animation-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: pageSlideUp 1s ease-out;
+        }
+
+        @keyframes pageSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-animation-icon {
+            font-size: 80px;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .page-animation-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .page-animation-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+            border-radius: 10px;
+            animation: progressFill 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+        .page-header p {
+            color: #64748b;
+            margin: 0;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            gap: 28px;
+            margin: 28px 0;
+            height: 600px;
+            max-height: 600px;
+        }
+        
+        .weekly-grid {
+            flex: 0 0 40%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 24px;
+            height: 100%;
+        }
+        
+        .week-quarter {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .week-quarter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+        .week-quarter:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .week-quarter:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .week-quarter:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .week-quarter:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        
+        .week-quarter:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        
+        .week-header {
+            flex-shrink: 0;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        
+        .week-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #475569;
+            text-align: center;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .week-amount {
+            font-size: 22px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+        
+        .mini-charts {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        
+        .mini-chart {
+            flex: 1;
+            position: relative;
+            min-height: 60px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .mini-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        
+        .monthly-section {
+            flex: 0 0 60%;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .monthly-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #1e3c72, #3b82f6);
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            text-align: center;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+        
+        .chart-half {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .chart-label {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 150px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent);
+            margin: 24px 0;
+            flex-shrink: 0;
+            border-radius: 2px;
+        }
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: slideUp 0.5s ease-out;
+            position: relative;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+
+        .filter-toolbar .filters-info {
+            margin-left: auto;
+            color: #64748b;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-radius: 10px;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+        }
+        
+        canvas { 
+            max-width: 100% !important; 
+            max-height: 100% !important;
+            display: block !important;
+        }
+        
+        /* Loading state */
+        .dashboard-container.loading {
+            position: relative;
+            opacity: 0.6;
+        }
+        .dashboard-container.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: rotate 1s linear infinite;
+            z-index: 10;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .weekly-grid {
+                flex: 1;
+                height: 500px;
+            }
+            .monthly-section {
+                flex: 1;
+                height: 500px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .weekly-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 1fr);
+                height: auto;
+            }
+            .week-quarter {
+                min-height: 200px;
+            }
+            .page-header {
+                padding: 20px 24px;
+            }
+            .page-header h4 {
+                font-size: 22px;
+            }
+        }
+    </style>
+    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('neptuneColorTheme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));</script>
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/app-theme.css?v=20260825-table-alignment}">
+</head>
+<body>
+    <!-- Page Animation -->
+    <div id="pageAnimation">
+        <div class="page-animation-content">
+            <div class="page-animation-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="page-animation-title">OVERDUE PAYMENTS</div>
+            <div class="page-animation-subtitle">Track Outstanding Payments</div>
+            <div class="page-progress-container">
+                <div class="page-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="cashflow/fragments/navigation :: navbar('overdue')"></div>
+    
+    <div class="container-fluid mt-4">
+        <div th:replace="cashflow/fragments/navigation :: tabbar('overdue')"></div>
+
+        <div class="filter-toolbar">
+            <label>
+                From Date
+                <input type="date" id="filterFromDate">
+            </label>
+            <label>
+                To Date
+                <input type="date" id="filterToDate">
+            </label>
+            <div class="filters-info">
+                Review overdue exposure for a specific date range.
+            </div>
+        </div>
+        
+        <div class="page-header">
+            <h4><i class="fas fa-exclamation-triangle text-warning"></i> Overdue Payment Tracking</h4>
+            <p class="mb-0 text-muted">Track overdue invoices and outstanding payments by customer and vendor</p>
+        </div>
+        
+        <div class="dashboard-container">
+            <div class="weekly-grid">
+                <div class="week-quarter">
+                    <div class="week-header">
+                        <div class="week-title" id="week1Title">Week 1</div>
+                        <div class="week-amount" id="w1Amount">-</div>
+                    </div>
+                    <div class="mini-charts">
+                        <div class="mini-chart">
+                            <div class="mini-label">Customers to Collect From</div>
+                            <canvas id="w1CustChart"></canvas>
+                        </div>
+                        <div class="mini-chart">
+                            <div class="mini-label">Vendors to Pay</div>
+                            <canvas id="w1VendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="week-quarter">
+                    <div class="week-header">
+                        <div class="week-title" id="week2Title">Week 2</div>
+                        <div class="week-amount" id="w2Amount">-</div>
+                    </div>
+                    <div class="mini-charts">
+                        <div class="mini-chart">
+                            <div class="mini-label">Customers to Collect From</div>
+                            <canvas id="w2CustChart"></canvas>
+                        </div>
+                        <div class="mini-chart">
+                            <div class="mini-label">Vendors to Pay</div>
+                            <canvas id="w2VendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="week-quarter">
+                    <div class="week-header">
+                        <div class="week-title" id="week3Title">Week 3</div>
+                        <div class="week-amount" id="w3Amount">-</div>
+                    </div>
+                    <div class="mini-charts">
+                        <div class="mini-chart">
+                            <div class="mini-label">Customers to Collect From</div>
+                            <canvas id="w3CustChart"></canvas>
+                        </div>
+                        <div class="mini-chart">
+                            <div class="mini-label">Vendors to Pay</div>
+                            <canvas id="w3VendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="week-quarter">
+                    <div class="week-header">
+                        <div class="week-title" id="week4Title">Week 4</div>
+                        <div class="week-amount" id="w4Amount">-</div>
+                    </div>
+                    <div class="mini-charts">
+                        <div class="mini-chart">
+                            <div class="mini-label">Customers to Collect From</div>
+                            <canvas id="w4CustChart"></canvas>
+                        </div>
+                        <div class="mini-chart">
+                            <div class="mini-label">Vendors to Pay</div>
+                            <canvas id="w4VendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="monthly-section">
+                <div class="section-title">October 2025 Monthly Analysis</div>
+                
+                <div class="chart-half">
+                    <div class="chart-label"><i class="fas fa-users"></i> Customer Activity</div>
+                    <div class="chart-container">
+                        <canvas id="monthlyCustomersChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="chart-half">
+                    <div class="chart-label"><i class="fas fa-building"></i> Vendor Activity</div>
+                    <div class="chart-container">
+                        <canvas id="monthlyVendorsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
+    <script>
+        let charts = {};
+        let currentFilters = { fromDate: '', toDate: '' };
+        let filtersInitialized = false;
+
+        function buildFilterQuery(filters) {
+            const params = new URLSearchParams();
+            if (filters && filters.fromDate) {
+                params.append('fromDate', filters.fromDate);
+            }
+            if (filters && filters.toDate) {
+                params.append('toDate', filters.toDate);
+            }
+            const query = params.toString();
+            return query ? `?${query}` : '';
+        }
+
+        function setLoading(show) {
+            const container = document.querySelector('.dashboard-container');
+            if (container) {
+                if (show) {
+                    container.classList.add('loading');
+                    container.style.opacity = '0.5';
+                } else {
+                    container.classList.remove('loading');
+                    container.style.opacity = '1';
+                }
+            }
+            document.body.style.cursor = show ? 'progress' : 'default';
+        }
+
+        function formatMonthLabel(monthValue) {
+            if (!monthValue) return 'Overall';
+            try {
+                const date = new Date(`${monthValue}-01T00:00:00`);
+                return date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            } catch (e) {
+                return monthValue;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            console.log(`[${type}] ${message}`);
+            alert(message);
+        }
+        
+        // Upload button is only available on Overview tab
+        // Data is shared via session across all tabs
+
+        async function fetchOverdueData(filters = currentFilters, silent = false) {
+            const query = buildFilterQuery(filters);
+            if (!silent) setLoading(true);
+            try {
+                const response = await fetch(`/api/cashflow/overdue-only/cached${query}`, {
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const payload = await response.json();
+                    renderAll(payload);
+                } else if (response.status === 404) {
+                    renderAll(null);
+                    if (!silent) {
+                        console.warn('No overdue data for selected filters.');
+                    }
+                } else {
+                    const message = await response.text().catch(() => 'Failed to load overdue analysis.');
+                    if (!silent) showToast(message, 'error');
+                }
+            } catch (error) {
+                console.error('Failed to fetch overdue analysis', error);
+                if (!silent) showToast('Failed to load overdue analysis.', 'error');
+            } finally {
+                if (!silent) setLoading(false);
+            }
+        }
+        
+        function renderAll(data) {
+            console.log('Rendering overdue payment analysis with data:', data);
+            if (!data) {
+                renderWeeklyCharts([], []);
+                renderMonthlyCharts([], []);
+                return;
+            }
+            renderWeeklyCharts(data.weeklyCustomers || [], data.weeklyVendors || []);
+            renderMonthlyCharts(data.monthlyCustomers || [], data.monthlyVendors || []);
+        }
+        
+        function renderWeeklyCharts(weeklyCustomers = [], weeklyVendors = []) {
+            for (let i = 0; i < 4; i++) {
+                const weekNum = i + 1;
+                const custWeek = weeklyCustomers[i] || { invoices: [], amount: 0, week: `Week ${weekNum}` };
+                const vendWeek = weeklyVendors[i] || { invoices: [], amount: 0, week: custWeek.week || `Week ${weekNum}` };
+                const weekLabel = custWeek.week || vendWeek.week || `Week ${weekNum}`;
+
+                const custAmount = Number(custWeek.amount || 0);
+                const vendAmount = Number(vendWeek.amount || 0);
+
+                const amountElement = document.getElementById(`w${weekNum}Amount`);
+                if (amountElement) {
+                    amountElement.textContent = `₹${(custAmount / 100000).toFixed(2)}L Overdue`;
+                }
+
+                const titleElement = document.getElementById(`week${weekNum}Title`);
+                if (titleElement) {
+                    titleElement.textContent = weekLabel;
+                }
+
+                const custDetails = (custWeek.invoices || []).map(inv => ({
+                    company: inv.name || '—',
+                    invoiceNo: inv.invoiceNo || 'N/A',
+                    amount: Number(inv.amount || 0),
+                    dueDate: inv.dueDate || '—'
+                }));
+
+                const vendDetails = (vendWeek.invoices || []).map(inv => ({
+                    company: inv.name || '—',
+                    invoiceNo: inv.invoiceNo || 'N/A',
+                    amount: Number(inv.amount || 0),
+                    dueDate: inv.dueDate || '—'
+                }));
+
+                renderMiniBarChart(
+                    `w${weekNum}CustChart`, 
+                    [
+                        { value: custDetails.length, totalAmount: custAmount, details: custDetails },
+                        { value: Math.round(custAmount / 100000), totalAmount: custAmount, details: null }
+                    ],
+                    ['Customers', 'Amount(L)'],
+                    ['rgba(59,130,246,0.8)', 'rgba(16,185,129,0.8)']
+                );
+                
+                renderMiniBarChart(
+                    `w${weekNum}VendChart`,
+                    [
+                        { value: vendDetails.length, totalAmount: vendAmount, details: vendDetails },
+                        { value: Math.round(vendAmount / 100000), totalAmount: vendAmount, details: null }
+                    ],
+                    ['Vendors', 'Amount(L)'],
+                    ['rgba(239,68,68,0.8)', 'rgba(251,146,60,0.8)']
+                );
+            }
+        }
+        
+        function renderMiniBarChart(id, chartData, labels, colors) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.error('Canvas element not found:', id);
+                return;
+            }
+            
+            const ctx = element.getContext('2d');
+            if (charts[id]) charts[id].destroy();
+            
+            // Create gradient for bars
+            const barGradient = ctx.createLinearGradient(0, 0, 0, element.height || 200);
+            barGradient.addColorStop(0, colors[0]);
+            barGradient.addColorStop(1, colors[1] || colors[0]);
+            
+            charts[id] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: chartData.map(d => d.value),
+                        backgroundColor: barGradient,
+                        borderRadius: 8,
+                        borderWidth: 0,
+                        invoiceData: chartData
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const dataset = context.dataset;
+                                    const dataIndex = context.dataIndex;
+                                    const invoiceData = dataset.invoiceData[dataIndex];
+                                    if (!invoiceData || !invoiceData.details) {
+                                        return 'Count: ' + context.parsed.y;
+                                    }
+                                    
+                                    // Helper function to wrap long text
+                                    const MAX_LENGTH = 32;
+                                    const addLineBreaks = (str, maxLen) => {
+                                        let lines = [];
+                                        while (str.length > maxLen) {
+                                            let idx = str.lastIndexOf(' ', maxLen);
+                                            if (idx <= 0) idx = maxLen;
+                                            lines.push(str.slice(0, idx));
+                                            str = str.slice(idx).trim();
+                                        }
+                                        if (str.length > 0) lines.push(str);
+                                        return lines.join('\n');
+                                    };
+                                    
+                                    const lines = [];
+                                    invoiceData.details.forEach((invoice, idx) => {
+                                        if (idx < 3) {
+                                            lines.push('');
+                                            lines.push('📄 ' + addLineBreaks(invoice.company, MAX_LENGTH));
+                                            lines.push('Invoice: ' + invoice.invoiceNo);
+                                            lines.push('Amount: ₹' + invoice.amount.toLocaleString('en-IN'));
+                                            lines.push('Due: ' + invoice.dueDate);
+                                        }
+                                    });
+                                    
+                                    if (invoiceData.details.length > 3) {
+                                        lines.push('');
+                                        lines.push('... and ' + (invoiceData.details.length - 3) + ' more');
+                                    }
+                                    lines.push('');
+                                    lines.push('Total: ₹' + invoiceData.totalAmount.toLocaleString('en-IN'));
+                                    return lines;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false, drawBorder: false }, 
+                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' } 
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' }, 
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderMonthlyCharts(monthlyCustomers = [], monthlyVendors = []) {
+            const sectionTitle = document.querySelector('.monthly-section .section-title');
+            if (sectionTitle) {
+                sectionTitle.textContent = currentFilters.fromDate && currentFilters.toDate 
+                    ? `Date Range Analysis (${currentFilters.fromDate} to ${currentFilters.toDate})`
+                    : 'Overall Analysis';
+            }
+
+            const custElement = document.getElementById('monthlyCustomersChart');
+            if (!custElement) {
+                console.error('Monthly customers canvas not found');
+                return;
+            }
+            
+            const custCtx = custElement.getContext('2d');
+            if (charts.monthlyCust) charts.monthlyCust.destroy();
+
+            const customerSeries = monthlyCustomers.length ? monthlyCustomers : [{ month: 'No Data', amount: 0, count: 0 }];
+            const vendorSeries = monthlyVendors.length ? monthlyVendors : [{ month: 'No Data', amount: 0, count: 0 }];
+            
+            // Create gradient for line chart
+            const custGradient = custCtx.createLinearGradient(0, 0, 0, custElement.height || 300);
+            custGradient.addColorStop(0, 'rgba(59,130,246,0.25)');
+            custGradient.addColorStop(1, 'rgba(59,130,246,0.05)');
+            
+            charts.monthlyCust = new Chart(custCtx, {
+                type: 'line',
+                data: {
+                    labels: customerSeries.map(m => m.month),
+                    datasets: [{
+                        label: 'Customer Activity (₹L)',
+                        data: customerSeries.map(m => Number(m.amount || 0) / 100000),
+                        borderColor: '#3b82f6',
+                        backgroundColor: custGradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            padding: 16,
+                            cornerRadius: 12,
+                            borderColor: 'rgba(59,130,246,0.5)',
+                            borderWidth: 2,
+                            boxPadding: 8,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            callbacks: {
+                                title: (context) => '📅 ' + context[0].label,
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const amount = Number(customerSeries[idx].amount || 0);
+                                    const count = customerSeries[idx].count || 0;
+                                    return [
+                                        'Amount: ₹' + (amount/100000).toFixed(1) + 'L',
+                                        'Invoices: ' + count
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false, drawBorder: false }, 
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 } 
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' }, 
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        }
+                    }
+                }
+            });
+            
+            const vendElement = document.getElementById('monthlyVendorsChart');
+            if (!vendElement) {
+                console.error('Monthly vendors canvas not found');
+                return;
+            }
+            
+            const vendCtx = vendElement.getContext('2d');
+            if (charts.monthlyVend) charts.monthlyVend.destroy();
+            
+            // Create gradient for vendor bars
+            const vendGradient = vendCtx.createLinearGradient(0, 0, 0, vendElement.height || 300);
+            vendGradient.addColorStop(0, 'rgba(239,68,68,0.9)');
+            vendGradient.addColorStop(1, 'rgba(239,68,68,0.6)');
+            
+            charts.monthlyVend = new Chart(vendCtx, {
+                type: 'bar',
+                data: {
+                    labels: vendorSeries.map(m => m.month),
+                    datasets: [{
+                        label: 'Vendor Activity (₹L)',
+                        data: vendorSeries.map(m => Number(m.amount || 0) / 100000),
+                        backgroundColor: vendGradient,
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            padding: 16,
+                            cornerRadius: 12,
+                            borderColor: 'rgba(59,130,246,0.5)',
+                            borderWidth: 2,
+                            boxPadding: 8,
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            callbacks: {
+                                title: (context) => '📅 ' + context[0].label,
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const amount = Number(vendorSeries[idx].amount || 0);
+                                    const count = vendorSeries[idx].count || 0;
+                                    return [
+                                        'Amount: ₹' + (amount/100000).toFixed(1) + 'L',
+                                        'Bills: ' + count
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { display: false, drawBorder: false }, 
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 } 
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' }, 
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function checkSessionData() {
+            try {
+                const response = await fetch('/api/cashflow/session-info', {
+                    credentials: 'same-origin'
+                });
+                if (response.ok) {
+                    const sessionInfo = await response.json();
+                    if (sessionInfo.hasData) {
+                        document.getElementById('fileNameText').textContent = sessionInfo.fileName;
+                        document.getElementById('fileNameDisplay').classList.remove('d-none');
+                        // Fetch the actual cached data
+                        await fetchOverdueData(currentFilters, true);
+                        console.log('Loaded cached session data');
+                    } else {
+                        console.log('No cached data in session');
+                    }
+                }
+            } catch (error) {
+                console.log('No cached data available', error);
+            }
+        }
+        
+        document.getElementById('deleteFileBtn').addEventListener('click', async function(e) {
+            e.stopPropagation();
+            if (confirm('Delete this file? All analyzed data will be cleared.')) {
+                try {
+                    const response = await fetch('/api/cashflow/session', { method: 'DELETE', credentials: 'same-origin' });
+                    if (response.ok) {
+                        document.getElementById('fileNameDisplay').classList.add('d-none');
+                        location.reload();
+                    }
+                } catch (error) {
+                    console.error('Error deleting file:', error);
+                    showToast('Failed to delete file', 'error');
+                }
+            }
+        });
+        
+        dashboardFilters.initTimeFilters({
+            onChange: (filters) => {
+                currentFilters = filters;
+                fetchOverdueData(filters, filtersInitialized);
+                filtersInitialized = true;
+            }
+        });
+
+        checkSessionData();
+        // Page Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageAnimation = document.getElementById('pageAnimation');
+            const body = document.body;
+            
+            if (pageAnimation) {
+                body.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    if (pageAnimation) {
+                        pageAnimation.style.display = 'none';
+                        body.style.overflow = '';
+                    }
+                }, 3000);
+            }
+        });
+    </script>
+<script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
+</body>
+</html>
+
+

@@ -4,6 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -128,6 +129,13 @@ if (dashboardListsLoading) {
     <section class="content">
       <div class="container-fluid">
         <!-- Small boxes (Stat box) -->
+<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+          <div class="col-lg-2 col-6"><div class="small-box bg-teal">
+            <div class="inner"><h3 aria-hidden="true">&nbsp;</h3><p>Cashflow Analyzer</p></div>
+            <div class="icon"><i class="fas fa-chart-line"></i></div>
+            <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" class="small-box-footer">Open analysis <i class="fas fa-arrow-circle-right"></i></a>
+          </div></div>
+          </security:authorize>
         <div class="dash-tiles-grid">
           <c:if test="${tileVisible.contains('SALES_ORDER')}">
           <div>

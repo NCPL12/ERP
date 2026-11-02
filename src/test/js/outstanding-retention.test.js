@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const ids={};const document={getElementById(id){return ids[id] ||= {value:id.includes('Filter')?'all':'',textContent:'',innerHTML:''}},querySelectorAll(){return []}};
+const context={document,window:{},formatCurrency:v=>Number(v).toFixed(2),formatDate:String,escapeHtml:String};vm.createContext(context);
+const source=fs.readFileSync(path.join(__dirname,'../../main/resources/static/cashflow/js/overview-dashboard.js'),'utf8');
+vm.runInContext(source.slice(source.indexOf('function getFilteredOutstandingRows'),source.indexOf('function openInvoiceDrawer')),context);
+context.window.outstandingState={rows:[{partyName:'Retention-JSS',invoiceNumber:'R1',retention:true,retentionAmount:100,amount:100,agingBucket:'90+',status:'Overdue'},{partyName:'Customer',invoiceNumber:'B1',retention:false,retentionAmount:0,amount:200,agingBucket:'current',status:'Current'}]};
+context.renderOutstandingTable();assert.equal(ids.outstandingFilteredTotal.textContent,'300.00');assert.equal(ids.outstandingRetentionTotal.textContent,'100.00');
+context.window.outstandingRetentionOnly=true;context.renderOutstandingTable();assert.equal(context.window.outstandingRenderedRows.length,1);assert.equal(ids.outstandingFilteredTotal.textContent,'100.00');
+document.getElementById('outstandingSearch').value='not found';context.renderOutstandingTable();assert.equal(ids.outstandingRetentionTotal.textContent,'0.00');assert.equal(ids.outstandingFilteredTotal.textContent,'0.00');
+document.getElementById('outstandingSearch').value='';document.getElementById('outstandingStatusFilter').value='current';context.renderOutstandingTable();assert.equal(context.window.outstandingRenderedRows.length,0);
+console.log('Retention table: toggle, combined filters, separate totals and empty results passed.');
