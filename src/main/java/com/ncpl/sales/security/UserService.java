@@ -43,18 +43,28 @@ public class UserService implements UserDetailsService{
 			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
 
 			boolean canViewReports = false;
+			boolean canViewArchives = false;   // NEW
 			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
 				if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
 				if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
 				if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
 				if ("REPORTS".equals(p.getModule()) && p.isCanView()) canViewReports = true;
+				if ("ARCHIVES".equals(p.getModule()) && p.isCanView()) canViewArchives = true;   // NEW
 			}
 
-			if (canViewReports) {
+			if (canViewReports || canViewArchives) {   // NEW: one role lookup for both
 				com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
 				if (roleObj != null) {
-					for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
-						grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
+					if (canViewReports) {
+						for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
+							grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
+						}
+					}
+					// NEW: ARCHIVE_<key> authorities, only while the role has ARCHIVES view on
+					if (canViewArchives) {
+						for (String key : com.ncpl.sales.model.ArchiveItem.visible(roleObj.getArchiveItems())) {
+							grantedAuthorities.add(new SimpleGrantedAuthority("ARCHIVE_" + key));
+						}
 					}
 				}
 			}

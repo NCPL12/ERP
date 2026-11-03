@@ -2,7 +2,8 @@ var roles = [];
 var selectedRoleId = null;
 var currentGrid = [];
 var currentTiles = [];
-var currentReports = [];   // NEW
+var currentReports = [];
+var currentArchives = [];   // NEW
 
 $(document).ready(function () {
 	loadRoles();
@@ -104,7 +105,8 @@ function selectRole(roleId) {
 	var currentRid = selectedRoleId;
 	currentGrid = [];
 	currentTiles = [];
-	currentReports = [];   // NEW
+	currentReports = [];
+	currentArchives = [];   // NEW
 
 	$.when(
 		$.ajax({
@@ -117,18 +119,24 @@ function selectRole(roleId) {
 			type: "GET",
 			cache: false
 		}),
-		$.ajax({   // NEW
+		$.ajax({
 			url: api.ROLE_API + "/" + roleId + "/report-items",
 			type: "GET",
 			cache: false
+		}),
+		$.ajax({   // NEW
+			url: api.ROLE_API + "/" + roleId + "/archive-items",
+			type: "GET",
+			cache: false
 		})
-	).done(function (permResp, tilesResp, reportsResp) {
+	).done(function (permResp, tilesResp, reportsResp, archivesResp) {
 		if (String(currentRid) !== String(selectedRoleId)) {
 			return;
 		}
 		currentGrid = permResp[0];
 		currentTiles = tilesResp[0];
-		currentReports = reportsResp[0];   // NEW
+		currentReports = reportsResp[0];
+		currentArchives = archivesResp[0];   // NEW
 		renderGrid();
 		updateRoleSummary();
 	}).fail(function (xhr) {
@@ -164,7 +172,8 @@ function renderGrid() {
 	});
 	$("#permissionGridBody").html(rows);
 	renderDashboardTilesRow();
-	renderReportsRow();   // NEW
+	renderReportsRow();
+	renderArchivesRow();   // NEW
 }
 
 // No View, or the module has no such permission at all (e.g. DASHBOARD has no
@@ -197,7 +206,7 @@ function renderDashboardTilesRow() {
 	$('#permissionGridBody tr[data-module="DASHBOARD"]').after(row);
 }
 
-// NEW: which reports this role can open — only shown while the
+// Which reports this role can open — only shown while the
 // REPORTS module's View box is ticked.
 function renderReportsRow() {
 	$("#permissionGridBody .reports-items-row").remove();
@@ -218,11 +227,41 @@ function renderReportsRow() {
 	$('#permissionGridBody tr[data-module="REPORTS"]').after(row);
 }
 
+// NEW: which archived pages this role can open — only shown while the
+// ARCHIVES module's View box is ticked.
+function renderArchivesRow() {
+	$("#permissionGridBody .archives-items-row").remove();
+	var viewOn = $('#permissionGridBody tr[data-module="ARCHIVES"] .view-box').is(":checked");
+	if (!viewOn || currentArchives.length === 0) {
+		return;
+	}
+	var boxes = "";
+	$.each(currentArchives, function (i, arc) {
+		var key = arc && arc.key ? escapeHtml(arc.key) : "";
+		var label = arc && arc.label ? escapeHtml(arc.label) : key;
+		boxes += '<label class="ra-tile-check"><input type="checkbox" class="archive-box" data-archive="' + key + '" ' +
+			(arc.visible ? "checked" : "") + '>&nbsp;' + label + '</label>';
+	});
+	var row = '<tr class="archives-items-row"><td colspan="4"><div class="ra-tiles-inline">' +
+		'<span class="ra-tiles-label">Archived data</span>' +
+		'<div class="ra-tiles-checks">' + boxes + '</div></div></td></tr>';
+	$('#permissionGridBody tr[data-module="ARCHIVES"]').after(row);
+}
+
 $(document).on("change", "#permissionGridBody .report-box", function () {
 	var key = $(this).data("report");
 	var visible = $(this).is(":checked");
 	$.each(currentReports, function (i, report) {
 		if (report.key === key) report.visible = visible;
+	});
+});
+
+// NEW
+$(document).on("change", "#permissionGridBody .archive-box", function () {
+	var key = $(this).data("archive");
+	var visible = $(this).is(":checked");
+	$.each(currentArchives, function (i, arc) {
+		if (arc.key === key) arc.visible = visible;
 	});
 });
 
@@ -262,8 +301,11 @@ $(document).on("change", "#permissionGridBody .view-box", function () {
 	if (row.data("module") === "DASHBOARD") {
 		renderDashboardTilesRow();
 	}
-	if (row.data("module") === "REPORTS") {   // NEW
+	if (row.data("module") === "REPORTS") {
 		renderReportsRow();
+	}
+	if (row.data("module") === "ARCHIVES") {   // NEW
+		renderArchivesRow();
 	}
 });
 
@@ -324,7 +366,6 @@ function savePermissions() {
 		return;
 	}
 
-	// NEW
 	var reportKeys = [];
 	$("#permissionGridBody .report-box:checked").each(function () {
 		var t = $(this).data("report");
@@ -344,6 +385,26 @@ function savePermissions() {
 		return;
 	}
 
+	// NEW
+	var archiveKeys = [];
+	$("#permissionGridBody .archive-box:checked").each(function () {
+		var t = $(this).data("archive");
+		if (t) {
+			archiveKeys.push(String(t));
+		}
+	});
+
+	// Keep the selection when Archives view is temporarily switched off.
+	if (!$("#permissionGridBody .archives-items-row").length) {
+		archiveKeys = currentArchives.filter(function (arc) { return arc.visible; })
+			.map(function (arc) { return arc.key; });
+	}
+
+	if ($("#permissionGridBody .archives-items-row").length && archiveKeys.length === 0) {
+		alert("At least one archived page must be enabled.");
+		return;
+	}
+
 	$.ajax({
 		url: api.ROLE_API + "/" + selectedRoleId + "/permissions",
 		type: "PUT",
@@ -356,15 +417,26 @@ function savePermissions() {
 				contentType: "application/json",
 				data: JSON.stringify(tileKeys),
 				success: function () {
-					$.ajax({   // NEW
+					$.ajax({
 						url: api.ROLE_API + "/" + selectedRoleId + "/report-items",
 						type: "PUT",
 						contentType: "application/json",
 						data: JSON.stringify(reportKeys),
 						success: function () {
-							alert("Permissions saved.");
-							loadRoles();
-							selectRole(selectedRoleId);
+							$.ajax({   // NEW
+								url: api.ROLE_API + "/" + selectedRoleId + "/archive-items",
+								type: "PUT",
+								contentType: "application/json",
+								data: JSON.stringify(archiveKeys),
+								success: function () {
+									alert("Permissions saved.");
+									loadRoles();
+									selectRole(selectedRoleId);
+								},
+								error: function (xhr) {
+									alert(xhr.responseText || ("Permissions saved, but archive items failed. Status: " + xhr.status));
+								}
+							});
 						},
 						error: function (xhr) {
 							alert(xhr.responseText || ("Permissions saved, but report items failed. Status: " + xhr.status));

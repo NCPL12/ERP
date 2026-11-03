@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.ncpl.sales.model.ArchiveItem;   // NEW
 import com.ncpl.sales.model.DashboardTile;
 import com.ncpl.sales.model.Module;
 import com.ncpl.sales.model.ReportItem;
@@ -69,6 +70,12 @@ public class RoleController {
 		}
 		for (ReportItem r : ReportItem.values()) {
 			if (n.equals("REPORT_" + r.name())) {
+				return true;
+			}
+		}
+		// NEW: archive items are authorities too (ARCHIVE_<key>)
+		for (ArchiveItem a : ArchiveItem.values()) {
+			if (n.equals("ARCHIVE_" + a.name())) {
 				return true;
 			}
 		}
@@ -403,6 +410,72 @@ public class RoleController {
 			return ResponseEntity.badRequest().body("At least one report must be enabled.");
 		}
 		role.setReportItems(String.join(",", filtered));
+		roleRepo.save(role);
+		return ResponseEntity.ok().build();
+	}
+
+	/** NEW: Which archived pages this role's users can open. */
+	@GetMapping("/api/roles/{id}/archive-items")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
+	public ResponseEntity<?> getArchiveItems(@PathVariable Long id) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		Set<String> visible = ArchiveItem.visible(role.getArchiveItems());
+
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (ArchiveItem a : ArchiveItem.values()) {
+			Map<String, Object> row = new HashMap<>();
+			row.put("key", a.name());
+			row.put("label", a.label());
+			row.put("visible", visible.contains(a.name()));
+			items.add(row);
+		}
+		return ResponseEntity.ok(items);
+	}
+
+	/** NEW */
+	@PutMapping("/api/roles/{id}/archive-items")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
+	public ResponseEntity<?> saveArchiveItems(@PathVariable Long id, @RequestBody List<String> keys) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		boolean admin = callerIsAdmin();
+		if (!admin && isAdminRole(role.getName())) {
+			return forbidden("Only an admin can change an admin role");
+		}
+		Set<String> valid = new HashSet<>();
+		for (ArchiveItem a : ArchiveItem.values()) {
+			valid.add(a.name());
+		}
+		Set<String> filtered = new java.util.LinkedHashSet<>();
+		if (keys != null) {
+			for (String k : keys) {
+				if (k != null && valid.contains(k.trim())) {
+					filtered.add(k.trim());
+				}
+			}
+		}
+		// Each archive key is an authority (ARCHIVE_<key>), so a non-admin editor can only switch on
+		// archive pages they can open themselves, or ones the role already had.
+		if (!admin) {
+			Set<String> had = ArchiveItem.visible(role.getArchiveItems());
+			for (String k : filtered) {
+				if (!had.contains(k) && !callerHas("ARCHIVE_" + k)) {
+					return forbidden("You cannot grant an archive page you do not have access to: " + k);
+				}
+			}
+		}
+		// Same rule as reports: Archives view on needs at least one archived page.
+		if (filtered.isEmpty() && hasModuleView(id, "ARCHIVES")) {
+			return ResponseEntity.badRequest().body("At least one archive page must be enabled.");
+		}
+		role.setArchiveItems(String.join(",", filtered));
 		roleRepo.save(role);
 		return ResponseEntity.ok().build();
 	}

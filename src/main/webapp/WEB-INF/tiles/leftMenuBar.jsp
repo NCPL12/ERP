@@ -182,7 +182,7 @@
 
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAuthority('SALES_ORDER_VIEW')">
+                          access="hasAuthority('CHARTS_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/salesList"
                               class="nav-link ${uri == '/salesList' ? 'active' : ''}">
@@ -314,7 +314,7 @@
                       </li>
                     </security:authorize>
                     <security:authorize
-                      access="hasAuthority('SALES_ORDER_VIEW')">
+                      access="hasAuthority('CHARTS_VIEW')">
                       <c:set var="chartsOpen" value="${uri == '/soChart'}" />
                       <li class="nav-item has-treeview ${chartsOpen ? 'menu-open' : ''}">
                         <a href="#" class="nav-link ${chartsOpen ? 'active' : ''}">
@@ -338,8 +338,11 @@
                       </li>
                     </security:authorize>
 
+                    <%-- NEW: parent menu shows only if the role has at least one ARCHIVE_<item> authority.
+                         (ARCHIVE_<item> authorities are only granted while ARCHIVES view is on.)
+                         Old check was: access="hasAuthority('ARCHIVES_VIEW')" --%>
                     <security:authorize
-                      access="hasAuthority('ARCHIVES_VIEW')">
+                      access="hasAnyAuthority('ARCHIVE_SALES_ORDER','ARCHIVE_PURCHASE_ORDER','ARCHIVE_DELIVERY_CHALLAN','ARCHIVE_GRN')">
                       <!-- Archived section started here -->
                       <c:set var="archivedOpen"
                         value="${uri == '/salesList_archived' or uri == '/purchase_archived' or uri == '/dc_archived' or uri == '/grn_archived'}" />
@@ -353,6 +356,7 @@
                         </a>
 
                         <ul class="nav nav-treeview">
+                          <security:authorize access="hasAuthority('ARCHIVE_SALES_ORDER')">   <%-- NEW --%>
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/salesList_archived"
                               class="nav-link ${uri == '/salesList_archived' ? 'active' : ''}">
@@ -362,6 +366,8 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
+                          <security:authorize access="hasAuthority('ARCHIVE_PURCHASE_ORDER')">   <%-- NEW --%>
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/purchase_archived"
                               class="nav-link ${uri == '/purchase_archived' ? 'active' : ''}">
@@ -371,6 +377,8 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
+                          <security:authorize access="hasAuthority('ARCHIVE_DELIVERY_CHALLAN')">   <%-- NEW --%>
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/dc_archived"
                               class="nav-link ${uri == '/dc_archived' ? 'active' : ''}">
@@ -380,6 +388,8 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
+                          <security:authorize access="hasAuthority('ARCHIVE_GRN')">   <%-- NEW --%>
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/grn_archived"
                               class="nav-link ${uri == '/grn_archived' ? 'active' : ''}">
@@ -389,6 +399,7 @@
                               </p>
                             </a>
                           </li>
+                          </security:authorize>
 
                         </ul>
                       </li>
