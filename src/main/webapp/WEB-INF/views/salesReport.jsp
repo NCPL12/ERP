@@ -713,7 +713,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
             var scheduleText = status.scheduleDescription || '12:15 AM (Asia/Kolkata)';
             var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync runs at ' + scheduleText + ' and sends only the previous day POs.';
             if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
-            if (status.lastError) message += ' ' + status.lastError;	
+            if (status.lastError) message += ' ' + status.lastError;
             document.getElementById('tallyPoAutoSyncStatus').textContent = message;
             document.getElementById('tallyPoAutoSyncStatus').className = status.configurationError || status.lastError || (status.lastResult && status.lastResult.failed) ? 'text-danger mb-2' : 'text-info mb-2';
             var host = document.getElementById('tallyPoSavedIssues');
