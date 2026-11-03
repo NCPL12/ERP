@@ -77,11 +77,11 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			</div>
 			</security:authorize>
 
-			<%-- NEW: every report card is now in ONE row, each card with its own role + report check,
+			<%-- NEW: every report card is now in ONE row, each card with its own report permission check,
 				 so a hidden card leaves no empty gap (visible cards fill left to right). --%>
 			<div class="row">
 
-				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_STOCK_HISTORY_BY_DATE')">
+				<security:authorize access="hasAuthority('REPORT_STOCK_HISTORY_BY_DATE')">
 				<div class="col-md-6" style="padding-bottom:10px">
 						<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -105,7 +105,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 
-				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_MONTHLY_REPORT')">
+				<security:authorize access="hasAuthority('REPORT_MONTHLY_REPORT')">
 				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -136,7 +136,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 
-				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_STOCK_REPORT_BY_REGION')">
+				<security:authorize access="hasAuthority('REPORT_STOCK_REPORT_BY_REGION')">
 				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -176,7 +176,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 
-				<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DAILY_REPORT')">
+				<security:authorize access="hasAuthority('REPORT_DAILY_REPORT')">
 				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -200,7 +200,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 
-			<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','PURCHASE','SALES','PURCHASE STORE') and hasAuthority('REPORT_OUTSTANDING_STOCK_REPORT')">
+			<security:authorize access="hasAuthority('REPORT_OUTSTANDING_STOCK_REPORT')">
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -235,7 +235,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PENDING_PO_REPORT')">
+				<security:authorize access="hasAuthority('REPORT_PENDING_PO_REPORT')">
 					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -271,7 +271,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_PENDING_DC_REPORT')">
+			<security:authorize access="hasAuthority('REPORT_PENDING_DC_REPORT')">
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -306,7 +306,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PURCHASE_ITEM_HISTORY')">
+				<security:authorize access="hasAuthority('REPORT_PURCHASE_ITEM_HISTORY')">
 				
 					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
@@ -339,7 +339,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			
 			
 			<!-- SO list by item report starts -->
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_SALES_LIST_BY_ITEM')">
+			<security:authorize access="hasAuthority('REPORT_SALES_LIST_BY_ITEM')">
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -366,7 +366,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 			</security:authorize>
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PENDING_PO_REPORT_BY_PONUMBER')">
+			<security:authorize access="hasAuthority('REPORT_PENDING_PO_REPORT_BY_PONUMBER')">
 					<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -397,7 +397,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			
 			<!-- Dc List By Item Report Starts -->
 			
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DC_LIST_BY_ITEM')">
+			<security:authorize access="hasAuthority('REPORT_DC_LIST_BY_ITEM')">
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -424,7 +424,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 			</security:authorize>		
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PO_LIST_BY_DATE')">
+			<security:authorize access="hasAuthority('REPORT_PO_LIST_BY_DATE')">
 			
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
@@ -476,7 +476,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 				</div>
 				</security:authorize>
 			
-			<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_ACTIVE_SALES_ORDER_BY_CUSTOMER')">
+			<security:authorize access="hasAuthority('REPORT_ACTIVE_SALES_ORDER_BY_CUSTOMER')">
 			<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -503,7 +503,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 						</div>
 				</div>
 				</security:authorize>
-				<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_GRN_REPORT_BY_DATE')">
+				<security:authorize access="hasAuthority('REPORT_GRN_REPORT_BY_DATE')">
 				<div class="col-md-6" style="padding-bottom:10px">
 					<div class="card w-100">
 							  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -537,7 +537,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			
 			
 		<!-- DC Report By Date + GRN and PO Details by Model Report -->
-		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_DC_REPORT_BY_DATE')">
+		<security:authorize access="hasAuthority('REPORT_DC_REPORT_BY_DATE')">
 		<div class="col-md-6" style="padding-bottom:10px">
 				<div class="card w-100">
 						  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -566,7 +566,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 					</div>
 			</div>
 		</security:authorize>
-		<security:authorize access="hasAnyAuthority('ADMIN','SALES','PURCHASE','PURCHASE STORE') and hasAuthority('REPORT_GRN_AND_PONUMBER_BY_MODELS')">
+		<security:authorize access="hasAuthority('REPORT_GRN_AND_PONUMBER_BY_MODELS')">
 		<div class="col-md-6" style="padding-bottom:10px">
 				<div class="card w-100">
 						  <h5 class="card-header  bg-light" style="font-size: inherit;">
@@ -596,7 +596,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 
 
 		<!-- Monthly Stock Movement Report -->
-		<security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE STORE') and hasAuthority('REPORT_MONTHLY_STOCK_MOVEMENT_REPORT')">
+		<security:authorize access="hasAuthority('REPORT_MONTHLY_STOCK_MOVEMENT_REPORT')">
 		<div class="col-md-6" style="padding-bottom:10px">
 			<div class="card w-100">
 				<h5 class="card-header bg-light" style="font-size: inherit;">
@@ -689,7 +689,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
 			</div></div>
 		</div>
     <%-- NEW: this Tally script needs the PO List By Date card on the page, so it only renders when that card renders --%>
-    <security:authorize access="hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES') and hasAuthority('REPORT_PO_LIST_BY_DATE')">
+    <security:authorize access="hasAuthority('REPORT_PO_LIST_BY_DATE')">
     <script>
     function refreshPoTallyConnection() {
         var button = document.getElementById('checkTallyPo');
