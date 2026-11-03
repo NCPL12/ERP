@@ -86,7 +86,7 @@ public class RoleMenuModulesTest {
 
 		Map<String, Object> summary = controller.listRoles().get(0);
 		assertEquals(1L, summary.get("moduleCount"));
-		assertEquals(12, summary.get("totalModules"));
+		assertEquals(13, summary.get("totalModules"));   // CHANGED: was 12 (CHARTS was added to the sidebar)
 	}
 
 	@Test
@@ -103,7 +103,7 @@ public class RoleMenuModulesTest {
 		@SuppressWarnings("unchecked")
 		List<Map<String, Object>> grid = (List<Map<String, Object>>) response.getBody();
 		List<String> names = grid.stream().map(row -> (String) row.get("module")).collect(Collectors.toList());
-		assertEquals(12, names.size());
+		assertEquals(13, names.size());   // CHANGED: was 12 (CHARTS was added to the sidebar)
 		assertTrue(names.contains("PARTY"));
 		assertFalse(names.contains("COMPANY_ASSETS"));
 		assertFalse(names.contains("WORK_ORDER"));
