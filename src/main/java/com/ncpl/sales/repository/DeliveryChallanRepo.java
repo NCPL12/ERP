@@ -27,6 +27,9 @@ public interface DeliveryChallanRepo extends
     // Find DCs by archive status
     List<DeliveryChallan> findByArchive(boolean archive);
 
+    // Pageable variant used by the archived and active DC dashboards
+    Page<DeliveryChallan> findByArchive(boolean archive, Pageable pageable);
+
     // Find DCs by item description (corrected)
     @Query("SELECT DISTINCT dc FROM DeliveryChallan dc JOIN dc.items i " +
            "WHERE LOWER(i.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
@@ -47,20 +50,27 @@ public interface DeliveryChallanRepo extends
 	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc " +
 	       "LEFT JOIN SalesOrder so ON so.id = dc.soNumber " +
 	       "LEFT JOIN so.party p " +
-	       "WHERE dc.archive = :archive " +
+	       "WHERE dc.archive = false " +
 	       "AND (CAST(dc.dcId AS string) LIKE CONCAT('%', :keyword, '%') " +
 	       "OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
 	       "OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
 	       "OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:keyword), '%'))")
-	Page<DeliveryChallan> searchByKeyword(@Param("keyword") String keyword, @Param("archive") boolean archive, Pageable pageable);
+	Page<DeliveryChallan> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc LEFT JOIN SalesOrder so ON so.id = dc.soNumber LEFT JOIN so.party p " +
+	       "WHERE dc.archive = :archive AND (CAST(dc.dcId AS string) LIKE CONCAT('%', :keyword, '%') " +
+	       "OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
+	       "OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:keyword), '%') " +
+	       "OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:keyword), '%'))")
+	Page<DeliveryChallan> searchByKeywordAndArchive(@Param("keyword") String keyword, @Param("archive") boolean archive, Pageable pageable);
 
     // Fetch all active (non-archived) DCs
     @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
     List<DeliveryChallan> findAllActiveDc();
 
-    // Fetch DCs by archive status with pagination
-    @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = :archive")
-    Page<DeliveryChallan> findByArchive(@Param("archive") boolean archive, Pageable pageable);
+    // Fetch all active (non-archived) DCs with pagination
+    @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
+    Page<DeliveryChallan> findAllActive(Pageable pageable);
 
     // Fetch all non-archived DCs (alias used by services)
     @Query("SELECT dc FROM DeliveryChallan dc WHERE dc.archive = false")
@@ -83,26 +93,33 @@ public interface DeliveryChallanRepo extends
 	       "LEFT JOIN SalesOrder so ON so.id = dc.soNumber " +
 	       "LEFT JOIN so.party p " +
 	       "LEFT JOIN PartyAddress pa ON pa.id = so.shippingAddress " +
-	       "WHERE dc.archive = :archive " +
-	       "AND (:dcId IS NULL OR CAST(dc.dcId AS string) LIKE CONCAT('%', :dcId, '%')) " +
+	       "WHERE dc.archive = false " +
+	       "AND (:dcId IS NULL OR dc.dcId = :dcId) " +
+	       "AND (:soNumber IS NULL OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:soNumber), '%')) " +
+	       "AND (:clientName IS NULL OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:clientName), '%')) " +
+	       "AND (:clientPo IS NULL OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:clientPo), '%')) " +
+	       "AND (:shipping IS NULL OR LOWER(pa.addr1) LIKE CONCAT('%', LOWER(:shipping), '%') OR LOWER(p.addr1) LIKE CONCAT('%', LOWER(:shipping), '%'))")
+	Page<DeliveryChallan> searchAdvanced(
+	        @Param("dcId") Integer dcId,
+	        @Param("soNumber") String soNumber,
+	        @Param("clientName") String clientName,
+	        @Param("clientPo") String clientPo,
+	        @Param("shipping") String shipping,
+	        Pageable pageable);
+
+	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc LEFT JOIN SalesOrder so ON so.id = dc.soNumber LEFT JOIN so.party p " +
+	       "LEFT JOIN PartyAddress pa ON pa.id = so.shippingAddress WHERE dc.archive = :archive " +
+	       "AND (:dcId IS NULL OR dc.dcId = :dcId) " +
 	       "AND (:soNumber IS NULL OR LOWER(dc.soNumber) LIKE CONCAT('%', LOWER(:soNumber), '%')) " +
 	       "AND (:clientName IS NULL OR LOWER(p.partyName) LIKE CONCAT('%', LOWER(:clientName), '%')) " +
 	       "AND (:clientPo IS NULL OR LOWER(so.clientPoNumber) LIKE CONCAT('%', LOWER(:clientPo), '%')) " +
 	       "AND (:shipping IS NULL OR LOWER(pa.addr1) LIKE CONCAT('%', LOWER(:shipping), '%') OR LOWER(p.addr1) LIKE CONCAT('%', LOWER(:shipping), '%')) " +
 	       "AND (:comment IS NULL OR LOWER(dc.dcComment) LIKE CONCAT('%', LOWER(:comment), '%')) " +
-	       "AND (:dateFrom IS NULL OR EXISTS (SELECT 1 FROM DeliveryChallanItems i " +
-	       "     WHERE i.deliveryChallan = dc AND i.created >= :dateFrom AND i.created < :dateTo))")
-	Page<DeliveryChallan> searchAdvanced(
-	        @Param("archive") boolean archive,
-	        @Param("dcId") String dcId,
-	        @Param("soNumber") String soNumber,
-	        @Param("clientName") String clientName,
-	        @Param("clientPo") String clientPo,
-	        @Param("shipping") String shipping,
-	        @Param("comment") String comment,
-	        @Param("dateFrom") java.util.Date dateFrom,
-	        @Param("dateTo") java.util.Date dateTo,
-	        Pageable pageable);
+	       "AND (:dateFrom IS NULL OR EXISTS (SELECT 1 FROM DeliveryChallanItems i WHERE i.deliveryChallan = dc AND i.created >= :dateFrom AND i.created < :dateTo))")
+	Page<DeliveryChallan> searchAdvancedByArchive(@Param("archive") boolean archive, @Param("dcId") Integer dcId,
+			@Param("soNumber") String soNumber, @Param("clientName") String clientName, @Param("clientPo") String clientPo,
+			@Param("shipping") String shipping, @Param("comment") String comment, @Param("dateFrom") java.util.Date dateFrom,
+			@Param("dateTo") java.util.Date dateTo, Pageable pageable);
 	
 	@Query("SELECT dc FROM DeliveryChallan dc WHERE dc.dcId IN :dcIds")
 	List<DeliveryChallan> findByDcIdIn(@Param("dcIds") List<Integer> dcIds);
@@ -110,10 +127,9 @@ public interface DeliveryChallanRepo extends
 	@Query("SELECT DISTINCT dc FROM DeliveryChallan dc LEFT JOIN FETCH dc.items WHERE dc.dcId IN :dcIds")
 	List<DeliveryChallan> findByDcIdInWithItems(@Param("dcIds") List<Integer> dcIds);
 
-	// Lightweight picker for Returnable create — single SQL, no N+1, no items
-	@Query("SELECT new map(dc.dcId as dcId, dc.soNumber as soNumber, p.partyName as clientName, so.clientPoNumber as clientPo) "
-			+ "FROM DeliveryChallan dc LEFT JOIN SalesOrder so ON so.id = dc.soNumber LEFT JOIN so.party p "
-			+ "WHERE dc.archive = false ORDER BY dc.dcId DESC")
+	@Query("SELECT new map(dc.dcId as dcId, dc.soNumber as soNumber, p.partyName as clientName, so.clientPoNumber as clientPo) " +
+			"FROM DeliveryChallan dc LEFT JOIN SalesOrder so ON so.id = dc.soNumber LEFT JOIN so.party p " +
+			"WHERE dc.archive = false ORDER BY dc.dcId DESC")
 	List<java.util.Map<String, Object>> findPickerMaps();
 
 }

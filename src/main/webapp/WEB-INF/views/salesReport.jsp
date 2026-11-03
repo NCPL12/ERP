@@ -710,9 +710,8 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         fetch('${pageContext.request.contextPath}/po_list/tally/sync-status', {credentials:'same-origin'})
         .then(function(response) { if (!response.ok) throw new Error('Status unavailable'); return response.json(); })
         .then(function(status) {
-            var intervalMs = status.intervalMs || 86400000;
-            var intervalText = intervalMs >= 86400000 ? Math.round(intervalMs / 86400000) + ' day(s)' : Math.round(intervalMs / 60000) + ' minutes';
-            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync runs every ' + intervalText + '.';
+            var scheduleText = status.scheduleDescription || '12:15 AM (Asia/Kolkata)';
+            var message = status.configurationError ? status.configurationError : !status.enabled ? 'Automatic PO sync is disabled.' : status.running ? 'Automatic PO sync is running...' : 'Automatic PO sync runs at ' + scheduleText + ' and sends only the previous day’s POs.';
             if (status.lastResult) message += ' Last run: ' + status.lastResult.imported + ' exported, ' + status.lastResult.skipped + ' unchanged/skipped, ' + status.lastResult.failed + ' need attention.';
             if (status.lastError) message += ' ' + status.lastError;
             document.getElementById('tallyPoAutoSyncStatus').textContent = message;

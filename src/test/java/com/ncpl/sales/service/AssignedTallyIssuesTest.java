@@ -27,7 +27,7 @@ class AssignedTallyIssuesTest {
             assertThat(service.isExportRunning()).isFalse();assertThat(service.getProgress()).isEmpty();
             com.ncpl.sales.repository.PurchaseRepo repo=mock(com.ncpl.sales.repository.PurchaseRepo.class);
             TallyPurchaseOrderAutoSync sync=new TallyPurchaseOrderAutoSync(repo,service);
-            ReflectionTestUtils.setField(sync,"enabled",true);ReflectionTestUtils.setField(sync,"fromDate","2026-04-01");
+            ReflectionTestUtils.setField(sync,"enabled",true);
             sync.synchronize();verifyZeroInteractions(repo);
             assertThat(sync.getLastError()).contains("cashflow.tally.company-name");
             assertThat(sync.getConfigurationError()).contains("cashflow.tally.company-name");

@@ -1,9 +1,6 @@
 package com.ncpl.sales.service;
 
 import java.io.FileOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.cert.PKIXRevocationChecker.Option;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -106,11 +103,9 @@ public class DcExcel {
 			populateSalesRecords(dcItemList,salesService, editAccountSheet, workbook,itemsList);
 	       
 			
-	        Path outputPath = Paths.get(filePath);
-	        Files.createDirectories(outputPath.getParent());
-	        try (FileOutputStream fileOut = new FileOutputStream(outputPath.toFile())) {
-	            workbook.write(fileOut);
-	        }
+	        FileOutputStream fileOut = new FileOutputStream(filePath);
+	        workbook.write(fileOut);
+	        fileOut.close();
 	        workbook.close();
 	        System.out.println("Item List By Date Report Sheets Has been Created successfully!");
 		}
