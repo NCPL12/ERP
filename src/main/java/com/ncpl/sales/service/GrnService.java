@@ -107,13 +107,23 @@ public class GrnService {
   
     
 	public Grn saveGrn(Grn grn) {
-		List<GrnItems> grnItemList = grn.getItems();
+		List<GrnItems> grnItemList = new ArrayList<>();
 
-		for (GrnItems grnItems : grnItemList) {
-			if (grnItems.getReceivedQuantity() <= 0) {
-				throw new IllegalStateException("Received quantity must be greater than 0 for item "
-						+ grnItems.getDescription() + " - GRN not saved.");
+		if (grn.getItems() != null) {
+			for (GrnItems grnItems : grn.getItems()) {
+				float receivedQty = grnItems.getReceivedQuantity();
+				if (!Float.isFinite(receivedQty) || receivedQty < 0) {
+					throw new IllegalStateException("Received quantity must be a valid non-negative number for PO line "
+							+ grnItems.getDescription() + " - GRN not saved.");
+				}
+				// Unreceived PO lines must not create GRN items or update stock/supplier prices.
+				if (receivedQty > 0) {
+					grnItemList.add(grnItems);
+				}
 			}
+		}
+		if (grnItemList.isEmpty()) {
+			throw new IllegalStateException("Enter a received quantity greater than 0 for at least one item - GRN not saved.");
 		}
 
 		String poNumber = grn.getPoNumber();
@@ -142,6 +152,7 @@ public class GrnService {
 			stockService.updateStockQuantityFromGrn(itemId, clientId, grnQty, className, soObj);
 			itemMasterService.updateSupplier(itemId,vendorId,grnItems.getUnitPrice());
 		}
+		grn.setItems(grnItemList);
 		Grn grnObj = grnRepo.save(grn);
 		return grnObj;
 	}

@@ -143,6 +143,7 @@ obj = obj.replace(/\&/g, "\"");
 							<input type="hidden" name="region" id="region" />
 							<input type="hidden" name="responsiblePerson" id="responsiblePerson" />
 							<input type="hidden" name="shippingAddress1" id="shippingAddressPartyId" />
+							<div class="sales-items-scroll" role="region" aria-label="Sales order items" tabindex="0">
 							<table id="salesTable" class="table table-head-fixed table-hover">
 								<thead id="table-header font">
 									<tr>
@@ -252,7 +253,7 @@ obj = obj.replace(/\&/g, "\"");
 								</tbody>
 								<tfoot id="table-footer">
 									<tr>
-										<td colspan="8" aria-hidden="true"></td>
+										<td colspan="6" aria-hidden="true"></td>
 										<td class="task-label" style="text-align: right; white-space: nowrap;">Total</td>
 										<td>
 											<form:input type="text" id="total" name="total" path="total"
@@ -260,7 +261,7 @@ obj = obj.replace(/\&/g, "\"");
 										</td>
 									</tr>
 									<tr id="taxDropDownRow">
-										<td colspan="8" aria-hidden="true"></td>
+										<td colspan="6" aria-hidden="true"></td>
 										<td class="task-label" style="text-align: right; white-space: nowrap;">Tax Rate</td>
 										<td><select id="taxDropDown" name="gstRate"
 												class="form-control" style="width: 100%; height: 32px; font-size: 14px; border-radius: 0;">
@@ -270,7 +271,7 @@ obj = obj.replace(/\&/g, "\"");
 											</select></td>
 									</tr>
 									<tr id="gstRow">
-										<td colspan="8" aria-hidden="true"></td>
+										<td colspan="6" aria-hidden="true"></td>
 										<td class="task-label" id="gstrate" style="text-align: right; white-space: nowrap;">GST@</td>
 										<td>
 											<form:input type="text" id="gst" name="gst" path="gst"
@@ -278,7 +279,7 @@ obj = obj.replace(/\&/g, "\"");
 										</td>
 									</tr>
 									<tr>
-										<td colspan="8" aria-hidden="true"></td>
+										<td colspan="6" aria-hidden="true"></td>
 										<td class="task-label" style="text-align: right; white-space: nowrap;">Grand Total</td>
 										<td>
 											<form:input type="text" id="grandTotal" name="grandTotal" path="grandTotal"
@@ -287,6 +288,7 @@ obj = obj.replace(/\&/g, "\"");
 									</tr>
 								</tfoot>
 							</table>
+							</div>
 							<div class="button-div-style" align="center" id="buttonDiv">
 								<button type="button" id="saveSalesOrder" class="btn btn-primary btn-sm btn-inline">
 									Save

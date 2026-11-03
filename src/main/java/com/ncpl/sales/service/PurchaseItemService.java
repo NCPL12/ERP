@@ -368,9 +368,13 @@ public class PurchaseItemService {
 		// TODO Auto-generated method stub
 		List<PurchaseItem> poItemList = purchaseItemRepo.findByModelNumberWithLatestPoItem(modelNo);
 		List<PurchaseItem> purchaseItemList= new ArrayList<PurchaseItem>();
-		purchaseItemList.add(poItemList.get(0));
+		if (!poItemList.isEmpty()) {
+			purchaseItemList.add(poItemList.get(0));
+		}
 		List<PurchaseItem> poItemCheapestList=purchaseItemRepo.findCheapestPurchaseItem(modelNo);
-		purchaseItemList.add(poItemCheapestList.get(0));
+		if (!poItemCheapestList.isEmpty()) {
+			purchaseItemList.add(poItemCheapestList.get(0));
+		}
 		for (PurchaseItem purchaseItem : purchaseItemList) {
 			
 			purchaseItem.set("vendor", purchaseItem.getPurchaseOrder().getParty().getPartyName());

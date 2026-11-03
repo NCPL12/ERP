@@ -22,11 +22,20 @@ text-align: center;
  }
  
  #salesTable td{
- 	padding: .15em !important;
+	padding: .3em !important;
+	vertical-align: middle;
  }
 
+#salesTable .PositionofTextbox {
+	height: 30px !important;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 3px 6px;
+}
+
  #salesTable .add-lot-btn {
-     height: 24px;
+     height: 30px;
      line-height: 1;
      padding: 0 8px;
      display: inline-flex;
@@ -45,7 +54,56 @@ text-align: center;
 #salesTable{
   table-layout: fixed;
   width: 100%;
-  font-size: 12px;
+  font-size: 13px;
+}
+
+/* Give model numbers more room while keeping the table within the page. */
+#salesTable > thead > tr:first-child > th:nth-child(3) {
+	width: 10%;
+}
+
+.sales-items-scroll {
+	/* Two header rows plus 17 standard item rows before internal scrolling. */
+	max-height: calc(80px + 17 * 40px + 2px);
+	overflow: auto;
+}
+
+#salesTable > tbody > tr {
+	height: 40px;
+}
+
+/* Hide tax-code columns in existing and newly added rows; retain form values. */
+#salesTable > thead > tr:first-child > th:nth-child(4),
+#salesTable > thead > tr:first-child > th:nth-child(5),
+#salesTable > tbody > tr > td:nth-child(4),
+#salesTable > tbody > tr > td:nth-child(5) {
+	display: none;
+}
+
+/* Keep both header rows, including Supply and Service, together while scrolling. */
+#salesTable > thead {
+	height: 80px;
+	position: sticky;
+	top: 0;
+	z-index: 3;
+	background-color: #fff;
+}
+
+/* Override AdminLTE's individual sticky cells so the two rows cannot overlap. */
+#salesTable.table-head-fixed > thead > tr > th {
+	position: static;
+	background-color: #fff;
+}
+
+@media print {
+	.sales-items-scroll {
+		max-height: none;
+		overflow: visible;
+	}
+
+	#salesTable > thead {
+		position: static;
+	}
 }
 .thStyle{
    padding-left: 0px!important;
