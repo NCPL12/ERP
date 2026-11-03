@@ -2484,12 +2484,14 @@ public class SalesController {
 			return new ResponseEntity<>(HttpStatus.OK);
 		}
 	 
+		 @PreAuthorize("hasAuthority('CHARTS_VIEW')")   // <-- NEW LINE
 	 @GetMapping("/soChart")
 		public String soChart(Model model) throws JsonProcessingException {
 			model.addAttribute("pageHeader", "Sales Order Monthly Chart");
 			return "soChart";
 		}
 	 
+	 @PreAuthorize("hasAuthority('CHARTS_VIEW')")   // <-- NEW LINE
 	 @SuppressWarnings("rawtypes")
 	@GetMapping("/api/so_monthly_chart")
 		public ResponseEntity<?> getReadingForTotalConsumption(HttpServletRequest req,

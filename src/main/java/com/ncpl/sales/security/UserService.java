@@ -26,87 +26,102 @@ public class UserService implements UserDetailsService{
 	private com.ncpl.sales.repository.RoleRepo roleRepo;
 
 	//validating user using database
-		@Override
-		public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-			System.out.println("Loading User Obj by UserName: " + username);
-			User user = userRepo.findUserByUserName(username);
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		User user = userRepo.findUserByUserName(username);
 
-			if (user == null) {
-				throw new UsernameNotFoundException("User not found: " + username);
+		if (user == null) {
+			throw new UsernameNotFoundException("User not found: " + username);
+		}
+		return toUserDetails(user);
+	}
+
+	/** Builds the login details and authorities for an already-loaded user (no extra user query). */
+	public UserDetails toUserDetails(User user) {
+		Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+		if (user.getRole() != null) {
+			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
+
+			boolean canViewReports = false;
+			boolean canViewArchives = false;   // NEW
+			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
+				if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
+				if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
+				if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+				if ("REPORTS".equals(p.getModule()) && p.isCanView()) canViewReports = true;
+				if ("ARCHIVES".equals(p.getModule()) && p.isCanView()) canViewArchives = true;   // NEW
 			}
 
-			Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-			if (user.getRole() != null) {
-				grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
-
-				boolean canViewReports = false;
-				for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
-					if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
-					if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
-					if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
-					if ("REPORTS".equals(p.getModule()) && p.isCanView()) canViewReports = true;
-				}
-
-				if (canViewReports) {
-					com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
-					if (roleObj != null) {
+			if (canViewReports || canViewArchives) {   // NEW: one role lookup for both
+				com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
+				if (roleObj != null) {
+					if (canViewReports) {
 						for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
 							grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
 						}
 					}
+					// NEW: ARCHIVE_<key> authorities, only while the role has ARCHIVES view on
+					if (canViewArchives) {
+						for (String key : com.ncpl.sales.model.ArchiveItem.visible(roleObj.getArchiveItems())) {
+							grantedAuthorities.add(new SimpleGrantedAuthority("ARCHIVE_" + key));
+						}
+					}
 				}
 			}
-
-			return new org.springframework.security.core.userdetails.User(
-					user.getUsername(),
-					user.getPassword(),
-					user.isEnabled(),   // enabled
-					true,                // accountNonExpired
-					true,                // credentialsNonExpired
-					true,                // accountNonLocked
-					grantedAuthorities);
 		}
 
-		/** One user by id, used by the User Management admin page. */
-		public User getUserByUserId(Long userId) {
-			if (userId == null || userId <= 0) {
-				return null;
-			}
-			return userRepo.findById(userId).orElse(null);
-		}
+		return new org.springframework.security.core.userdetails.User(
+				user.getUsername(),
+				user.getPassword(),
+				user.isEnabled(),   // enabled
+				true,                // accountNonExpired
+				true,                // credentialsNonExpired
+				true,                // accountNonLocked
+				grantedAuthorities);
+	}
 
-		/** Save a new user (with encrypted password). */
-		public User saveUser(User user) {
-			if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-				user.setPassword(encryptPasswd.encrytePassword(user.getPassword()));
-			}
-			return userRepo.save(user);
+	/** One user by id, used by the User Management admin page. */
+	public User getUserByUserId(Long userId) {
+		if (userId == null || userId <= 0) {
+			return null;
 		}
+		return userRepo.findById(userId).orElse(null);
+	}
 
-		public User updateUser(User user) {
-			return userRepo.save(user);
+	/** Save a new user (with encrypted password). */
+	public User saveUser(User user) {
+		if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+			user.setPassword(encryptPasswd.encrytePassword(user.getPassword()));
 		}
+		return userRepo.save(user);
+	}
 
-		public void deleteUser(Long userId) {
-			if (userId != null && userId > 0) {
-				userRepo.deleteById(userId);
-			}
+	public User updateUser(User user) {
+		return userRepo.save(user);
+	}
+
+	public void deleteUser(Long userId) {
+		if (userId != null && userId > 0) {
+			userRepo.deleteById(userId);
 		}
+	}
 
-		public boolean userExists(String username) {
-			return userRepo.findUserByUserName(username) != null;
+	public boolean userExists(String username) {
+		return userRepo.findUserByUserName(username) != null;
+	}
+
+	public boolean changePassword(Long userId, String password) {
+		User user = userRepo.findById(userId).orElse(null);
+		if (user == null) {
+			return false;
 		}
+		String encryptedPassword = encryptPasswd.encrytePassword(password);
+		int updatedRows = userRepo.updatePassword(userId, encryptedPassword);
+		return updatedRows > 0;
+	}
 
-		public boolean changePassword(Long userId, String password) {
-			User user = userRepo.findById(userId).orElse(null);
-			if (user == null) {
-				return false;
-			}
-			String encryptedPassword = encryptPasswd.encrytePassword(password);
-			int updatedRows = userRepo.updatePassword(userId, encryptedPassword);
-			return updatedRows > 0;
-		}
-
+	// Old seed code with plaintext passwords was removed. Kept as a stub in case
+	// something still calls it; delete it if nothing does.
 	public User save() {
 		/*User user = new User();
 		user.setUsername("anvesh");
@@ -145,9 +160,9 @@ public class UserService implements UserDetailsService{
 		return userRepo.findUserByUserName(userName);
 	}
 
-public List<User> getAllUsers() {
-    return userRepo.findAll();
-}
+	public List<User> getAllUsers() {
+		return userRepo.findAll();
+	}
 
 	public User getCurrentUser() {
 		User user = null;

@@ -30,6 +30,11 @@ public class Role extends TimeStampEntity {
 	@Column(name = "report_items", length = 1000)
 	private String reportItems;
 
+	// NEW: comma-separated ArchiveItem keys (SALES_ORDER, PURCHASE_ORDER, DELIVERY_CHALLAN, GRN)
+	// this role's users can open under Archived Data.
+	@Column(name = "archive_items", length = 1000)
+	private String archiveItems;
+
 	public String getDashboardTiles() {
 		return dashboardTiles;
 	}
@@ -44,6 +49,16 @@ public class Role extends TimeStampEntity {
 
 	public void setReportItems(String reportItems) {
 		this.reportItems = reportItems;
+	}
+
+	// NEW
+	public String getArchiveItems() {
+		return archiveItems;
+	}
+
+	// NEW
+	public void setArchiveItems(String archiveItems) {
+		this.archiveItems = archiveItems;
 	}
 
 	public Long getRoleId() {

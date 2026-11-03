@@ -74,8 +74,8 @@ public class UserStatusFilter extends OncePerRequestFilter {
 
             // Role/permission edits must take effect immediately, not just on next login —
             // re-derive authorities from the DB on every request instead of trusting the
-            // ones cached in the session since login.
-            UserDetails fresh = userService.loadUserByUsername(authentication.getName());
+            // ones cached in the session since login. Reuses the user loaded above.
+            UserDetails fresh = userService.toUserDetails(user);
             Authentication refreshed = new UsernamePasswordAuthenticationToken(
                     fresh, authentication.getCredentials(), fresh.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(refreshed);
