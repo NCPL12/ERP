@@ -11,10 +11,39 @@ import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.ncpl.sales.service.ErrorAlertService;
 
 public class ErrorAlertFilterTest {
+    @Test
+    public void capturesUserBeforeSecurityContextIsClearedAndAlertsForEachUser() throws Exception {
+        RecordingAlertService alerts = new RecordingAlertService();
+        ErrorAlertFilter filter = new ErrorAlertFilter(alerts, 300000);
+        try {
+            for (String username : new String[] { "alice", "bob" }) {
+                SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                        username, "secret", AuthorityUtils.createAuthorityList("SALES_ORDER_EDIT")));
+                MockHttpServletRequest request = request();
+                request.setRemoteAddr("192.0.2.10");
+                request.addHeader("User-Agent", "Test browser");
+                filter.doFilter(request, new MockHttpServletResponse(), (req, res) -> {
+                    SecurityContextHolder.clearContext();
+                    ((HttpServletResponse) res).setStatus(500);
+                });
+                assertEquals(username, alerts.lastUser);
+                assertEquals("[SALES_ORDER_EDIT]", alerts.lastAuthorities);
+                assertEquals("192.0.2.10", alerts.lastAddress);
+                assertEquals("Test browser", alerts.lastBrowser);
+            }
+            assertEquals(2, alerts.sent);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
     @Test
     public void alertsOnServerFailureButNotClientFailure() throws Exception {
         RecordingAlertService alerts = new RecordingAlertService();
@@ -81,17 +110,26 @@ public class ErrorAlertFilterTest {
         private int lastStatus;
         private String lastRoute;
         private Throwable lastFailure;
+        private String lastUser;
+        private String lastAuthorities;
+        private String lastAddress;
+        private String lastBrowser;
 
         private RecordingAlertService() {
             super(null, "team@example.com");
         }
 
         @Override
-        public void sendAlert(int status, String method, String path, String route, Throwable failure) {
+        public void sendAlert(int status, String method, String path, String route, Throwable failure,
+                String username, String authorities, String clientAddress, String browser, long durationMillis) {
             sent++;
             lastStatus = status;
             lastRoute = route;
             lastFailure = failure;
+            lastUser = username;
+            lastAuthorities = authorities;
+            lastAddress = clientAddress;
+            lastBrowser = browser;
         }
     }
 }

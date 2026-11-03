@@ -17,6 +17,9 @@ import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 
 import com.ncpl.sales.service.ErrorAlertService;
 
@@ -45,6 +48,19 @@ public class ErrorAlertFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         Throwable failure = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = "Anonymous / not signed in";
+        String authorities = "None";
+        if (authentication != null && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            username = authentication.getName();
+            authorities = authentication.getAuthorities().toString();
+        } else if (httpRequest.getUserPrincipal() != null) {
+            username = httpRequest.getUserPrincipal().getName();
+        }
+        final String requestUser = username;
+        final String requestAuthorities = authorities;
+        long started = System.nanoTime();
         try {
             chain.doFilter(request, response);
         } catch (IOException | ServletException | RuntimeException | Error error) {
@@ -52,14 +68,16 @@ public class ErrorAlertFilter implements Filter {
             throw error;
         } finally {
             try {
-                reportFailure(httpRequest, httpResponse, failure);
+                reportFailure(httpRequest, httpResponse, failure, requestUser, requestAuthorities,
+                        (System.nanoTime() - started) / 1000000);
             } catch (RuntimeException alertError) {
                 log.error("Error alert processing failed", alertError);
             }
         }
     }
 
-    private void reportFailure(HttpServletRequest request, HttpServletResponse response, Throwable thrown) {
+    private void reportFailure(HttpServletRequest request, HttpServletResponse response, Throwable thrown,
+            String username, String authorities, long durationMillis) {
         if (!alertService.isEnabled() || Boolean.TRUE.equals(request.getAttribute(ALERT_SENT_ATTRIBUTE))) {
             return;
         }
@@ -85,7 +103,7 @@ public class ErrorAlertFilter implements Filter {
         Object pattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         String route = pattern instanceof String ? (String) pattern : "(unmapped request)";
         String failureType = failure == null ? "" : failure.getClass().getName();
-        String key = request.getMethod() + " " + route + " " + status + " " + failureType;
+        String key = request.getMethod() + " " + route + " " + status + " " + failureType + " " + username;
         long now = System.currentTimeMillis();
         AtomicBoolean shouldSend = new AtomicBoolean();
         lastAlertAt.compute(key, (ignored, previous) -> {
@@ -97,7 +115,8 @@ public class ErrorAlertFilter implements Filter {
         });
         request.setAttribute(ALERT_SENT_ATTRIBUTE, Boolean.TRUE);
         if (shouldSend.get()) {
-            alertService.sendAlert(status, request.getMethod(), path, route, failure);
+            alertService.sendAlert(status, request.getMethod(), path, route, failure,
+                    username, authorities, request.getRemoteAddr(), request.getHeader("User-Agent"), durationMillis);
         }
     }
 
