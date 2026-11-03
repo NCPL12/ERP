@@ -8,7 +8,7 @@ public enum Module {
 	PURCHASE("/purchase"), GRN("/grnLists"), NON_BILLABLE(null),
 
 	REPORTS("/sales_report"),
-	CHARTS("/charts"),   // change "/charts" to your real Charts page URL
+	CHARTS("/soChart"),   // change "/charts" to your real Charts page URL
 	ARCHIVES("/salesList_archived"),
 	USER_MANAGEMENT("/user-management");
 
