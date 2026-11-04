@@ -225,4 +225,3 @@ public class ItemUploadService {
 	        return null; // Invalid type
 	    }
 	}
-	
