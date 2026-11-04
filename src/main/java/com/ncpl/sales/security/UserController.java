@@ -23,11 +23,20 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import static com.ncpl.sales.security.AccessUtil.callerIsAdmin;
+import static com.ncpl.sales.security.AccessUtil.isAdminRole;
+
 @Controller
 public class UserController {
 
     @Autowired
     private UserService userService;
+
+    // USER_MANAGEMENT_EDIT must not be a way to become admin (admin checks are in AccessUtil).
+
+    private static ResponseEntity<?> forbidden(String message) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message);
+    }
 
     @GetMapping("/login")
     public String login(Model model, String error, User user,
@@ -40,6 +49,8 @@ public class UserController {
         return "login";
     }
 
+    // TODO: any logged-in user can call this and gets every user record. Find which pages use it
+    // (search the JS/JSP for "/api/users") and either restrict it or return only id and name.
     @GetMapping("/api/users")
     @ResponseBody
     public List<User> getAllUsers() {
@@ -68,6 +79,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No user logged in");
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW','USER_MANAGEMENT_EDIT')")
     @GetMapping("/api/users/findByUsername")
     @ResponseBody
     public ResponseEntity<?> findByUsername(@RequestParam String username) {
@@ -78,6 +90,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with username: " + username);
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW','USER_MANAGEMENT_EDIT')")
     @GetMapping("/api/users/{userId}")
     @ResponseBody
     public ResponseEntity<?> getUserById(@PathVariable Long userId) {
@@ -99,6 +112,10 @@ public class UserController {
             @RequestParam("number") String number,
             @RequestParam("emailId") String emailId,
             @RequestParam("name") String name) {
+
+        if (isAdminRole(role) && !callerIsAdmin()) {
+            return forbidden("Only an admin can create an admin user");
+        }
 
         try {
             if (userService.userExists(user_name)) {
@@ -150,6 +167,19 @@ public class UserController {
         User existingUser = userService.getUserByUserId(id);
         if (existingUser == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
+        }
+
+        if (!callerIsAdmin()) {
+            // A non-admin editor can't touch an admin account or hand out an admin role.
+            if (isAdminRole(existingUser.getRole()) || isAdminRole(role)) {
+                return forbidden("Only an admin can change an admin user or assign an admin role");
+            }
+            // ...and can't change their own role.
+            User me = userService.getCurrentUser();
+            if (me != null && id.equals(me.getId())
+                    && !java.util.Objects.equals(existingUser.getRole(), role)) {
+                return forbidden("You cannot change your own role");
+            }
         }
 
         if (!existingUser.getUsername().equals(username) && userService.userExists(username)) {
@@ -205,6 +235,11 @@ public class UserController {
         if (password == null || password.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Password cannot be empty");
         }
+        // Without this, a non-admin editor could reset an admin's password and log in as them.
+        User target = userService.getUserByUserId(id);
+        if (target != null && isAdminRole(target.getRole()) && !callerIsAdmin()) {
+            return forbidden("Only an admin can change an admin user's password");
+        }
         boolean updated = userService.changePassword(id, password);
         if (!updated) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
@@ -220,6 +255,13 @@ public class UserController {
             User existingUser = userService.getUserByUserId(id);
             if (existingUser == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
+            }
+            if (isAdminRole(existingUser.getRole()) && !callerIsAdmin()) {
+                return forbidden("Only an admin can delete an admin user");
+            }
+            User me = userService.getCurrentUser();
+            if (me != null && id.equals(me.getId())) {
+                return forbidden("You cannot delete your own account");
             }
             userService.deleteUser(id);
             return ResponseEntity.ok("User deleted successfully with ID: " + id);
