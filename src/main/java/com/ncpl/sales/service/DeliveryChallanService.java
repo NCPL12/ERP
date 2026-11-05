@@ -133,6 +133,11 @@ public class DeliveryChallanService {
 						DesignItems designItemsList = designItemRepo.findDesignItemListByItemIdAndDesignId(itemId, designId).stream().findFirst().orElse(null);
 						if (designItemsList == null)
 							throw new IllegalArgumentException("Design item " + designId + " was not found for item " + itemId);
+						if (!Objects.equals(designItemsList.getSalesOrderDesign().getSalesItemId(),
+								dcItemList.get(k).getDescription())) {
+							throw new IllegalArgumentException("Design does not belong to sales item " + dcItemList.get(k).getDescription());
+						}
+						validateDesignDeliveryQuantity(designItemsList, todayQty);
 						designItemsList.setDeliveredQty(designItemsList.getDeliveredQty()+todayQty);
 						designItemRepo.save(designItemsList);
 						Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
@@ -164,8 +169,14 @@ public class DeliveryChallanService {
 					}
 					if (salesItemsWithDesignAllocations.contains(soItemId)) {
 						float allocatedQty = designAllocatedQtyBySalesItem.getOrDefault(soItemId, 0f);
-						if (Math.abs(allocatedQty - deliveryChallanItems.getTodaysQty()) > 0.01f) {
+						// A sales unit can contain several design components. Only a single
+						// design has the same quantity basis as the sales/DC row.
+						if (designList.size() == 1 && Math.abs(allocatedQty - deliveryChallanItems.getTodaysQty()) > 0.01f) {
 							throw new IllegalArgumentException("Design quantities do not match today's DC quantity for sales item " + soItemId);
+						}
+						if ((deliveryChallanItems.getTodaysQty() > 0 && allocatedQty <= 0)
+								|| (deliveryChallanItems.getTodaysQty() == 0 && allocatedQty > 0)) {
+							throw new IllegalArgumentException("Allocate design quantities only for a positive today's DC quantity for sales item " + soItemId);
 						}
 					} else if (designList.size() > 1 && deliveryChallanItems.getTodaysQty() > 0) {
 						throw new IllegalArgumentException("Allocate today's quantity to each design for sales item " + soItemId);
@@ -173,6 +184,7 @@ public class DeliveryChallanService {
 					if(designList.size()==1 && !salesItemsWithDesignAllocations.contains(soItemId)) {
 						String itemId=designList.get(0).getItemId();
 						float todayQty=deliveryChallanItems.getTodaysQty();
+						validateDesignDeliveryQuantity(designList.get(0), todayQty);
 						if (todayQty > 0) {
 							Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
 							if (stock == null || stock.getQuantity() < todayQty) {
@@ -212,6 +224,15 @@ public class DeliveryChallanService {
 			return dcObj;
 		
 		
+	}
+	private void validateDesignDeliveryQuantity(DesignItems designItem, float todayQty) {
+		if (!Float.isFinite(todayQty) || todayQty < 0) {
+			throw new IllegalArgumentException("Design delivery quantity must be a finite, non-negative number for item " + designItem.getItemId());
+		}
+		float remainingQty = designItem.getQuantity() - designItem.getDeliveredQty();
+		if (todayQty > 0 && todayQty - remainingQty > 0.01f) {
+			throw new IllegalArgumentException("Design delivery quantity exceeds remaining quantity for item " + designItem.getItemId());
+		}
 	}
 	private Map<String, Object> dcDetails(String clientPoNo,
 			String partyName,int dcId, String dcFilePath) {

@@ -461,47 +461,15 @@ public class SalesService {
 	 * @return salesItemList
 	 */
 	public List<SalesItem> getSalesListById(List<String> id, String className) {
+		if ("dc".equalsIgnoreCase(className)) {
+			return getDcSalesItems(id);
+		}
 		// get list of sales order for all sales id
 		List<SalesOrder> salesOrderListbyId = salesrepo.findSalesOrderById(id);
 		ArrayList<SalesItem> itemList = new ArrayList<SalesItem>();
 		// get list of items for each sales order
 		List<SalesItem> salesItemList = null;
 		for (SalesOrder salesOrder : salesOrderListbyId) {
-
-			if (className.equalsIgnoreCase("dc")) {
-				salesItemList = getItemsWhereSupplyPriceIsGreaterThanZero(salesOrder.getId());
-				for (SalesItem salesItem : salesItemList) {
-					boolean value = false;
-					Optional<SalesItem> item=getSalesItemById(salesItem.getId(),value);
-					salesItem.set("unitName",item.get().getItem_units().getName());
-					List<DesignItems> designItemList = soDesignService.getSalesOrderDesignItemListBySalesItemId(salesItem.getId());
-					if(!designItemList.isEmpty()) {
-						itemList.add(salesItem);
-					}
-					List<DeliveryChallanItems> dcItemList = dcService.getDcItemListBySoItemId(salesItem.getId());
-					float todaysQty = 0;
-					// if for dc item list is empty for the selected salesItemId then set
-					// delivered qty to 0.
-					if (dcItemList.isEmpty()) {
-						todaysQty = 0;
-						salesItem.set("todaysQty", todaysQty);
-						salesItem.set("deliveredQty", todaysQty);
-					} else {
-						for (DeliveryChallanItems dcItem : dcItemList) {
-							todaysQty = todaysQty + dcItem.getTodaysQty();
-
-						}
-						 if (todaysQty == salesItem.getQuantity()) {
-							 itemList.remove(salesItem);
-						 }
-						salesItem.set("todaysQty", salesItem.getQuantity() - todaysQty);
-						salesItem.set("deliveredQty", todaysQty);
-					}
-					
-					
-				}
-				//itemList.addAll(salesItemList);
-			} else {
 				salesItemList = salesOrder.getItems();
 
 				// Fetch design items for every sales item in one batched call (instead of one
@@ -547,7 +515,6 @@ public class SalesService {
 					salesItem.set("vendoritemsList", vendoritemsList);
 				}
 				itemList.addAll(salesItemList);
-			}
 		}
 		// this function is used in other places.so className is used to
 		// differentiate.
@@ -715,6 +682,35 @@ public class SalesService {
 
 		Collections.sort(itemList);
 		return itemList;
+	}
+
+	private List<SalesItem> getDcSalesItems(List<String> salesOrderIds) {
+		if (salesOrderIds == null || salesOrderIds.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<SalesItem> candidates = salesItemrepo.findDcSalesItems(salesOrderIds);
+		if (candidates.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<String> salesItemIds = candidates.stream().map(SalesItem::getId).collect(java.util.stream.Collectors.toList());
+		Map<String, Float> deliveredByItem = new HashMap<>();
+		for (Object[] row : dcItemRepo.findDeliveredQuantities(salesItemIds)) {
+			deliveredByItem.put((String) row[0], ((Number) row[1]).floatValue());
+		}
+		List<SalesItem> result = new ArrayList<>();
+		for (SalesItem item : candidates) {
+			Float delivered = deliveredByItem.get(item.getId());
+			if (delivered != null && delivered == item.getQuantity()) {
+				continue;
+			}
+			item.set("unitName", item.getItem_units() == null ? "" : item.getItem_units().getName());
+			item.set("deliveredQty", delivered == null ? 0f : delivered);
+			// Preserve the existing no-delivery-history response (todaysQty = 0).
+			item.set("todaysQty", delivered == null ? 0f : item.getQuantity() - delivered);
+			result.add(item);
+		}
+		Collections.sort(result);
+		return result;
 	}
 
 	public Optional<SalesOrder> getSalesOrderById(String salesOrderId) {

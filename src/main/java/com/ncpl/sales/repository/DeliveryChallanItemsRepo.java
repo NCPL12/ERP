@@ -12,6 +12,9 @@ import com.ncpl.sales.model.DeliveryChallanItems;
 
 @Repository
 public interface DeliveryChallanItemsRepo extends JpaRepository<DeliveryChallanItems,Integer>{
+	@Query("SELECT i.description, SUM(i.todaysQty) FROM DeliveryChallanItems i " +
+			"WHERE i.description IN :salesItemIds GROUP BY i.description")
+	List<Object[]> findDeliveredQuantities(@Param("salesItemIds") List<String> salesItemIds);
 	@Query("select i.deliveryChallan.dcId, min(i.created) from DeliveryChallanItems i " +
 			"where i.deliveryChallan.dcId in :dcIds group by i.deliveryChallan.dcId")
 	List<Object[]> findFirstCreatedDates(@Param("dcIds") List<Integer> dcIds);

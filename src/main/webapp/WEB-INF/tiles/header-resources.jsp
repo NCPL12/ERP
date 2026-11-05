@@ -3,6 +3,8 @@
 
 <c:url var="ROOT" value="/"></c:url>
 <c:url var="RESOURCES" value="${pageContext.request.contextPath}/resources/"></c:url>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/sidebar-navigation.css">
+<script src="${pageContext.request.contextPath}/resources/js/sidebar-navigation.js"></script>
 
 <!-- <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet"> -->
 

@@ -217,15 +217,41 @@ text-align: center;
    overflow-x:hidden): shrink the pill's own box model so the icon has room
    to center, and flex-center it explicitly so alignment doesn't depend on
    .nav-link's display type. */
+.sidebar-collapse .main-sidebar .nav-sidebar {
+	width: 100%;
+	overflow: hidden;
+}
+/* AdminLTE reveals open submenus on hover/focus even with sidebar-no-expand.
+   Keep their state, but show their contents only after explicitly expanding. */
+.sidebar-collapse .main-sidebar .nav-sidebar .nav-treeview,
+.sidebar-collapse .main-sidebar .user-panel > .info,
+.sidebar-collapse .main-sidebar .brand-text,
+.sidebar-collapse .main-sidebar .logo-xl {
+	display: none !important;
+}
+.sidebar-collapse .main-sidebar .brand-link .logo-xs {
+	display: flex !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+}
+.sidebar-collapse .main-sidebar .nav-sidebar > .nav-item {
+	width: 100%;
+	min-width: 0;
+}
 .sidebar-collapse .main-sidebar .nav-sidebar > .nav-item > .nav-link {
 	display: flex !important;
 	align-items: center;
 	justify-content: center;
 	margin: 3px 4px;
 	padding: .6rem .25rem;
+	width: calc(100% - 8px);
+}
+.sidebar-collapse .main-sidebar .nav-sidebar > .nav-item > .nav-link p {
+	display: none !important;
 }
 .sidebar-collapse .main-sidebar .nav-sidebar > .nav-item > .nav-link .nav-icon {
-	margin-right: 0 !important;
+	flex: 0 0 auto;
+	margin: 0 !important;
 	width: auto !important;
 }
 

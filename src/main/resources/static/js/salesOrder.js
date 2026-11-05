@@ -135,7 +135,7 @@ $(document).ready(function () {
 
 	 designValidation();
 
-	 $("#designModal").draggable({
+	 $("#designModal .modal-dialog").draggable({
 	      handle: ".modal-header"
 	    });
 });
@@ -352,6 +352,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			//	$("#designTd"+key).show();
 				$("#toggleBriefTd"+key).show();
 				$("#design"+key).val(value.id);
+				updateDesignCompletion(value.id, value.designItems);
 
 
 
@@ -563,10 +564,10 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			modalHeaderDesc = jQuery.trim(modalHeaderDesc).substring(0, 35) + "....";
 		}
 		var salesItemId=$(this).val();
-		 $("#designModal").css({
-		        top: "100px",
-		        left: "100px"
-		      }).modal("show");
+		 var $designModal = $("#designModal");
+		 $designModal.css({ top: "", left: "" });
+		 $designModal.find(".modal-dialog").css({ top: "", left: "" });
+		 $designModal.modal("show");
 		//$("#designModal").modal("show");
 		$("#salesItemId").val(salesItemId);
 		$("#designHeader").text(slNo+". "+modalHeaderDesc);
@@ -767,6 +768,19 @@ function designTable2Json(){
 		});
 	}
 
+	// A saved design item marks this SO line's design as done.
+	function updateDesignCompletion(salesItemId, designItems){
+		var completed = Array.isArray(designItems) && designItems.length > 0;
+		$("#salesTable .design").filter(function(){
+			return String($(this).val()) === String(salesItemId);
+		}).each(function(){
+			$(this).find('.design-completed-star').remove();
+			if(completed){
+				$(this).append(' <span class="design-completed-star" role="img" aria-label="Design completed" title="Design completed">&#11088;</span>');
+			}
+		});
+	}
+
 	//ajax call to get all the design item list
 	function getDesignItemList(salesItemId){
 		$.ajax({
@@ -775,6 +789,7 @@ function designTable2Json(){
 			success:function(response){
 				console.log(response);
 				designListTable(response);
+				updateDesignCompletion(salesItemId, response);
 
 			},
 			complete:function(resp){
