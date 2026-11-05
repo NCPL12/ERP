@@ -14,7 +14,8 @@
 
             <body>
               <!-- Main Sidebar Container -->
-              <aside class="main-sidebar sidebar-dark-primary elevation-4 sidebar-no-expand">
+              <aside class="main-sidebar sidebar-dark-primary elevation-4 sidebar-no-expand"
+                data-sidebar-user="<c:out value='${pageContext.request.userPrincipal.name}' />">
                 <!-- Brand Logo -->
                 <security:authorize access="hasAuthority('DASHBOARD_VIEW')">
                   <c:set var="brandHref" value="${pageContext.request.contextPath}/dashboard" />
@@ -440,6 +441,7 @@
                 <!-- Control sidebar content goes here -->
               </aside>
               <!-- /.control-sidebar -->
+              <script src="${pageContext.request.contextPath}/resources/js/sidebar-state.js"></script>
 
 
             </body>

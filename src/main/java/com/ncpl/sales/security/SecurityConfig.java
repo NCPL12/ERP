@@ -45,6 +45,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 protected void configure(HttpSecurity http) throws Exception {
 		 http.addFilterAfter(userStatusFilter, SecurityContextPersistenceFilter.class);
 		 http.csrf().disable();
+		 // The persistent navigation shell embeds pages from this application only.
+		 http.headers().frameOptions().sameOrigin();
 		 http
 		 .authorizeRequests()
 		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**", "/audit/**", "/audit-test.html").permitAll()

@@ -1,0 +1,60 @@
+/* Each page keeps its own scripts and forms; only the navigation shell persists. */
+html.erp-content-frame .main-sidebar,
+html.erp-content-frame .control-sidebar {
+    display: none !important;
+}
+/* Outrank the expanded/collapsed offsets in common.css, loaded later. */
+html.erp-content-frame body .wrapper .content-wrapper,
+html.erp-content-frame body .wrapper .main-header,
+html.erp-content-frame body .wrapper .main-footer {
+    margin-left: 0 !important;
+}
+/* The page keeps its position while its modal uses the full browser viewport. */
+html.erp-popup-viewport,
+html.erp-popup-viewport body {
+    background: transparent !important;
+}
+html.erp-popup-viewport body {
+    /* Apply spacing outside wrappers that use CSS zoom (Sales Order uses 80%). */
+    padding-left: var(--erp-sidebar-offset, 0px) !important;
+}
+.modal .modal-dialog {
+    margin: 1.75rem auto !important;
+    min-height: calc(100% - 3.5rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal .modal-content {
+    flex-shrink: 0;
+    max-width: calc(100vw - 2rem) !important;
+}
+body.erp-navigation-shell {
+    overflow: hidden;
+}
+body.erp-navigation-shell > .wrapper > :not(.main-sidebar) {
+    display: none !important;
+}
+body.erp-navigation-shell > .wrapper > .main-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+}
+#erpContentFrame {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #f4f6f9;
+}
+#erpContentFrame.erp-popup-open {
+    z-index: 1100;
+    background: transparent;
+}
+@media print {
+    body.erp-navigation-shell > .wrapper { display: none !important; }
+    #erpContentFrame { position: static; width: 100% !important; }
+}

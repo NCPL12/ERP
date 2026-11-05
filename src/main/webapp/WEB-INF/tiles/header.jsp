@@ -255,7 +255,7 @@
 						</style>
 						<script type="text/javascript">
 							$(document).ready(function () {
-								$('body').addClass('sidebar-mini sidebar-mini-md').removeClass('sidebar-collapse');
+								$('body').addClass('sidebar-mini sidebar-mini-md');
 
 								// Prevent sidebar from expanding on hover (keep narrow, only icon highlight like 2nd photo)
 								setTimeout(function () {
@@ -330,13 +330,7 @@
 							function initSidebarMenuAnimation() {
 								$(document).off('click', '[data-widget="treeview"] .nav-link');
 
-								// Animate the menu of the current page opening on page load
-								$('.nav-sidebar > .nav-item.menu-open > .nav-treeview').each(function () {
-									var $menu = $(this);
-									$menu.stop(true, true).hide().slideDown(350, function () {
-										$(this).css('height', '');
-									});
-								});
+								// Initial menu state is restored before paint; animate only user toggles.
 
 								$(document).on('click', '[data-widget="treeview"] .nav-link', function (event) {
 									var $li = $(this).parent('li.nav-item.has-treeview');

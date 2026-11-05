@@ -11,6 +11,12 @@ import com.ncpl.sales.model.SalesItem;
 
 
 public interface SalesItemRepo  extends JpaRepository<SalesItem, String>{
+	@Query("SELECT si FROM SalesItem si LEFT JOIN FETCH si.item_units " +
+			"JOIN FETCH si.salesOrder so LEFT JOIN FETCH so.party p LEFT JOIN FETCH p.party_category " +
+			"LEFT JOIN FETCH p.party_type LEFT JOIN FETCH p.party_city city LEFT JOIN FETCH city.state state LEFT JOIN FETCH state.country " +
+			"WHERE so.id IN :salesOrderIds AND si.unitPrice > 0 AND si.archive = false " +
+			"AND EXISTS (SELECT d.id FROM SalesOrderDesign d JOIN d.items di WHERE d.salesItemId = si.id)")
+	List<SalesItem> findDcSalesItems(@Param("salesOrderIds") Collection<String> salesOrderIds);
 
 	@Query(" from SalesItem where sales_order_id=?1 and unit_price>0 and archive=0")
 	List<SalesItem> getSalesItemsBySalesOrderId(String salesOrderId);
