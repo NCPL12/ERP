@@ -81,25 +81,25 @@ public class ItemUploadService {
 	                   // continue;
 	                }
 
-	                // ✅ Fetch and validate "Price" (Column 2, Mandatory, Numeric)
+	                // ✅ Fetch and validate "HSN" (Column 2, Mandatory)
 	                String hsn = getCellValue(row.getCell(2));
 	                if (hsn.isEmpty()) {
 	                	rowErrors.add("Row " + (i + 1) + ": hsn is mandatory.");
 	                    //continue;
 	                }
 
-	                // ✅ Fetch and validate "Quantity" (Column 3, Mandatory, Numeric)
+	                // ✅ Fetch and validate "GST" (Column 4, Mandatory, Numeric)
 	                Integer gst = getIntegerCellValue(row.getCell(4));
 	                if (gst == null || gst < 0) {
 	                	rowErrors.add("Row " + (i + 1) + ": gst is mandatory.");
 	                    //continue;
 	                }
 	                
-	                // ✅ Fetch and validate "Price" (Column 2, Mandatory, Numeric)
-	                String location = getCellValue(row.getCell(2));
+	                // FIX 1: Location is column F (index 5). It was reading index 2 (HSN).
+	                String location = getCellValue(row.getCell(5));
 	               
 
-	                // ✅ Fetch and validate "Make" (Column 4, Foreign Key)
+	                // ✅ Fetch and validate "Make" (Column 6, Foreign Key)
 	                String make = getCellValue(row.getCell(6));
 	                if (make.isEmpty()) {
 	                	rowErrors.add("Row " + (i + 1) + ": Make is mandatory.");
@@ -112,7 +112,7 @@ public class ItemUploadService {
 	                }
 	               
 
-	                // ✅ Fetch and validate "Unit" (Column 5, Foreign Key)
+	                // ✅ Fetch and validate "Unit" (Column 3, Foreign Key)
 	                String unit = getCellValue(row.getCell(3));
 	                if (unit.isEmpty()) {
 	                	rowErrors.add("Row " + (i + 1) + ": Unit is mandatory.");
@@ -127,7 +127,7 @@ public class ItemUploadService {
 	                    errors.add("Row " + (i + 1) + ": " + String.join(" | ", rowErrors));
 	                    continue; // Skip processing this row further
 	                }
-	                // ✅ Fetch and validate "Price" (Column 2, Mandatory, Numeric)
+	                // ✅ Tool Tackles flag (Column 7)
 	                String toolTracker = getCellValue(row.getCell(7));
 	               
 
@@ -144,7 +144,7 @@ public class ItemUploadService {
                     	
                     	item.setMake(makeObj.getId().toString());
                     }
-	                item.setMake(make);
+	                // FIX 2: removed "item.setMake(make);" - it overwrote the Make id with the text name.
 	                item.setLocation(location);
 	                
 	                item.setItem_units(unitObj);
@@ -225,4 +225,3 @@ public class ItemUploadService {
 	        return null; // Invalid type
 	    }
 	}
-
