@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
@@ -66,6 +67,22 @@ public class PurchaseAccessSecurityTest {
 
     private interface SecuredAction {
         void run() throws Exception;
+    }
+
+    @Test
+    public void dcDataPermissionFollowsTheArchiveFlag() throws Exception {
+        PurchaseController controller = securedController(mock(PurchaseOrderService.class), mock(PurchaseItemService.class));
+        com.ncpl.sales.service.DeliveryChallanService challans = mock(com.ncpl.sales.service.DeliveryChallanService.class);
+        when(challans.getDeliveryChallanPage(any(), any(), org.mockito.ArgumentMatchers.anyBoolean()))
+                .thenReturn(org.springframework.data.domain.Page.empty());
+        ReflectionTestUtils.setField(controller, "deliveryChallanService", challans);
+
+        loginWith("DELIVERY_CHALLAN_VIEW");
+        assertDenied(() -> controller.getDeliveryChallanList(0, 10, "", "dcId", "asc", true, "", "", "", "", "", "", ""));
+        assertEquals(0, controller.getDeliveryChallanList(0, 10, "", "dcId", "asc", false, "", "", "", "", "", "", "").getTotalElements());
+        loginWith("ARCHIVE_DELIVERY_CHALLAN");
+        assertDenied(() -> controller.getDeliveryChallanList(0, 10, "", "dcId", "asc", false, "", "", "", "", "", "", ""));
+        assertEquals(0, controller.getDeliveryChallanList(0, 10, "", "dcId", "asc", true, "", "", "", "", "", "", "").getTotalElements());
     }
 
     private void assertDenied(SecuredAction action) throws Exception {

@@ -1,14 +1,18 @@
 package com.ncpl.sales.config;
 
 import java.util.EnumSet;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.ncpl.sales.model.ArchiveItem;
 import com.ncpl.sales.model.Module;
 import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.RolePermission;
@@ -21,10 +25,12 @@ import com.ncpl.sales.security.UserRepo;
  * First-run seed for the Role & Permission module: one `role` row per distinct
  * users.role value already in use, and a `role_permission` grid that mirrors
  * exactly which modules each role can reach today (read off leftMenuBar.jsp's
- * existing hasAnyAuthority(...) gates). Runs once — no-ops if roles already exist.
+ * existing hasAnyAuthority(...) gates). Existing roles receive missing permission upgrades.
  */
 @Component
 public class RolePermissionSeeder implements CommandLineRunner {
+	private static final String ALL_ARCHIVE_ITEMS = Arrays.stream(ArchiveItem.values())
+			.map(ArchiveItem::name).collect(Collectors.joining(","));
 
 	@Autowired
 	private UserRepo userRepo;
@@ -70,8 +76,10 @@ public class RolePermissionSeeder implements CommandLineRunner {
 	}
 
 	@Override
+	@Transactional
 	public void run(String... args) {
 		if (roleRepo.count() > 0) {
+			backfillArchiveAndChartPermissions();
 			return;
 		}
 
@@ -86,21 +94,48 @@ public class RolePermissionSeeder implements CommandLineRunner {
 		roleNames.addAll(TODAYS_ACCESS.keySet());
 
 		for (String roleName : roleNames) {
+			Set<Module> accessible = TODAYS_ACCESS.getOrDefault(roleName, EnumSet.noneOf(Module.class));
 			Role role = new Role();
 			role.setName(roleName);
 			role.setDashboardTiles(TODAYS_DASHBOARD_TILES.get(roleName));
+			role.setArchiveItems(accessible.contains(Module.ARCHIVES) ? ALL_ARCHIVE_ITEMS : "");
 			role = roleRepo.save(role);
 
-			Set<Module> accessible = TODAYS_ACCESS.getOrDefault(roleName, EnumSet.noneOf(Module.class));
 			for (Module module : Module.menuModules()) {
 				RolePermission p = new RolePermission();
 				p.setRole(role);
 				p.setModule(module.name());
-				boolean view = accessible.contains(module);
+				boolean view = accessible.contains(module)
+						|| (module == Module.CHARTS && accessible.contains(Module.SALES_ORDER));
 				p.setCanView(view);
 				p.setCanEdit(view && module.editable());
 				p.setCanDelete(view && module.deletable());
 				rolePermissionRepo.save(p);
+			}
+		}
+	}
+
+	private void backfillArchiveAndChartPermissions() {
+		for (Role role : roleRepo.findAll()) {
+			boolean archivesView = false;
+			boolean salesView = false;
+			boolean chartsConfigured = false;
+			for (RolePermission permission : rolePermissionRepo.findByRole_RoleId(role.getRoleId())) {
+				if (Module.ARCHIVES.name().equals(permission.getModule())) archivesView = permission.isCanView();
+				if (Module.SALES_ORDER.name().equals(permission.getModule())) salesView = permission.isCanView();
+				if (Module.CHARTS.name().equals(permission.getModule())) chartsConfigured = true;
+			}
+			// NULL means pre-upgrade; an empty string is an explicit choice to allow none.
+			if (role.getArchiveItems() == null) {
+				role.setArchiveItems(archivesView ? ALL_ARCHIVE_ITEMS : "");
+				roleRepo.save(role);
+			}
+			if (!chartsConfigured) {
+				RolePermission charts = new RolePermission();
+				charts.setRole(role);
+				charts.setModule(Module.CHARTS.name());
+				charts.setCanView(salesView);
+				rolePermissionRepo.save(charts);
 			}
 		}
 	}

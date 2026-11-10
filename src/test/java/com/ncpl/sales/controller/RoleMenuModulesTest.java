@@ -68,6 +68,26 @@ public class RoleMenuModulesTest {
 	}
 
 	@Test
+	public void salesOrderLinkUsesSalesPermissionIndependentlyOfCharts() throws Exception {
+		String sidebar = new String(Files.readAllBytes(Paths.get(
+				"src/main/webapp/WEB-INF/tiles/leftMenuBar.jsp")), StandardCharsets.UTF_8);
+		java.util.regex.Matcher gate = java.util.regex.Pattern.compile(
+				"<security:authorize\\s+access=\"([^\"]+)\"[^>]*>\\s*<li[^>]*>\\s*<a href=\"[^\"]*/salesList\"",
+				java.util.regex.Pattern.DOTALL).matcher(sidebar);
+		assertTrue("Sales Order link not found", gate.find());
+		for (String authority : Arrays.asList("SALES_ORDER_VIEW", "CHARTS_VIEW")) {
+			org.springframework.security.access.expression.SecurityExpressionRoot root =
+					new org.springframework.security.access.expression.SecurityExpressionRoot(
+							new UsernamePasswordAuthenticationToken("user", "unused",
+									Collections.singletonList(new SimpleGrantedAuthority(authority)))) { };
+			Boolean visible = new org.springframework.expression.spel.standard.SpelExpressionParser()
+					.parseExpression(gate.group(1)).getValue(
+							new org.springframework.expression.spel.support.StandardEvaluationContext(root), Boolean.class);
+			assertEquals(authority, "SALES_ORDER_VIEW".equals(authority), visible);
+		}
+	}
+
+	@Test
 	public void roleSummaryCountsOnlySidebarModules() throws Exception {
 		RoleController controller = new RoleController();
 		RoleRepo roles = mock(RoleRepo.class);

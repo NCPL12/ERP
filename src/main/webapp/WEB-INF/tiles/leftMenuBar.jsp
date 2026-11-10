@@ -182,7 +182,7 @@
 
                       <ul class="nav nav-treeview">
                         <security:authorize
-                          access="hasAuthority('CHARTS_VIEW')">
+                          access="hasAuthority('SALES_ORDER_VIEW')">
                           <li class="nav-item">
                             <a href="${pageContext.request.contextPath}/salesList"
                               class="nav-link ${uri == '/salesList' ? 'active' : ''}">

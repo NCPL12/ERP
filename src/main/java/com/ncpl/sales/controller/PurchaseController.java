@@ -1143,6 +1143,7 @@ public class PurchaseController {
 	 // ✅ Lazy load API for delivery challans
      @GetMapping("/dcList/data")
      @ResponseBody
+     @PreAuthorize("#archive ? hasAuthority('ARCHIVE_DELIVERY_CHALLAN') : hasAuthority('DELIVERY_CHALLAN_VIEW')")
      public Page<DeliveryChallan> getDeliveryChallanList(
              @RequestParam(defaultValue = "0") int page,
              @RequestParam(defaultValue = "10") int size,

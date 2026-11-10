@@ -36,7 +36,11 @@ public class LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler i
 		LANDING_PAGES.put("GRN_VIEW", "/grnLists");
 		LANDING_PAGES.put("NON_BILLABLE_VIEW", "/nonBillableList");
 		LANDING_PAGES.put("REPORTS_VIEW", "/sales_report");
-		LANDING_PAGES.put("ARCHIVES_VIEW", "/salesList_archived");
+		LANDING_PAGES.put("CHARTS_VIEW", "/soChart");
+		LANDING_PAGES.put("ARCHIVE_SALES_ORDER", "/salesList_archived");
+		LANDING_PAGES.put("ARCHIVE_PURCHASE_ORDER", "/purchase_archived");
+		LANDING_PAGES.put("ARCHIVE_DELIVERY_CHALLAN", "/dc_archived");
+		LANDING_PAGES.put("ARCHIVE_GRN", "/grn_archived");
 		LANDING_PAGES.put("USER_MANAGEMENT_VIEW", "/user-management");
 	}
 

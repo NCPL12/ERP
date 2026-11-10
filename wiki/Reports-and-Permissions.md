@@ -40,4 +40,8 @@ The report JSP also contains legacy role-name checks on some cards. If a selecte
 
 ## Other access rules
 
+Charts use `CHARTS_VIEW` for `/soChart` and `/api/so_monthly_chart`, independently of Sales Order access. Each archived page requires its matching `ARCHIVE_SALES_ORDER`, `ARCHIVE_PURCHASE_ORDER`, `ARCHIVE_DELIVERY_CHALLAN`, or `ARCHIVE_GRN` authority. The shared `/dcList/data` endpoint requires the DC archive permission when `archive=true`, and `DELIVERY_CHALLAN_VIEW` otherwise.
+
+On startup, the role seeder upgrades existing permissions in a transaction. It creates missing Charts rows using the role's previous Sales Order view access, and initializes unconfigured (`NULL`) archive selections from the role's Archives view access. Existing Charts rows and explicit archive selections, including an empty selection, are preserved. Repeated startups do not restore permissions that have been explicitly disabled. New roles start with no archive selections; new installations receive defaults consistent with the previous module access.
+
 Role Management controls module-level view, edit, and delete flags. A permission can allow a list while denying its edit page: for example, `/grnLists` requires `GRN_VIEW`, while `/new_grn` and `/grn/{grnId}` require `GRN_EDIT`. `/purchase` requires `PURCHASE_VIEW`, and `/purchaseOrder` requires `PURCHASE_EDIT`. Disabled accounts are rejected even if their session was already active.

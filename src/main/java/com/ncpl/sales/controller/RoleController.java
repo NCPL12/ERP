@@ -171,6 +171,7 @@ public class RoleController {
 
 		Role role = new Role();
 		role.setName(trimmed);
+		role.setArchiveItems("");
 		role = roleRepo.save(role);
 
 		List<RolePermission> blankGrid = new ArrayList<>();
