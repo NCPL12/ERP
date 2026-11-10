@@ -375,6 +375,8 @@ public class ItemMasterService {
 			return item;
 		}else {
 			Optional<ItemMaster> persistedItem = getItemById(itemMaster.getId());
+			// GST is fixed at creation for every role, including direct form submissions.
+			itemMaster.setGst(persistedItem.get().getGst());
 			Date createdDate = persistedItem.get().getCreated();
 			itemMaster.setCreated(createdDate);
 			itemMaster.setCreatedBy(persistedItem.get().getCreatedBy());

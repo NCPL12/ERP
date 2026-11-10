@@ -22,7 +22,7 @@ var itemList=${itemList};
 var pageContext = '${pageContext.request.contextPath}';
 var canEditPurchase = ${canEditPurchase};
 </script> 
-<script src="<c:url value="/resources/js/po-dashboard.js" />"></script>
+<script src="<c:url value="/resources/js/po-dashboard.js?v=20261106-po-gst" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 <style type="text/css">
 .lbl-biiling-popup{

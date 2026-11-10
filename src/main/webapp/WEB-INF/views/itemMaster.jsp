@@ -25,7 +25,7 @@
 	<link rel="stylesheet"
 	href="<c:url value="/resources/css/item-master.css" />">
 <!--  <script src="<c:url value="/resources/js/salesOrder.js" />"></script> -->
-<script src="<c:url value="/resources/js/itemMaster.js" />"></script>
+<script src="<c:url value="/resources/js/itemMaster.js?v=20261106-lock-gst" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 
 

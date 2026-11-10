@@ -132,6 +132,7 @@
 				"aaSorting": [[ 4, "desc" ]],
 			orderCellsTop: true,
 			fixedHeader: true,
+			deferRender: true,
 
 			"aaData": dataObj,
 
@@ -661,20 +662,16 @@
 							"mData" : "hsnCode",
 
 						},{
-							"defaultContent":"18%",
+							"mData":"gstRate",
+							"defaultContent":"Unknown",
+							render: function (rate) {
+								return rate == null ? 'Unknown (historical rate not recorded)' : rate + '%';
+							},
 						},{
 							"mData" : "quantity",
 						},{
-							"mData" : "modelNo",
-							render: function (mData, type, row, meta) {
-								var unitName = null;
-								$.each(itemList, function (index, value) {
-									if (mData.trim() == value.model.trim()) {
-										unitName = value.item_units.name;
-									}
-								});
-								return unitName;
-							}
+							"mData" : "poUnitName",
+							"defaultContent" : "",
 						},
 					{
 							"mData" : "unitPrice",

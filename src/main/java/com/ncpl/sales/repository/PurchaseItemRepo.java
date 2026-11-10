@@ -12,6 +12,15 @@ import com.ncpl.sales.model.PurchaseItem;
 
 @Repository
 public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
+	// Scalar GRN response: do not load the parent PO/history or supplier graphs.
+	@Query("select new map(pi.purchase_item_id as purchase_item_id, pi.quantity as quantity, " +
+			"pi.amount as amount, pi.unitPrice as unitPrice, pi.poDescription as poDescription, " +
+			"pi.delivaryDate as delivaryDate, pi.lrNum as lrNum, pi.description as description, pi.hsnCode as hsnCode, " +
+			"case when im.id is null then pi.modelNo else im.model end as modelNo, u.name as unitName) " +
+			"from PurchaseItem pi left join ItemMaster im on im.id = pi.modelNo " +
+			"left join SalesItem si on si.id = pi.description left join si.item_units u " +
+			"where pi.purchaseOrder.poNumber = :poNumber order by pi.purchase_item_id")
+	List<java.util.Map<String, Object>> findGrnPurchaseItemRows(@Param("poNumber") String poNumber);
 
 	// Direct DELETE statement, bypassing the entity's managed remove() lifecycle -
 	// deleteById() loads the entity (eagerly pulling in its @Version-checked parent
@@ -59,7 +68,7 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 
 	@Query(value = "SELECT po.po_number, " +
 			"COALESCE(SUM(pi.amount), 0) AS total, " +
-			"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gstTotal " +
+			"COALESCE(SUM(pi.amount * COALESCE(pi.gst_rate, im.gst) / 100.0), 0) AS gstTotal " +
 			"FROM tbl_purchase_order po " +
 			"LEFT JOIN tbl_purchase_items pi ON pi.po_number = po.po_number " +
 			"LEFT JOIN tbl_item_master im ON im.id = pi.model_no " +
@@ -70,7 +79,7 @@ public interface PurchaseItemRepo extends JpaRepository<PurchaseItem,Integer>{
 
 	@Query(value = "SELECT po.po_number, " +
 			"COALESCE(SUM(pi.amount), 0) AS total, " +
-			"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gstTotal " +
+			"COALESCE(SUM(pi.amount * COALESCE(pi.gst_rate, im.gst) / 100.0), 0) AS gstTotal " +
 			"FROM tbl_purchase_order po " +
 			"LEFT JOIN tbl_purchase_items pi ON pi.po_number = po.po_number " +
 			"LEFT JOIN tbl_item_master im ON im.id = pi.model_no " +

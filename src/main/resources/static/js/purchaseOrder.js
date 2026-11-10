@@ -1008,7 +1008,7 @@ function addSalesOrder() {
 		columns += '<td width="6%"><input type="text" class="form-control PositionofTextbox unit" readonly="readonly" id="unit' + arraycount + '" /><span id="unitDiv' + arraycount + '"></span></td>';
 		columns += '<td width="8%"><input type="text" class="form-control PositionofTextbox unitPrice upInput alignright" id="newPrice' + arraycount + '" name="items[' + arraycount + '].unitPrice"/><span id="unitPriceDiv' + arraycount + '"></span></td>';
 		columns += '<td class="hideTd"><input type="hidden" class="salesUnitPrice" value="" id="salesUnitPrice' + arraycount + '" /></td>';
-		columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  id="tax' + arraycount + '"  readonly="readonly"/></td>';
+		columns += '<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  name="items[' + arraycount + '].gstRate" id="tax' + arraycount + '"  readonly="readonly"/></td>';
 		columns += '<td width="10%"><input type="text" class="form-control PositionofTextbox amount amtInput alignright"  id="amount' + arraycount + '" name="items[' + arraycount + '].amount" readonly="readonly"/><span id="amountDiv' + arraycount + '"></span></td>';
 
 		columns += '<td align="center"><i class="deleteButton fa fa-trash" aria-hidden="true"></i></td>';
@@ -1412,13 +1412,14 @@ function editPoTable() {
 				"mData": "modelNo",
 				"width":"5%",
 				render: function (mData, type, row, meta) {
-					var tax = null;
+					var tax = row.gstRate;
+					var legacyNote = tax == null ? "Historical GST not recorded; displaying current Item Master rate" : "Saved PO GST rate";
 					$.each(itemList, function (index, value) {
-						if (mData == value.id) {
+						if (tax == null && mData == value.id) {
 							tax = value.gst;
 						}
 					});
-					return '<input type="text" class="form-control PositionofTextbox tax alignright"  value="' + tax + '" id="tax' + meta.row + '"  readonly="readonly" style="width:100%;"/>';
+					return '<input type="text" class="form-control PositionofTextbox tax alignright"  value="' + tax + '" title="' + legacyNote + '" name="items[' + meta.row + '].gstRate" id="tax' + meta.row + '"  readonly="readonly" style="width:100%;"/>';
 				}
 			},
 			{
@@ -1592,7 +1593,7 @@ $(document).ready(function () {
 		columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox unit" id="unit' + arraycount + '"readonly="readonly"/></td>';
 		columns += '<td width="6%"><input type="text" class="form-control PositionofTextbox unitPrice upInput" style= "text-align: right;" id="newUPrice' + arraycount + '" name="items[' + arraycount + '].unitPrice"/></td>';
 		columns += '<td class="hideTd"><input type="hidden" class="form-control PositionofTextbox" id="salesUprice' + arraycount + '"/></td>';
-		columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox tax" style= "text-align: right;" id="tax' + arraycount + '" readonly="readonly"/></td>';
+		columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox tax" style= "text-align: right;" name="items[' + arraycount + '].gstRate" id="tax' + arraycount + '" readonly="readonly"/></td>';
 		columns += '<td width="8%"><input type="text" class="form-control PositionofTextbox delivaryDate" style= "text-align: right;" id="delivaryDate' + arraycount + '" name="items[' + arraycount + '].delivaryDate" autoComplete="off"/></td>';
 		columns += '<td width="6%"><input type="text" class="form-control PositionofTextbox lrNum" style= "text-align: right;" id="lrNum' + arraycount + '" name="items[' + arraycount + '].lrNum"/></td>';
 		columns += '<td width="6%"><input type="text" class="form-control PositionofTextbox amount amtInput" style= "text-align: right;" id="amount' + arraycount + '" name="items[' + arraycount + '].amount" readonly="readonly"/></td>';
@@ -1756,6 +1757,7 @@ function settingNameAndIdAdd(){
 		$(salesUnitPriceTdElement).find('input').attr('id', 'salesUnitPrice' + index);
 		var taxTdElement = $(this).find('td').eq(11);
 		$(taxTdElement).find('input').attr('id', 'tax' + index);
+		$(taxTdElement).find('input').attr('name', 'items[' + index + '].gstRate');
 		var amountTdElement = $(this).find('td').eq(12);
 		$(amountTdElement).find('input').attr('name', 'items[' + index + '].amount');
 		$(amountTdElement).find('input').attr('id', 'amount' + index);
@@ -1803,6 +1805,7 @@ function settingNameAndId(){
 		$(hiddenUnitPriceElement).find('input').attr('id', 'salesUPrice' + index);
 		let ninthTdElement = $(this).find('td')[12];
 		$(ninthTdElement).find('input').attr('id', 'tax' + index);
+		$(ninthTdElement).find('input').attr('name', 'items[' + index + '].gstRate');
 		let tenthTdElement = $(this).find('td')[13];
 		$(tenthTdElement).find('input').attr('name', 'items[' + index + '].amount');
 		$(tenthTdElement).find('input').attr('id', 'amount' + index);
@@ -2062,7 +2065,7 @@ function getAutoPopulateSalesOrdertbySalesOrderId(soId,row,soText){
 	    			'<td width="6%"><input type="text" class="form-control PositionofTextbox unit" readonly="readonly" id="unit' + arraycount + '"  value="'+unitName+'"/><span id="unitDiv' + arraycount + '"></span></td>'+
 	    			'<td width="8%"><input type="text" class="form-control PositionofTextbox unitPrice upInput alignright" id="newPrice' + arraycount + '" name="items[' + arraycount + '].unitPrice"/><span id="unitPriceDiv' + arraycount + '"></span></td>'+
 	    			'<td class="hideTd"><input type="hidden" class="salesUnitPrice" value="" id="salesUnitPrice' + arraycount + '" /></td>'+
-	    			'<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  id="tax' + arraycount + '"  readonly="readonly"  value="'+tax+'"/></td>'+
+	    			'<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  name="items[' + arraycount + '].gstRate" id="tax' + arraycount + '"  readonly="readonly"  value="'+tax+'"/></td>'+
 	    			'<td width="10%"><input type="text" class="form-control PositionofTextbox amount amtInput alignright"  id="amount' + arraycount + '" name="items[' + arraycount + '].amount" readonly="readonly"/><span id="amountDiv' + arraycount + '"></span></td>'+
 	    			'<td align="center"><i class="deleteButton fa fa-trash" aria-hidden="true"></i></td>'+
 	    			'<td class="hideTd"><input type="hidden" class="totalQty" id="totalQty' + arraycount + '" value="'+qty+'"/></td></tr>';
@@ -2096,7 +2099,7 @@ function getAutoPopulateSalesOrdertbySalesOrderId(soId,row,soText){
 			    			'<td width="6%"><input type="text" class="form-control PositionofTextbox unit" readonly="readonly" id="unit' + arraycount + '"  value="'+unitName+'"/><span id="unitDiv' + arraycount + '"></span></td>'+
 			    			'<td width="8%"><input type="text" class="form-control PositionofTextbox unitPrice upInput alignright" id="newPrice' + arraycount + '" name="items[' + arraycount + '].unitPrice"/><span id="unitPriceDiv' + arraycount + '"></span></td>'+
 			    			'<td class="hideTd"><input type="hidden" class="salesUnitPrice" value="" id="salesUnitPrice' + arraycount + '" /></td>'+
-			    			'<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  id="tax' + arraycount + '"  readonly="readonly"  value="'+tax+'"/></td>'+
+			    			'<td width="7%"><input type="text" class="form-control PositionofTextbox tax alignright"  name="items[' + arraycount + '].gstRate" id="tax' + arraycount + '"  readonly="readonly"  value="'+tax+'"/></td>'+
 			    			'<td width="10%"><input type="text" class="form-control PositionofTextbox amount amtInput alignright"  id="amount' + arraycount + '" name="items[' + arraycount + '].amount" readonly="readonly"/><span id="amountDiv' + arraycount + '"></span></td>'+
 			    			'<td align="center"><i class="deleteButton fa fa-trash" aria-hidden="true"></i></td>'+
 			    			'<td class="hideTd"><input type="hidden" class="totalQty" id="totalQty' + arraycount + '" value="'+qty+'"/></td></tr>';

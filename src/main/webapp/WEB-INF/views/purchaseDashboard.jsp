@@ -17,7 +17,6 @@
 <tiles:insertAttribute name="header-resources" />
  <script>
 var dataObj=${poList};
-var itemList=${itemList};
 var role = ${role};
 var user=${user};
 var pageContext = '${pageContext.request.contextPath}';
@@ -27,7 +26,7 @@ if (errorMessage && errorMessage != '') {
 	alert("Error: " + errorMessage);
 }
 </script>
-<script src="<c:url value="/resources/js/po-dashboard.js" />"></script>
+<script src="<c:url value="/resources/js/po-dashboard.js?v=20261106-po-gst" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 <style type="text/css">
 .lbl-biiling-popup{

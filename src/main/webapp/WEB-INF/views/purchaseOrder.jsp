@@ -26,7 +26,7 @@ var unitsList=${unitsList};
 var purchaseOrderObj =null;
 var role=${role};
 </script>
-<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261014-po-lookup" />"></script>
+<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261106-po-gst" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 
@@ -74,7 +74,7 @@ var role=${role};
     </div> -->
     
 			<div id="purchaseDiv" class="card">
-			<div class="card-body table-responsive p-0">
+			<div class="card-body table-responsive p-0 po-items-scroll" role="region" aria-label="Purchase order items" tabindex="0">
 				<table id="poTable" class="table table-head-fixed" style="width: 100%;">
 				
 					<thead id="table-header" style="text-align:center">
@@ -143,7 +143,7 @@ var role=${role};
 								<td class="hideTd">
 								<input type="hidden" class="salesUnitPrice" value="" id="salesUnitPrice0" />
 								</td>
-								<td width="7%"><input type="text" id="tax0" 
+								<td width="7%"><input type="text" id="tax0" name="items[0].gstRate"
 									class="form-control PositionofTextbox tax " readonly="readonly" style= "text-align: right;" value="" /></td>
 								<td width="10%"><input type="text" id="amount0" name="items[0].amount" 
 									class="form-control PositionofTextbox amount amtInput " style= "text-align: right;" value="" /><span id="amountDiv0"></span></td>

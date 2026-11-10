@@ -47,6 +47,7 @@ import com.ncpl.sales.model.AppConfig;
 import com.ncpl.sales.model.PurchaseOrder;
 import com.ncpl.sales.repository.AppConfigRepo;
 import com.ncpl.sales.security.User;
+import com.ncpl.sales.util.NcplUtil;
 
 public class PurchasePdf  extends PdfPageEventHelper {
 	public static final String RUPEE = "\u20B9";
@@ -167,32 +168,9 @@ public class PurchasePdf  extends PdfPageEventHelper {
 			String[] singleAddressArr = billingAddressesArray[i].split("\\$\\$");
 			String key = singleAddressArr[0].replace("\n", "").trim();
 			if (key.equalsIgnoreCase(billingAddressKey)) {
-				billingAddress = billingAddressesArray[i].replaceAll("\\$\\$", ",").replace(key + ",", "").trim();
+				billingAddress = NcplUtil.formatCompanyAddress(singleAddressArr);
 			}
 		}
-		// billingAddress =billingAddress.replace(",Karnataka", "");
-		// billingAddress =billingAddress.replace(",India", "");
-		if (billingAddress.contains("Mangalore")) {
-			billingAddress = billingAddress.replace(",Karnataka", "");
-			billingAddress = billingAddress.replace(",India", "");
-			billingAddress = billingAddress.replace("Sri Ganesh Kripa,", "Sri Ganesh Kripa,");
-			billingAddress = billingAddress.replace("Venkatesh Sadana", "Venkatesh Sadana,");
-			billingAddress = billingAddress.replace(",575015", "");
-			billingAddress=  billingAddress.replace(",Near Ganapathi Temple", "Near Ganapathi Temple,");
-			billingAddress=  billingAddress.replace(",Perlaguri", "");
-			billingAddress=  billingAddress.replace(",Kavoor Post", "Perlaguri Kavoor Post");
-			billingAddress = billingAddress.replace("Mangalore", "Mangalore 575015");
-		} else {
-			billingAddress = billingAddress.replace("No 8/2(Old No 114),2nd Cross 7th Main Road,Nandi",
-					"No 8/2(Old No 114).2nd Cross 7th Main Road.Nandi,");
-			billingAddress = billingAddress.replace("durga Extension,Bengaluru,",
-					"Durga Extension. Bengaluru.,");
-			billingAddress = billingAddress.replace("Karnataka,India,560046", "Karnataka 560046");
-			// billingAddress = billingAddress.replace("Bangalore", "Bangalore 560046");
-		}
-		billingAddress = billingAddress.replace(",", "\n");
-		billingAddress = billingAddress.replace(".", ",");
-		
 		Party altshippingParty = (Party) request.getAttribute("altshippingParty");
 
 		if(altshippingParty!= null) {
@@ -225,36 +203,10 @@ public class PurchasePdf  extends PdfPageEventHelper {
 				String[] singleShippingAddressArr = shippingAddressesArray[i].split("\\$\\$");
 				String key = singleShippingAddressArr[0].replace("\n", "").trim();
 				if (key.equalsIgnoreCase(shippingAddressKey)) {
-					shippingAddress = shippingAddressesArray[i].replaceAll("\\$\\$", ",").replace(key + ",", "").trim();
+					shippingAddress = NcplUtil.formatCompanyAddress(singleShippingAddressArr);
 				}
 			}
-			/*
-			 * shippingAddress =shippingAddress.replace(",Karnataka", ""); shippingAddress
-			 * =shippingAddress.replace(",India", "");
-			 */
-			if (shippingAddress.contains("Mangalore")) {
-				shippingAddress = shippingAddress.replace(",Karnataka", "");
-				shippingAddress = shippingAddress.replace(",India", "");
-				shippingAddress = shippingAddress.replace("Sri Ganesh Kripa,", "Sri Ganesh Kripa,");
-				shippingAddress = shippingAddress.replace("Venkatesh Sadana", "Venkatesh Sadana,");
-				shippingAddress = shippingAddress.replace(",575015", "");
-				shippingAddress=  shippingAddress.replace(",Near Ganapathi Temple", "Near Ganapathi Temple,");
-				shippingAddress=  shippingAddress.replace(",Perlaguri", "");
-				shippingAddress=  shippingAddress.replace(",Kavoor Post", "Perlaguri Kavoor Post");
-				shippingAddress = shippingAddress.replace("Mangalore", "Mangalore 575015");
-			} else {
-				shippingAddress = shippingAddress.replace("No 8/2(Old No 114),2nd Cross 7th Main Road, Nandi",
-						"No 8/2(Old No 114).2nd Cross 7th Main Road.Nandi,");
-				shippingAddress = shippingAddress.replace("durga Extension,Bengaluru,",
-						"Durga Extension. Bengaluru.,");
-				shippingAddress = shippingAddress.replace("Karnataka,India,560046", "Karnataka 560046");
-				// shippingAddress = shippingAddress.replace("Jayamahal extension,Bangalore,",
-				// "Durga Road Extension. Bengaluru., ");
-				// shippingAddress =shippingAddress.replace("Karnataka,India,560046", "Karnataka
-				// 560046");
-			}
-			shippingAddress = shippingAddress.replace(",", "\n");
-			shippingAddress = shippingAddress.replace(".", ",");
+
 		}
 		companyName = messageSource.getMessage("company.name", null, null);
 		qtn = messageSource.getMessage("qtn", null, null);
@@ -286,48 +238,8 @@ public class PurchasePdf  extends PdfPageEventHelper {
 		// SalesOrder salesOrderObject = poObject.get().getSalesOrder();
 		List<PurchaseItem> items = poObject.getItems();
 		 System.out.println("Items List"+items.size());
-		Map<String,PurchaseItem> poItemMap = new HashMap<String,PurchaseItem>();
-		List<PurchaseItem> newItems = new ArrayList();
-		
-		/*
-		 *  This below code is to add the quantities if po item is having the same
-		 * models added..
-		 */
-		
-		for (PurchaseItem purchaseItem : items) {
-		
-			String modelValue = (String) modelList.get(purchaseItem.getModelNo());
-			int arrOfStr = modelValue.indexOf("$");
-			String gst = modelValue.substring(arrOfStr + 1, modelValue.length());
-			int len = modelValue.length();
-			int len1 = modelValue.length() - 1;
-			int len2 = modelValue.length() - 2;
-			String[] m = modelValue.split("$");
-			modelValue = modelValue.substring(0, modelValue.length() - 3);
-			System.out.println("model No"+modelValue);
-			String modelKey = " "+modelValue;
-			System.out.println("boolean1"+poItemMap.containsKey(modelKey));
-             
-		    
-	
-			if(poItemMap.containsKey(modelKey)) {
-				PurchaseItem prevValueWithUpdates =poItemMap.get(modelKey);
-				float prevQty  = prevValueWithUpdates.getQuantity();
-				float newQty = prevQty + purchaseItem.getQuantity();
-				float newAmount = newQty * purchaseItem.getUnitPrice();
-				newAmount = (float) (Math.round(newAmount * 100.0) / 100.0);
-				prevValueWithUpdates.setQuantity(newQty);
-				prevValueWithUpdates.setAmount(newAmount);
-				poItemMap.put(modelKey, prevValueWithUpdates);
-			}else {
-				poItemMap.put(modelKey, purchaseItem);
-			}
-			
-		}
-		
-	
-		
-		poItemMap.forEach((key, value) -> newItems.add(value));
+		// Preserve individual PO lines, which can carry different saved GST rates.
+		List<PurchaseItem> newItems = new ArrayList<>(items);
 		Collections.sort(newItems, Comparator.comparingInt(obj -> obj.getPurchase_item_id()));
         System.out.println("newItems List"+newItems.size());
 		
@@ -482,15 +394,16 @@ public class PurchasePdf  extends PdfPageEventHelper {
 				String modelValue = (String) modelList.get(key);
 				int arrOfStr = modelValue.indexOf("$");
 				int unitEndIndex = modelValue.indexOf("&");
-				String gst = modelValue.substring(arrOfStr + 1, modelValue.length());
+				String gst = purchaseItem.getGstRate() == null
+					? modelValue.substring(arrOfStr + 1) : purchaseItem.getGstRate().stripTrailingZeros().toPlainString();
 				String unitName = modelValue.substring(0,unitEndIndex);
 				int len = modelValue.length();
 				int len1 = modelValue.length() - 1;
 				int len2 = modelValue.length() - 2;
-				modelValue = modelValue.substring(unitEndIndex+1, modelValue.length() - 3);
+				modelValue = modelValue.substring(unitEndIndex+1, arrOfStr);
 	
 				
-				if (Integer.parseInt(gst) > 0) {
+				if (Float.parseFloat(gst) > 0) {
 					double gstValue = Float.parseFloat(gst) / 2;
 					gstValue = gstValue / 100;
 					cGst = (cGst + (gstValue * purchaseItem.getAmount()));
@@ -784,14 +697,17 @@ public class PurchasePdf  extends PdfPageEventHelper {
 			double stateTax = 0;
 			double centralTax = 0;
 			Map<String, Float> taxMap = new HashMap<String, Float>();
+			Map<String, Float> taxableMap = new HashMap<String, Float>();
 			for (PurchaseItem purchaseItem : newItems) {
 
 				String key = purchaseItem.getModelNo();
 				String modelValue = (String) modelList.get(key);
 				int arrOfStr = modelValue.indexOf("$");
-				String gst = modelValue.substring(arrOfStr + 1, modelValue.length());
-				int igstRate = Integer.parseInt(gst);
+				String gst = purchaseItem.getGstRate() == null
+					? modelValue.substring(arrOfStr + 1) : purchaseItem.getGstRate().stripTrailingZeros().toPlainString();
+				float igstRate = Float.parseFloat(gst);
 				String gstKey = "GST" + "$" + igstRate;
+				taxableMap.put(gstKey, taxableMap.getOrDefault(gstKey, 0f) + purchaseItem.getAmount());
 
 				if (taxMap.containsKey(gstKey)) {
 					float gstValue = (float) taxMap.get(gstKey);
@@ -824,7 +740,7 @@ public class PurchasePdf  extends PdfPageEventHelper {
 				taxGstCell.addElement(taxGstPhrase);
 				table.addCell(taxGstCell);
 				
-				double taxableValue = (value * 100) / Integer.parseInt(gst);
+				double taxableValue = taxableMap.get(name);
 				taxableValue = Math.round(taxableValue * 100.0) / 100.0;
 				totalTaxableAmount = totalTaxableAmount + taxableValue;
 				totalTaxableAmount = Math.round(totalTaxableAmount * 100.0) / 100.0;
@@ -985,14 +901,17 @@ public class PurchasePdf  extends PdfPageEventHelper {
 			double igst5 = 0;
 			double igst5taxable = 0;
 			Map<String, Float> taxMap = new HashMap<String, Float>();
+			Map<String, Float> taxableMap = new HashMap<String, Float>();
 			for (PurchaseItem purchaseItem : newItems) {
 
 				String key = purchaseItem.getModelNo();
 				String modelValue = (String) modelList.get(key);
 				int arrOfStr = modelValue.indexOf("$");
-				String gst = modelValue.substring(arrOfStr + 1, modelValue.length());
-				int igstRate = Integer.parseInt(gst);
+				String gst = purchaseItem.getGstRate() == null
+					? modelValue.substring(arrOfStr + 1) : purchaseItem.getGstRate().stripTrailingZeros().toPlainString();
+				float igstRate = Float.parseFloat(gst);
 				String gstKey = "GST" + "$" + igstRate;
+				taxableMap.put(gstKey, taxableMap.getOrDefault(gstKey, 0f) + purchaseItem.getAmount());
 
 				if (igstRate > 0) {
 
@@ -1020,8 +939,8 @@ public class PurchasePdf  extends PdfPageEventHelper {
 				System.out.println("Key = " + name + ", Value = " + value);
 				int arrOfStr = name.indexOf("$");
 				String gst = name.substring(arrOfStr + 1, name.length());
-				if (Integer.parseInt(gst) > 0) {
-					double taxableValue = (value * 100) / Integer.parseInt(gst);
+				if (Float.parseFloat(gst) > 0) {
+					double taxableValue = taxableMap.get(name);
 					taxableValue = Math.round(taxableValue * 100.0) / 100.0;
 					totalTaxableAmount = totalTaxableAmount + taxableValue;
 					totalTaxableAmount =Math.round(totalTaxableAmount * 100.0) / 100.0;
@@ -1034,7 +953,7 @@ public class PurchasePdf  extends PdfPageEventHelper {
 					taxableValueCell.addElement(taxableValuePhrase);
 					table.addCell(taxableValueCell);
 					
-					float gstRateValue = (float) (Math.round(Integer.parseInt(gst) * 100.0) / 100.0);
+					float gstRateValue = (float) (Math.round(Float.parseFloat(gst) * 100.0) / 100.0);
 					
 					PdfPCell gstRateValueCell = new PdfPCell();
 					Phrase gstRateValuePhrase= new Phrase();

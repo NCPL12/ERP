@@ -120,7 +120,7 @@ class AssignedTallyIssuesTest {
         verifyZeroInteractions(tally);
     }
     static TallyPurchaseOrderService.PreparedOrder order() {
-        TallyPurchaseOrderService.PreparedItem item=new TallyPurchaseOrderService.PreparedItem("Cable","Mtr",new BigDecimal("1.234"),BigDecimal.TEN,new BigDecimal("12.34"),LocalDate.of(2026,10,1),"State Purchase@0%","",0);
+        TallyPurchaseOrderService.PreparedItem item=new TallyPurchaseOrderService.PreparedItem("Cable","Mtr",new BigDecimal("1.234"),BigDecimal.TEN,new BigDecimal("12.34"),LocalDate.of(2026,10,1),"State Purchase@0%","",BigDecimal.ZERO);
         return new TallyPurchaseOrderService.PreparedOrder("PO-1",LocalDate.of(2026,10,1),"Vendor",new BigDecimal("12.34"),Collections.singletonList(item),Collections.emptyMap());
     }
     static String savedVoucher() {

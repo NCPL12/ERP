@@ -95,10 +95,6 @@ obj = obj.replace(/\&/g, "\"");
   left:20px;
 }
 
-.CellWithComment:hover span.CellComment{
-  display:block;
-}
-
 .modal-header {
   cursor: move;
   background: #007bff;
@@ -155,10 +151,11 @@ obj = obj.replace(/\&/g, "\"");
 										<th width="5%" rowspan="2" class="thStyle">SAC</th>
 										<th width="8%" rowspan="2" class="thStyle">Qty</th>
 										<th width="7%" rowspan="2" class="thStyle">Unit</th>
-										<th width="10%" colspan="2" style="text-align: center;">Price</th>
+										<th colspan="2" class="sales-price-header" style="text-align: center;">Price</th>
 										<th width="11%" rowspan="2" class="thStyle">Amount</th>
-										<th align="center" rowspan="2"><i class="add fa fa-plus-square fa-2x"
+										<th align="center" rowspan="2" class="sales-actions-header"><i class="add fa fa-plus-square fa-2x"
 												aria-hidden="true"></i></th>
+										<th rowspan="2" id="designColumnHeader" style="display:none; width:76px;" aria-label="Design"></th>
 										<th align="center" rowspan="2" class="thStyle expandAllHeader" id="expandAllHeader" title="Expand All" width="3%" style="display:none;">
 										<input type="checkbox" id="masterToggleBrief" title="Check to expand all descriptions" style="cursor:pointer;">
 										</th>
@@ -166,8 +163,8 @@ obj = obj.replace(/\&/g, "\"");
 
 									<!--dividing a cloumn into two rows-->
 									<tr>
-										<th width="9%">Supply </th>
-										<th>Service</th>
+										<th class="sales-price-column">Supply</th>
+										<th class="sales-price-column">Service</th>
 									</tr>
 								</thead>
 								<tbody id="table-body">
@@ -189,7 +186,7 @@ obj = obj.replace(/\&/g, "\"");
 
 										<td width="5%">
 											<form:input type="text" id="modelNo0" name="items[0].modelNo"
-												path="items[0].modelNo" class="form-control PositionofTextbox" maxlength = "100"
+												path="items[0].modelNo" class="form-control PositionofTextbox"
 												value="" />
 											<form:errors path="items[0].modelNo" cssClass="error" />
 										</td>

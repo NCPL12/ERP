@@ -685,6 +685,7 @@ function loadItemTable() {
 		getStockList(itemId);
 		setCostPrice(itemId);
 		$('#itemModelNo').prop('readonly', true)
+		$('#gst').prop('readonly', true).attr('title', 'GST cannot be changed after item creation.');
 		$.each(rowData, function (key, value) {
 			if (rowData.item_units != null) {
 				$("#units").val(rowData.item_units.id);

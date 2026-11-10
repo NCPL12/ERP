@@ -20,6 +20,7 @@ import com.ncpl.sales.model.PurchaseItem;
 import com.ncpl.sales.model.PurchaseOrder;
 import com.ncpl.sales.model.SalesItem;
 import com.ncpl.sales.repository.DeliveryChallanItemsRepo;
+import com.ncpl.sales.repository.GrnItemRepo;
 import com.ncpl.sales.repository.PurchaseItemRepo;
 import com.ncpl.sales.repository.PurchaseRepo;
 
@@ -27,6 +28,8 @@ import com.ncpl.sales.repository.PurchaseRepo;
 public class PurchaseItemService {
 	@Autowired
 	PurchaseItemRepo purchaseItemRepo;
+	@Autowired
+	GrnItemRepo grnItemRepo;
 	@Autowired
 	ItemMasterService itemMasterService;
 	@Autowired
@@ -54,6 +57,35 @@ public class PurchaseItemService {
 //	@PersistenceContext
 //    private EntityManager em;
 
+	public List<Map<String, Object>> getGrnPurchaseItems(String poNumber) {
+		List<Map<String, Object>> rows = purchaseItemRepo.findGrnPurchaseItemRows(poNumber);
+		if (rows.isEmpty()) {
+			return Collections.emptyList();
+		}
+		List<String> ids = new ArrayList<>();
+		for (Map<String, Object> row : rows) {
+			ids.add(row.get("purchase_item_id").toString());
+		}
+		Map<String, Float> receivedByItem = new HashMap<>();
+		for (Object[] total : grnItemRepo.findReceivedQuantities(ids)) {
+			receivedByItem.put((String) total[0], ((Number) total[1]).floatValue());
+		}
+		List<Map<String, Object>> pending = new ArrayList<>();
+		for (Map<String, Object> row : rows) {
+			String id = row.get("purchase_item_id").toString();
+			float quantity = ((Number) row.get("quantity")).floatValue();
+			Float received = receivedByItem.get(id);
+			if ((received == null ? 0f : received) == quantity) {
+				continue;
+			}
+			// Keep the existing GRN contract: 0 with no receipts, otherwise
+			// receivedQty contains the remaining quantity, not the received total.
+			row.put("receivedQty", received == null ? 0f : quantity - received);
+			pending.add(row);
+		}
+		return pending;
+	}
+
 	@SuppressWarnings("unused")
 	public List<PurchaseItem> getPurchaseItem(String poNumber, String className) {
 
@@ -67,6 +99,10 @@ public class PurchaseItemService {
 			Optional<SalesItem> salesItemObj = salesService.getSalesItemById(salesItemId1, value1);
 			p.set("unitName", salesItemObj.get().getItem_units().getName());
 			if (itemMasterObject.isPresent()) {
+				if (!"grn".equalsIgnoreCase(className)) {
+					p.set("poUnitName", itemMasterObject.get().getItem_units() == null
+							? null : itemMasterObject.get().getItem_units().getName());
+				}
 				p.setModelNo(itemMasterObject.get().getModel());
 			}
 

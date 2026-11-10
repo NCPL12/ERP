@@ -22,6 +22,22 @@
 #purchaseDiv{
 	height: 400px;
 }
+
+.po-items-scroll {
+	max-height: 60vh;
+	overflow: auto;
+}
+
+@media print {
+	.po-items-scroll {
+		max-height: none;
+		overflow: visible;
+	}
+	#purchaseDiv {
+		height: auto;
+	}
+}
+
 #poTable>tbody>tr>td,  #poTable>thead>tr>th {
     padding: 3px 2px!important;
     vertical-align: middle;

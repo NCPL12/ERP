@@ -62,6 +62,30 @@ text-align: center;
 	width: 10%;
 }
 
+#salesTable > thead > tr:first-child > th:nth-child(2) {
+	width: 30%;
+}
+
+#salesTable > thead > tr:first-child > th:nth-child(6),
+#salesTable > thead > tr:first-child > th:nth-child(7) {
+	width: 6%;
+}
+
+#salesTable .sales-actions-header {
+	width: 32px;
+}
+
+#salesTable .sales-price-header {
+	width: 200px;
+}
+
+#salesTable .sales-price-column {
+	width: 100px;
+	padding: 6px !important;
+	white-space: nowrap;
+	text-align: center;
+}
+
 .sales-items-scroll {
 	/* Two header rows plus 17 standard item rows before internal scrolling. */
 	max-height: calc(80px + 17 * 40px + 2px);
@@ -151,6 +175,32 @@ text-align: center;
 	text-align: center;
 }
 
-.design-completed-star {
-	color: #d4a017;
+#salesTable .design {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
+	width: 54px;
+	white-space: nowrap;
+}
+
+#salesTable .toggleBriefTd,
+#salesTable #expandAllHeader {
+	text-align: center;
+	vertical-align: middle;
+}
+
+#salesTable .toggleBrief,
+#salesTable #masterToggleBrief {
+	margin: 0;
+	vertical-align: middle;
+}
+
+#salesTable .design.design-completed {
+	color: #007bff;
+}
+
+#salesTable .design.design-completed::after {
+	content: "\2713";
+	font-weight: bold;
 }

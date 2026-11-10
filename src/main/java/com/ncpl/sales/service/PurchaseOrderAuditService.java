@@ -198,6 +198,7 @@ public class PurchaseOrderAuditService {
 		m.put("modelNo", item.getModelNo());
 		m.put("quantity", item.getQuantity());
 		m.put("unitPrice", item.getUnitPrice());
+		m.put("gstRate", item.getGstRate());
 		m.put("amount", item.getAmount());
 		m.put("delivaryDate", item.getDelivaryDate());
 		m.put("lrNum", item.getLrNum());
