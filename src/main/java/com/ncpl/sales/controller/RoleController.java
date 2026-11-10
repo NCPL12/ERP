@@ -164,6 +164,7 @@ public class RoleController {
 
 		Role role = new Role();
 		role.setName(trimmed);
+		role.setReportItems("");
 		role = roleRepo.save(role);
 
 		List<RolePermission> blankGrid = new ArrayList<>();
@@ -233,6 +234,11 @@ public class RoleController {
 
 				if (wantsView && !(callerHas(moduleName + "_VIEW") || roleAlreadyHadView)) {
 					deniedPermissions.add(moduleName + "_VIEW");
+				}
+				if (wantsView && Module.REPORTS.name().equals(moduleName) && !roleAlreadyHadView) {
+					for (String report : ReportItem.visible(role.getReportItems())) {
+						if (!callerHas("REPORT_" + report)) deniedPermissions.add("REPORT_" + report);
+					}
 				}
 				if (wantsEdit && !(callerHas(moduleName + "_EDIT") || roleAlreadyHadEdit)) {
 					deniedPermissions.add(moduleName + "_EDIT");

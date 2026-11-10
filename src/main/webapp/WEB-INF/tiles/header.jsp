@@ -39,20 +39,28 @@
 								});
 
 								// 2) Every POST form gets the token. File-upload forms get it in the URL.
-								function protectForm(form) {
+								function protectForm(form, submitter) {
 									var $f = $(form);
-									var action = $f.attr("action") || window.location.href;
-									if (!/^post$/i.test($f.attr("method") || "") || !sameOrigin(action)) { return; }
-									if (/multipart\/form-data/i.test($f.attr("enctype") || "")) {
+									var $button = $(submitter);
+									var overridesAction = $button.attr("formaction") !== undefined;
+									var $actionTarget = overridesAction ? $button : $f;
+									var actionAttribute = overridesAction ? "formaction" : "action";
+									var action = $actionTarget.attr(actionAttribute) || window.location.href;
+									var method = $button.attr("formmethod") || $f.attr("method") || "";
+									if (!/^post$/i.test(method) || !sameOrigin(action)) { return; }
+									if (/multipart\/form-data/i.test($button.attr("formenctype") || $f.attr("enctype") || "")) {
 										if (action.indexOf(PARAM + "=") === -1) {
-											$f.attr("action", action + (action.indexOf("?") === -1 ? "?" : "&") + PARAM + "=" + encodeURIComponent(token));
+											$actionTarget.attr(actionAttribute, action + (action.indexOf("?") === -1 ? "?" : "&") + PARAM + "=" + encodeURIComponent(token));
 										}
 									} else if (!$f.find("input[name='" + PARAM + "']").length) {
 										$("<input>", { type: "hidden", name: PARAM, value: token }).appendTo($f);
 									}
 								}
 								$(function () { $("form").each(function () { protectForm(this); }); });
-								$(document).on("submit", "form", function () { protectForm(this); });
+								$(document).on("submit", "form", function (event) {
+									var submitter = (event.originalEvent && event.originalEvent.submitter) || document.activeElement;
+									protectForm(this, submitter && submitter.form === this ? submitter : null);
+								});
 
 								// 3) Logout must be a POST when CSRF is on, so turn the logout link into one.
 								$(document).on("click", "a[href$='/logout'], a[href$='/logout/']", function (e) {
