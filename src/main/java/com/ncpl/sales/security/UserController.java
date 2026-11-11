@@ -116,6 +116,9 @@ public class UserController {
         if (isAdminRole(role) && !callerIsAdmin()) {
             return forbidden("Only an admin can create an admin user");
         }
+        if (!userService.canManageRole(role)) {
+            return forbidden("Role must exist and cannot grant permissions you do not have");
+        }
 
         try {
             if (userService.userExists(user_name)) {
@@ -174,6 +177,9 @@ public class UserController {
             if (isAdminRole(existingUser.getRole()) || isAdminRole(role)) {
                 return forbidden("Only an admin can change an admin user or assign an admin role");
             }
+            if (!userService.canManageRole(existingUser.getRole())) {
+                return forbidden("You cannot change a user with permissions you do not have");
+            }
             // ...and can't change their own role.
             User me = userService.getCurrentUser();
             if (me != null && id.equals(me.getId())
@@ -182,6 +188,9 @@ public class UserController {
             }
         }
 
+        if (!userService.canManageRole(role)) {
+            return forbidden("Role must exist and cannot grant permissions you do not have");
+        }
         if (!existingUser.getUsername().equals(username) && userService.userExists(username)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Username '" + username + "' already exists. Please choose a different username.");
@@ -240,6 +249,9 @@ public class UserController {
         if (target != null && isAdminRole(target.getRole()) && !callerIsAdmin()) {
             return forbidden("Only an admin can change an admin user's password");
         }
+        if (target != null && !callerIsAdmin() && !userService.canManageRole(target.getRole())) {
+            return forbidden("You cannot reset a user with permissions you do not have");
+        }
         boolean updated = userService.changePassword(id, password);
         if (!updated) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with ID: " + id);
@@ -258,6 +270,9 @@ public class UserController {
             }
             if (isAdminRole(existingUser.getRole()) && !callerIsAdmin()) {
                 return forbidden("Only an admin can delete an admin user");
+            }
+            if (!callerIsAdmin() && !userService.canManageRole(existingUser.getRole())) {
+                return forbidden("You cannot delete a user with permissions you do not have");
             }
             User me = userService.getCurrentUser();
             if (me != null && id.equals(me.getId())) {

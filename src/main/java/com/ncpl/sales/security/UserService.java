@@ -38,12 +38,21 @@ public class UserService implements UserDetailsService{
 
 	/** Builds the login details and authorities for an already-loaded user (no extra user query). */
 	public UserDetails toUserDetails(User user) {
+		Set<GrantedAuthority> grantedAuthorities = permissionsForRole(user.getRole());
+		if (user.getRole() != null && !AccessUtil.isPermissionLikeName(user.getRole())) {
+			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));
+		}
+		return new org.springframework.security.core.userdetails.User(
+				user.getUsername(), user.getPassword(), user.isEnabled(), true, true, true, grantedAuthorities);
+	}
+
+	/** Use the same permission set for login and role assignment checks. */
+	private Set<GrantedAuthority> permissionsForRole(String roleName) {
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
-		if (user.getRole() != null) {
-			grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
+		if (roleName != null) {
 
 			boolean canViewReports = false;
-			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
+			for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(roleName)) {
 				if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
 				if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
 				if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
@@ -51,7 +60,7 @@ public class UserService implements UserDetailsService{
 			}
 
 			if (canViewReports) {
-				com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
+				com.ncpl.sales.model.Role roleObj = roleRepo.findByName(roleName);
 				if (roleObj != null) {
 					for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
 						grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
@@ -60,14 +69,29 @@ public class UserService implements UserDetailsService{
 			}
 		}
 
-		return new org.springframework.security.core.userdetails.User(
-				user.getUsername(),
-				user.getPassword(),
-				user.isEnabled(),   // enabled
-				true,                // accountNonExpired
-				true,                // credentialsNonExpired
-				true,                // accountNonLocked
-				grantedAuthorities);
+		return grantedAuthorities;
+	}
+
+	public boolean canManageRole(String roleName) {
+		if (roleName == null || AccessUtil.isPermissionLikeName(roleName)) {
+			return false;
+		}
+		com.ncpl.sales.model.Role role = roleRepo.findByName(roleName);
+		if (role == null || !roleName.equals(role.getName())) {
+			return false;
+		}
+		if (AccessUtil.callerIsAdmin()) {
+			return true;
+		}
+		if (AccessUtil.isAdminRole(roleName)) {
+			return false;
+		}
+		for (GrantedAuthority authority : permissionsForRole(roleName)) {
+			if (!AccessUtil.callerHas(authority.getAuthority())) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** One user by id, used by the User Management admin page. */

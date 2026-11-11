@@ -3,6 +3,8 @@ package com.ncpl.sales.security;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.ncpl.sales.model.Module;
+import com.ncpl.sales.model.ReportItem;
 
 /** Small helpers to ask "what can the logged-in user do?" inside controllers. */
 public final class AccessUtil {
@@ -12,6 +14,21 @@ public final class AccessUtil {
 
 	public static boolean isAdminRole(String role) {
 		return "ADMIN".equalsIgnoreCase(role) || "SUPER ADMIN".equalsIgnoreCase(role);
+	}
+
+	public static boolean isPermissionLikeName(String name) {
+		String n = name.trim().toUpperCase(java.util.Locale.ROOT);
+		for (Module m : Module.values()) {
+			if (n.equals(m.name() + "_VIEW") || n.equals(m.name() + "_EDIT") || n.equals(m.name() + "_DELETE")) {
+				return true;
+			}
+		}
+		for (ReportItem r : ReportItem.values()) {
+			if (n.equals("REPORT_" + r.name())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** True if the logged-in user holds this exact authority (a role name or a permission like INVOICE_EDIT). */

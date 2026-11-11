@@ -3,6 +3,7 @@ package com.ncpl.sales.controller;
 import static com.ncpl.sales.security.AccessUtil.callerHas;
 import static com.ncpl.sales.security.AccessUtil.callerIsAdmin;
 import static com.ncpl.sales.security.AccessUtil.isAdminRole;
+import static com.ncpl.sales.security.AccessUtil.isPermissionLikeName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,25 +55,6 @@ public class RoleController {
 
 	private static ResponseEntity<?> forbidden(String message) {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(message);
-	}
-
-	/**
-	 * A user's role name is also one of their authorities (see UserService), so a role named like a
-	 * permission ("PURCHASE_DELETE", "REPORT_...") would hand out that permission without the grid.
-	 */
-	private static boolean isPermissionLikeName(String name) {
-		String n = name.trim().toUpperCase();
-		for (Module m : Module.values()) {
-			if (n.equals(m.name() + "_VIEW") || n.equals(m.name() + "_EDIT") || n.equals(m.name() + "_DELETE")) {
-				return true;
-			}
-		}
-		for (ReportItem r : ReportItem.values()) {
-			if (n.equals("REPORT_" + r.name())) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@GetMapping("/role-management")
@@ -164,6 +146,7 @@ public class RoleController {
 
 		Role role = new Role();
 		role.setName(trimmed);
+		role.setReportItems("");
 		role = roleRepo.save(role);
 
 		List<RolePermission> blankGrid = new ArrayList<>();
@@ -230,6 +213,13 @@ public class RoleController {
 				boolean roleAlreadyHadView = currentPermission != null && currentPermission.isCanView();
 				boolean roleAlreadyHadEdit = currentPermission != null && currentPermission.isCanEdit();
 				boolean roleAlreadyHadDelete = currentPermission != null && currentPermission.isCanDelete();
+				if ("REPORTS".equals(moduleName) && wantsView && !roleAlreadyHadView) {
+					for (String key : ReportItem.visible(role.getReportItems())) {
+						if (!callerHas("REPORT_" + key)) {
+							deniedPermissions.add("REPORT_" + key);
+						}
+					}
+				}
 
 				if (wantsView && !(callerHas(moduleName + "_VIEW") || roleAlreadyHadView)) {
 					deniedPermissions.add(moduleName + "_VIEW");
