@@ -92,6 +92,7 @@ public class PurchaseOrderService {
 	public PurchaseOrder savePurchaseOrder(PurchaseOrder purchaseOrder,String salesOrderId,String partyId ){
 
 		validateAgainstDesignQuantity(purchaseOrder.getItems(), null);
+		prepareGstRates(purchaseOrder.getItems(), Collections.emptyList());
 		//Optional<SalesOrder> salesOrder=salesService.getSalesOrderById(salesOrderId);
 		//purchaseOrder.setSalesOrder(salesOrder.get());
 		Party party=partyService.getPartyById(partyId);
@@ -279,6 +280,25 @@ public class PurchaseOrderService {
 	
 
 
+	void prepareGstRates(List<PurchaseItem> items, List<PurchaseItem> previousItems) {
+		Map<Integer, PurchaseItem> previous = new HashMap<>();
+		if (previousItems != null) {
+			for (PurchaseItem item : previousItems) previous.put(item.getPurchase_item_id(), item);
+		}
+		if (items == null) return;
+		for (PurchaseItem item : items) {
+			PurchaseItem old = previous.get(item.getPurchase_item_id());
+			if (old != null && java.util.Objects.equals(old.getModelNo(), item.getModelNo())) {
+				// Ordinary edits must not replace a saved rate or invent a historical legacy rate.
+				item.setGstRate(old.getGstRate());
+			} else if (item.getGstRate() == null) {
+				ItemMaster master = itemMasterService.getItemById(item.getModelNo())
+						.orElseThrow(() -> new IllegalArgumentException("Cannot determine GST for item " + item.getModelNo()));
+				item.setGstRate(item.resolveGstRate(master));
+			}
+		}
+	}
+
 	//On editing of purchase order updating items..
 	public void updatePo(PurchaseOrder purchaseOrder) {
 		String purchaseOrderNumber = purchaseOrder.getPoNumber();
@@ -288,6 +308,7 @@ public class PurchaseOrderService {
 		// @D0017 snapshot BEFORE mutation, so the diff below has something to compare against (see README.md)
 		Map<Integer, Map<String, Object>> oldItemSnapshots = purchaseOrderAuditService
 				.buildPurchaseItemSnapshotMap(poToUpdate.getItems());
+		prepareGstRates(purchaseOrder.getItems(), poToUpdate.getItems());
 		poToUpdate.setHistory(history);
 		poToUpdate.setItems(purchaseOrder.getItems());
 		List<PurchaseItem> purchaseItems = purchaseOrder.getItems();

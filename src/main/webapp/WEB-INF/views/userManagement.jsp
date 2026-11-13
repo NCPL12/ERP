@@ -39,6 +39,15 @@ var pageContext = '${pageContext.request.contextPath}';
 									<th>Status</th>
 									<th>Action</th>
 								</tr>
+								<tr>
+									<th></th>
+									<th><input type="text" class="form-control form-control-sm" size="1" data-column="1" placeholder="Username" aria-label="Filter by username"></th>
+									<th><input type="text" class="form-control form-control-sm" size="1" data-column="2" placeholder="Email" aria-label="Filter by email"></th>
+									<th><input type="text" class="form-control form-control-sm" size="1" data-column="3" placeholder="Mobile" aria-label="Filter by mobile"></th>
+									<th><input type="text" class="form-control form-control-sm" size="1" data-column="4" placeholder="Role" aria-label="Filter by role"></th>
+									<th><input type="text" class="form-control form-control-sm" size="1" data-column="5" placeholder="ACTIVE / INACTIVE" aria-label="Filter by status"></th>
+									<th></th>
+								</tr>
 							</thead>
 							<tbody>
 							</tbody>
@@ -132,17 +141,6 @@ var pageContext = '${pageContext.request.contextPath}';
 									minlength="6" placeholder="Enter password (minimum 6 characters)">
 								<small class="form-text text-muted"><i class="fas fa-info-circle"></i>
 									Password must be at least 6 characters long.</small>
-							</div>
-						</div>
-
-						<div class="col-md-6">
-							<div class="form-group">
-								<label for="editName">Name <span class="text-muted">(Optional)</span></label>
-								<select id="editName" name="name" class="form-control select2-employee">
-									<option value="">Select Employee</option>
-								</select>
-								<small class="form-text text-muted"><i class="fas fa-info-circle"></i>
-									Pulled from the Employee list - picking one fills in Mobile too.</small>
 							</div>
 						</div>
 

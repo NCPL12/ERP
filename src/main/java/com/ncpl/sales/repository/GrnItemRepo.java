@@ -13,6 +13,9 @@ import com.ncpl.sales.model.GrnItems;
 
 @Repository
 public interface GrnItemRepo extends JpaRepository<GrnItems , Integer>{
+	@Query("select gi.description, sum(gi.receivedQuantity) from GrnItems gi " +
+			"where gi.description in :purchaseItemIds group by gi.description")
+	List<Object[]> findReceivedQuantities(@Param("purchaseItemIds") List<String> purchaseItemIds);
 	@Query(" from GrnItems where po_item_id=?1 ")
 	List<GrnItems> findByPoItemId(String poItemId);
 	

@@ -182,11 +182,11 @@ class TallyPurchaseOrderServiceTest {
         TallyPurchaseOrderService.PreparedItem first = new TallyPurchaseOrderService.PreparedItem(
                 "ITEM-18", "Nos", new BigDecimal("2"), new BigDecimal("100.00"),
                 new BigDecimal("200.00"), LocalDate.of(2026, 10, 15),
-                "State Purchase @ 18%", "85371000", 18);
+                "State Purchase @ 18%", "85371000", new BigDecimal("18"));
         TallyPurchaseOrderService.PreparedItem second = new TallyPurchaseOrderService.PreparedItem(
                 "ITEM-5", "Nos", BigDecimal.ONE, new BigDecimal("50.00"),
                 new BigDecimal("50.00"), LocalDate.of(2026, 10, 16),
-                "State Purchase 5%", "85365090", 5);
+                "State Purchase 5%", "85365090", new BigDecimal("5"));
         Map<String, BigDecimal> taxes = new LinkedHashMap<>();
         taxes.put("Input Tax- CGST @ 9%", new BigDecimal("18.00"));
         taxes.put("Input Tax- SGST @ 9%", new BigDecimal("18.00"));

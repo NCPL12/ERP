@@ -11,6 +11,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class NcplUtil {
+	public static String formatCompanyAddress(String[] fields) {
+		if (fields.length != 8) {
+			throw new IllegalArgumentException("Company address must have eight $$-separated fields");
+		}
+		return fields[1].trim() + "\n" + fields[2].trim() + "\n" + fields[3].trim()
+				+ "\n" + fields[4].trim() + "," + fields[5].trim() + " " + fields[7].trim();
+	}
 
 	public ObjectMapper getObjectMapper() {
 		ObjectMapper mapper=new ObjectMapper();

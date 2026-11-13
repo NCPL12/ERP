@@ -644,7 +644,7 @@ public class TallyPurchaseOrderService {
             if (amount.compareTo(BigDecimal.ZERO) <= 0) {
                 amount = quantity.multiply(rate).setScale(2, RoundingMode.HALF_UP);
             }
-            int gstRate = itemMaster.getGst();
+            BigDecimal gstRate = item.resolveGstRate(itemMaster);
             String purchaseLedger = resolvePurchaseLedger(interState, gstRate, snapshot);
             String hsnCode = firstNonBlank(item.getHsnCode(), itemMaster.getHsnCode());
             LocalDate dueDate = item.getDelivaryDate() == null ? orderDate : toLocalDate(item.getDelivaryDate());
@@ -666,22 +666,22 @@ public class TallyPurchaseOrderService {
         }
     }
 
-    private String resolvePurchaseLedger(boolean interState, int gstRate, MasterSnapshot snapshot) {
+    private String resolvePurchaseLedger(boolean interState, BigDecimal gstRate, MasterSnapshot snapshot) {
         List<String> candidates = new ArrayList<>();
         if (interState) {
-            if (gstRate == 5) candidates.add("Inter State Purchase 5%");
-            if (gstRate == 12) candidates.add("Interstate Purchase@12%");
-            if (gstRate == 18) candidates.add("Inter-State-Purchase @ 18%");
-            if (gstRate == 28) candidates.add("Interstate Purchase@28%");
-            if (gstRate == 0) candidates.add("Inter State Purchase@0%");
-            if (gstRate == 3) candidates.add("Inter State Purchase@3%");
+            if (gstRate.compareTo(BigDecimal.valueOf(5)) == 0) candidates.add("Inter State Purchase 5%");
+            if (gstRate.compareTo(BigDecimal.valueOf(12)) == 0) candidates.add("Interstate Purchase@12%");
+            if (gstRate.compareTo(BigDecimal.valueOf(18)) == 0) candidates.add("Inter-State-Purchase @ 18%");
+            if (gstRate.compareTo(BigDecimal.valueOf(28)) == 0) candidates.add("Interstate Purchase@28%");
+            if (gstRate.compareTo(BigDecimal.valueOf(0)) == 0) candidates.add("Inter State Purchase@0%");
+            if (gstRate.compareTo(BigDecimal.valueOf(3)) == 0) candidates.add("Inter State Purchase@3%");
         } else {
-            if (gstRate == 0) candidates.add("State Purchase@0%");
-            if (gstRate == 3) candidates.add("State Purchase @3%");
-            if (gstRate == 5) candidates.add("State Purchase 5%");
-            if (gstRate == 12) candidates.add("State Purchase 12%");
-            if (gstRate == 18) candidates.add("State Purchase @ 18%");
-            if (gstRate == 28) candidates.add("State Purchase @ 28%");
+            if (gstRate.compareTo(BigDecimal.valueOf(0)) == 0) candidates.add("State Purchase@0%");
+            if (gstRate.compareTo(BigDecimal.valueOf(3)) == 0) candidates.add("State Purchase @3%");
+            if (gstRate.compareTo(BigDecimal.valueOf(5)) == 0) candidates.add("State Purchase 5%");
+            if (gstRate.compareTo(BigDecimal.valueOf(12)) == 0) candidates.add("State Purchase 12%");
+            if (gstRate.compareTo(BigDecimal.valueOf(18)) == 0) candidates.add("State Purchase @ 18%");
+            if (gstRate.compareTo(BigDecimal.valueOf(28)) == 0) candidates.add("State Purchase @ 28%");
         }
         for (String candidate : candidates) {
             String ledger = snapshot.ledgerNames.get(normalize(candidate));
@@ -691,9 +691,9 @@ public class TallyPurchaseOrderService {
                 + " purchase ledger for " + gstRate + "% GST was not found in Tally.");
     }
 
-    private void addTaxAllocations(Map<String, BigDecimal> taxLedgers, boolean interState, int gstRate,
+    private void addTaxAllocations(Map<String, BigDecimal> taxLedgers, boolean interState, BigDecimal gstRate,
                                    BigDecimal taxableAmount, MasterSnapshot snapshot) {
-        if (gstRate <= 0) return;
+        if (gstRate.signum() <= 0) return;
         if (interState) {
             String ledger = requireLedger(snapshot, igstLedgerCandidates(gstRate), "Input IGST " + gstRate + "%");
             mergeAmount(taxLedgers, ledger, percentage(taxableAmount, gstRate));
@@ -702,7 +702,7 @@ public class TallyPurchaseOrderService {
         String rateText = halfRateText(gstRate);
         String cgst = requireLedger(snapshot, cgstLedgerCandidates(gstRate), "Input CGST " + rateText + "%");
         String sgst = requireLedger(snapshot, sgstLedgerCandidates(gstRate), "Input SGST " + rateText + "%");
-        BigDecimal halfTax = taxableAmount.multiply(BigDecimal.valueOf(gstRate))
+        BigDecimal halfTax = taxableAmount.multiply(gstRate)
                 .divide(BigDecimal.valueOf(200), 2, RoundingMode.HALF_UP);
         mergeAmount(taxLedgers, cgst, halfTax);
         mergeAmount(taxLedgers, sgst, halfTax);
@@ -716,30 +716,30 @@ public class TallyPurchaseOrderService {
         throw new IllegalArgumentException(label + " ledger was not found in Tally.");
     }
 
-    private String[] igstLedgerCandidates(int rate) {
-        return new String[] { "Input Tax IGST@" + rate + "%", "Input Tax IGST @ " + rate + "%",
-                "Input Tax IGST@ " + rate + " %" };
+    private String[] igstLedgerCandidates(BigDecimal rate) {
+        return new String[] { "Input Tax IGST@" + rate.stripTrailingZeros().toPlainString() + "%", "Input Tax IGST @ " + rate.stripTrailingZeros().toPlainString() + "%",
+                "Input Tax IGST@ " + rate.stripTrailingZeros().toPlainString() + " %" };
     }
 
-    private String[] cgstLedgerCandidates(int rate) {
+    private String[] cgstLedgerCandidates(BigDecimal rate) {
         String half = halfRateText(rate);
         return new String[] { "Input Tax-CGST @ " + half + "%", "Input Tax -CGST @ " + half + " %",
                 "Input Tax- CGST @ " + half + "%", "Input- CGST @ " + half + "%" };
     }
 
-    private String[] sgstLedgerCandidates(int rate) {
+    private String[] sgstLedgerCandidates(BigDecimal rate) {
         String half = halfRateText(rate);
         return new String[] { "Input Tax-SGST @ " + half + "%", "Input Tax -SGST @ " + half + " %",
                 "Input Tax- SGST @ " + half + "%", "Input - SGST @ " + half + "%" };
     }
 
-    private String halfRateText(int rate) {
-        BigDecimal half = BigDecimal.valueOf(rate).divide(BigDecimal.valueOf(2));
+    private String halfRateText(BigDecimal rate) {
+        BigDecimal half = rate.divide(BigDecimal.valueOf(2));
         return half.stripTrailingZeros().toPlainString();
     }
 
-    private BigDecimal percentage(BigDecimal amount, int rate) {
-        return amount.multiply(BigDecimal.valueOf(rate)).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    private BigDecimal percentage(BigDecimal amount, BigDecimal rate) {
+        return amount.multiply(rate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
 
     private void mergeAmount(Map<String, BigDecimal> values, String key, BigDecimal amount) {
@@ -1459,10 +1459,10 @@ public class TallyPurchaseOrderService {
         private final LocalDate dueDate;
         private final String purchaseLedger;
         private final String hsnCode;
-        private final int gstRate;
+        private final BigDecimal gstRate;
         PreparedItem(String name, String unit, BigDecimal quantity, BigDecimal rate,
                      BigDecimal amount, LocalDate dueDate, String purchaseLedger,
-                     String hsnCode, int gstRate) {
+                     String hsnCode, BigDecimal gstRate) {
             this.name = name; this.unit = unit; this.quantity = quantity; this.rate = rate;
             this.amount = amount; this.dueDate = dueDate; this.purchaseLedger = purchaseLedger;
             this.hsnCode = hsnCode; this.gstRate = gstRate;

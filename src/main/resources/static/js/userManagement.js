@@ -1,6 +1,5 @@
 var userTable;
 var selectedUserId = null;
-var employeeOptionsCache = [];
 
 function escapeHtml(text) {
 	if (text === null || text === undefined) {
@@ -13,9 +12,20 @@ function escapeHtml(text) {
 
 $(document).ready(function () {
 	loadUsers();
-	loadEmployeesForNameDropdown();
 	loadRolesForDropdown();
+	$('#userManagementTable thead').on('input change', 'input[data-column]', applyUserFilters);
 });
+
+function applyUserFilters() {
+	if (!userTable) return;
+	$('#userManagementTable thead input[data-column]').each(function () {
+		var column = Number($(this).data('column'));
+		var value = $.fn.dataTable.util.escapeRegex(this.value.trim());
+		if (column === 5 && value) value = '^' + value;
+		userTable.column(column).search(value, true, false);
+	});
+	userTable.draw();
+}
 
 /** Role dropdown in Add/Edit User - sourced from the same roles Role Management manages,
  *  instead of a hardcoded list that drifts from whatever roles actually exist. */
@@ -37,46 +47,6 @@ function loadRolesForDropdown() {
 		}
 	});
 }
-
-/** Employee dropdown for the Name field - picking one auto-fills Mobile from the Employee table. */
-function loadEmployeesForNameDropdown() {
-	$.ajax({
-		url: api.EMPLOYEE_OPTIONS,
-		type: 'GET',
-		success: function (employees) {
-			employeeOptionsCache = employees || [];
-			var options = '<option value="">Select Employee</option>';
-			$.each(employeeOptionsCache, function (i, emp) {
-				options += '<option value="' + emp.name + '">' + emp.name + ' (' + (emp.empId || '') + ')</option>';
-			});
-			$("#editName").html(options);
-			$("#editName").select2({
-				theme: "bootstrap4",
-				tags: true,
-				allowClear: true,
-				placeholder: "Select Employee",
-				dropdownParent: $("#editUserModal")
-			});
-		},
-		error: function (xhr) {
-			console.log("Unable to load employee list for Name dropdown.", xhr);
-		}
-	});
-}
-
-$(document).on("change", "#editName", function () {
-	var selectedName = $(this).val();
-	var match = null;
-	$.each(employeeOptionsCache, function (i, emp) {
-		if (emp.name === selectedName) {
-			match = emp;
-			return false;
-		}
-	});
-	if (match) {
-		$("#editNumber").val(match.contactNo || "");
-	}
-});
 
 function updateUserStatusInDatabase(userId, username, newStatus, enabled) {
 	$.ajax({
@@ -130,6 +100,7 @@ function loadUsers() {
 				destroy: true,
 				data: users,
 				autoWidth: false,
+				orderCellsTop: true,
 				columns: [
 					{
 						data: null,
@@ -173,6 +144,7 @@ function loadUsers() {
 					}
 				]
 			});
+			applyUserFilters();
 		},
 		error: function (xhr) {
 			alert("Unable to load users.");
@@ -199,13 +171,6 @@ function isValidUsername(username) {
 	return /^[a-zA-Z0-9_]{3,}$/.test(username);
 }
 
-function isValidName(name) {
-	if (!name) {
-		return true;
-	}
-	return /^[a-zA-Z\s]{3,}$/.test(name);
-}
-
 function editUser(userId) {
 	if (!userId || userId === "undefined" || userId === "null") {
 		alert("User ID is missing.");
@@ -225,7 +190,6 @@ function editUser(userId) {
 
 	if (userData) {
 		$("#editUsername").val(userData.username || "");
-		setEditNameValue(userData.name || "");
 		$("#editEmailId").val(userData.emailId || "");
 		$("#editNumber").val(userData.number || "");
 		$("#editRole").val(userData.role || "");
@@ -243,21 +207,10 @@ function editUser(userId) {
 	}
 }
 
-/** Sets the Name select2's value, adding it as an ad-hoc option first if it's not one of the
- *  known employees (e.g. an existing user's name typed in before this dropdown existed). */
-function setEditNameValue(name) {
-	var $select = $("#editName");
-	if (name && $select.find("option[value='" + name.replace(/'/g, "\\'") + "']").length === 0) {
-		$select.append('<option value="' + name + '">' + name + '</option>');
-	}
-	$select.val(name || "").trigger("change");
-}
-
 function addNewUser() {
 	selectedUserId = null;
 
 	$("#editUsername").val("");
-	setEditNameValue("");
 	$("#editEmailId").val("");
 	$("#editNumber").val("");
 	$("#editRole").val("");
@@ -286,15 +239,6 @@ function updateUser() {
 	username = username.trim();
 	if (!isValidUsername(username)) {
 		alert("Username must be at least 3 characters long and contain only letters, numbers, and underscores.");
-		return;
-	}
-
-	var name = $("#editName").val();
-	if (name) {
-		name = name.trim();
-	}
-	if (!isValidName(name)) {
-		alert("Name must be at least 3 characters long and contain only letters and spaces.");
 		return;
 	}
 
@@ -332,7 +276,6 @@ function updateUser() {
 	if (selectedUserId) {
 		var updateParams = $.param({
 			username: username,
-			name: name || "",
 			emailId: emailId,
 			number: number || "",
 			role: role,
@@ -380,7 +323,6 @@ function updateUser() {
 			role: role,
 			number: number || "",
 			emailId: emailId,
-			name: name || "",
 			enabled: enabled
 		});
 

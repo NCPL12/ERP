@@ -685,6 +685,7 @@ function loadItemTable() {
 		getStockList(itemId);
 		setCostPrice(itemId);
 		$('#itemModelNo').prop('readonly', true)
+		$('#gst').prop('readonly', true).attr('title', 'GST cannot be changed after item creation.');
 		$.each(rowData, function (key, value) {
 			if (rowData.item_units != null) {
 				$("#units").val(rowData.item_units.id);
@@ -1731,8 +1732,10 @@ $(document).on('submit',"#itemUploadForm", function (e) {
             window.location.href="/ncpl-sales/itemMaster";
         },
         error: function (xhr) {
-            let errors = xhr.responseJSON.errors;
-            $("#response").html(errors.map(e => `<p>${e}</p>`).join(""));
+            const response = xhr.responseJSON || {};
+            const errors = response.errors || [response.error || 'Upload failed. Please try again.'];
+            const container = $("#response").empty();
+            errors.forEach(error => container.append($('<p>').text(error)));
         }
     });
 });

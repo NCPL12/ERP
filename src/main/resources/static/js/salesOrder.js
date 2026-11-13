@@ -43,6 +43,7 @@ $(document).ready(function () {
 	  $(document).on('keyup keypress input', '#salesTable input, #salesTable select', function(e){ e.stopPropagation(); });
 	//to display sales list view page
 	if(salesOrderObj!=""){
+		$("#designColumnHeader").show();
 		getSalesOrderById(salesOrderObj.id);
 
 	}
@@ -124,9 +125,9 @@ $(document).ready(function () {
 		 var qty=$(this).val();
 		 if(salesItemId!=""){
 		 if(qty==0){
-			 $("#designTd"+index).hide();
+			 $("#designTd"+index).css("visibility", "hidden");
 		 }else{
-			 $("#designTd"+index).show();
+			 $("#designTd"+index).css("visibility", "visible");
 		 }
 		 }
 
@@ -218,7 +219,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
         var columns = "";
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox slNo" id="slNo'+ arraycount +'" name="items['+arraycount+'].slNo" path="items['+arraycount+'].slNo"/></td>';
 	    columns += '<td width="35%" class="CellWithComment"><input type="text" class="form-control PositionofTextbox description" autocomplete="off" id="description'+ arraycount +'" name="items['+arraycount+'].description" path="items['+arraycount+'].description"/><span id="descriptionDiv'+arraycount+'"></td>';
-	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" maxlength = "100" id="modelNo'+ arraycount +'" name="items['+arraycount+'].modelNo" path="items['+arraycount+'].modelNo"/></td>';
+	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" id="modelNo'+ arraycount +'" name="items['+arraycount+'].modelNo" path="items['+arraycount+'].modelNo"/></td>';
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" id="hsnCode'+ arraycount +'" name="items['+arraycount+'].hsnCode" path="items['+arraycount+'].hsnCode"/></td>';
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" id="servicehsnCode'+ arraycount +'" name="items['+arraycount+'].servicehsnCode" path="items['+arraycount+'].servicehsnCode"/></td>';
 	    columns += '<td width="8%"><input type="text" class="form-control PositionofTextbox qty" id="qty'+ arraycount +'" name="items['+arraycount+'].quantity" path="items['+arraycount+'].qty" value="0"/><span id="qtyDiv'+arraycount+'"></span></td>';
@@ -352,6 +353,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			//	$("#designTd"+key).show();
 				$("#toggleBriefTd"+key).show();
 				$("#design"+key).val(value.id);
+				$("#designTd"+key).show();
 				updateDesignCompletion(value.id, value.designItems);
 
 
@@ -390,7 +392,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					$("#modelNo"+key).attr("readonly",true);
 					$("#hsnCode"+key).attr("readonly",true);
 					$("#servicehsnCode"+key).attr("readonly",true);
-					$("#designTd"+key).hide();
+					$("#designTd"+key).css("visibility", "hidden");
 				}else{
 					$("#servicePrice"+key).attr("readonly",false);
 					$("#unitPrice"+key).attr("readonly",false);
@@ -398,12 +400,12 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					$("#modelNo"+key).attr("readonly",false);
 					$("#hsnCode"+key).attr("readonly",false);
 					$("#servicehsnCode"+key).attr("readonly",false);
-					$("#designTd"+key).show();
+					$("#designTd"+key).css("visibility", "visible");
 				}
 				 if(qty==0){
-					 $("#designTd"+key).hide();
+					 $("#designTd"+key).css("visibility", "hidden");
 				 }else{
-					 $("#designTd"+key).show();
+					 $("#designTd"+key).css("visibility", "visible");
 				 }
 				//$(".deleteButton").hide();
 		    	});
@@ -775,9 +777,8 @@ function designTable2Json(){
 			return String($(this).val()) === String(salesItemId);
 		}).each(function(){
 			$(this).find('.design-completed-star').remove();
-			if(completed){
-				$(this).append(' <span class="design-completed-star" role="img" aria-label="Design completed" title="Design completed">&#11088;</span>');
-			}
+			$(this).toggleClass('design-completed', completed)
+				.attr('title', completed ? 'Design completed' : 'Design');
 		});
 	}
 
@@ -2091,6 +2092,7 @@ $(document).on('mousemove', function(e){
 });
 
 $(document).on('mouseup', function(e){
+	if(!salesTableSelection.drag) return;
 	salesTableSelection.drag = false;
 	if(salesTableSelection.active){
 		var $td = $(e.target).closest('td');

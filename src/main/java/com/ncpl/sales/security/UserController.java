@@ -98,7 +98,7 @@ public class UserController {
             @RequestParam("enabled") Boolean enabled,
             @RequestParam("number") String number,
             @RequestParam("emailId") String emailId,
-            @RequestParam("name") String name) {
+            @RequestParam(value = "name", required = false) String name) {
 
         try {
             if (userService.userExists(user_name)) {
@@ -124,7 +124,7 @@ public class UserController {
             user.setEnabled(enabled);
             user.setNumber(number);
             user.setEmailId(emailId);
-            user.setName(name);
+            user.setName(name == null ? user_name : name);
 
             User savedUser = userService.saveUser(user);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
@@ -143,7 +143,7 @@ public class UserController {
             @RequestParam("number") String number,
             @RequestParam("emailId") String emailId,
             @RequestParam("enabled") Boolean enabled,
-            @RequestParam("name") String name,
+            @RequestParam(value = "name", required = false) String name,
             HttpServletRequest request,
             HttpServletResponse response) {
 
@@ -176,7 +176,7 @@ public class UserController {
         existingUser.setNumber(number);
         existingUser.setEmailId(emailId);
         existingUser.setEnabled(enabled);
-        existingUser.setName(name);
+        if (name != null) existingUser.setName(name);
 
         User updatedUser = userService.updateUser(existingUser);
 

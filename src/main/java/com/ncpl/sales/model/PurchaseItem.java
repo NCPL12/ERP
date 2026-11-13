@@ -1,6 +1,7 @@
 package com.ncpl.sales.model;
 
 import java.util.Date;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,28 @@ public class PurchaseItem implements Comparable<PurchaseItem>{
 		private float amount;
 		@NotNull
 		private float unitPrice;
+		@Column(name = "gst_rate", precision = 5, scale = 2)
+		private BigDecimal gstRate;
+
+		public BigDecimal getGstRate() {
+			return gstRate;
+		}
+
+		public void setGstRate(BigDecimal gstRate) {
+			if (gstRate != null && (gstRate.signum() < 0
+					|| gstRate.compareTo(new BigDecimal("100")) > 0
+					|| gstRate.stripTrailingZeros().scale() > 2)) {
+				throw new IllegalArgumentException("GST rate must be between 0 and 100 with at most two decimal places.");
+			}
+			this.gstRate = gstRate;
+		}
+
+		public BigDecimal resolveGstRate(ItemMaster master) {
+			if (gstRate != null) return gstRate;
+			// shortcut: legacy rates were never stored; retain the master fallback until original rates are verified.
+			if (master == null) throw new IllegalArgumentException("GST rate is unknown for PO item " + purchase_item_id);
+			return BigDecimal.valueOf(master.getGst());
+		}
 		@NotNull
 		private String poDescription;
 		

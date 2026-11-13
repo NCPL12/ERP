@@ -84,7 +84,7 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	@Query(value =
 		"SELECT po.po_number, p.party_name, c.name AS city_name, " +
 		"COALESCE(SUM(pi.amount), 0) AS total, " +
-		"COALESCE(SUM(pi.amount * im.gst / 100.0), 0) AS gst_total, " +
+		"COALESCE(SUM(pi.amount * COALESCE(pi.gst_rate, im.gst) / 100.0), 0) AS gst_total, " +
 		"po.created, po.version, po.archive " +
 		"FROM tbl_purchase_order po " +
 		"JOIN tbl_party p ON p.id = po.party_id " +

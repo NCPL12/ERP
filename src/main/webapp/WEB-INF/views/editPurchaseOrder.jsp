@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 
 
-<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261014-po-lookup" />"></script>
+<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261106-po-gst" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 <script type="text/javascript">
@@ -172,7 +172,7 @@ $(document).ready(function () {
       </div><!-- /.container-fluid -->
     
 			<div id="salesDiv" class="card">
-			<div class="card-body table-responsive p-0">
+			<div class="card-body table-responsive p-0 po-items-scroll" role="region" aria-label="Purchase order items" tabindex="0">
 				<table id="poTableEdit" class="table table-head-fixed" style="width: 100%;">
 					<!-- <thead id="table-header">
 						<tr>

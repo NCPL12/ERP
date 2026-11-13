@@ -171,15 +171,11 @@ public class PurchaseController {
 		User userObj  = userService.getCurrentUser();
 		String role = userObj.getRole();
 		List<Map<String, Object>> poList = purchaseService.getDashboardPoList();
-		List<Party> partyList = partyService.getPartyListbyTypeSupplier(); 
-		List<Map<String, Object>> itemList = itemMasterService.getModelAndUnitList();
 		ObjectMapper mapper = utilService.getObjectMapper();
 		model.addAttribute("poList", mapper.writeValueAsString(poList));
 		model.addAttribute("role", mapper.writeValueAsString(role));
 		model.addAttribute("user", mapper.writeValueAsString(userObj.getUsername()));
 		model.addAttribute("pageHeader", "Purchase Orders");
-		model.addAttribute("partyList", mapper.writeValueAsString(partyList));
-		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
 		return "purchaseDashboard";
 	}
 
@@ -455,11 +451,11 @@ public class PurchaseController {
 		for (PurchaseItem purchaseItem : purchaseItems) {
 			//Optional<SalesItem> salesItemObj = salesService.getSalesItemById(purchaseItem.getDescription());
 			Optional<ItemMaster> itemMasterObject = itemMasterService.getItemById(purchaseItem.getModelNo());
-			float gst = 0;
+			double gst = purchaseItem.resolveGstRate(itemMasterObject.orElse(null)).doubleValue();
 			if(itemMasterObject.isPresent()){
 			modelMap.put(purchaseItem.getModelNo(), itemMasterObject.get().getItem_units().getName()+"&"+itemMasterObject.get().getModel()+"$"
-					+itemMasterObject.get().getGst());
-			gst = itemMasterObject.get().getGst();
+					+purchaseItem.resolveGstRate(itemMasterObject.get()).stripTrailingZeros().toPlainString());
+			gst = purchaseItem.resolveGstRate(itemMasterObject.get()).doubleValue();
 			}
 			//purchaseItem.setDescription(salesItemObj.get().getDescription());
 			//purchaseItem.setModelNo(purchaseItem.getModelNo());
@@ -473,9 +469,9 @@ public class PurchaseController {
 			gstAmount = gstAmount +purchaseItem.getAmount() * gst;
 			System.out.println(gstAmount);
 		}
-		sgstAmount = totalAmount*0.09;
+		sgstAmount = gstAmount / 2;
 		sgstAmount = Math.round(sgstAmount * 100.0) / 100.0;
-		cgstAmount = totalAmount*0.09;
+		cgstAmount = gstAmount / 2;
 		cgstAmount = Math.round(cgstAmount * 100.0) / 100.0;
 		//gstAmount = totalAmount*0.18;
 		gstAmount = Math.round(gstAmount * 100.0) / 100.0;
@@ -833,9 +829,11 @@ public class PurchaseController {
 	@GetMapping("/api/getPurchaseItemList")
 	public ResponseEntity<?> purchaseItemList(@RequestParam("id") String poNumber,
 			@RequestParam("className") String className, Model model) {
+		if ("grn".equalsIgnoreCase(className)) {
+			return new ResponseEntity<>(purchaseItemService.getGrnPurchaseItems(poNumber), HttpStatus.OK);
+		}
 
 		List<PurchaseItem> purchaseItems = purchaseItemService.getPurchaseItem(poNumber, className);
-		System.out.println(purchaseItems);
 		// model.addAttribute("purchaseItems", purchaseItems);
 		return new ResponseEntity<>(purchaseItems, HttpStatus.OK);
 		// return "goodsReceiptNote";
@@ -1890,11 +1888,11 @@ public class PurchaseController {
 			for (PurchaseItem purchaseItem : purchaseItems) {
 				//Optional<SalesItem> salesItemObj = salesService.getSalesItemById(purchaseItem.getDescription());
 				Optional<ItemMaster> itemMasterObject = itemMasterService.getItemById(purchaseItem.getModelNo());
-				float gst = 0;
+				double gst = purchaseItem.resolveGstRate(itemMasterObject.orElse(null)).doubleValue();
 				if(itemMasterObject.isPresent()){
 					modelMap.put(purchaseItem.getModelNo(), itemMasterObject.get().getItem_units().getName()+"&"+itemMasterObject.get().getModel()+"$"
-							+itemMasterObject.get().getGst());
-					gst = itemMasterObject.get().getGst();
+							+purchaseItem.resolveGstRate(itemMasterObject.get()).stripTrailingZeros().toPlainString());
+					gst = purchaseItem.resolveGstRate(itemMasterObject.get()).doubleValue();
 				}
 				//purchaseItem.setDescription(salesItemObj.get().getDescription());
 				//purchaseItem.setModelNo(purchaseItem.getModelNo());
@@ -1908,9 +1906,9 @@ public class PurchaseController {
 				gstAmount = gstAmount +purchaseItem.getAmount() * gst;
 				System.out.println(gstAmount);
 			}
-			sgstAmount = totalAmount*0.09;
+			sgstAmount = gstAmount / 2;
 			sgstAmount = Math.round(sgstAmount * 100.0) / 100.0;
-			cgstAmount = totalAmount*0.09;
+			cgstAmount = gstAmount / 2;
 			cgstAmount = Math.round(cgstAmount * 100.0) / 100.0;
 			//gstAmount = totalAmount*0.18;
 			gstAmount = Math.round(gstAmount * 100.0) / 100.0;

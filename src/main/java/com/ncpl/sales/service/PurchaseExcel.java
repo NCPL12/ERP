@@ -155,7 +155,7 @@ public class PurchaseExcel extends AbstractXlsxView{
 				
 				Optional<ItemMaster> itemObj = itemService.getItemById(purchaseItem.getModelNo());
 				String itemName =  itemObj.get().getItemName();
-				int gst = itemObj.get().getGst();
+				double gst = purchaseItem.resolveGstRate(itemObj.get()).doubleValue();
 				String unitName = itemObj.get().getItem_units().getName();
 				String hsn = itemObj.get().getHsnCode();
 				String partNum =  itemObj.get().getModel();

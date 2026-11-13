@@ -34,6 +34,32 @@ text-align: center;
 	padding: 3px 6px;
 }
 
+#salesTable .select2-container {
+	width: 100% !important;
+	min-width: 0;
+	vertical-align: middle;
+}
+
+#salesTable .select2-selection--single {
+	height: 30px !important;
+	border-radius: 0;
+	padding: 0;
+}
+
+#salesTable .select2-selection__rendered {
+	margin-top: 0 !important;
+	line-height: 28px !important;
+	padding: 0 20px 0 6px;
+}
+
+#salesTable .slNo {
+	text-align: center;
+}
+
+#salesTable .select2-selection__arrow {
+	height: 28px;
+}
+
  #salesTable .add-lot-btn {
      height: 30px;
      line-height: 1;
@@ -57,9 +83,50 @@ text-align: center;
   font-size: 13px;
 }
 
+.sales-items-scroll > #salesTable {
+	min-width: 1100px;
+}
+
+#salesTable > thead > tr {
+	height: 40px;
+}
+
+#salesTable > thead > tr > th {
+	padding: 8px 6px !important;
+	vertical-align: middle;
+	text-align: center;
+}
+
 /* Give model numbers more room while keeping the table within the page. */
 #salesTable > thead > tr:first-child > th:nth-child(3) {
 	width: 10%;
+}
+
+#salesTable > thead > tr:first-child > th:nth-child(2) {
+	width: 30%;
+}
+
+#salesTable > thead > tr:first-child > th:nth-child(6) {
+	width: 6%;
+}
+
+#salesTable > thead > tr:first-child > th:nth-child(7) {
+	width: 130px;
+}
+
+#salesTable .sales-actions-header {
+	width: 32px;
+}
+
+#salesTable .sales-price-header {
+	width: 200px;
+}
+
+#salesTable .sales-price-column {
+	width: 100px;
+	padding: 6px !important;
+	white-space: nowrap;
+	text-align: center;
 }
 
 .sales-items-scroll {
@@ -96,6 +163,10 @@ text-align: center;
 }
 
 @media print {
+	.sales-items-scroll > #salesTable {
+		min-width: 0;
+	}
+
 	.sales-items-scroll {
 		max-height: none;
 		overflow: visible;
@@ -122,6 +193,14 @@ text-align: center;
 
 #salesTable tfoot td:last-child {
 	width: 12%;
+}
+
+#salesTable tfoot td {
+	border-top: 0;
+}
+
+#salesTable tfoot .form-control {
+	height: 30px !important;
 }
 
 #salesTable tfoot input,
@@ -151,6 +230,32 @@ text-align: center;
 	text-align: center;
 }
 
-.design-completed-star {
-	color: #d4a017;
+#salesTable .design {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 4px;
+	width: 54px;
+	white-space: nowrap;
+}
+
+#salesTable .toggleBriefTd,
+#salesTable #expandAllHeader {
+	text-align: center;
+	vertical-align: middle;
+}
+
+#salesTable .toggleBrief,
+#salesTable #masterToggleBrief {
+	margin: 0;
+	vertical-align: middle;
+}
+
+#salesTable .design.design-completed {
+	color: #007bff;
+}
+
+#salesTable .design.design-completed::after {
+	content: "\2713";
+	font-weight: bold;
 }

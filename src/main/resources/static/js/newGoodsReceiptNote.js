@@ -177,7 +177,6 @@ $(document).on("change", "#purchaseOrderDropDown", function () {
 	$("#purchaseOrder").val(poNumber);
 	//$("#purchaseOrder").attr("readonly","readonly");
 	$("#poNumber").val(poNumber);
-	getPurchaseItemListByPoNumber();
 	displayAllPurchaseItemByPoNumber(poNumber);
 	
 });

@@ -37,7 +37,7 @@ public class SalesItem extends TimeStampEntity implements Comparable<SalesItem>{
 	private String id;
 
 	@NotNull(message = "{error.desc.not.empty}")
-	@Column(name = "description")
+	@Column(name = "description", columnDefinition = "LONGTEXT")
 	private String description;
 
 	/*@NotNull
@@ -86,7 +86,7 @@ public class SalesItem extends TimeStampEntity implements Comparable<SalesItem>{
 	}
 
 	/*@NotNull*/
-	@Column(name = "modelNo")
+	@Column(name = "modelNo", columnDefinition = "LONGTEXT")
 	private String modelNo;
 	
 	@Transient
