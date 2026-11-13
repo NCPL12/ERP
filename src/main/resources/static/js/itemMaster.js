@@ -1732,8 +1732,10 @@ $(document).on('submit',"#itemUploadForm", function (e) {
             window.location.href="/ncpl-sales/itemMaster";
         },
         error: function (xhr) {
-            let errors = xhr.responseJSON.errors;
-            $("#response").html(errors.map(e => `<p>${e}</p>`).join(""));
+            const response = xhr.responseJSON || {};
+            const errors = response.errors || [response.error || 'Upload failed. Please try again.'];
+            const container = $("#response").empty();
+            errors.forEach(error => container.append($('<p>').text(error)));
         }
     });
 });

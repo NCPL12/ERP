@@ -34,6 +34,32 @@ text-align: center;
 	padding: 3px 6px;
 }
 
+#salesTable .select2-container {
+	width: 100% !important;
+	min-width: 0;
+	vertical-align: middle;
+}
+
+#salesTable .select2-selection--single {
+	height: 30px !important;
+	border-radius: 0;
+	padding: 0;
+}
+
+#salesTable .select2-selection__rendered {
+	margin-top: 0 !important;
+	line-height: 28px !important;
+	padding: 0 20px 0 6px;
+}
+
+#salesTable .slNo {
+	text-align: center;
+}
+
+#salesTable .select2-selection__arrow {
+	height: 28px;
+}
+
  #salesTable .add-lot-btn {
      height: 30px;
      line-height: 1;
@@ -57,6 +83,20 @@ text-align: center;
   font-size: 13px;
 }
 
+.sales-items-scroll > #salesTable {
+	min-width: 1100px;
+}
+
+#salesTable > thead > tr {
+	height: 40px;
+}
+
+#salesTable > thead > tr > th {
+	padding: 8px 6px !important;
+	vertical-align: middle;
+	text-align: center;
+}
+
 /* Give model numbers more room while keeping the table within the page. */
 #salesTable > thead > tr:first-child > th:nth-child(3) {
 	width: 10%;
@@ -66,9 +106,12 @@ text-align: center;
 	width: 30%;
 }
 
-#salesTable > thead > tr:first-child > th:nth-child(6),
-#salesTable > thead > tr:first-child > th:nth-child(7) {
+#salesTable > thead > tr:first-child > th:nth-child(6) {
 	width: 6%;
+}
+
+#salesTable > thead > tr:first-child > th:nth-child(7) {
+	width: 130px;
 }
 
 #salesTable .sales-actions-header {
@@ -120,6 +163,10 @@ text-align: center;
 }
 
 @media print {
+	.sales-items-scroll > #salesTable {
+		min-width: 0;
+	}
+
 	.sales-items-scroll {
 		max-height: none;
 		overflow: visible;
@@ -146,6 +193,14 @@ text-align: center;
 
 #salesTable tfoot td:last-child {
 	width: 12%;
+}
+
+#salesTable tfoot td {
+	border-top: 0;
+}
+
+#salesTable tfoot .form-control {
+	height: 30px !important;
 }
 
 #salesTable tfoot input,

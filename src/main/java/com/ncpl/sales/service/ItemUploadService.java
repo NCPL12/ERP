@@ -1,6 +1,7 @@
 package com.ncpl.sales.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,7 +14,7 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,12 +48,20 @@ public class ItemUploadService {
 	        List<ItemMaster> itemList = new ArrayList<>();
 	        Set<String> duplicateCheckSet = new HashSet<>();
 
-	        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+	        try (InputStream input = file.getInputStream(); Workbook workbook = WorkbookFactory.create(input)) {
 	            Sheet sheet = workbook.getSheetAt(0);
 
 	            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // Skipping header row
 	                Row row = sheet.getRow(i);
 	                if (row == null) continue;
+	                boolean blank = true;
+	                for (int column = 0; column < 8; column++) {
+	                    if (!getCellValue(row.getCell(column)).isEmpty()) {
+	                        blank = false;
+	                        break;
+	                    }
+	                }
+	                if (blank) continue;
 	                List<String> rowErrors = new ArrayList<>(); 
 	                // ✅ Fetch and validate "Model Number" (Column 0, Mandatory, Unique)
 	                String modelNumber = getCellValue(row.getCell(0));
@@ -96,7 +105,7 @@ public class ItemUploadService {
 	                }
 	                
 	                // ✅ Fetch and validate "Price" (Column 2, Mandatory, Numeric)
-	                String location = getCellValue(row.getCell(2));
+	                String location = getCellValue(row.getCell(5));
 	               
 
 	                // ✅ Fetch and validate "Make" (Column 4, Foreign Key)
@@ -138,13 +147,7 @@ public class ItemUploadService {
 	                item.setItemName(itemName);
 	                item.setHsnCode(hsn);
 	                item.setGst(gst);
-	                if(make.equals("")){
-                    	item.setMake(null);
-                    }else {
-                    	
-                    	item.setMake(makeObj.getId().toString());
-                    }
-	                item.setMake(make);
+	                item.setMake(makeObj.getId().toString());
 	                item.setLocation(location);
 	                
 	                item.setItem_units(unitObj);
@@ -158,6 +161,9 @@ public class ItemUploadService {
 	                itemList.add(item);
 	            }
 
+	            if (errors.isEmpty() && itemList.isEmpty()) {
+	                errors.add("No items found in the Excel file.");
+	            }
 	            // ✅ Save valid data if no errors
 	            if (errors.isEmpty()) {
 	                itemRepository.saveAll(itemList);

@@ -116,7 +116,7 @@ obj = obj.replace(/\&/g, "\"");
 			<tiles:insertAttribute name="header" />
 			<tiles:insertAttribute name="sideMenu" />
 
-			<div class="content-wrapper">
+			<div class="content-wrapper bg-white">
 				<%-- <tiles:insertAttribute name="pageHeader" /> --%>
 				<div id="salesDiv" class="card">
 					<div class="card-body table-responsive p-0">
@@ -155,7 +155,7 @@ obj = obj.replace(/\&/g, "\"");
 										<th width="11%" rowspan="2" class="thStyle">Amount</th>
 										<th align="center" rowspan="2" class="sales-actions-header"><i class="add fa fa-plus-square fa-2x"
 												aria-hidden="true"></i></th>
-										<th rowspan="2" id="designColumnHeader" style="display:none; width:76px;" aria-label="Design"></th>
+										<th rowspan="2" id="designColumnHeader" style="display:none; width:76px;" aria-label="Design">Design</th>
 										<th align="center" rowspan="2" class="thStyle expandAllHeader" id="expandAllHeader" title="Expand All" width="3%" style="display:none;">
 										<input type="checkbox" id="masterToggleBrief" title="Check to expand all descriptions" style="cursor:pointer;">
 										</th>

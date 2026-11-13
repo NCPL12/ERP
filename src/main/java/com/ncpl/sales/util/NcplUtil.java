@@ -16,7 +16,7 @@ public class NcplUtil {
 			throw new IllegalArgumentException("Company address must have eight $$-separated fields");
 		}
 		return fields[1].trim() + "\n" + fields[2].trim() + "\n" + fields[3].trim()
-				+ "\n" + fields[4].trim() + "\n" + fields[5].trim() + " " + fields[7].trim();
+				+ "\n" + fields[4].trim() + "," + fields[5].trim() + " " + fields[7].trim();
 	}
 
 	public ObjectMapper getObjectMapper() {

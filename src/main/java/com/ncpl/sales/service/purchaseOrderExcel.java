@@ -465,7 +465,7 @@ public class purchaseOrderExcel extends AbstractXlsxView {
 		// vendor1.setCellValue("Deliver To:" + "\n"+companyName+"\nContact:
 		// "+contactPerson+"\nContact Number:"+contactNo);
 		CellStyle vendorstyle1 = workbook.createCellStyle();
-		// vendorstyle1.setAlignment(HSSFCellStyle.ALIGN_LEFT);
+		vendorstyle1.setAlignment(HSSFCellStyle.ALIGN_LEFT);
 		vendorstyle1.setVerticalAlignment((short) (VERTICAL_TOP));
 		vendorstyle1.setBorderLeft(BORDER_THIN);
 		vendorstyle1.setBorderRight(BORDER_THIN);
@@ -484,15 +484,15 @@ public class purchaseOrderExcel extends AbstractXlsxView {
 		String loginUserName=user.getUsername();
 		if (shippingAddress.contains("Mangalore")) {
 			if(shippingAddressKey.contains("key")) {
-				vendor1.setCellValue("Deliver To:" + "\n" + shippingAddress + "\nContact: " + contactPerson1
-						+ "\n@:" + contactNo1+ "\nEmail:" +  "purchase@ncpl.co");
+				vendor1.setCellValue("Deliver To:" + "\n" + shippingAddress + "\nContact: " + contactPerson1.trim()
+						+ "@:" + contactNo1.trim() + "\nEmail:" + "purchase@ncpl.co");
 				}else {
 					vendor1.setCellValue("Deliver To:" + "\n" + shippingAddress);
 				}
 		}else {
 			if(shippingAddressKey.contains("key")) {
 			vendor1.setCellValue("Deliver To:" + "\n" + shippingAddress + "\nContact: " + user.getName()
-					+ "\n@:" + user.getNumber()+ "\nEmail:" + user.getEmailId());
+					+ "@:" + user.getNumber()+ "\nEmail:" + user.getEmailId());
 			}else {
 				vendor1.setCellValue("Deliver To:" + "\n" + shippingAddress);
 			}
@@ -525,6 +525,10 @@ public class purchaseOrderExcel extends AbstractXlsxView {
 		// NO:123456"+"\n"+gstNo);
 		vendor2.setCellValue(
 				"Billing & Invoice:" + "\n" + billingAddress + "\nPAN NO: " + billingPan + "\nGSTIN : " + billingGst);
+		// Align with cell formatting, removing padding from saved address lines.
+		for (Cell addressCell : new Cell[] { vendor, vendor1, vendor2 }) {
+			addressCell.setCellValue(addressCell.getStringCellValue().replaceAll("(?m)^\\h+|\\h+$", ""));
+		}
 
 		editAccountSheet.addMergedRegion(new CellRangeAddress(15, // first row
 				15, // last row

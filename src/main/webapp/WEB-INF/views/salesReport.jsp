@@ -741,18 +741,31 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         }).catch(function() { var label = document.getElementById('tallyPoAutoSyncStatus'); label.textContent = 'Automatic PO sync status is unavailable. Check ERP logs or retry.'; label.className = 'text-danger mb-2'; });
     }
     function submitTallyReview(poNumber, action) {
-        var confirmation='';
-        if (action === 'accept') {
-            if (!window.confirm('Keep the current Tally version for '+poNumber+' and use it as the new sync baseline?')) return;
-        } else {
-            confirmation=window.prompt('This overwrites the Tally PO with ERP data once. Type FORCE ERP VERSION to confirm:');
-            if (confirmation !== 'FORCE ERP VERSION') return;
+        function submit(confirmation) {
+            var form=document.createElement('form'); form.method='post'; form.action='${pageContext.request.contextPath}/po_list/tally/review/'+action;
+            function hidden(name,value){var input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
+            hidden('poNumber',poNumber); if (action === 'force-erp') hidden('confirmation',confirmation);
+            <c:if test="${not empty _csrf}">hidden('<c:out value="${_csrf.parameterName}"/>','<c:out value="${_csrf.token}"/>');</c:if>
+            document.body.appendChild(form); form.submit();
         }
-        var form=document.createElement('form'); form.method='post'; form.action='${pageContext.request.contextPath}/po_list/tally/review/'+action;
-        function hidden(name,value){var input=document.createElement('input');input.type='hidden';input.name=name;input.value=value;form.appendChild(input);}
-        hidden('poNumber',poNumber); if (action === 'force-erp') hidden('confirmation',confirmation);
-        <c:if test="${not empty _csrf}">hidden('<c:out value="${_csrf.parameterName}"/>','<c:out value="${_csrf.token}"/>');</c:if>
-        document.body.appendChild(form); form.submit();
+        if (action === 'accept') {
+            bootbox.confirm({
+                message: $('<p>').text('Keep the current Tally version for '+poNumber+' and use it as the new sync baseline?'),
+                callback: function(confirmed) { if (confirmed) submit(''); }
+            });
+        } else {
+            bootbox.prompt({
+                title: 'Overwrite Tally with ERP data: type FORCE ERP VERSION',
+                callback: function(confirmation) {
+                    if (confirmation === null) return;
+                    if (confirmation !== 'FORCE ERP VERSION') {
+                        bootbox.alert('Type FORCE ERP VERSION exactly to confirm, or cancel.');
+                        return false;
+                    }
+                    submit(confirmation);
+                }
+            });
+        }
     }
     refreshPoAutoSyncStatus();
     setInterval(refreshPoAutoSyncStatus, 15000);
@@ -760,11 +773,21 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
         var button = event.submitter || document.activeElement;
         if (!button || (button.getAttribute('formaction') || '').indexOf('/tally/import') < 0) return;
         if (this.dataset.exportRunning === 'true') { event.preventDefault(); return; }
+        var form = this;
+        var originalLabel = button.innerHTML;
         this.dataset.exportRunning = 'true';
         button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending and verifying POs...';
         document.getElementById('tallyPoConnectionStatus').textContent = 'Export in progress. Please wait for the verified result.';
         // Disable after the browser has captured the submitter URL and method.
-        setTimeout(function() { button.disabled = true; }, 0);
+        setTimeout(function() {
+            if (event.defaultPrevented) {
+                delete form.dataset.exportRunning;
+                button.innerHTML = originalLabel;
+                document.getElementById('tallyPoConnectionStatus').textContent = 'Correct the dates and try sending again.';
+                return;
+            }
+            button.disabled = true;
+        }, 0);
     });
     </script>
     </security:authorize>

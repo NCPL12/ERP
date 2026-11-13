@@ -13,7 +13,7 @@ class CompanyAddressFormatTest {
         String expected = "Neptune Controls Pvt Ltd\n"
                 + "2nd Floor, No. 56/4, Sharada Towers Unit-II, Nandi Durga Road\n"
                 + "Near Bharathi Airtel Office, Jayamahal Extension, Bengaluru Urban\n"
-                + "Bengaluru\nKarnataka 560046";
+                + "Bengaluru,Karnataka 560046";
         for (String profile : new String[]{"dev", "h2", "qa", "prod"}) {
             Properties config = new Properties();
             try (InputStream input = Files.newInputStream(Paths.get(
@@ -27,7 +27,7 @@ class CompanyAddressFormatTest {
                 String[] mangalore = addresses[1].split("\\$\\$");
                 assertThat(NcplUtil.formatCompanyAddress(mangalore))
                         .isEqualTo(mangalore[1] + "\n" + mangalore[2] + "\n" + mangalore[3]
-                                + "\nMangalore\nKarnataka " + mangalore[7]);
+                                + "\nMangalore,Karnataka " + mangalore[7]);
             }
         }
     }
