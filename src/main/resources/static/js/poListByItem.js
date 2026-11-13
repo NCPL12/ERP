@@ -81,7 +81,7 @@ function loadPoTable() {
 			
 			"mData" : "version",
 			"visible": false,
-			
+
 		}
 		]
 	})
