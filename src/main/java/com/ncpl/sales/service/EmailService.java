@@ -138,6 +138,7 @@ public class EmailService {
 	        properties.put("mail.smtp.port", String.valueOf(SMTP_HOST_PORT));
 	        properties.put("mail.smtp.auth", "true");
 	        properties.put("mail.smtp.ssl.enable", "true");
+	        properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	        properties.put("mail.smtp.ssl.checkserveridentity", "true");
 	        properties.put("mail.smtp.connectiontimeout", "5000");
 	        properties.put("mail.smtp.timeout", "10000");

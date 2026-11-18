@@ -50,6 +50,7 @@ var dashboardTileScrollTargets = {
 
 /** Clicking anywhere on a dashboard tile scrolls down to that tile's table. */
 $(document).on("click", ".dash-tiles-grid .small-box", function (e) {
+	if ($(this).closest("a[href]").length) return; // link tiles (Cashflow Analyzer) navigate instead
 	e.preventDefault();
 	var tableId = dashboardTileScrollTargets[this.id];
 	var $table = tableId ? $("#" + tableId) : null;

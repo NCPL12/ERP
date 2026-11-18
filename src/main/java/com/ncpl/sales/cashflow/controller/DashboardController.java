@@ -27,9 +27,10 @@ public class DashboardController {
         String initialSection = path == null || "/overview".equals(path)
                 ? "overview" : path.substring(path.lastIndexOf('/') + 1);
         model.addAttribute("initialSection", initialSection);
-        String userRole = authentication == null ? "" : authentication.getAuthorities().stream()
-                .findFirst().map(authority -> authority.getAuthority()).orElse("");
-        model.addAttribute("userRole", "ROLE_ADMIN");
+        // Admins keep full controls; roles granted only CASHFLOW_ANALYZER_VIEW get the read-only UI.
+        boolean admin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ADMIN".equals(a.getAuthority()) || "SUPER ADMIN".equals(a.getAuthority()));
+        model.addAttribute("userRole", admin ? "ROLE_ADMIN" : "ROLE_VIEWER");
         return "cashflow/overview";
     }
     

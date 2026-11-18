@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
-    <meta name="csrf-token" th:content="${_csrf.token}" />
-    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <meta name="csrf-token" th:content="${_csrf?.token}" />
+    <meta name="csrf-header" th:content="${_csrf?.headerName}" />
     <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
     <meta charset="UTF-8">
     <title>Due Date Tracker</title>

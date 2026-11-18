@@ -129,13 +129,6 @@ if (dashboardListsLoading) {
     <section class="content">
       <div class="container-fluid">
         <!-- Small boxes (Stat box) -->
-<security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
-          <div class="col-lg-2 col-6"><div class="small-box bg-teal">
-            <div class="inner"><h3 aria-hidden="true">&nbsp;</h3><p>Cashflow Analyzer</p></div>
-            <div class="icon"><i class="fas fa-chart-line"></i></div>
-            <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" class="small-box-footer">Open analysis <i class="fas fa-arrow-circle-right"></i></a>
-          </div></div>
-          </security:authorize>
         <div class="dash-tiles-grid">
           <c:if test="${tileVisible.contains('SALES_ORDER')}">
           <div>
@@ -247,6 +240,23 @@ if (dashboardListsLoading) {
             </div>
           </div>
           </c:if>
+          <security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','CASHFLOW_ANALYZER_VIEW')">
+          <div>
+            <!-- small box: whole tile is the link, opens in its own tab -->
+            <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;display:block;height:100%">
+              <div class="small-box bg-primary">
+                <div class="inner">
+                  <h3><i class="fas fa-arrow-circle-right" style="font-size:.7em"></i></h3>
+
+                  <p>Cashflow Analyzer</p>
+                </div>
+                <div class="icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+              </div>
+            </a>
+          </div>
+          </security:authorize>
 
           <!-- ./col -->
         </div>

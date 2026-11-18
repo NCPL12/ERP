@@ -94,9 +94,9 @@
                 <nav class="mt-2">
                   <ul class="nav nav-pills nav-sidebar flex-column nav-collapse-hide-child" data-widget="treeview" role="menu"
                     data-accordion="false">
-                    <security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN')">
+                    <security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','CASHFLOW_ANALYZER_VIEW')">
                       <li class="nav-item">
-                        <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" class="nav-link">
+                        <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" class="nav-link" target="_blank" rel="noopener">
                           <i class="nav-icon fas fa-chart-line"></i>
                           <p>Cashflow Analyzer</p>
                         </a>

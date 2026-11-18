@@ -1397,7 +1397,7 @@ public class CashFlowApiController {
         try {
             if (!Boolean.TRUE.equals(tallySyncService.getConfigStatus().get("enabled"))) {
                 response.put("success", false);
-                response.put("message", "Tally sync is disabled. Start ERP with the cashflow-test profile enabled.");
+                response.put("message", "Tally sync is disabled. Set cashflow.tally.sync.enabled=true in the active profile and restart.");
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }
             tallySyncService.syncTallyInvoices(force);

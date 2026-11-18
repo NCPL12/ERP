@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
-    <meta name="csrf-token" th:content="${_csrf.token}" />
-    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <meta name="csrf-token" th:content="${_csrf?.token}" />
+    <meta name="csrf-header" th:content="${_csrf?.headerName}" />
     <title>Neptune Cash Flow Analyzer - Finance Cash Plan</title>
     <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
     <script>
