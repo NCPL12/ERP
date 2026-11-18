@@ -61,4 +61,3 @@ class CashflowWebIntegrationTest {
             .andExpect(status().isOk());
     }
 }
-

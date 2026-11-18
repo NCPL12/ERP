@@ -1679,7 +1679,7 @@ table tbody tr:hover::before {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
-    
+
     .animate-fade-in,
     .animate-slide-in-right,
     .animate-slide-in-left,
@@ -1714,16 +1714,15 @@ table tbody tr:hover::before {
         opacity: 1 !important;
         transform: none !important;
     }
-    
+
     .cash-flow-bg,
     .gradient-flow {
         animation: none !important;
         background-size: 100% 100% !important;
     }
-    
+
     .ripple-effect::after,
     .pulse-ring::before {
         display: none !important;
     }
 }
-

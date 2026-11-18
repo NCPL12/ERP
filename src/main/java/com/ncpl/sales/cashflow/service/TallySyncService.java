@@ -72,7 +72,7 @@ public class TallySyncService {
         }
         logger.info("Starting live TallyPrime synchronization... (force={})", force);
         LocalDateTime syncStartTime = LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata"));
-        
+
         try {
             if (lastSyncMetadata == null) {
                 lastSyncMetadata = initializeSyncMetadata();
@@ -88,13 +88,13 @@ public class TallySyncService {
 
             TallySyncStatusEntity syncStatus = createSyncStatus(syncStartTime, savedInvoices.size(), "SUCCESS", null);
             syncStatusRepository.save(syncStatus);
-            
+
             lastSyncMetadata.setLastSyncTime(syncStartTime);
             lastSyncMetadata.setLastSyncEndTime(LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata")));
             lastSyncMetadata.setInvoicesSynced(savedInvoices.size());
             lastSyncMetadata.setLastSyncStatus("SUCCESS");
             lastSyncMetadata.setLastErrorMessage(null);
-            
+
         } catch (IOException e) {
             logger.error("IO Error during Tally sync: {}", e.getMessage(), e);
             recordSyncFailure("IO Error: " + e.getMessage());
@@ -233,11 +233,11 @@ public class TallySyncService {
         entity.setInvoiceDate(invoice.getInvoiceDate());
         entity.setDueDate(invoice.getDueDate());
         entity.setInvoiceValue(BigDecimal.valueOf(invoice.getInvoiceValue()));
-        
+
         String type = invoice.getType().toString();
         entity.setInvoiceType(InvoiceEntity.InvoiceType.valueOf(type));
         entity.setSource("TALLY");
-        
+
         return entity;
     }
 
@@ -272,7 +272,7 @@ public class TallySyncService {
         lastSyncMetadata.setLastSyncStatus("FAILED");
         lastSyncMetadata.setLastErrorMessage(errorMessage);
         lastSyncMetadata.setLastSyncEndTime(LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata")));
-        
+
         try {
             TallySyncStatusEntity syncStatus = createSyncStatus(LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata")), 0, "FAILED", errorMessage);
             syncStatusRepository.save(syncStatus);
@@ -327,4 +327,3 @@ public class TallySyncService {
         return status;
     }
 }
-

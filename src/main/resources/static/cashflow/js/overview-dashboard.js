@@ -1242,7 +1242,7 @@ function updateDashboard(data) {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
     });
-    
+
     console.log('📊 Dashboard updated with fresh data');
 }
 
@@ -1305,7 +1305,7 @@ function openDetailsModal(type) {
             // Aggregate totals from overdueReceivables and dueReceivables
             const allRec = [...(data.overdueReceivables || []), ...(data.dueReceivables || [])];
             const stats = {};
-            
+
             allRec.forEach(inv => {
                 const name = inv.customerName || 'Unknown';
                 if (!stats[name]) stats[name] = { count: 0, amount: 0 };
@@ -1346,18 +1346,18 @@ function applyModalFilters() {
     const fromDate = document.getElementById('modalFromDate')?.value || '';
     const toDate = document.getElementById('modalToDate')?.value || '';
     const minAmount = parseFloat(document.getElementById('modalMinAmount')?.value) || 0;
-    
+
     const filterTable = (tbodyId) => {
         const tbody = document.getElementById(tbodyId);
         if (!tbody) return;
-        
+
         Array.from(tbody.querySelectorAll('tr')).forEach(row => {
             if (row.cells.length < 5) return;
-            
+
             const name = (row.cells[1]?.textContent || '').toLowerCase();
             const amount = parseAmount(row.cells[2]?.textContent);
             const dueDate = row.cells[3]?.textContent || '';
-            
+
             let visible = true;
             if (searchName && !name.includes(searchName)) visible = false;
             if (minAmount && amount < minAmount) visible = false;
@@ -1371,24 +1371,24 @@ function applyModalFilters() {
                 const to = new Date(toDate);
                 if (rowDate > to) visible = false;
             }
-            
+
             row.style.display = visible ? '' : 'none';
         });
     };
-    
+
     filterTable('modalReceivablesBody');
     filterTable('modalPayablesBody');
-    
+
     // Also filter the All tab content
     const allBody = document.getElementById('modalAllBody');
     if (allBody) {
         Array.from(allBody.querySelectorAll('tr')).forEach(row => {
             if (row.cells.length < 5) return;
-            
+
             const name = (row.cells[1]?.textContent || '').toLowerCase();
             const amount = parseAmount(row.cells[2]?.textContent);
             const dueDate = row.cells[3]?.textContent || '';
-            
+
             let visible = true;
             if (searchName && !name.includes(searchName)) visible = false;
             if (minAmount && amount < minAmount) visible = false;
@@ -1402,7 +1402,7 @@ function applyModalFilters() {
                 const to = new Date(toDate);
                 if (rowDate > to) visible = false;
             }
-            
+
             row.style.display = visible ? '' : 'none';
         });
     }
@@ -1413,22 +1413,22 @@ function applyCustomersModalFilters() {
     const searchName = (document.getElementById('customersModalSearchName')?.value || '').toLowerCase();
     const minInvoices = parseInt(document.getElementById('customersModalMinInvoices')?.value) || 0;
     const minAmount = parseFloat(document.getElementById('customersModalMinAmount')?.value) || 0;
-    
+
     const tbody = document.getElementById('activeCustomersModalBody');
     if (!tbody) return;
-    
+
     Array.from(tbody.querySelectorAll('tr')).forEach(row => {
         if (row.cells.length < 3) return;
-        
+
         const name = (row.cells[0].textContent || '').toLowerCase();
         const invoiceCount = parseInt(row.cells[1].textContent) || 0;
         const amount = parseAmount(row.cells[2].textContent);
-        
+
         let visible = true;
         if (searchName && !name.includes(searchName)) visible = false;
         if (minInvoices && invoiceCount < minInvoices) visible = false;
         if (minAmount && amount < minAmount) visible = false;
-        
+
         row.style.display = visible ? '' : 'none';
     });
 }
@@ -1640,7 +1640,7 @@ function wireEvents() {
             }
         });
     });
-    
+
     const mappings = [
         ['tileActiveCustomers', () => openDetailsModal('activeCustomers')],
         ['tileOverdueReceivables', () => openDetailsModal('receivables')],

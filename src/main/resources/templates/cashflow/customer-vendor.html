@@ -15,19 +15,19 @@
         * { box-sizing: border-box; }
         body {
             background: #f0f4f8;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             min-height: 100vh;
         }
-        
+
         .page-header {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 28px 32px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -45,9 +45,9 @@
             height: 5px;
             background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #ef4444);
         }
-        .page-header h4 { 
-            color: #0f172a; 
-            font-weight: 800; 
+        .page-header h4 {
+            color: #0f172a;
+            font-weight: 800;
             margin: 0 0 8px 0;
             font-size: 26px;
             display: flex;
@@ -173,7 +173,7 @@
             font-size: 15px;
             font-weight: 500;
         }
-        
+
         .dashboard-container {
             display: flex;
             gap: 28px;
@@ -181,7 +181,7 @@
             height: 600px;
             max-height: 600px;
         }
-        
+
         .weekly-grid {
             flex: 0 0 40%;
             display: grid;
@@ -190,12 +190,12 @@
             gap: 24px;
             height: 100%;
         }
-        
+
         .week-quarter {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -217,22 +217,22 @@
         .week-quarter:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #059669); }
         .week-quarter:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
         .week-quarter:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
-        
+
         .week-quarter:hover {
             transform: translateY(-6px) scale(1.01);
-            box-shadow: 
+            box-shadow:
                 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
         }
-        
+
         .week-header {
             flex-shrink: 0;
             margin-bottom: 16px;
             padding-bottom: 12px;
             border-bottom: 2px solid #f1f5f9;
         }
-        
+
         .week-title {
             font-size: 13px;
             font-weight: 800;
@@ -242,7 +242,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        
+
         .week-amount {
             font-size: 22px;
             font-weight: 800;
@@ -253,7 +253,7 @@
             text-align: center;
             letter-spacing: -0.5px;
         }
-        
+
         .mini-charts {
             flex: 1;
             display: flex;
@@ -261,7 +261,7 @@
             gap: 12px;
             min-height: 0;
         }
-        
+
         .mini-chart {
             flex: 1;
             position: relative;
@@ -272,7 +272,7 @@
             padding: 12px;
             border: 1px solid #e2e8f0;
         }
-        
+
         .mini-label {
             font-size: 10px;
             font-weight: 700;
@@ -282,13 +282,13 @@
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
-        
+
         .monthly-section {
             flex: 0 0 60%;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 32px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -306,7 +306,7 @@
             height: 5px;
             background: linear-gradient(90deg, #1e3c72, #3b82f6);
         }
-        
+
         .section-title {
             font-size: 22px;
             font-weight: 800;
@@ -320,14 +320,14 @@
             gap: 12px;
             letter-spacing: -0.5px;
         }
-        
+
         .chart-half {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
         }
-        
+
         .chart-label {
             font-size: 16px;
             font-weight: 700;
@@ -340,7 +340,7 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .chart-container {
             flex: 1;
             position: relative;
@@ -350,7 +350,7 @@
             padding: 16px;
             border: 1px solid #e2e8f0;
         }
-        
+
         .divider {
             height: 2px;
             background: linear-gradient(90deg, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent);
@@ -366,7 +366,7 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 22px 28px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -384,7 +384,7 @@
             background: linear-gradient(90deg, #3b82f6, #10b981);
             border-radius: 20px 20px 0 0;
         }
-        
+
         .filter-toolbar label {
             font-weight: 700;
             color: #1e293b;
@@ -426,13 +426,13 @@
             font-weight: 500;
             border: 1px solid #e2e8f0;
         }
-        
-        canvas { 
-            max-width: 100% !important; 
+
+        canvas {
+            max-width: 100% !important;
             max-height: 100% !important;
             display: block !important;
         }
-        
+
         /* Loading state */
         .dashboard-container.loading {
             position: relative;
@@ -452,7 +452,7 @@
             animation: rotate 1s linear infinite;
             z-index: 10;
         }
-        
+
         /* Responsive design */
         @media (max-width: 1200px) {
             .dashboard-container {
@@ -468,7 +468,7 @@
                 height: 500px;
             }
         }
-        
+
         @media (max-width: 768px) {
             .weekly-grid {
                 grid-template-columns: 1fr;
@@ -505,7 +505,7 @@
     </div>
 
     <div th:replace="cashflow/fragments/navigation :: navbar('overdue')"></div>
-    
+
     <div class="container-fluid mt-4">
         <div th:replace="cashflow/fragments/navigation :: tabbar('overdue')"></div>
 
@@ -522,12 +522,12 @@
                 Review overdue exposure for a specific date range.
             </div>
         </div>
-        
+
         <div class="page-header">
             <h4><i class="fas fa-exclamation-triangle text-warning"></i> Overdue Payment Tracking</h4>
             <p class="mb-0 text-muted">Track overdue invoices and outstanding payments by customer and vendor</p>
         </div>
-        
+
         <div class="dashboard-container">
             <div class="weekly-grid">
                 <div class="week-quarter">
@@ -546,7 +546,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="week-quarter">
                     <div class="week-header">
                         <div class="week-title" id="week2Title">Week 2</div>
@@ -563,7 +563,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="week-quarter">
                     <div class="week-header">
                         <div class="week-title" id="week3Title">Week 3</div>
@@ -580,7 +580,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="week-quarter">
                     <div class="week-header">
                         <div class="week-title" id="week4Title">Week 4</div>
@@ -598,19 +598,19 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="monthly-section">
                 <div class="section-title">October 2025 Monthly Analysis</div>
-                
+
                 <div class="chart-half">
                     <div class="chart-label"><i class="fas fa-users"></i> Customer Activity</div>
                     <div class="chart-container">
                         <canvas id="monthlyCustomersChart"></canvas>
                     </div>
                 </div>
-                
+
                 <div class="divider"></div>
-                
+
                 <div class="chart-half">
                     <div class="chart-label"><i class="fas fa-building"></i> Vendor Activity</div>
                     <div class="chart-container">
@@ -620,7 +620,7 @@
             </div>
         </div>
     </div>
-    
+
     <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
     <script>
         let charts = {};
@@ -667,7 +667,7 @@
             console.log(`[${type}] ${message}`);
             alert(message);
         }
-        
+
         // Upload button is only available on Overview tab
         // Data is shared via session across all tabs
 
@@ -698,7 +698,7 @@
                 if (!silent) setLoading(false);
             }
         }
-        
+
         function renderAll(data) {
             console.log('Rendering overdue payment analysis with data:', data);
             if (!data) {
@@ -709,7 +709,7 @@
             renderWeeklyCharts(data.weeklyCustomers || [], data.weeklyVendors || []);
             renderMonthlyCharts(data.monthlyCustomers || [], data.monthlyVendors || []);
         }
-        
+
         function renderWeeklyCharts(weeklyCustomers = [], weeklyVendors = []) {
             for (let i = 0; i < 4; i++) {
                 const weekNum = i + 1;
@@ -745,7 +745,7 @@
                 }));
 
                 renderMiniBarChart(
-                    `w${weekNum}CustChart`, 
+                    `w${weekNum}CustChart`,
                     [
                         { value: custDetails.length, totalAmount: custAmount, details: custDetails },
                         { value: Math.round(custAmount / 100000), totalAmount: custAmount, details: null }
@@ -753,7 +753,7 @@
                     ['Customers', 'Amount(L)'],
                     ['rgba(59,130,246,0.8)', 'rgba(16,185,129,0.8)']
                 );
-                
+
                 renderMiniBarChart(
                     `w${weekNum}VendChart`,
                     [
@@ -765,22 +765,22 @@
                 );
             }
         }
-        
+
         function renderMiniBarChart(id, chartData, labels, colors) {
             const element = document.getElementById(id);
             if (!element) {
                 console.error('Canvas element not found:', id);
                 return;
             }
-            
+
             const ctx = element.getContext('2d');
             if (charts[id]) charts[id].destroy();
-            
+
             // Create gradient for bars
             const barGradient = ctx.createLinearGradient(0, 0, 0, element.height || 200);
             barGradient.addColorStop(0, colors[0]);
             barGradient.addColorStop(1, colors[1] || colors[0]);
-            
+
             charts[id] = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -796,7 +796,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(0, 0, 0, 0.85)',
@@ -818,7 +818,7 @@
                                     if (!invoiceData || !invoiceData.details) {
                                         return 'Count: ' + context.parsed.y;
                                     }
-                                    
+
                                     // Helper function to wrap long text
                                     const MAX_LENGTH = 32;
                                     const addLineBreaks = (str, maxLen) => {
@@ -832,7 +832,7 @@
                                         if (str.length > 0) lines.push(str);
                                         return lines.join('\n');
                                     };
-                                    
+
                                     const lines = [];
                                     invoiceData.details.forEach((invoice, idx) => {
                                         if (idx < 3) {
@@ -843,7 +843,7 @@
                                             lines.push('Due: ' + invoice.dueDate);
                                         }
                                     });
-                                    
+
                                     if (invoiceData.details.length > 3) {
                                         lines.push('');
                                         lines.push('... and ' + (invoiceData.details.length - 3) + ' more');
@@ -856,24 +856,24 @@
                         }
                     },
                     scales: {
-                        x: { 
-                            grid: { display: false, drawBorder: false }, 
-                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' } 
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' }
                         },
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' }, 
-                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { size: 9, weight: '600' }, color: '#64748b' },
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }
                         }
                     }
                 }
             });
         }
-        
+
         function renderMonthlyCharts(monthlyCustomers = [], monthlyVendors = []) {
             const sectionTitle = document.querySelector('.monthly-section .section-title');
             if (sectionTitle) {
-                sectionTitle.textContent = currentFilters.fromDate && currentFilters.toDate 
+                sectionTitle.textContent = currentFilters.fromDate && currentFilters.toDate
                     ? `Date Range Analysis (${currentFilters.fromDate} to ${currentFilters.toDate})`
                     : 'Overall Analysis';
             }
@@ -883,18 +883,18 @@
                 console.error('Monthly customers canvas not found');
                 return;
             }
-            
+
             const custCtx = custElement.getContext('2d');
             if (charts.monthlyCust) charts.monthlyCust.destroy();
 
             const customerSeries = monthlyCustomers.length ? monthlyCustomers : [{ month: 'No Data', amount: 0, count: 0 }];
             const vendorSeries = monthlyVendors.length ? monthlyVendors : [{ month: 'No Data', amount: 0, count: 0 }];
-            
+
             // Create gradient for line chart
             const custGradient = custCtx.createLinearGradient(0, 0, 0, custElement.height || 300);
             custGradient.addColorStop(0, 'rgba(59,130,246,0.25)');
             custGradient.addColorStop(1, 'rgba(59,130,246,0.05)');
-            
+
             charts.monthlyCust = new Chart(custCtx, {
                 type: 'line',
                 data: {
@@ -917,7 +917,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(30, 41, 59, 0.95)',
@@ -945,33 +945,33 @@
                         }
                     },
                     scales: {
-                        x: { 
-                            grid: { display: false, drawBorder: false }, 
-                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 } 
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 }
                         },
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' }, 
-                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' },
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }
                         }
                     }
                 }
             });
-            
+
             const vendElement = document.getElementById('monthlyVendorsChart');
             if (!vendElement) {
                 console.error('Monthly vendors canvas not found');
                 return;
             }
-            
+
             const vendCtx = vendElement.getContext('2d');
             if (charts.monthlyVend) charts.monthlyVend.destroy();
-            
+
             // Create gradient for vendor bars
             const vendGradient = vendCtx.createLinearGradient(0, 0, 0, vendElement.height || 300);
             vendGradient.addColorStop(0, 'rgba(239,68,68,0.9)');
             vendGradient.addColorStop(1, 'rgba(239,68,68,0.6)');
-            
+
             charts.monthlyVend = new Chart(vendCtx, {
                 type: 'bar',
                 data: {
@@ -988,7 +988,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(30, 41, 59, 0.95)',
@@ -1016,20 +1016,20 @@
                         }
                     },
                     scales: {
-                        x: { 
-                            grid: { display: false, drawBorder: false }, 
-                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 } 
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', maxRotation: 45, minRotation: 45 }
                         },
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' }, 
-                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false } 
+                        y: {
+                            beginAtZero: true,
+                            ticks: { font: { size: 10, weight: '600' }, color: '#64748b', callback: v => '₹' + v + 'L' },
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }
                         }
                     }
                 }
             });
         }
-        
+
         async function checkSessionData() {
             try {
                 const response = await fetch('/api/cashflow/session-info', {
@@ -1051,7 +1051,7 @@
                 console.log('No cached data available', error);
             }
         }
-        
+
         document.getElementById('deleteFileBtn').addEventListener('click', async function(e) {
             e.stopPropagation();
             if (confirm('Delete this file? All analyzed data will be cleared.')) {
@@ -1067,7 +1067,7 @@
                 }
             }
         });
-        
+
         dashboardFilters.initTimeFilters({
             onChange: (filters) => {
                 currentFilters = filters;
@@ -1081,10 +1081,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const pageAnimation = document.getElementById('pageAnimation');
             const body = document.body;
-            
+
             if (pageAnimation) {
                 body.style.overflow = 'hidden';
-                
+
                 setTimeout(() => {
                     if (pageAnimation) {
                         pageAnimation.style.display = 'none';
@@ -1097,5 +1097,3 @@
 <script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
 </body>
 </html>
-
-

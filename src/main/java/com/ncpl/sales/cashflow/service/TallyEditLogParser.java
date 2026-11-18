@@ -20,11 +20,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Parses Tally 6.2 Edit Log exports (XML format) to extract new/modified invoices.
- * 
+ *
  * Tally 6.2 Edit Log format (XML structure):
  * - VOUCHERs contain: Party Name, Voucher Number, Voucher Date, Amount, Due Date
  * - Modified On timestamp allows incremental sync
- * 
+ *
  * Usage:
  * TallyEditLogParser parser = new TallyEditLogParser();
  * List<Invoice> newInvoices = parser.parseEditLog(
@@ -39,7 +39,7 @@ public class TallyEditLogParser {
 
     /**
      * Parse Tally 6.2 Edit Log XML file and extract invoices.
-     * 
+     *
      * @param editLogPath Path to Tally's exported XML file
      * @param lastSyncTime Last sync timestamp (for future incremental support)
      * @return List of Invoice objects
@@ -48,7 +48,7 @@ public class TallyEditLogParser {
     public List<Invoice> parseEditLog(Path editLogPath, LocalDateTime lastSyncTime) throws IOException {
         System.out.println("Tally Parser: Reading file from path: " + editLogPath.toAbsolutePath());
         List<Invoice> invoices = new ArrayList<>();
-        
+
         // Use BufferedReader to read line by line instead of loading entire file
         try (BufferedReader reader = Files.newBufferedReader(editLogPath, StandardCharsets.UTF_16LE)) {
             StringBuilder voucherBlock = new StringBuilder();
@@ -56,9 +56,9 @@ public class TallyEditLogParser {
             boolean inVoucher = false;
             int voucherCount = 0;
             int relevantCount = 0;
-            
+
             System.out.println("Tally Parser: Starting line-by-line parsing");
-            
+
             while ((line = reader.readLine()) != null) {
                 if (line.trim().startsWith("<VOUCHER ")) {
                     inVoucher = true;
@@ -69,7 +69,7 @@ public class TallyEditLogParser {
                     if (line.contains("</VOUCHER>")) {
                         inVoucher = false;
                         voucherCount++;
-                        
+
                         // Debug: print first few vouchers
                         if (voucherCount <= 3) {
                             System.out.println("Tally Parser: Found voucher " + voucherCount + ", length: " + voucherBlock.length());
@@ -77,7 +77,7 @@ public class TallyEditLogParser {
                             String vchType = extractValue(voucherBlock.toString(), "VCHTYPE=\"([^\"]+)\"");
                             System.out.println("Tally Parser: Voucher " + voucherCount + " type: " + vchType);
                         }
-                        
+
                         try {
                             Invoice invoice = parseVoucher(voucherBlock.toString());
                             if (invoice != null) {
@@ -91,10 +91,10 @@ public class TallyEditLogParser {
                     }
                 }
             }
-            
+
             System.out.println("Tally Parser: Found " + voucherCount + " total vouchers, " + relevantCount + " relevant invoices");
         }
-        
+
         return invoices;
     }
 
@@ -105,43 +105,43 @@ public class TallyEditLogParser {
         try {
             // Extract VCHTYPE (voucher type)
             String vchType = extractValue(voucherXml, "VCHTYPE=\"([^\"]+)\"");
-            
+
             // Only process Sales and Purchase vouchers (skip payments, journals, etc.)
             if (!isRelevantVoucherType(vchType)) {
                 logger.debug("Skipping voucher type: {}", vchType);
                 return null;
             }
-            
+
             // Extract key fields
             String voucherNo = extractXmlTagValue(voucherXml, "VOUCHERNUMBER");
             if (voucherNo == null || voucherNo.isEmpty()) {
                 return null;
             }
-            
+
             String partyName = extractXmlTagValue(voucherXml, "PARTYNAME");
             if (partyName == null || partyName.isEmpty()) {
                 partyName = "Unknown Party";
             }
-            
+
             String dateStr = extractXmlTagValue(voucherXml, "DATE");
             LocalDate voucherDate = dateStr != null ? parseTallyDate(dateStr) : LocalDate.now();
             logger.info("Processing voucher date: {}", dateStr);
-            
+
             // Extract due date or default to 30 days from invoice date
             String dueDateStr = extractXmlTagValue(voucherXml, "DUEDATE");
             LocalDate dueDate = dueDateStr != null ? parseTallyDate(dueDateStr) : voucherDate.plusDays(30);
-            
+
             // Extract amount from ledger entries (look for positive amounts in Sales)
             double amount = extractAmount(voucherXml);
             if (amount <= 0) {
                 return null; // Skip zero/negative amounts
             }
-            
+
             // Determine invoice type
-            Invoice.InvoiceType type = isOutflow(vchType) 
-                ? Invoice.InvoiceType.OUTFLOW 
+            Invoice.InvoiceType type = isOutflow(vchType)
+                ? Invoice.InvoiceType.OUTFLOW
                 : Invoice.InvoiceType.INFLOW;
-            
+
             return new Invoice(
                 partyName,
                 voucherNo,
@@ -150,7 +150,7 @@ public class TallyEditLogParser {
                 amount,
                 type
             );
-            
+
         } catch (Exception e) {
             System.err.println("Error parsing voucher: " + e.getMessage());
             return null;
@@ -192,7 +192,7 @@ public class TallyEditLogParser {
     private boolean isOutflow(String vchType) {
         if (vchType == null) return false;
         String lower = vchType.toLowerCase();
-        return lower.contains("purchase") || lower.contains("expense") 
+        return lower.contains("purchase") || lower.contains("expense")
             || lower.contains("debit note");
     }
 
@@ -239,13 +239,13 @@ public class TallyEditLogParser {
             // Find all ledger entry blocks
             Pattern ledgerPattern = Pattern.compile("<ALLLEDGERENTRIES\\.LIST>(.*?)</ALLLEDGERENTRIES\\.LIST>", Pattern.DOTALL);
             Matcher ledgerMatcher = ledgerPattern.matcher(voucherXml);
-            
+
             double maxPositiveAmount = 0;
             double maxNegativeAmount = 0;
-            
+
             while (ledgerMatcher.find()) {
                 String ledgerBlock = ledgerMatcher.group(1);
-                
+
                 // Extract amount from this ledger entry
                 String amountStr = extractXmlTagValue(ledgerBlock, "AMOUNT");
                 if (amountStr != null) {
@@ -261,7 +261,7 @@ public class TallyEditLogParser {
                     }
                 }
             }
-            
+
             // For Sales invoices, return the positive amount (customer receivable)
             // For Purchase invoices, return the absolute value of negative amount (vendor payable)
             if (maxPositiveAmount > 0) {
@@ -269,7 +269,7 @@ public class TallyEditLogParser {
             } else if (maxNegativeAmount < 0) {
                 return Math.abs(maxNegativeAmount);
             }
-            
+
         } catch (Exception e) {
             System.err.println("Error extracting amount: " + e.getMessage());
         }

@@ -33,7 +33,7 @@
         const notify = () => {
             notifyChange();
         };
-        
+
         // Add event listeners for date range inputs
         fromDateInputEl?.addEventListener('change', notify);
         toDateInputEl?.addEventListener('change', notify);
@@ -56,4 +56,3 @@
         setFilterState
     };
 })();
-

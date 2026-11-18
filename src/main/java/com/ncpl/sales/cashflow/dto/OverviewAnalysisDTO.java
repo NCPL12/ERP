@@ -23,10 +23,10 @@ public class OverviewAnalysisDTO {
     private BigDecimal duePayablesAmount;
     private int duePayablesCount;
     private BigDecimal bankBalance = BigDecimal.ZERO;
-    
+
     public OverviewAnalysisDTO() {}
-    
-    public OverviewAnalysisDTO(int activeCustomers, BigDecimal totalInflow, 
+
+    public OverviewAnalysisDTO(int activeCustomers, BigDecimal totalInflow,
                               BigDecimal totalOutflow, BigDecimal netCashflow,
                               int totalOverdueCount, double collectionSuccessRate,
                               List<OverdueInvoiceDTO> overdueReceivables,
@@ -43,122 +43,122 @@ public class OverviewAnalysisDTO {
         this.overduePayables = overduePayables != null ? overduePayables : com.ncpl.sales.cashflow.util.Java8Collections.list();
         this.dueReceivables = dueReceivables != null ? dueReceivables : com.ncpl.sales.cashflow.util.Java8Collections.list();
         this.duePayables = duePayables != null ? duePayables : com.ncpl.sales.cashflow.util.Java8Collections.list();
-        
+
         // Calculate overdue amounts and counts
         this.overdueReceivablesAmount = this.overdueReceivables.stream()
                 .map(OverdueInvoiceDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         this.overdueReceivablesCount = this.overdueReceivables.size();
-        
+
         this.overduePayablesAmount = this.overduePayables.stream()
                 .map(OverdueInvoiceDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         this.overduePayablesCount = this.overduePayables.size();
-        
+
         this.dueReceivablesAmount = this.dueReceivables.stream()
                 .map(UpcomingInvoiceDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         this.dueReceivablesCount = this.dueReceivables.size();
-        
+
         this.duePayablesAmount = this.duePayables.stream()
                 .map(UpcomingInvoiceDTO::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         this.duePayablesCount = this.duePayables.size();
     }
-    
+
     // Getters and Setters
     public int getActiveCustomers() {
         return activeCustomers;
     }
-    
+
     public void setActiveCustomers(int activeCustomers) {
         this.activeCustomers = activeCustomers;
     }
-    
+
     public BigDecimal getTotalInflow() {
         return totalInflow;
     }
-    
+
     public void setTotalInflow(BigDecimal totalInflow) {
         this.totalInflow = totalInflow;
     }
-    
+
     public BigDecimal getTotalOutflow() {
         return totalOutflow;
     }
-    
+
     public void setTotalOutflow(BigDecimal totalOutflow) {
         this.totalOutflow = totalOutflow;
     }
-    
+
     public BigDecimal getNetCashflow() {
         return netCashflow;
     }
-    
+
     public void setNetCashflow(BigDecimal netCashflow) {
         this.netCashflow = netCashflow;
     }
-    
+
     public int getTotalOverdueCount() {
         return totalOverdueCount;
     }
-    
+
     public void setTotalOverdueCount(int totalOverdueCount) {
         this.totalOverdueCount = totalOverdueCount;
     }
-    
+
     public double getCollectionSuccessRate() {
         return collectionSuccessRate;
     }
-    
+
     public void setCollectionSuccessRate(double collectionSuccessRate) {
         this.collectionSuccessRate = collectionSuccessRate;
     }
-    
+
     public List<OverdueInvoiceDTO> getOverdueReceivables() {
         return overdueReceivables;
     }
-    
+
     public void setOverdueReceivables(List<OverdueInvoiceDTO> overdueReceivables) {
         this.overdueReceivables = overdueReceivables;
     }
-    
+
     public List<OverdueInvoiceDTO> getOverduePayables() {
         return overduePayables;
     }
-    
+
     public void setOverduePayables(List<OverdueInvoiceDTO> overduePayables) {
         this.overduePayables = overduePayables;
     }
-    
+
     public BigDecimal getOverdueReceivablesAmount() {
         return overdueReceivablesAmount;
     }
-    
+
     public void setOverdueReceivablesAmount(BigDecimal overdueReceivablesAmount) {
         this.overdueReceivablesAmount = overdueReceivablesAmount;
     }
-    
+
     public int getOverdueReceivablesCount() {
         return overdueReceivablesCount;
     }
-    
+
     public void setOverdueReceivablesCount(int overdueReceivablesCount) {
         this.overdueReceivablesCount = overdueReceivablesCount;
     }
-    
+
     public BigDecimal getOverduePayablesAmount() {
         return overduePayablesAmount;
     }
-    
+
     public void setOverduePayablesAmount(BigDecimal overduePayablesAmount) {
         this.overduePayablesAmount = overduePayablesAmount;
     }
-    
+
     public int getOverduePayablesCount() {
         return overduePayablesCount;
     }
-    
+
     public void setOverduePayablesCount(int overduePayablesCount) {
         this.overduePayablesCount = overduePayablesCount;
     }

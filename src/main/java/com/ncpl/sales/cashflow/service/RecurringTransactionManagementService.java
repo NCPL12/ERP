@@ -11,13 +11,13 @@ import java.util.Optional;
 
 @Service
 public class RecurringTransactionManagementService {
-    
+
     private final RecurringTransactionRepository repository;
-    
+
     public RecurringTransactionManagementService(RecurringTransactionRepository repository) {
         this.repository = repository;
     }
-    
+
     /**
      * Create a new recurring transaction
      */
@@ -29,28 +29,28 @@ public class RecurringTransactionManagementService {
         transaction.setIsActive(true);
         return repository.save(transaction);
     }
-    
+
     /**
      * Get all active recurring transactions
      */
     public List<RecurringTransactionEntity> getAllActiveTransactions() {
         return repository.findByIsActiveOrderByNextDueDateAsc(true);
     }
-    
+
     /**
      * Get all transactions (including inactive)
      */
     public List<RecurringTransactionEntity> getAllTransactions() {
         return repository.findAll();
     }
-    
+
     /**
      * Get transaction by ID
      */
     public Optional<RecurringTransactionEntity> getTransactionById(Long id) {
         return repository.findById(id);
     }
-    
+
     /**
      * Update an existing recurring transaction
      */
@@ -58,7 +58,7 @@ public class RecurringTransactionManagementService {
         Optional<RecurringTransactionEntity> existing = repository.findById(id);
         if (existing.isPresent()) {
             RecurringTransactionEntity transaction = existing.get();
-            
+
             if (updates.getName() != null) transaction.setName(updates.getName());
             if (updates.getDescription() != null) transaction.setDescription(updates.getDescription());
             if (updates.getType() != null) transaction.setType(updates.getType());
@@ -68,14 +68,14 @@ public class RecurringTransactionManagementService {
             if (updates.getNextDueDate() != null) transaction.setNextDueDate(updates.getNextDueDate());
             if (updates.getNotes() != null) transaction.setNotes(updates.getNotes());
             if (updates.getIsActive() != null) transaction.setIsActive(updates.getIsActive());
-            
+
             transaction.setLastUpdatedDate(LocalDate.now());
-            
+
             return repository.save(transaction);
         }
         throw new IllegalArgumentException("Transaction not found with ID: " + id);
     }
-    
+
     /**
      * Delete a recurring transaction (soft delete - mark as inactive)
      */
@@ -88,7 +88,7 @@ public class RecurringTransactionManagementService {
             repository.save(transaction);
         }
     }
-    
+
     /**
      * Get total monthly obligations
      */
@@ -98,7 +98,7 @@ public class RecurringTransactionManagementService {
             .mapToDouble(t -> t.getAmount().doubleValue())
             .sum();
     }
-    
+
     /**
      * Get upcoming transactions for the next N days
      */

@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.datasource.url=jdbc:h2:mem:cashflowmodule;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop",
-    "cashflow.tally.sync.enabled=true", "spring.main.allow-bean-definition-overriding=false"})
+    "spring.jpa.properties.hibernate.jdbc.time_zone=UTC", "cashflow.tally.sync.enabled=true", "spring.main.allow-bean-definition-overriding=false"})
 class CashflowPersistenceIntegrationTest {
     @Configuration @EnableAutoConfiguration @EnableWebSecurity
     @EntityScan(basePackageClasses=InvoiceEntity.class)
@@ -76,4 +76,3 @@ class CashflowPersistenceIntegrationTest {
         } finally { java.util.TimeZone.setDefault(previousZone); }
     }
 }
-

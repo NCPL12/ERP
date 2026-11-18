@@ -18,7 +18,7 @@ import java.util.Locale;
 
 @Service
 public class ExcelReaderService {
-    
+
     private static final String[] INFLOW_SHEET_NAMES = {
         "Inflow", "inflow", "Receivables", "receivables", "Sales", "sales", "Revenue", "revenue", "Invoices", "invoices"
     };
@@ -28,13 +28,13 @@ public class ExcelReaderService {
 
     public List<Invoice> readExcelFile(String filePath) throws IOException {
         List<Invoice> invoices = new ArrayList<>();
-        
+
         try (FileInputStream fis = new FileInputStream(filePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
-            
+
             Sheet inflowSheet = findSheet(workbook, INFLOW_SHEET_NAMES);
             Sheet outflowSheet = findSheet(workbook, OUTFLOW_SHEET_NAMES);
-            
+
             if (inflowSheet == null || outflowSheet == null) {
                 for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                     Sheet sheet = workbook.getSheetAt(i);
@@ -62,7 +62,7 @@ public class ExcelReaderService {
                     }
                 }
             }
-            
+
             if (inflowSheet != null) {
                 invoices.addAll(readSheet(inflowSheet, Invoice.InvoiceType.INFLOW));
             }
@@ -70,14 +70,14 @@ public class ExcelReaderService {
                 invoices.addAll(readSheet(outflowSheet, Invoice.InvoiceType.OUTFLOW));
             }
         }
-        
+
         if (invoices.isEmpty()) {
             throw new IOException("No valid invoice data found in Excel file. Expected sheets: Inflow/Outflow (or inflow/outflow/Receivables/Payables)");
         }
 
         return invoices;
     }
-    
+
     private Sheet findSheet(Workbook workbook, String[] sheetNames) {
         for (String name : sheetNames) {
             Sheet sheet = workbook.getSheet(name);
@@ -128,10 +128,10 @@ public class ExcelReaderService {
         int emptyCustomerName = 0;
         int invalidDate = 0;
         int zeroOrNegativeValue = 0;
-        
+
         System.out.println("\n=== Processing " + type + " sheet ===");
         System.out.println("Total rows in sheet: " + sheet.getLastRowNum());
-        
+
         // Skip header row
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
@@ -140,18 +140,18 @@ public class ExcelReaderService {
                 skippedRows++;
                 continue;
             }
-            
+
             try {
                 String customerName = getCellValueAsString(row.getCell(0));
                 String invoiceNumber = getCellValueAsString(row.getCell(1));
                 LocalDate invoiceDate = getCellValueAsDate(row.getCell(2));
                 LocalDate dueDate = getCellValueAsDate(row.getCell(3));
                 double invoiceValue = getCellValueAsDouble(row.getCell(4));
-                
+
                 // Log the row being processed with all values
                 System.out.printf("\nRow %d - Customer: %s, Invoice: %s, Date: %s, Due: %s, Value: %,.2f%n",
                     i, customerName, invoiceNumber, invoiceDate, dueDate, invoiceValue);
-                
+
                 // Validate customer name
                 if (customerName == null || customerName.trim().isEmpty()) {
                     System.out.println("Skipping row " + i + ": Empty customer name");
@@ -159,36 +159,36 @@ public class ExcelReaderService {
                     skippedRows++;
                     continue;
                 }
-                
+
                 // Validate invoice value
                 if (invoiceValue <= 0) {
                     System.out.println("Warning: Row " + i + " has invalid invoice value: " + invoiceValue);
                     zeroOrNegativeValue++;
                 }
-                
+
                 // Validate dates
                 if (invoiceDate == null || dueDate == null) {
                     System.out.println("Warning: Row " + i + " has missing date(s). Invoice: " + invoiceDate + ", Due: " + dueDate);
                     invalidDate++;
                 }
-                
-                Invoice invoice = new Invoice(customerName, invoiceNumber, 
+
+                Invoice invoice = new Invoice(customerName, invoiceNumber,
                                           invoiceDate, dueDate, invoiceValue, type);
                 invoices.add(invoice);
                 totalValue += invoiceValue;
-                
+
                 // Log every 10 rows to track progress
                 if (i % 10 == 0) {
                     System.out.printf("Processed %d rows. Current total: %,.2f%n", i, totalValue);
                 }
-                
+
             } catch (Exception e) {
                 System.err.println("Error reading row " + i + ": " + e.getMessage());
                 e.printStackTrace();
                 skippedRows++;
             }
         }
-        
+
         System.out.println("\n=== " + type + " Summary ===");
         System.out.println("Total invoices processed: " + invoices.size());
         System.out.println("Skipped rows: " + skippedRows);
@@ -196,23 +196,23 @@ public class ExcelReaderService {
         System.out.println("  - Invalid dates: " + invalidDate);
         System.out.println("  - Zero/negative values: " + zeroOrNegativeValue);
         System.out.printf("Total %s value: %,.2f%n", type, totalValue);
-        
+
         // Log the sum of all invoice values for verification
         double sumOfInvoices = invoices.stream().mapToDouble(Invoice::getInvoiceValue).sum();
         System.out.printf("Sum of all invoice values: %,.2f%n", sumOfInvoices);
-        
+
         // Log a warning if the sum doesn't match the running total
         if (Math.abs(sumOfInvoices - totalValue) > 0.01) {
-            System.err.printf("WARNING: Sum of invoice values (%,.2f) does not match running total (%,.2f)%n", 
+            System.err.printf("WARNING: Sum of invoice values (%,.2f) does not match running total (%,.2f)%n",
                 sumOfInvoices, totalValue);
         }
-        
+
         return invoices;
     }
-    
+
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
-        
+
         switch (cell.getCellType()) {
             case Cell.CELL_TYPE_STRING:
                 return cell.getStringCellValue();
@@ -224,13 +224,13 @@ public class ExcelReaderService {
                 return "";
         }
     }
-    
+
     private double getCellValueAsDouble(Cell cell) {
         if (cell == null) {
             System.out.println("Cell is null, returning 0.0");
             return 0.0;
         }
-        
+
         try {
             double value = 0.0;
             switch (cell.getCellType()) {
@@ -242,7 +242,7 @@ public class ExcelReaderService {
                     }
                     value = cell.getNumericCellValue();
                     break;
-                    
+
                 case Cell.CELL_TYPE_STRING:
                     String strValue = cell.getStringCellValue().trim();
                     System.out.println("Original string value: " + strValue);
@@ -272,7 +272,7 @@ public class ExcelReaderService {
                         return 0.0;
                     }
                     break;
-                    
+
                 case Cell.CELL_TYPE_FORMULA:
                     try {
                         switch (cell.getCachedFormulaResultType()) {
@@ -299,7 +299,7 @@ public class ExcelReaderService {
                         return 0.0;
                     }
                     break;
-                    
+
                 default:
                     System.out.println("Unsupported cell type: " + cell.getCellType());
                     return 0.0;
@@ -314,7 +314,7 @@ public class ExcelReaderService {
             return 0.0;
         }
     }
-    
+
     private LocalDate getCellValueAsDate(Cell cell) {
         if (cell == null) return null;
 

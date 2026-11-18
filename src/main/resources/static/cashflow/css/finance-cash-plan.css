@@ -37,4 +37,3 @@ html.sidebar-precollapsed .finance-sidebar-footer .erp-back-link span{display:no
 .manual-input:focus{outline:3px solid rgba(37,99,235,.15);border-color:var(--blue)}
 html[data-theme="dark"] .manual-input{background:#0b1f38;color:#e3edf9}
 @media(max-width:700px){.statement-actions{width:100%;justify-content:flex-start}.statement-actions button{flex:1 1 auto}.manual-input{width:120px}}
-

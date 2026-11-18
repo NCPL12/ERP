@@ -108,10 +108,10 @@ class CombinedErpContextTest {
         mvc.perform(get("/ncpl-sales/cashflow-analyzer/api/cashflow/finance-plan/summary").contextPath("/ncpl-sales")
             .param("startMonth", "2026-01").param("months", "2").with(user("admin").authorities(() -> "ADMIN")))
             .andExpect(status().isOk())
-            
+
             .andExpect(jsonPath("$.periods[0].totalCashIn").value(800))
             .andExpect(jsonPath("$.periods[0].netFlow").value(800))
-            
+
             .andExpect(jsonPath("$.periods[1].totalCashOut").value(250))
             .andExpect(jsonPath("$.periods[1].netFlow").value(-250));
     }
@@ -132,4 +132,3 @@ class CombinedErpContextTest {
             .with(csrf()).with(user("admin").authorities(() -> "ADMIN"))).andExpect(status().isOk());
     }
 }
-

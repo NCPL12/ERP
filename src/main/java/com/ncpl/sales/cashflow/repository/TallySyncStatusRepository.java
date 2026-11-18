@@ -11,7 +11,7 @@ import java.util.Optional;
  */
 @Repository
 public interface TallySyncStatusRepository extends JpaRepository<TallySyncStatusEntity, Long> {
-    
+
     /**
      * Get the most recent sync status
      */

@@ -191,7 +191,7 @@ body {
     .page-header {
         padding: 20px 24px;
     }
-    
+
     .filter-toolbar {
         padding: 16px 20px;
     }
@@ -201,15 +201,15 @@ body {
     .page-header {
         padding: 18px 20px;
     }
-    
+
     .page-header h4 {
         font-size: 20px;
     }
-    
+
     .filter-toolbar {
         flex-direction: column;
     }
-    
+
     .filter-toolbar .filters-info {
         margin-left: 0;
         width: 100%;
@@ -247,10 +247,3 @@ body {
         transform: rotate(360deg);
     }
 }
-
-
-
-
-
-
-

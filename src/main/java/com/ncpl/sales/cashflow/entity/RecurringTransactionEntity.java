@@ -7,48 +7,48 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "cashflow_recurring_transactions")
 public class RecurringTransactionEntity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = false)
     private String name; // e.g., "Electricity Bill", "Salary", "Water Bill"
-    
+
     @Column(nullable = false)
     private String description;
-    
+
     @Column(nullable = false)
     private String type; // MONTHLY, QUARTERLY, YEARLY, WEEKLY
-    
+
     @Column(nullable = false)
     private Integer dayOfMonth; // Day of month when it recurs (1-31)
-    
+
     @Column(nullable = false)
     private BigDecimal amount;
-    
+
     @Column(nullable = false)
     private String category; // UTILITY, SALARY, RENT, SUBSCRIPTION, OTHER
-    
+
     @Column(nullable = false)
     private Boolean isActive = true;
-    
+
     @Column(nullable = false)
     private LocalDate nextDueDate;
-    
+
     @Column
     private String notes;
-    
+
     @Column(nullable = false, updatable = false)
     private LocalDate createdDate = LocalDate.now();
-    
+
     @Column
     private LocalDate lastUpdatedDate;
 
     // Constructors
     public RecurringTransactionEntity() {}
 
-    public RecurringTransactionEntity(String name, String description, String type, 
+    public RecurringTransactionEntity(String name, String description, String type,
                                     Integer dayOfMonth, BigDecimal amount, String category,
                                     LocalDate nextDueDate) {
         this.name = name;

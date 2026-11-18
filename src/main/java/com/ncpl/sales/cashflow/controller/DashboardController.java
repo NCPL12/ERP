@@ -20,7 +20,7 @@ public class DashboardController {
             selectedMode = "TALLY";
             session.setAttribute("selectedMode", selectedMode);
         }
-        
+
         // Pass the selected mode to the view
         model.addAttribute("selectedMode", selectedMode);
         String path = request.getRequestURI();
@@ -33,7 +33,7 @@ public class DashboardController {
         model.addAttribute("userRole", admin ? "ROLE_ADMIN" : "ROLE_VIEWER");
         return "cashflow/overview";
     }
-    
+
     @GetMapping("/finance-cash-plan")
     public String financeCashPlan() {
         return "cashflow/finance-cash-plan";
@@ -48,32 +48,32 @@ public class DashboardController {
     public String cashflowForecast() {
         return "cashflow/cashflow-forecast";
     }
-    
+
     @GetMapping("/due-date-tracker")
     public String dueDateTracker() {
         return "cashflow/due-date-tracker";
     }
-    
+
     @GetMapping("/customer-vendor")
     public String customerVendor() {
         return "cashflow/customer-vendor";
     }
-    
+
     @GetMapping("/aging-analysis")
     public String agingAnalysis() {
         return "redirect:/cashflow-analyzer/aging";
     }
-    
+
     @GetMapping("/top-performers")
     public String topPerformers() {
         return "cashflow/top-performers";
     }
-    
+
     @GetMapping("/debtors-creditors")
     public String debtorsCreditors() {
         return "cashflow/debtors-creditors";
     }
-    
+
     @GetMapping("/recurring-transactions")
     public String recurringTransactions() {
         return "cashflow/recurring-transactions";

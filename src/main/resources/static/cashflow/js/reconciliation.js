@@ -202,7 +202,7 @@
     const populateTable = (tbodyId, items, type) => {
         const tbody = getElement(tbodyId);
         if (!tbody) return;
-        
+
         // Clear only the tbody content, preserve thead
         while (tbody.firstChild) {
             tbody.removeChild(tbody.firstChild);
@@ -229,7 +229,7 @@
             table.addEventListener('change', (event) => {
                 if (event.target.classList.contains('row-checkbox')) {
                     const checkbox = event.target;
-                    
+
                     // Restricted for Viewers
                     if (window.userRole === 'ROLE_VIEWER') {
                         checkbox.checked = !checkbox.checked; // Undo the check
@@ -298,10 +298,10 @@
 
         const label = item.type === 'receivables' ? 'Receivable' : 'Payable';
         const action = item.type === 'receivables' ? 'received' : 'paid';
-        
+
         const actionText = isSelecting ? `Mark` : `Unmark`;
         const actionContext = isSelecting ? ` as ${action}` : ` (Pending)`;
-        
+
         const message = `${actionText} this ${label.toLowerCase()}${actionContext}?\n\n${item.name || '-'}\n${formatCurrency(item.amount)}`;
 
         if (!confirmModal || !confirmMessage || !confirmAmount || !confirmYesBtn) {
@@ -688,7 +688,7 @@
                 try {
                     const params = new URLSearchParams();
                     params.append('amount', newBalance);
-                    
+
                     const response = await fetch(`/api/cashflow/bank-balance?${params.toString()}`, {
                         method: 'POST',
                         credentials: 'same-origin'
@@ -733,7 +733,7 @@
         if (exportBtn) {
             exportBtn.addEventListener('click', async () => {
                 const { totalReceivables, totalPayables, adjustedBalance } = calculateReconciliationTotals();
-                
+
                 // Helper to get selected item details
                 const getSelectedDetails = (markedMap, items) => {
                     const today = new Date();

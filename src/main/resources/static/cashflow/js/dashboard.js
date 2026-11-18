@@ -57,7 +57,7 @@ function handleFileUpload(event) {
 function displayAnalysis(data) {
     console.log('displayAnalysis called with data:', data);
     console.log('totalInflow:', data.totalInflow, 'totalOutflow:', data.totalOutflow, 'netCashflow:', data.netCashflow);
-    
+
     // Update KPI cards
     document.getElementById('totalInflow').textContent = formatCurrency(data.totalInflow);
     document.getElementById('totalOutflow').textContent = formatCurrency(data.totalOutflow);
@@ -65,7 +65,7 @@ function displayAnalysis(data) {
     document.getElementById('overdueReceivables').textContent = formatCurrency(data.overdueReceivablesAmount);
     document.getElementById('overduePayables').textContent = formatCurrency(data.overduePayablesAmount);
 
-    const collectionRate = data.totalInflow > 0 ? 
+    const collectionRate = data.totalInflow > 0 ?
         (1 - data.overdueReceivablesAmount / data.totalInflow) * 100 : 100;
     document.getElementById('collectionRate').textContent = collectionRate.toFixed(1) + '%';
 
@@ -79,14 +79,14 @@ function displayAnalysis(data) {
     createSuppliersChart(data);
     createAgingChart(data);
     updateAgingTable(data);
-    
+
     console.log('✓ Created all charts');
 }
 
 // Create pie chart
 function createPieChart(data) {
     const ctx = document.getElementById('pieChart').getContext('2d');
-    
+
     if (charts.pie) {
         charts.pie.destroy();
     }
@@ -129,7 +129,7 @@ function createPieChart(data) {
 // Create line chart
 function createLineChart(data) {
     const ctx = document.getElementById('lineChart').getContext('2d');
-    
+
     if (charts.line) {
         charts.line.destroy();
     }
@@ -199,7 +199,7 @@ function createLineChart(data) {
 // Create bar chart
 function createBarChart(data) {
     const ctx = document.getElementById('barChart').getContext('2d');
-    
+
     if (charts.bar) {
         charts.bar.destroy();
     }
@@ -256,7 +256,7 @@ function createBarChart(data) {
 // Create customers chart
 function createCustomersChart(data) {
     const ctx = document.getElementById('customersChart').getContext('2d');
-    
+
     if (charts.customers) {
         charts.customers.destroy();
     }
@@ -295,7 +295,7 @@ function createCustomersChart(data) {
 // Create suppliers chart
 function createSuppliersChart(data) {
     const ctx = document.getElementById('suppliersChart').getContext('2d');
-    
+
     if (charts.suppliers) {
         charts.suppliers.destroy();
     }
@@ -334,7 +334,7 @@ function createSuppliersChart(data) {
 // Create aging chart
 function createAgingChart(data) {
     const ctx = document.getElementById('agingChart').getContext('2d');
-    
+
     if (charts.aging) {
         charts.aging.destroy();
     }
@@ -443,7 +443,7 @@ function bindExcelUpload() {
 function initializeDashboard() {
     console.log('🚀 Dashboard initialization started');
     bindExcelUpload();
-    
+
     // Check if Tally data is available
     fetch('/api/cashflow/tally/data-status')
         .then(response => {
@@ -455,7 +455,7 @@ function initializeDashboard() {
         })
         .then(status => {
             console.log('📊 Tally data status:', status);
-            
+
             if (status.hasTallyData) {
                 console.log('✅ Tally data found (' + status.invoiceCount + ' invoices), loading...');
                 loadTallyOverview();
@@ -481,25 +481,25 @@ function loadTallyOverview() {
         })
         .then(data => {
             console.log('📦 Raw response:', data);
-            
+
             if (!data || !data.hasData || !data.data) {
                 console.error('❌ Missing data in response');
                 return;
             }
-            
+
             console.log('✅ Valid data received:');
             console.log('  - Invoices:', data.invoiceCount);
             console.log('  - Inflow:', data.data.totalInflow);
             console.log('  - Outflow:', data.data.totalOutflow);
             console.log('  - Net:', data.data.netCashflow);
-            
+
             // Store in window
             window.lastOverviewData = data.data;
             console.log('💾 Stored in window.lastOverviewData');
-            
+
             // Update the DOM with actual values
             console.log('🎯 Updating DOM elements...');
-            
+
             // Try template functions first
             if (typeof updateTotalInflowDisplay === 'function') {
                 console.log('  → Calling updateTotalInflowDisplay');
@@ -509,7 +509,7 @@ function loadTallyOverview() {
                     console.error('  ✗ updateTotalInflowDisplay failed:', e.message);
                 }
             }
-            
+
             if (typeof updateNetCashFlowDisplay === 'function') {
                 console.log('  → Calling updateNetCashFlowDisplay');
                 try {
@@ -518,7 +518,7 @@ function loadTallyOverview() {
                     console.error('  ✗ updateNetCashFlowDisplay failed:', e.message);
                 }
             }
-            
+
             // Try displayAnalysis
             if (typeof displayAnalysis === 'function') {
                 console.log('  → Calling displayAnalysis');
@@ -528,31 +528,31 @@ function loadTallyOverview() {
                     console.error('  ✗ displayAnalysis failed:', e.message);
                 }
             }
-            
+
             // Fallback: direct DOM updates
             console.log('🔧 Fallback: Direct DOM updates');
             const totalInflowEl = document.getElementById('totalInflow');
             const totalOutflowEl = document.getElementById('totalOutflow');
             const netCashflowEl = document.getElementById('netCashflow');
-            
+
             if (totalInflowEl) {
                 const formatted = new Intl.NumberFormat('en-IN', {style: 'currency', currency: 'INR'}).format(data.data.totalInflow);
                 totalInflowEl.textContent = formatted;
                 console.log('  ✓ Updated totalInflow to:', formatted);
             }
-            
+
             if (totalOutflowEl) {
                 const formatted = new Intl.NumberFormat('en-IN', {style: 'currency', currency: 'INR'}).format(data.data.totalOutflow);
                 totalOutflowEl.textContent = formatted;
                 console.log('  ✓ Updated totalOutflow to:', formatted);
             }
-            
+
             if (netCashflowEl) {
                 const formatted = new Intl.NumberFormat('en-IN', {style: 'currency', currency: 'INR'}).format(data.data.netCashflow);
                 netCashflowEl.textContent = formatted;
                 console.log('  ✓ Updated netCashflow to:', formatted);
             }
-            
+
             console.log('✨ Dashboard initialization complete');
         })
         .catch(error => {

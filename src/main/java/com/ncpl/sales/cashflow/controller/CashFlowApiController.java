@@ -201,7 +201,7 @@ public class CashFlowApiController {
             try {
                 logger.info("💾 Persistence: Deleting old EXCEL records...");
                 invoiceRepository.deleteBySource("EXCEL");
-                
+
                 logger.info("💾 Persistence: Mapping {} invoices to entities...", invoices.size());
                 List<com.ncpl.sales.cashflow.entity.InvoiceEntity> entities = invoices.stream()
                         .filter(inv -> inv != null && inv.getCustomerName() != null)
@@ -218,7 +218,7 @@ public class CashFlowApiController {
                             return entity;
                         })
                         .collect(Collectors.toList());
-                
+
                 logger.info("💾 Persistence: Saving {} entities to MySQL...", entities.size());
                 invoiceRepository.saveAll(entities);
                 invoiceRepository.flush();
@@ -294,7 +294,7 @@ public class CashFlowApiController {
             if (sessionInvoices != null) {
                 for (Invoice inv : sessionInvoices) {
                     boolean match = (id != null && id.equals(inv.getId())) ||
-                                    (id == null && inv.getCustomerName().equals(customerName) && 
+                                    (id == null && inv.getCustomerName().equals(customerName) &&
                                      ((inv.getInvoiceNumber() == null && invoiceNumber == null) ||
                                       (inv.getInvoiceNumber() != null && inv.getInvoiceNumber().equals(invoiceNumber))));
                     if (match) {
@@ -476,7 +476,7 @@ public class CashFlowApiController {
             String source = sessionDataService.isTallyMode() ? "TALLY" : "EXCEL";
             Long dbCount = invoiceRepository.countBySource(source);
             logger.info("🔍 Session Check: No session data, checking DB for source '{}'... Found: {}", source, dbCount);
-            
+
             if (dbCount > 0) {
                 hasData = true;
                 fileName = sessionDataService.isTallyMode() ? "Tally 6.2 Sync" : "Shared Database Records";
@@ -1285,11 +1285,11 @@ public class CashFlowApiController {
             // EXCEL MODE - Prioritize Database for multi-user synchronization
             logger.info("💾 Resolve: Fetching EXCEL records from MySQL...");
             List<com.ncpl.sales.cashflow.entity.InvoiceEntity> entities = invoiceRepository.findBySource("EXCEL");
-            
+
             if (!entities.isEmpty()) {
                 List<Invoice> invoices = convertEntitiesToInvoices(entities);
                 logger.info("💾 Resolve: Retrieved {} EXCEL invoices from MySQL", invoices.size());
-                
+
                 // Sync session state so UI components (like filename display) remain active
                 sessionDataService.setInvoices(invoices);
                 if (!sessionDataService.hasUploadedFile()) {
@@ -1314,7 +1314,7 @@ public class CashFlowApiController {
                 sessionDataService.setInvoices(reloaded);
                 return reloaded;
             }
-            
+
             logger.info("💾 Resolve: No data found anywhere.");
             return sessionInvoices;
         }
@@ -1387,7 +1387,7 @@ public class CashFlowApiController {
     /**
      * Trigger manual Tally 6.2 synchronization.
      * Reads from SME network Tally edit log and imports new invoices.
-     * 
+     *
      * @return Sync status information
      */
     @PostMapping("/tally/sync")
@@ -1415,7 +1415,7 @@ public class CashFlowApiController {
 
     /**
      * Get current Tally sync status and configuration.
-     * 
+     *
      * @return Sync metadata and config status
      */
     @GetMapping("/tally/status")

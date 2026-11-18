@@ -15,27 +15,27 @@
     <style>
         body {
             background: #f0f4f8;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
                 radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
         }
-        
-        
+
+
         .analytics-container {
             display: flex;
             gap: 28px;
             margin: 28px 0;
             height: 900px;
         }
-        
+
         .monthly-chart-section {
             flex: 0 0 40%;
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -53,21 +53,21 @@
             background: linear-gradient(90deg, #3b82f6, #10b981);
             border-radius: 20px 20px 0 0;
         }
-        
+
         .chart-container-half {
             flex: 1;
             position: relative;
             min-height: 0;
             margin-bottom: 12px;
         }
-        
+
         .chart-divider {
             height: 2px;
             background: linear-gradient(90deg, transparent, #cbd5e1 20%, #cbd5e1 80%, transparent);
             margin: 16px 0;
             border-radius: 2px;
         }
-        
+
         .mini-chart-label {
             font-size: 14px;
             font-weight: 700;
@@ -75,7 +75,7 @@
             margin-bottom: 10px;
             text-align: center;
         }
-        
+
         .weekly-charts-section {
             flex: 0 0 60%;
             display: grid;
@@ -83,12 +83,12 @@
             grid-template-rows: repeat(2, 1fr);
             gap: 28px;
         }
-        
+
         .week-chart-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -111,15 +111,15 @@
         .week-chart-card:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #059669); }
         .week-chart-card:nth-child(3)::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
         .week-chart-card:nth-child(4)::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
-        
+
         .week-chart-card:hover {
             transform: translateY(-6px) scale(1.01);
-            box-shadow: 
+            box-shadow:
                 0 20px 25px -5px rgba(0, 0, 0, 0.1),
                 0 10px 10px -5px rgba(0, 0, 0, 0.04),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
         }
-        
+
         .chart-title {
             font-size: 22px;
             font-weight: 800;
@@ -128,7 +128,7 @@
             text-align: center;
             letter-spacing: -0.5px;
         }
-        
+
         .chart-subtitle {
             font-size: 14px;
             color: #64748b;
@@ -136,7 +136,7 @@
             margin-bottom: 18px;
             font-weight: 500;
         }
-        
+
         .chart-container {
             position: relative;
             flex: 1;
@@ -146,40 +146,40 @@
             padding: 16px;
             border: 1px solid #e2e8f0;
         }
-        
-        
+
+
         @media (max-width: 1200px) {
             .analytics-container {
                 flex-direction: column;
                 height: auto;
             }
-            
+
             .monthly-chart-section {
                 flex: 1;
                 height: 450px;
             }
-            
+
             .weekly-charts-section {
                 grid-template-columns: 1fr;
                 grid-template-rows: repeat(4, 350px);
             }
         }
-        
+
         .loading-spinner {
             display: none;
             text-align: center;
             padding: 60px;
         }
-        
+
         .loading-spinner.show {
             display: block;
         }
-        
+
         .page-header {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 28px 32px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -316,7 +316,7 @@
                 visibility: hidden;
             }
         }
-        
+
         .filter-toolbar {
             animation: slideUp 0.5s ease-out;
             display: flex;
@@ -325,7 +325,7 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 22px 28px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -421,43 +421,43 @@
                 Change the date range to refresh the analytics instantly.
             </div>
         </div>
-        
+
         <div class="loading-spinner" id="loadingSpinner">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
             <p class="mt-3">Analyzing data...</p>
         </div>
-        
+
         <div class="page-header">
             <h4>📊 Cashflow Analytics Dashboard</h4>
             <p class="mb-0 text-muted" id="monthlyAnalysisLabel">Comprehensive monthly and weekly cashflow analysis</p>
         </div>
-        
+
         <div id="analyticsContent">
-            
+
             <div class="analytics-container">
                 <!-- Left: Monthly Charts (40%) - TWO STACKED CHARTS -->
                 <div class="monthly-chart-section">
                     <div class="chart-title" id="monthlyChartTitle">October 2025 Daily Analysis</div>
                     <div class="chart-subtitle">Daily Cashflow Breakdown</div>
-                    
+
                     <!-- Top: Net Cashflow Line Chart -->
                     <div class="chart-container-half">
                         <div class="mini-chart-label">Net Cashflow Trend</div>
                         <canvas id="netCashflowChart"></canvas>
                     </div>
-                    
+
                     <!-- Divider -->
                     <div class="chart-divider"></div>
-                    
+
                     <!-- Bottom: Inflow/Outflow Bar Chart -->
                     <div class="chart-container-half">
                         <div class="mini-chart-label">Inflow vs Outflow</div>
                         <canvas id="inflowOutflowChart"></canvas>
                     </div>
                 </div>
-                
+
                 <!-- Right: Weekly Charts Grid (60%) -->
                 <div class="weekly-charts-section">
                     <!-- Week 1 -->
@@ -468,7 +468,7 @@
                             <canvas id="week1Chart"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Week 2 -->
                     <div class="week-chart-card">
                         <div class="chart-title">Week 2</div>
@@ -477,7 +477,7 @@
                             <canvas id="week2Chart"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Week 3 -->
                     <div class="week-chart-card">
                         <div class="chart-title">Week 3</div>
@@ -486,7 +486,7 @@
                             <canvas id="week3Chart"></canvas>
                         </div>
                     </div>
-                    
+
                     <!-- Week 4 -->
                     <div class="week-chart-card">
                         <div class="chart-title">Week 4</div>
@@ -499,7 +499,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
     <script>
@@ -520,10 +520,10 @@
             const query = params.toString();
             return query ? `?${query}` : '';
         }
-        
+
         // Upload button is only available on Overview tab
         // Data is shared via session across all tabs
-        
+
         async function fetchAnalyticsData(filters = currentFilters, silent = false) {
             const query = buildFilterQuery(filters);
             if (!silent) showLoading(true);
@@ -555,7 +555,7 @@
                 if (!silent) showLoading(false);
             }
         }
-        
+
         function renderCharts(data) {
             if (!data || !Array.isArray(data.monthlyData)) {
                 document.getElementById('monthlyChartTitle').textContent = 'Analytics';
@@ -568,24 +568,24 @@
             // Update monthly chart title with actual month
             if (data.weeklyDataMonth) {
                 document.getElementById('monthlyChartTitle').textContent = data.weeklyDataMonth + ' Daily Analysis';
-                document.getElementById('monthlyAnalysisLabel').textContent = 
+                document.getElementById('monthlyAnalysisLabel').textContent =
                     `Daily and weekly breakdown for ${data.weeklyDataMonth}`;
             }
-            
+
             renderMonthlyChart(data.monthlyData);
-            
+
             // Check if weekly data has any values
             const weeklyData = data.weeklyData || {};
-            const hasWeeklyData = Object.values(weeklyData).some(week => 
+            const hasWeeklyData = Object.values(weeklyData).some(week =>
                 week && (week.inflow > 0 || week.outflow > 0 || week.transactionCount > 0)
             );
-            
+
             console.log('Weekly Data Check:', {
                 hasData: hasWeeklyData,
                 weeklyDataMonth: data.weeklyDataMonth,
                 weeks: Object.keys(data.weeklyData).length
             });
-            
+
             if (hasWeeklyData) {
                 renderWeeklyCharts(weeklyData);
             } else {
@@ -593,7 +593,7 @@
                 renderEmptyWeeklyCharts(weeklyData);
             }
         }
-        
+
         function renderMonthlyChart(monthlyData) {
             if (!Array.isArray(monthlyData) || monthlyData.length === 0) {
                 renderNetCashflowChart(['No Data'], [0]);
@@ -601,40 +601,40 @@
                 return;
             }
             // Filter days with data
-            const daysWithData = monthlyData.filter(d => 
+            const daysWithData = monthlyData.filter(d =>
                 d.inflow > 0 || d.outflow > 0
             );
-            
-            const dataToShow = daysWithData.length > 0 && daysWithData.length < 20 
-                ? daysWithData 
+
+            const dataToShow = daysWithData.length > 0 && daysWithData.length < 20
+                ? daysWithData
                 : monthlyData;
-            
+
             const labels = dataToShow.map(d => d.month);
             const inflowData = dataToShow.map(d => d.inflow);
             const outflowData = dataToShow.map(d => d.outflow);
             const netData = dataToShow.map(d => d.netCashflow);
-            
+
             // Render both charts
             renderNetCashflowChart(labels, netData);
             renderInflowOutflowChart(labels, inflowData, outflowData);
         }
-        
+
         // Chart 1: Net Cashflow Line Chart - FIXED VERSION
         function renderNetCashflowChart(labels, netData) {
             const ctx = document.getElementById('netCashflowChart').getContext('2d');
-            
+
             if (netCashflowChart) {
                 netCashflowChart.destroy();
             }
-            
+
             const maxValue = Math.max(...netData.map(Math.abs), 0);
             const minValue = Math.min(...netData, 0);
             const yAxisMax = maxValue > 0 ? Math.ceil(maxValue * 1.15) : 1;
             const yAxisMin = minValue < 0 ? Math.floor(minValue * 1.15) : 0;
-            
+
             const range = yAxisMax - yAxisMin || 1;
             const stepSize = Math.max(1, Math.ceil(range / 10));
-            
+
             netCashflowChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -679,7 +679,7 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { 
+                            ticks: {
                                 font: { size: 9, weight: '600' },
                                 color: '#6b7280',
                                 maxRotation: 45,
@@ -697,7 +697,7 @@
                                     // Handle negative and positive values uniformly
                                     const absValue = Math.abs(value);
                                     const sign = value < 0 ? '-' : '';
-                                    
+
                                     if (absValue >= 10000000) {
                                         return sign + '₹' + (absValue / 10000000).toFixed(1) + 'Cr';
                                     }
@@ -719,19 +719,19 @@
                 }
             });
         }
-        
+
         // Chart 2: Inflow/Outflow Bar Chart - IMPROVED VERSION
         function renderInflowOutflowChart(labels, inflowData, outflowData) {
             const ctx = document.getElementById('inflowOutflowChart').getContext('2d');
-            
+
             if (inflowOutflowChart) {
                 inflowOutflowChart.destroy();
             }
-            
+
             const maxValue = Math.max(...inflowData, ...outflowData, 0);
             const yAxisMax = maxValue > 0 ? maxValue * 1.12 : 1;
             const stepSize = Math.max(1, Math.ceil(yAxisMax / 10));
-            
+
             inflowOutflowChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -797,7 +797,7 @@
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { 
+                            ticks: {
                                 font: { size: 9, weight: '600' },
                                 color: '#6b7280',
                                 maxRotation: 45,
@@ -827,34 +827,34 @@
                 }
             });
         }
-        
+
         // Weekly Charts - PROPERLY ALIGNED BAR CHARTS WITH LEGENDS
         function renderWeeklyCharts(weeklyData) {
             [1, 2, 3, 4].forEach(weekNum => {
                 const weekData = weeklyData[weekNum];
                 if (!weekData) return;
-                
+
                 document.getElementById(`week${weekNum}Label`).textContent = weekData.weekLabel;
-                
+
                 const ctx = document.getElementById(`week${weekNum}Chart`).getContext('2d');
-                
+
                 if (weekCharts[weekNum]) {
                     weekCharts[weekNum].destroy();
                 }
-                
+
                 // Calculate max value for this week
                 const maxValue = Math.max(
-                    weekData.inflow, 
-                    weekData.outflow, 
+                    weekData.inflow,
+                    weekData.outflow,
                     Math.abs(weekData.netCashflow)
                 );
-                
+
                 // Set Y-axis max with minimal padding for taller bars
                 const yAxisMax = maxValue > 0 ? maxValue * 1.15 : 100000;
-                
+
                 // Calculate step size for finer grid
                 const stepSize = Math.ceil(yAxisMax / 10);
-                
+
                 weekCharts[weekNum] = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -866,15 +866,15 @@
                                 backgroundColor: [
                                     'rgba(16, 185, 129, 0.85)',
                                     'rgba(251, 146, 60, 0.85)',
-                                    weekData.netCashflow >= 0 
-                                        ? 'rgba(59, 130, 246, 0.85)' 
+                                    weekData.netCashflow >= 0
+                                        ? 'rgba(59, 130, 246, 0.85)'
                                         : 'rgba(239, 68, 68, 0.85)'
                                 ],
                                 borderColor: [
                                     'rgba(16, 185, 129, 1)',
                                     'rgba(251, 146, 60, 1)',
-                                    weekData.netCashflow >= 0 
-                                        ? 'rgba(59, 130, 246, 1)' 
+                                    weekData.netCashflow >= 0
+                                        ? 'rgba(59, 130, 246, 1)'
                                         : 'rgba(239, 68, 68, 1)'
                                 ],
                                 borderWidth: 2,
@@ -914,11 +914,11 @@
                                             },
                                             {
                                                 text: 'Net Cashflow',
-                                                fillStyle: weekData.netCashflow >= 0 
-                                                    ? 'rgba(59, 130, 246, 0.85)' 
+                                                fillStyle: weekData.netCashflow >= 0
+                                                    ? 'rgba(59, 130, 246, 0.85)'
                                                     : 'rgba(239, 68, 68, 0.85)',
-                                                strokeStyle: weekData.netCashflow >= 0 
-                                                    ? 'rgba(59, 130, 246, 1)' 
+                                                strokeStyle: weekData.netCashflow >= 0
+                                                    ? 'rgba(59, 130, 246, 1)'
                                                     : 'rgba(239, 68, 68, 1)',
                                                 lineWidth: 2,
                                                 hidden: false,
@@ -938,12 +938,12 @@
                                     label: function(context) {
                                         const value = Number(context.parsed.y);
                                         const label = context.label;
-                                        
+
                                         let formatted = label + ': ₹' + value.toLocaleString('en-IN', {
                                             minimumFractionDigits: 2,
                                             maximumFractionDigits: 2
                                         });
-                                        
+
                                         // Add transaction count for Net Cashflow
                                         if (label === 'Net Cashflow') {
                                             return [formatted, 'Transactions: ' + weekData.transactionCount];
@@ -956,7 +956,7 @@
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { 
+                                ticks: {
                                     font: { size: 11, weight: '600' },
                                     color: '#4b5563'
                                 }
@@ -984,21 +984,21 @@
                 });
             });
         }
-        
+
         function renderEmptyWeeklyCharts(weeklyData = {}) {
             [1, 2, 3, 4].forEach(weekNum => {
                 const weekData = weeklyData[weekNum] || {
                     weekLabel: `Week ${weekNum}`
                 };
-                
+
                 document.getElementById(`week${weekNum}Label`).textContent = weekData.weekLabel;
-                
+
                 const ctx = document.getElementById(`week${weekNum}Chart`).getContext('2d');
-                
+
                 if (weekCharts[weekNum]) {
                     weekCharts[weekNum].destroy();
                 }
-                
+
                 weekCharts[weekNum] = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -1075,7 +1075,7 @@
                         scales: {
                             x: {
                                 grid: { display: false },
-                                ticks: { 
+                                ticks: {
                                     font: { size: 10, weight: '600' },
                                     color: '#9ca3af'
                                 }
@@ -1103,16 +1103,16 @@
                 });
             });
         }
-        
+
         function showLoading(show) {
             document.getElementById('loadingSpinner').classList.toggle('show', show);
             document.getElementById('analyticsContent').style.opacity = show ? '0.3' : '1';
         }
-        
+
         function showToast(message, type) {
             alert(message);
         }
-        
+
         // Check for cached data on page load
         async function checkSessionData() {
             try {
@@ -1135,7 +1135,7 @@
                 console.log('No cached data available', error);
             }
         }
-        
+
         document.getElementById('deleteFileBtn').addEventListener('click', async function(e) {
             e.stopPropagation();
             if (confirm('Delete this file? All analyzed data will be cleared.')) {
@@ -1151,7 +1151,7 @@
                 }
             }
         });
-        
+
         dashboardFilters.initTimeFilters({
             onChange: (filters) => {
                 currentFilters = filters;
@@ -1166,10 +1166,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const pageAnimation = document.getElementById('pageAnimation');
             const body = document.body;
-            
+
             if (pageAnimation) {
                 body.style.overflow = 'hidden';
-                
+
                 setTimeout(() => {
                     if (pageAnimation) {
                         pageAnimation.style.display = 'none';
@@ -1182,5 +1182,3 @@
 <script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
 </body>
 </html>
-
-

@@ -12,12 +12,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
-        
+
         .page-header {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 28px 32px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -35,10 +35,10 @@
             height: 5px;
             background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #ef4444);
         }
-        .page-header h4 { 
-            color: #0f172a; 
-            font-weight: 800; 
-            margin: 0; 
+        .page-header h4 {
+            color: #0f172a;
+            font-weight: 800;
+            margin: 0;
             font-size: 26px;
             letter-spacing: -0.5px;
         }
@@ -54,7 +54,7 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -90,30 +90,30 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
             animation: fadeIn 0.6s ease-out;
         }
-        
+
         .card-title {
             font-size: 18px;
             font-weight: 700;
             color: #1e3c72;
             margin-bottom: 16px;
         }
-        
+
         .chart-container {
             position: relative;
             height: 300px;
         }
-        
+
         .aging-table {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 20px;
             padding: 28px;
-            box-shadow: 
+            box-shadow:
                 0 10px 15px -3px rgba(0, 0, 0, 0.1),
                 0 4px 6px -2px rgba(0, 0, 0, 0.05),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -130,14 +130,14 @@
             background: linear-gradient(90deg, #1e3c72, #3b82f6);
             border-radius: 20px 20px 0 0;
         }
-        
+
         .table { margin-bottom: 0; }
         .table thead th {
             background: #f8f9fa;
             font-weight: 600;
             border-bottom: 2px solid #dee2e6;
         }
-        
+
         .badge-current { background: #10b981; }
         .badge-030 { background: #f59e0b; }
         .badge-3160 { background: #f97316; }
@@ -151,7 +151,7 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             padding: 22px 28px;
             border-radius: 20px;
-            box-shadow: 
+            box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.1),
                 0 2px 4px -1px rgba(0, 0, 0, 0.06),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -230,7 +230,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-        
+
                     <div class="filter-toolbar">
                         <label>
                             From Date
@@ -244,12 +244,12 @@
                             Filter the aging view by date range (based on due date). Leave blank to view all data.
                         </div>
                     </div>
-                    
+
                     <div class="page-header">
                         <h4>⏰ Aging Analysis</h4>
                         <p class="mb-0 text-muted">Track overdue receivables and payables by aging buckets</p>
                     </div>
-                    
+
                     <!-- Summary Cards -->
                     <div class="summary-cards">
                         <div class="summary-card" style="border-left: 4px solid #10b981;">
@@ -273,7 +273,7 @@
                             <div class="label">90+ Days</div>
                         </div>
                     </div>
-                    
+
                     <!-- Charts -->
                     <div class="dashboard-container">
                         <div class="aging-card">
@@ -282,7 +282,7 @@
                                 <canvas id="receivablesChart"></canvas>
                             </div>
                         </div>
-                        
+
                         <div class="aging-card">
                             <div class="card-title">📊 Payables Aging</div>
                             <div class="chart-container">
@@ -290,7 +290,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Detailed Table -->
                     <div class="aging-table">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -388,7 +388,7 @@
                     showToast('Failed to download aging report', 'error');
                 }
             }
-            
+
             // Modal Open Event - Load data when modal is shown
             function initializeModal() {
                 const agingModal = document.getElementById('agingAnalysisModal');
@@ -398,26 +398,26 @@
                     agingModal.removeEventListener('shown.bs.modal', handleModalShow);
                     agingModal.addEventListener('shown.bs.modal', handleModalShow);
                 }
-                
+
                 const downloadBtn = document.getElementById('downloadAgingReportBtn');
                 if (downloadBtn) {
                     downloadBtn.removeEventListener('click', downloadAgingReport);
                     downloadBtn.addEventListener('click', downloadAgingReport);
                 }
             }
-            
+
             function handleModalShow() {
                 console.log('Aging Analysis modal opened');
                 fetchAgingData(currentFilters, false);
             }
-            
+
             // Initialize when DOM is ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', initializeModal);
             } else {
                 initializeModal();
             }
-            
+
             async function fetchAgingData(filters = currentFilters, silent = false) {
                 const query = buildFilterQuery(filters);
                 if (!silent) setLoading(true);
@@ -427,7 +427,7 @@
                     const sessionResponse = await fetch('/api/cashflow/session-info', {
                         credentials: 'same-origin'
                     });
-                    
+
                     if (!sessionResponse.ok) {
                         console.warn('No session data available');
                         if (!silent) {
@@ -437,7 +437,7 @@
                         if (!silent) setLoading(false);
                         return;
                     }
-                    
+
                     const sessionInfo = await sessionResponse.json();
                     if (!sessionInfo.hasData) {
                         console.warn('Session has no data');
@@ -448,7 +448,7 @@
                         if (!silent) setLoading(false);
                         return;
                     }
-                    
+
                     console.log('Session data confirmed, fetching aging analysis...');
                     const response = await fetch(`/api/cashflow/aging-analysis/cached${query}`, {
                         credentials: 'same-origin'
@@ -477,7 +477,7 @@
             }
             // Expose reload function to global scope
             window.reloadAgingData = fetchAgingData;
-            
+
             function renderAgingAnalysis(data) {
                 console.log('Rendering aging analysis with data:', data);
 
@@ -495,7 +495,7 @@
                     renderAgingTable([]);
                     return;
                 }
-                
+
                 const receivables = data.receivables || {};
                 const payables = data.payables || {};
 
@@ -504,7 +504,7 @@
                 document.getElementById('days3160Amount').textContent = formatCurrency(Number(receivables.days3160 || 0));
                 document.getElementById('days6190Amount').textContent = formatCurrency(Number(receivables.days6190 || 0));
                 document.getElementById('days90plusAmount').textContent = formatCurrency(Number(receivables.days90plus || 0));
-                
+
                 renderReceivablesChart({
                     current: Number(receivables.current || 0),
                     days030: Number(receivables.days030 || 0),
@@ -519,18 +519,18 @@
                     days6190: Number(payables.days6190 || 0),
                     days90plus: Number(payables.days90plus || 0)
                 });
-                
+
                 agingDetails = Array.isArray(data.details) ? data.details : [];
                 currentBucketFilter = 'ALL';
                 renderAgingTable(agingDetails, currentBucketFilter);
             }
-            
+
             function renderReceivablesChart(data) {
                 const ctx = document.getElementById('receivablesChart');
                 if (!ctx) return;
                 const ctxActual = ctx.getContext('2d');
                 if (charts.receivables) charts.receivables.destroy();
-                
+
                 charts.receivables = new Chart(ctxActual, {
                     type: 'bar',
                     data: {
@@ -575,13 +575,13 @@
                     }
                 });
             }
-            
+
             function renderPayablesChart(data) {
                 const ctx = document.getElementById('payablesChart');
                 if (!ctx) return;
                 const ctxActual = ctx.getContext('2d');
                 if (charts.payables) charts.payables.destroy();
-                
+
                 charts.payables = new Chart(ctxActual, {
                     type: 'doughnut',
                     data: {
@@ -613,19 +613,19 @@
                     }
                 });
             }
-            
+
             function renderAgingTable(details, filter = 'ALL') {
                 const tbody = document.getElementById('agingTableBody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
                 const rows = !details ? [] : (filter === 'ALL' ? details : details.filter(item => item.bucket === filter));
-                
+
                 if (!rows || rows.length === 0) {
                     const label = filter === 'ALL' ? 'No aging data available' : `No invoices for ${filter}`;
                     tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">${label}</td></tr>`;
                     return;
                 }
-                
+
                 rows.forEach(item => {
                     const row = document.createElement('tr');
                     const bucket = (item.bucket || '').toLowerCase();
@@ -639,7 +639,7 @@
                     } else if (bucket.includes('61-90')) {
                         badgeClass = 'badge-6190';
                     }
-                    
+
                     row.innerHTML = `
                         <td><strong>${item.name}</strong></td>
                         <td>${item.invoice || 'N/A'}</td>
@@ -651,7 +651,7 @@
                     tbody.appendChild(row);
                 });
             }
-            
+
             function formatCurrency(value) {
                 const amount = Number(value || 0);
                 if (amount <= 0) return '₹0';
@@ -660,18 +660,18 @@
                 if (amount >= 1000) return '₹' + (amount/1000).toFixed(0) + 'K';
                 return '₹' + amount.toFixed(0);
             }
-            
+
             // Add event listeners for date range filters
             const filterFromDate = document.getElementById('filterFromDate');
             const filterToDate = document.getElementById('filterToDate');
-            
+
             const updateDateRangeFilters = () => {
                 currentFilters.fromDate = filterFromDate ? filterFromDate.value : '';
                 currentFilters.toDate = filterToDate ? filterToDate.value : '';
                 fetchAgingData(currentFilters, filtersInitialized);
                 filtersInitialized = true;
             };
-            
+
             if (filterFromDate) {
                 filterFromDate.addEventListener('change', updateDateRangeFilters);
             }
@@ -683,5 +683,3 @@
 <script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
 </body>
 </html>
-
-
