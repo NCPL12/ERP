@@ -8,6 +8,8 @@
   
   <properties>
   	<java.version>1.8</java.version>
+	<!-- FileNameGenerator forces EST at runtime; run tests in EST so H2 caches the same zone -->
+	<argLine>-Duser.timezone=EST</argLine>
   </properties>
   
   <parent>
