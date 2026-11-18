@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+    <meta name="csrf-token" th:content="${_csrf.token}" />
+    <meta name="csrf-header" th:content="${_csrf.headerName}" />
+    <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+    <meta charset="UTF-8">
+    <title>Strategy Summary - Neptune Cash Flow Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('neptuneColorTheme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));</script>
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/app-theme.css?v=20260825-table-alignment}">
+    <link rel="stylesheet" th:href="@{/cashflow-analyzer/css/animations.css}">
+    <style>
+        body {
+            background: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+
+        .filter-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 28px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: slideUp 0.5s ease-out;
+            position: relative;
+        }
+        .filter-toolbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .filter-toolbar label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-toolbar input,
+        .filter-toolbar select {
+            margin-top: 0;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background: white;
+            font-weight: 500;
+        }
+        .filter-toolbar input:focus,
+        .filter-toolbar select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+            background: #fafbfc;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 28px 32px;
+            border-radius: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 28px;
+            animation: fadeIn 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b, #ef4444);
+        }
+        .page-header h4 {
+            color: #0f172a;
+            font-weight: 800;
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Full Page Animation */
+        #pageAnimation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #6366f1 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: fadeOut 0.8s ease-out 2.2s forwards;
+            overflow: hidden;
+        }
+
+        #pageAnimation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .page-animation-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            animation: pageSlideUp 1s ease-out;
+        }
+
+        @keyframes pageSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-animation-icon {
+            font-size: 80px;
+            color: rgba(255,255,255,0.95);
+            margin-bottom: 24px;
+            animation: iconPulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .page-animation-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .page-animation-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .page-progress-container {
+            width: 300px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+            border-radius: 10px;
+            animation: progressFill 2s ease-out forwards;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 20px 20px 0 0;
+        }
+        .metric-card:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-card span {
+            display: block;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #6c757d;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 26px;
+            font-weight: 800;
+            color: #1e3c72;
+            line-height: 1.2;
+        }
+
+        .summary-layout {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            align-items: stretch;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 
+                0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                0 4px 6px -2px rgba(0, 0, 0, 0.05),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #1e3c72, #3b82f6);
+            border-radius: 20px 20px 0 0;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h5 {
+            font-weight: 700;
+            color: #1e3c72;
+        }
+
+        .highlights-list li {
+            padding: 12px 14px;
+            background: rgba(30, 60, 114, 0.05);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            list-style: none;
+            font-size: 14px;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        .action-badge {
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 4px 10px;
+            text-transform: uppercase;
+        }
+
+        .calendar-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .calendar-event {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(30, 60, 114, 0.08);
+        }
+
+        .calendar-event .date {
+            width: 64px;
+            text-align: center;
+            background: #1e3c72;
+            color: white;
+            border-radius: 10px;
+            padding: 8px 0;
+            font-weight: 700;
+        }
+
+        .calendar-event .label {
+            flex: 1;
+            color: #1e293b;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .calendar-event .type {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Animation -->
+    <div id="pageAnimation">
+        <div class="page-animation-content">
+            <div class="page-animation-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="page-animation-title">STRATEGY SUMMARY</div>
+            <div class="page-animation-subtitle">Plan Your Next Steps</div>
+            <div class="page-progress-container">
+                <div class="page-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="cashflow/fragments/navigation :: navbar('summary')"></div>
+
+    <div class="container-fluid mt-4">
+        <div th:replace="cashflow/fragments/navigation :: tabbar('summary')"></div>
+
+        <div class="filter-toolbar">
+            <label>
+                From Date
+                <input type="date" id="filterFromDate">
+            </label>
+            <label>
+                To Date
+                <input type="date" id="filterToDate">
+            </label>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span class="text-muted small">See what needs attention and plan next steps.</span>
+            </div>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric-card">
+                <span>Total Inflow</span>
+                <strong id="summaryTotalInflow">₹0</strong>
+            </div>
+            <div class="metric-card">
+                <span>Total Outflow</span>
+                <strong id="summaryTotalOutflow">₹0</strong>
+            </div>
+            <div class="metric-card">
+                <span>Net Cash Flow</span>
+                <strong id="summaryNetCashFlow">₹0</strong>
+            </div>
+            <div class="metric-card">
+                <span>Total Overdue Amount</span>
+                <strong id="summaryOverdueAmount">₹0</strong>
+            </div>
+            <div class="metric-card">
+                <span>Due in Next 14 Days</span>
+                <strong id="summaryUpcomingAmount">₹0</strong>
+            </div>
+        </div>
+
+        <div class="summary-layout">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="fas fa-lightbulb me-2 text-warning"></i>Highlights</h5>
+                    <ul class="highlights-list p-0" id="highlightsList">
+                        <li>No data available. Upload a workbook to generate insights.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="fas fa-check-circle me-2 text-success"></i>Action Plan</h5>
+                    <div id="actionItemsList">
+                        <div class="text-muted">Upload a workbook to receive recommended actions.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="fas fa-calendar-alt me-2 text-primary"></i>Calendar View</h5>
+                    <div class="calendar-grid" id="calendarEvents">
+                        <div class="text-muted">Upcoming receivables and payables will appear here once data is available.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/cashflow-analyzer/js/common-filters.js}"></script>
+    <script th:src="@{/cashflow-analyzer/js/strategy-summary.js}"></script>
+    <script th:src="@{/cashflow-analyzer/js/debtors-creditors.js?v=20260822-exports}"></script>
+    <script>
+        // Page Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageAnimation = document.getElementById('pageAnimation');
+            const body = document.body;
+            
+            if (pageAnimation) {
+                body.style.overflow = 'hidden';
+                
+                setTimeout(() => {
+                    if (pageAnimation) {
+                        pageAnimation.style.display = 'none';
+                        body.style.overflow = '';
+                    }
+                }, 3000);
+            }
+        });
+    </script>
+<script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
+</body>
+</html>
+        }
+
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .insight-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+
+        .entity-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .entity-table table {
+            font-size: 0.875rem;
+        }
+
+        .entity-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .entity-table td {
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .amount-positive {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .amount-negative {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #6b7280;
+        }
+
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal fade" id="debtorsCreditorsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: #f0f4f8;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border: none;">
+                    <div>
+                        <h5 class="modal-title mb-0">HIGHEST DEBTORS & CREDITORS</h5>
+                        <small class="text-white-50">Outstanding Receivables & Payables</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+
+        <div class="filter-toolbar">
+            <label>
+                From Date
+                <input type="date" id="debtors-creditors-FromDate">
+            </label>
+            <label>
+                To Date
+                <input type="date" id="debtors-creditors-ToDate">
+            </label>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <span class="text-muted small">Data updates immediately when you change filters.</span>
+            </div>
+        </div>
+
+        <div class="summary-row">
+            <div class="summary-card">
+                <h6>Total Receivables</h6>
+                <div class="value" id="totalReceivablesValue">₹0</div>
+            </div>
+            <div class="summary-card">
+                <h6>Total Payables</h6>
+                <div class="value" id="totalPayablesValue">₹0</div>
+            </div>
+            <div class="summary-card">
+                <h6>Net Outstanding</h6>
+                <div class="value" id="netOutstandingValue">₹0</div>
+            </div>
+        </div>
+
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-user-minus me-2 text-danger"></i>Highest Debtors</h5>
+                    <button class="btn btn-sm btn-success" onclick="downloadDebtorsCreditors('debtors')">
+                        <i class="fas fa-download me-1"></i>Download Excel
+                    </button>
+                </div>
+                <div class="chart-wrapper mb-3">
+                    <canvas id="highestDebtorsChart"></canvas>
+                </div>
+                <div class="entity-table">
+                    <table class="table table-sm">
+                        <colgroup>
+                            <col style="width: 8%;" />
+                            <col style="width: 52%;" />
+                            <col style="width: 20%;" />
+                            <col style="width: 20%;" />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th class="text-end">Outstanding Amount</th>
+                                <th class="text-end">Days Overdue</th>
+                            </tr>
+                        </thead>
+                        <tbody id="highestDebtorsTable">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-user-plus me-2 text-success"></i>Highest Creditors</h5>
+                    <button class="btn btn-sm btn-success" onclick="downloadDebtorsCreditors('creditors')">
+                        <i class="fas fa-download me-1"></i>Download Excel
+                    </button>
+                </div>
+                <div class="chart-wrapper mb-3">
+                    <canvas id="highestCreditorsChart"></canvas>
+                </div>
+                <div class="entity-table">
+                    <table class="table table-sm">
+                        <colgroup>
+                            <col style="width: 8%;" />
+                            <col style="width: 52%;" />
+                            <col style="width: 20%;" />
+                            <col style="width: 20%;" />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Name</th>
+                                <th class="text-end">Outstanding Amount</th>
+                                <th class="text-end">Days Until Due</th>
+                            </tr>
+                        </thead>
+                        <tbody id="highestCreditorsTable">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta name="cashflow-base" th:content="@{/cashflow-analyzer}" />
+    <meta name="csrf-token" th:content="${_csrf == null ? '' : _csrf.token}" />
+    <meta name="csrf-header" th:content="${_csrf == null ? 'X-CSRF-TOKEN' : _csrf.headerName}" />
+    <script th:src="@{/cashflow-analyzer/js/module-paths.js}"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login - Neptune Cash Flow Analyzer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('neptuneColorTheme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'));</script>
+<link rel="stylesheet" th:href="@{/cashflow-analyzer/css/app-theme.css?v=20260825-table-alignment}">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:24px;display:grid;place-items:center;background:#eef4fb;color:#0b1f46;font-family:"Segoe UI",Arial,sans-serif}
+.login-shell{width:min(1080px,100%);min-height:650px;display:grid;grid-template-columns:1.05fr .95fr;overflow:hidden;border-radius:28px;background:#fff;box-shadow:0 24px 70px #0f264f2e;animation:arrive .45s ease}
+.visual-panel{position:relative;overflow:hidden;padding:52px;color:#fff;background:linear-gradient(145deg,#061a3e,#0c3f9b 56%,#1576ef);display:flex;flex-direction:column;justify-content:space-between}
+.visual-panel:before,.visual-panel:after{content:"";position:absolute;border:1px solid #ffffff24;border-radius:50%}.visual-panel:before{width:420px;height:420px;right:-180px;top:-120px}.visual-panel:after{width:280px;height:280px;left:-150px;bottom:-100px}
+.brand,.visual-copy,.features{position:relative;z-index:1}.brand{display:flex;align-items:center;gap:13px;font-size:17px;font-weight:700}.brand img{width:44px;height:44px;padding:5px;border-radius:12px;background:#fff;object-fit:contain}.brand small{display:block;margin-top:2px;color:#bed8ff;font-size:12px;font-weight:500}
+.visual-copy{margin:70px 0 42px}.eyebrow{color:#9bc8ff;font-size:12px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase}.visual-copy h1{max-width:440px;margin:14px 0 16px;font-size:42px;line-height:1.12;letter-spacing:-1.2px}.visual-copy p{max-width:430px;margin:0;color:#d8e8ff;font-size:16px;line-height:1.65}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.feature{padding:16px 13px;border:1px solid #ffffff29;border-radius:15px;background:#ffffff14}.feature i{color:#79e8b5;font-size:18px}.feature strong{display:block;margin:11px 0 3px;font-size:13px}.feature span{color:#bcd6fa;font-size:11px}
+.form-panel{padding:64px 68px;display:flex;flex-direction:column;justify-content:center}.mobile-brand{display:none}.form-panel h2{margin:0 0 9px;font-size:32px;letter-spacing:-.7px}.subtitle{margin:0 0 32px;color:#64748b;font-size:14px}
+.alert{margin-bottom:16px;padding:12px 14px;border-radius:10px;font-size:13px}.alert-danger{color:#b42318;background:#fff1f0;border:1px solid #ffc9c5}.alert-success{color:#067647;background:#ecfdf3;border:1px solid #abefc6}.alert-info{color:#175cd3;background:#eff8ff;border:1px solid #b2ddff}.d-none{display:none}
+.field{margin-bottom:20px}label{display:block;margin-bottom:8px;color:#243b60;font-size:13px;font-weight:700}.input-wrap{position:relative}.input-wrap>i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#8291aa}
+.form-control{width:100%;height:50px;padding:0 44px;border:1px solid #dce5f1;border-radius:12px;outline:0;color:#152b4f;background:#fbfdff;font:500 14px inherit;transition:.18s}.form-control:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 4px #3b82f61c}
+.password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:#718096;cursor:pointer}.password-toggle:hover{background:#edf4ff;color:#1769e8}
+.submit-btn{width:100%;height:51px;border:0;border-radius:12px;color:#fff;cursor:pointer;background:linear-gradient(100deg,#145bd6,#287cf0);font-size:14px;font-weight:800;box-shadow:0 9px 20px #1769e838;transition:.18s}.submit-btn:hover{transform:translateY(-1px)}.submit-btn:disabled{opacity:.7;cursor:wait;transform:none}.secure-note{margin-top:21px;text-align:center;color:#8291a8;font-size:12px}.secure-note i{margin-right:6px;color:#16a36a}
+@keyframes arrive{from{opacity:0;transform:translateY(12px)}}@media(max-width:820px){body{padding:14px}.login-shell{grid-template-columns:1fr;min-height:auto;max-width:480px}.visual-panel{display:none}.form-panel{padding:42px 32px}.mobile-brand{display:flex;align-items:center;gap:10px;margin-bottom:35px;font-weight:800}.mobile-brand img{width:38px;height:38px}}@media(max-width:420px){.form-panel{padding:34px 22px}.form-panel h2{font-size:27px}}
+</style>
+</head>
+<body>
+<main class="login-shell">
+<section class="visual-panel" aria-label="Neptune finance platform">
+ <div class="brand"><img th:src="@{/cashflow-analyzer/images/neptune-logo.ico}" alt="Neptune logo"><div>Neptune Cash Flow Analyzer<small>Finance intelligence workspace</small></div></div>
+ <div class="visual-copy"><div class="eyebrow">Tally-connected finance</div><h1>Live visibility into every receivable and payable.</h1><p>Turn your Tally data into clear collection priorities, payment planning and decision-ready finance insights.</p></div>
+ <div class="features"><div class="feature"><i class="fas fa-arrows-rotate"></i><strong>Live Tally sync</strong><span>Current company data</span></div><div class="feature"><i class="fas fa-chart-line"></i><strong>Aging insights</strong><span>Focus collection effort</span></div><div class="feature"><i class="fas fa-file-excel"></i><strong>Finance exports</strong><span>Excel-ready reports</span></div></div>
+</section>
+<section class="form-panel">
+ <div class="mobile-brand"><img th:src="@{/cashflow-analyzer/images/neptune-logo.ico}" alt="Neptune logo"> Neptune Finance</div>
+ <h2>Welcome back</h2><p class="subtitle">Sign in to open your finance overview.</p>
+ <div th:if="${selectedMode}" class="alert alert-info"><i class="fas fa-circle-info"></i> Tally Prime Sync is selected for this workspace.</div>
+ <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+ <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div><div th:if="${successMsg}" class="alert alert-success" th:text="${successMsg}"></div>
+ <form id="loginForm" th:action="@{/login}" method="post" autocomplete="off">
+  <div class="field"><label for="username">Email or username</label><div class="input-wrap"><i class="far fa-user"></i><input id="username" name="username" class="form-control" placeholder="Enter your username" required autofocus autocomplete="off"></div></div>
+  <div class="field"><label for="password">Password</label><div class="input-wrap"><i class="fas fa-lock"></i><input id="password" name="password" type="password" class="form-control" placeholder="Enter your password" required autocomplete="off"><button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password"><i class="far fa-eye"></i></button></div></div>
+  <button type="submit" class="submit-btn" id="loginButton"><span>Sign in securely</span> <i class="fas fa-arrow-right"></i></button>
+ </form>
+ <div class="secure-note"><i class="fas fa-shield-halved"></i>Authorized Neptune finance users only</div>
+</section>
+</main>
+<script th:src="@{/cashflow-analyzer/js/auth.js}"></script><script th:src="@{/cashflow-analyzer/js/app-theme.js?v=20260924-erp-navigation-2}"></script>
+<script>
+function showLoginError(message){const box=document.getElementById('loginError');if(box){box.textContent=message;box.classList.remove('d-none')}}
+function clearLoginError(){const box=document.getElementById('loginError');if(box){box.textContent='';box.classList.add('d-none')}}
+document.addEventListener('DOMContentLoaded',function(){
+ const usernameField=document.getElementById('username'),passwordField=document.getElementById('password'),loginForm=document.getElementById('loginForm'),loginButton=document.getElementById('loginButton'),passwordToggle=document.getElementById('passwordToggle');
+ if(usernameField)usernameField.value='';if(passwordField)passwordField.value='';
+ passwordToggle?.addEventListener('click',function(){const showing=passwordField.type==='text';passwordField.type=showing?'password':'text';this.innerHTML=showing?'<i class="far fa-eye"></i>':'<i class="far fa-eye-slash"></i>';this.setAttribute('aria-label',showing?'Show password':'Hide password')});
+ loginForm?.addEventListener('submit',function(event){
+  clearLoginError();const username=usernameField?.value?.trim(),password=passwordField?.value?.trim();
+  if(!username||!password){event.preventDefault();showLoginError('Please enter both username and password.');return}
+  window.auth?.clearAuthStorage?.();localStorage.removeItem('neptuneWelcomeShown');sessionStorage.removeItem('neptuneWelcomeShown');loginButton.disabled=true;loginButton.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Signing in...';
+ })
+});
+</script>
+</body>
+</html>
+
+
+
