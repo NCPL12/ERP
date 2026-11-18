@@ -10,22 +10,19 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TallyLiveServiceCostCentreSummaryTest {
     @Test
-    void nativeCostCentreReportsUseTheCurrentlyOpenCompanyWhenNoCompanyIsConfigured() throws Exception {
+    void nativeCostCentreReportsRequireAConfiguredCompany() throws Exception {
         TallyLiveService service = new TallyLiveService();
         setCompanyName(service, "");
 
-        String summary = service.buildCostCentreSummaryRequest(
-                "SITE A", LocalDate.of(2024, 4, 1), LocalDate.of(2026, 9, 26));
-        String breakup = service.buildNativeCostCentreReportRequest(
-                "Cost Centre Breakup", "SITE A", LocalDate.of(2024, 4, 1), LocalDate.of(2026, 9, 26));
-
-        assertFalse(summary.contains("<SVCURRENTCOMPANY>"));
-        assertFalse(breakup.contains("<SVCURRENTCOMPANY>"));
+        assertThrows(IllegalStateException.class, () -> service.buildCostCentreSummaryRequest(
+                "SITE A", LocalDate.of(2024, 4, 1), LocalDate.of(2026, 9, 26)));
+        assertThrows(IllegalStateException.class, () -> service.buildNativeCostCentreReportRequest(
+                "Cost Centre Breakup", "SITE A", LocalDate.of(2024, 4, 1), LocalDate.of(2026, 9, 26)));
     }
 
     @Test

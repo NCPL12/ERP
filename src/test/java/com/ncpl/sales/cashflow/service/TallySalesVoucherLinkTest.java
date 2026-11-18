@@ -13,7 +13,7 @@ class TallySalesVoucherLinkTest {
         AtomicReference<String> request=new AtomicReference<>();
         HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         server.createContext("/",exchange->{
-            request.set(new String(exchange.getRequestBody().readAllBytes(),StandardCharsets.UTF_8));
+            request.set(new java.util.Scanner(exchange.getRequestBody(),"UTF-8").useDelimiter("\\A").next());
             String xml="<ENVELOPE><HEADER><STATUS>1</STATUS></HEADER><BODY><DATA><COLLECTION>"
                 +"<VOUCHER><MASTERID>42</MASTERID><VOUCHERNUMBER>S1</VOUCHERNUMBER><DATE>20261001</DATE>"
                 +"<REFERENCE>SO-BLR-ELT-123-2026</REFERENCE><PARTYLEDGERNAME>Client</PARTYLEDGERNAME>"

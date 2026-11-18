@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -39,7 +40,7 @@ class TallySyncServiceSnapshotSafetyTest {
         when(invoices.findBySource("TALLY")).thenReturn(existing);
         when(tally.fetchOutstandingBills()).thenReturn(Collections.emptyList());
 
-        service.syncTallyInvoices(false);
+        assertThrows(IllegalStateException.class, () -> service.syncTallyInvoices(false));
 
         verify(invoices, never()).save(any(InvoiceEntity.class));
         verify(invoices, never()).deleteAll(any());
