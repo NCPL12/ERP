@@ -4,6 +4,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -239,6 +240,23 @@ if (dashboardListsLoading) {
             </div>
           </div>
           </c:if>
+          <security:authorize access="hasAnyAuthority('ADMIN','SUPER ADMIN','CASHFLOW_ANALYZER_VIEW')">
+          <div>
+            <!-- small box: whole tile is the link, opens in its own tab -->
+            <a href="${pageContext.request.contextPath}/cashflow-analyzer/overview" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;display:block;height:100%">
+              <div class="small-box bg-primary">
+                <div class="inner">
+                  <h3><i class="fas fa-arrow-circle-right" style="font-size:.7em"></i></h3>
+
+                  <p>Cashflow Analyzer</p>
+                </div>
+                <div class="icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+              </div>
+            </a>
+          </div>
+          </security:authorize>
 
           <!-- ./col -->
         </div>

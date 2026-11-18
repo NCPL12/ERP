@@ -410,12 +410,6 @@
 										<form method="get"
 											action="<%=request.getContextPath()%>/stockModified/Download">
 
-
-
-											<!--   <button class="btn btn-flat btn-sm btn-default button-download"  type="submit">
-								         <i class="fa fa-fw fa-download"></i>Download
-								    <span class="caret"></span></button> -->
-
 										</form>
 									</li>
 									<li>

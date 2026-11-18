@@ -484,7 +484,15 @@ function loadItemTable() {
 		buttons: [{
 			extend: 'excel',
 			filename: 'Current Item Stock',
-			title: 'Current Item Stock'
+			title: 'Current Item Stock',
+			// Server-side paging means the built-in export only has the current page; download everything from the server.
+			action: function (e, dt, node, config) {
+				if (window.itemMasterLazyConfig && window.itemMasterLazyConfig.enabled) {
+					window.location.href = window.itemMasterLazyConfig.api.download;
+				} else {
+					$.fn.dataTable.ext.buttons.excelHtml5.action.call(this, e, dt, node, config);
+				}
+			}
 		}],
 		"columns": [
 			{
@@ -671,7 +679,11 @@ function loadItemTable() {
 		});
 		datatable = $('#itemMasterList').DataTable(clientConfig);
 	}
-	datatable.buttons().container().appendTo($('#itemMasterList_length'));
+	// Plain link beside "Show entries"; does not depend on the DataTables buttons plugin rendering.
+	$('#itemMasterList_length .item-master-download').remove();
+	$('<a class="btn btn-default btn-sm item-master-download" style="margin-left:10px;"><i class="fa fa-fw fa-download"></i> Download</a>')
+		.attr('href', window.itemMasterLazyConfig && window.itemMasterLazyConfig.api.download || '#')
+		.appendTo($('#itemMasterList_length'));
 
 	$('#itemMasterList tbody').on('dblclick', 'tr', function () {
 		if (!canEditItemMaster) {
