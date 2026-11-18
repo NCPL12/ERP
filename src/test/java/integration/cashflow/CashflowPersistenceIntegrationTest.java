@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.datasource.url=jdbc:h2:mem:cashflowmodule;DB_CLOSE_DELAY=-1",
     "spring.datasource.driver-class-name=org.h2.Driver", "spring.datasource.username=sa", "spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect", "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.properties.hibernate.jdbc.time_zone=UTC", "cashflow.tally.sync.enabled=true", "spring.main.allow-bean-definition-overriding=false"})
+    "cashflow.tally.sync.enabled=true", "spring.main.allow-bean-definition-overriding=false"})
 class CashflowPersistenceIntegrationTest {
     @Configuration @EnableAutoConfiguration @EnableWebSecurity
     @EntityScan(basePackageClasses=InvoiceEntity.class)
@@ -49,10 +49,14 @@ class CashflowPersistenceIntegrationTest {
     @Autowired InvoiceRepository repository;
     @MockBean TallyLiveService tally;
     @MockBean InvoicePipelineService invoicePipelineService;
-    @Test void syncPersistsBillsAndReturnsIsoDatesWithoutChangingTally() throws Exception {
-        java.util.TimeZone previousZone = java.util.TimeZone.getDefault();
+    private static java.util.TimeZone previousZone;
+    // Switch zone before the context (and its DB connections) start so H2 and the app agree on the zone.
+    @org.junit.jupiter.api.BeforeAll static void useEst() {
+        previousZone = java.util.TimeZone.getDefault();
         java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("EST"));
-        try {
+    }
+    @org.junit.jupiter.api.AfterAll static void restoreZone() { java.util.TimeZone.setDefault(previousZone); }
+    @Test void syncPersistsBillsAndReturnsIsoDatesWithoutChangingTally() throws Exception {
         when(tally.fetchOutstandingBills()).thenReturn(Arrays.asList(
             new Invoice("Customer", "INV-TEST-1",LocalDate.of(2026,1,1),LocalDate.of(2026,2,1),1200,Invoice.InvoiceType.INFLOW),
             new Invoice("Vendor", "PUR-TEST-1",LocalDate.of(2026,1,2),LocalDate.of(2026,2,2),500,Invoice.InvoiceType.OUTFLOW)));
@@ -73,6 +77,5 @@ class CashflowPersistenceIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.syncStatus.lastSyncEndTime").value(org.hamcrest.Matchers.startsWith(
                 java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Kolkata")).toString().substring(0,13))));
-        } finally { java.util.TimeZone.setDefault(previousZone); }
     }
 }
