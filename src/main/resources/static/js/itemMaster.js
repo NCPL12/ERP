@@ -985,7 +985,11 @@ function saveStock(stockJson) {
 		},
 		error : function(e) {
 			console.log(e);
-		}  	
+			hideLoader();
+			if (e.status == 400 && e.responseText) {
+				$.error(e.responseText);
+			}
+		}
 	});
 
 }

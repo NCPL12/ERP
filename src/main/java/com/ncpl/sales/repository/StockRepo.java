@@ -27,6 +27,12 @@ public interface StockRepo extends JpaRepository<Stock,String>{
 	public List<Stock> getStockByDate(Date date);
 	@Query(" from Stock where item_master_id=?1 and party_id=?2")
 	Stock findStockByClientAndItemId(String itemId, String clientId);
+
+	// Row lock (SELECT ... FOR UPDATE): use inside a transaction before any read-modify-write of quantity,
+	// so a concurrent user waits and then sees the updated quantity instead of overwriting it.
+	@org.springframework.data.jpa.repository.Lock(javax.persistence.LockModeType.PESSIMISTIC_WRITE)
+	@Query(" from Stock where item_master_id=?1 and party_id=?2")
+	Stock findStockForUpdate(String itemId, String clientId);
 	
 	
 	/*

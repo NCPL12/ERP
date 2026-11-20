@@ -75,10 +75,11 @@ public class StockService {
 	 * @param existingPartyName 
 	 * @return stockObject
 	 */
+	@Transactional
 	public Stock saveStock(Stock stock, String partyId, String itemId) {
 		String stockId = stock.getStockId();
 		float presentStockQuantity = 0.0f;
-		Stock stockByClient = stockRepo.findStockByClientAndItemId(itemId, partyId);
+		Stock stockByClient = stockRepo.findStockForUpdate(itemId, partyId);
 		if (stockByClient != null) {
 			presentStockQuantity = stockByClient.getQuantity();
 
@@ -437,11 +438,12 @@ public class StockService {
 	}
 
 	//update stock on adding grn and dc
+	@Transactional
 	public Stock updateStockQuantityFromGrn(String itemId, String clientId, float qty,String className,SalesOrder soObj) {
 		//Optional<SalesItem> salesItemObj = salesService.getSalesItemById(soItemId);
 		//SalesOrder soObj=soObj2.get().getSalesOrder();
 		Party party=partyService.getPartyById(clientId);
-		Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
+		Stock stock = stockRepo.findStockForUpdate(itemId,clientId);
 		if(className=="grn") {
 			if(stock == null) {
 				Stock new_stock = new Stock();
@@ -495,17 +497,26 @@ public class StockService {
 
 	}
 
-	public Stock updateStockAfterAssign(float existingquantity, String clientId, String itemId, float assignedQuantity, String storeName, String location) {
-		// TODO Auto-generated method stub
-		Stock stockObj = stockRepo.findStockByClientAndItemId(itemId, clientId);
-		float currentQuantity = existingquantity - assignedQuantity;
-		stockObj.setQuantity(currentQuantity);
-		stockObj.setReason(Constants.ASSIGNMENT_REASON);
-		stockObj.setActivity(Constants.ASSIGNMENT_REASON);
-		//stockObj.setStoreName(storeName);
-		//stockObj.setLocationInStore(location);
-		stockRepo.save(stockObj);
-		return null;
+	/**
+	 * Assign stock from one client to another in ONE transaction: lock the source row,
+	 * re-check the quantity from the DB (never trust the figure shown on the user's screen),
+	 * subtract it, then add to the destination.
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	public Stock assignStock(Stock stock, String destPartyId, String itemId, String sourceClientId, float assignedQuantity) {
+		if (assignedQuantity <= 0) {
+			throw new IllegalArgumentException("Assigned quantity must be greater than zero");
+		}
+		Stock source = sourceClientId == null ? null : stockRepo.findStockForUpdate(itemId, sourceClientId);
+		float available = source == null ? 0 : source.getQuantity();
+		if (available < assignedQuantity) {
+			throw new IllegalArgumentException("Insufficient stock. Available: " + available + ", requested: " + assignedQuantity);
+		}
+		source.setQuantity(available - assignedQuantity);
+		source.setReason(Constants.ASSIGNMENT_REASON);
+		source.setActivity(Constants.ASSIGNMENT_REASON);
+		stockRepo.save(source);
+		return saveStock(stock, destPartyId, itemId);
 	}
 	
 	public Stock getLatestUpdatedStockByItemId(String itemId,Timestamp sqlFromDate,Timestamp sqlToDate) {

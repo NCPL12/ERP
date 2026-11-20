@@ -29,946 +29,112 @@ public class EmailService {
 
 	@Autowired
 	private VelocityEngine velocityEngine;
-		
-	/*private static final String USERNAME = "";
-    private static final String PASSWORD = "";
 
-    private static final String EMAIL_FROM = "sunil@tek-nika.com";*/
-
-	//Using below host name for sending mail through godaddy server
-    private static final String SMTP_HOST_NAME = "smtp.gmail.com"; //smtp URL
-    private static final int SMTP_HOST_PORT = 465; //port number
-    private static String SMTP_AUTH_USER = "teknikainfotech1122@gmail.com"; //email_id of sender
-    private static String SMTP_AUTH_PWD = "hjyqbcvyhhxotpge"; //password of sender email_id
-   // private static String SMTP_AUTH_USER = "anitha.poojary6666@gmail.com"; //email_id of sender
-  //  private static String SMTP_AUTH_PWD = "blupiewengglcmzz"; //password of sender email_id
-//    private static String SMTP_AUTH_USER = "sunilsgs891@gmail.com"; //email_id of sender
-//    private static String SMTP_AUTH_PWD = "suniL58891"; //password of sender email_id
-   // private static String SMTP_BOUCE_BACK_USER = "anitha.poojary6666@gmail.com"; 
-  
-    
-    
-	    public Map<String, Object> sendEmailToServer(Map<String, Object> emailContents) throws IOException {
-	        Properties prop = System.getProperties();
-	        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-	        prop.put("mail.smtp.starttls.enable","true");
-	       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-	        prop.put("mail.smtp.socketFactory.class",    
-                    "javax.net.ssl.SSLSocketFactory");   
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.ssl.enable", "true");
-	        prop.put("mail.smtp.ssl.trust", "*");
-	        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
-	       
-	        
-	        Session session = Session.getInstance(prop, null);
-	        Message msg = new MimeMessage(session);
-	        BodyPart body = new MimeBodyPart();
-
-	        try {
-	        	StringWriter writer = new StringWriter();
-	        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-				template.merge(new VelocityContext(emailContents), writer);
-			
-				// from
-	            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-	           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-				// to (to2 is optional - not every scheduler has a second recipient)
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to1"), false));
-	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to2"));
-
-				// cc (cc2/cc3 are optional)
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc1"));
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc2"));
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc3"));
-
-				// subject
-	            msg.setSubject((String) emailContents.get("subject"));
-				
-				// content 
-	            body.setContent(writer.toString(),"text/html;");
-	            
-	            msg.setSentDate(new Date());
-	            
-	            //attachment
-	            Multipart multipart = new MimeMultipart();
-	            multipart.addBodyPart(body);
-	            System.out.println((String)emailContents.get("attachment"));
-	            
-	            MimeBodyPart attachPart = new MimeBodyPart();
-
-	            attachPart.attachFile((String) emailContents.get("attachment"));
-	            multipart.addBodyPart(attachPart);
-	            msg.setContent(multipart);
-	            
-				// Get SMTPTransport
-	            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-				
-				// connect
-	            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-				
-				// send
-	            t.sendMessage(msg, msg.getAllRecipients());
-
-	            System.out.println("Sending email: " + t.getLastServerResponse());
-
-	            t.close();
-
-	        } catch (MessagingException e) {
-	            e.printStackTrace();
-	        }
-			return emailContents;
-
-
-	    }
-
-	    private void addRecipientIfPresent(Message msg, Message.RecipientType type, String address) throws MessagingException {
-	        if (address != null && !address.trim().isEmpty()) {
-	            msg.addRecipient(type, new InternetAddress(address, false));
-	        }
-	    }
-
-	    public void sendErrorAlert(String recipients, String subject, String body) throws MessagingException {
-	        Properties properties = new Properties();
-	        properties.put("mail.smtp.host", SMTP_HOST_NAME);
-	        properties.put("mail.smtp.port", String.valueOf(SMTP_HOST_PORT));
-	        properties.put("mail.smtp.auth", "true");
-	        properties.put("mail.smtp.ssl.enable", "true");
-	        properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
-	        properties.put("mail.smtp.ssl.checkserveridentity", "true");
-	        properties.put("mail.smtp.connectiontimeout", "5000");
-	        properties.put("mail.smtp.timeout", "10000");
-	        properties.put("mail.smtp.writetimeout", "10000");
-
-	        Session session = Session.getInstance(properties);
-	        MimeMessage message = new MimeMessage(session);
-	        message.setFrom(new InternetAddress(SMTP_AUTH_USER));
-	        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipients, true));
-	        message.setSubject(subject, "UTF-8");
-	        message.setText(body, "UTF-8");
-	        message.setSentDate(new Date());
-
-	        SMTPTransport transport = (SMTPTransport) session.getTransport("smtp");
-	        try {
-	            transport.connect(SMTP_HOST_NAME, SMTP_HOST_PORT, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-	            transport.sendMessage(message, message.getAllRecipients());
-	        } finally {
-	            transport.close();
-	        }
-	    }
-
-	    public Map<String, Object> sendSOWithDesignwherePONotDoneEmailToServer(Map<String, Object> emailContents) throws IOException {
-	        Properties prop = System.getProperties();
-	        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-	        prop.put("mail.smtp.starttls.enable","true");
-	       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-	        prop.put("mail.smtp.socketFactory.class",    
-                    "javax.net.ssl.SSLSocketFactory");   
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.ssl.enable", "true");
-	        prop.put("mail.smtp.ssl.trust", "*");
-	       
-	        
-	        Session session = Session.getInstance(prop, null);
-	        Message msg = new MimeMessage(session);
-	        BodyPart body = new MimeBodyPart();
-
-	        try {
-	        	StringWriter writer = new StringWriter();
-	        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-				template.merge(new VelocityContext(emailContents), writer);
-			
-				// from
-	            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-	           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-				// to (to2/to3 optional)
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to1"), false));
-	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to2"));
-	            addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to3"));
-
-				// cc (all optional)
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc1"));
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc2"));
-	            addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc3"));
-
-				// subject
-	            msg.setSubject((String) emailContents.get("subject"));
-
-				// content
-	            body.setContent(writer.toString(),"text/html;");
-
-	            msg.setSentDate(new Date());
-
-	            //attachment
-	            Multipart multipart = new MimeMultipart();
-	            multipart.addBodyPart(body);
-	            System.out.println((String)emailContents.get("attachment"));
-
-	            MimeBodyPart attachPart = new MimeBodyPart();
-
-	            attachPart.attachFile((String) emailContents.get("attachment"));
-	            multipart.addBodyPart(attachPart);
-	            msg.setContent(multipart);
-	            
-				// Get SMTPTransport
-	            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-				
-				// connect
-	            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-				
-				// send
-	            t.sendMessage(msg, msg.getAllRecipients());
-
-	            System.out.println("Sending email: " + t.getLastServerResponse());
-
-	            t.close();
-
-	        } catch (MessagingException e) {
-	            e.printStackTrace();
-	        }
-			return emailContents;
-
-
-	    }
-
-
-
-
-		public Map<String, Object> sendSalesOrderEmailToServer(Map<String, Object> emailContents) throws IOException {
-	        Properties prop = System.getProperties();
-	        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-	        prop.put("mail.smtp.starttls.enable","true");
-
-	        prop.put("mail.smtp.socketFactory.class",    
-                    "javax.net.ssl.SSLSocketFactory");   
-	        prop.put("mail.smtp.auth", "true");
-	        prop.put("mail.smtp.ssl.enable", "true");
-	        prop.put("mail.smtp.ssl.trust", "*");
-	        
-	        Session session = Session.getInstance(prop, null);
-	        Message msg = new MimeMessage(session);
-	        BodyPart body = new MimeBodyPart();
-
-	        try {
-	        	StringWriter writer = new StringWriter();
-	        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-				template.merge(new VelocityContext(emailContents), writer);
-			
-				// from
-	            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-
-				// to 
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to1"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to2"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to3"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to4"), false));
-	            msg.addRecipient(Message.RecipientType.TO,
-	                    new InternetAddress((String) emailContents.get("to5"), false));
-
-
-				// subject
-	            msg.setSubject((String) emailContents.get("subject"));
-				
-				// content 
-	            body.setContent(writer.toString(),"text/html;");
-	            
-	            msg.setSentDate(new Date());
-	            
-	            //attachment
-	            Multipart multipart = new MimeMultipart();
-	            multipart.addBodyPart(body);
-	       
-	            
-	            msg.setContent(multipart);
-	            
-				// Get SMTPTransport
-	            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-				
-				// connect
-	            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-				
-				// send
-	            t.sendMessage(msg, msg.getAllRecipients());
-
-	            System.out.println("Sending email: " + t.getLastServerResponse());
-
-	            t.close();
-
-	        } catch (MessagingException e) {
-	            e.printStackTrace();
-	        }
-			return emailContents;
-
-
-	    }
-
-
-
-
-		 public Map<String, Object> sendItemAddedEmailToServer(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to3"), false));
-		            
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc2"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc3"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc4"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc5"), false));
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 
-		 public Map<String, Object> sendSOEmailToServer(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to3"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to4"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to5"), false));
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 
-		 public Map<String, Object> sendEmailToServerForStockByItems(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    } 
-
-		 public Map<String, Object> sendEmailToServerForStockByCustomerEmail(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",
-	                    "javax.net.ssl.SSLSocketFactory");
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
-
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc2"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc3"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc4"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc5"), false));
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 
-		 public Map<String, Object> sendEmailToServerForActiveSO(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc2"), false));
-		           
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 
-		 public Map<String, Object> sendSOWithDesignwherePONotDoneEmailToServerNew(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to3"), false));
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc2"), false));
-		            
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 
-		 public Map<String, Object> sendEmailToServerForDCCreated(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		           
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-		 public Map<String, Object> sendEmailToServerForStockByCustomerEmailSchedular(Map<String, Object> emailContents) throws IOException {
-		        Properties prop = System.getProperties();
-		        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.port", SMTP_HOST_PORT); // default port 25
-		        prop.put("mail.smtp.starttls.enable","true");
-		       // prop.put("mail.smtp.from",SMTP_BOUCE_BACK_USER);
-		        prop.put("mail.smtp.socketFactory.class",    
-	                    "javax.net.ssl.SSLSocketFactory");   
-		        prop.put("mail.smtp.auth", "true");
-		        prop.put("mail.smtp.ssl.enable", "true");
-		        prop.put("mail.smtp.ssl.trust", "*");
-		       
-		        
-		        Session session = Session.getInstance(prop, null);
-		        Message msg = new MimeMessage(session);
-		        BodyPart body = new MimeBodyPart();
-
-		        try {
-		        	StringWriter writer = new StringWriter();
-		        	Template template = velocityEngine.getTemplate((String) "template/"+emailContents.get("template"), "UTF-8");
-					template.merge(new VelocityContext(emailContents), writer);
-				
-					// from
-		            msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
-		           // msg.addFrom(InternetAddress.parse(SMTP_AUTH_USER));
-
-					// to 
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to1"), false));
-		            msg.addRecipient(Message.RecipientType.TO,
-		                    new InternetAddress((String) emailContents.get("to2"), false));
-
-					// cc
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc1"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc2"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc3"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc4"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc5"), false));
-		            msg.addRecipient(Message.RecipientType.CC,
-		                    new InternetAddress((String) emailContents.get("cc6"), false));
-
-					// subject
-		            msg.setSubject((String) emailContents.get("subject"));
-					
-					// content 
-		            body.setContent(writer.toString(),"text/html;");
-		            
-		            msg.setSentDate(new Date());
-		            
-		            //attachment
-		            Multipart multipart = new MimeMultipart();
-		            multipart.addBodyPart(body);
-		            System.out.println((String)emailContents.get("attachment"));
-		            
-		            MimeBodyPart attachPart = new MimeBodyPart();
-
-		            attachPart.attachFile((String) emailContents.get("attachment"));
-		            multipart.addBodyPart(attachPart);
-		            msg.setContent(multipart);
-		            
-					// Get SMTPTransport
-		            SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
-					
-					// connect
-		            t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
-					
-					// send
-		            t.sendMessage(msg, msg.getAllRecipients());
-
-		            System.out.println("Sending email: " + t.getLastServerResponse());
-
-		            t.close();
-
-		        } catch (MessagingException e) {
-		            e.printStackTrace();
-		        }
-				return emailContents;
-
-
-		    }
-
-
+	private static final String SMTP_HOST_NAME = "smtp.gmail.com";
+	private static final int SMTP_HOST_PORT = 465;
+	private static String SMTP_AUTH_USER = "teknikainfotech1122@gmail.com";
+	private static String SMTP_AUTH_PWD = "hjyqbcvyhhxotpge";
+
+	// Single send path for every report mail (sales order, DC, stock, item added...).
+	// to1 is required; to2..to6, cc1..cc6 and "attachment" are optional.
+	public Map<String, Object> sendEmailToServer(Map<String, Object> emailContents) throws IOException {
+		Properties prop = System.getProperties();
+		prop.put("mail.smtp.host", SMTP_HOST_NAME);
+		prop.put("mail.smtp.auth", "true");
+		prop.put("mail.smtp.port", SMTP_HOST_PORT);
+		prop.put("mail.smtp.starttls.enable", "true");
+		prop.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+		prop.put("mail.smtp.ssl.enable", "true");
+		prop.put("mail.smtp.ssl.trust", "*");
+		prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
+
+		Session session = Session.getInstance(prop, null);
+		Message msg = new MimeMessage(session);
+		BodyPart body = new MimeBodyPart();
+
+		try {
+			StringWriter writer = new StringWriter();
+			Template template = velocityEngine.getTemplate((String) "template/" + emailContents.get("template"), "UTF-8");
+			template.merge(new VelocityContext(emailContents), writer);
+
+			msg.setFrom(new InternetAddress(SMTP_AUTH_USER));
+			msg.addRecipient(Message.RecipientType.TO,
+					new InternetAddress((String) emailContents.get("to1"), false));
+			for (int i = 2; i <= 6; i++) {
+				addRecipientIfPresent(msg, Message.RecipientType.TO, (String) emailContents.get("to" + i));
+			}
+			for (int i = 1; i <= 6; i++) {
+				addRecipientIfPresent(msg, Message.RecipientType.CC, (String) emailContents.get("cc" + i));
+			}
+
+			msg.setSubject((String) emailContents.get("subject"));
+			body.setContent(writer.toString(), "text/html;");
+			msg.setSentDate(new Date());
+
+			Multipart multipart = new MimeMultipart();
+			multipart.addBodyPart(body);
+			String attachment = (String) emailContents.get("attachment");
+			if (attachment != null && !attachment.trim().isEmpty()) {
+				MimeBodyPart attachPart = new MimeBodyPart();
+				attachPart.attachFile(attachment);
+				multipart.addBodyPart(attachPart);
+			}
+			msg.setContent(multipart);
+
+			SMTPTransport t = (SMTPTransport) session.getTransport("smtp");
+			t.connect(SMTP_HOST_NAME, SMTP_AUTH_USER, SMTP_AUTH_PWD);
+			t.sendMessage(msg, msg.getAllRecipients());
+			System.out.println("Sending email: " + t.getLastServerResponse());
+			t.close();
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+		return emailContents;
+	}
+
+	private void addRecipientIfPresent(Message msg, Message.RecipientType type, String address) throws MessagingException {
+		if (address != null && !address.trim().isEmpty()) {
+			msg.addRecipient(type, new InternetAddress(address, false));
+		}
+	}
+
+	public void sendErrorAlert(String recipients, String subject, String body) throws MessagingException {
+		Properties properties = new Properties();
+		properties.put("mail.smtp.host", SMTP_HOST_NAME);
+		properties.put("mail.smtp.port", String.valueOf(SMTP_HOST_PORT));
+		properties.put("mail.smtp.auth", "true");
+		properties.put("mail.smtp.ssl.enable", "true");
+		properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
+		properties.put("mail.smtp.ssl.checkserveridentity", "true");
+		properties.put("mail.smtp.connectiontimeout", "5000");
+		properties.put("mail.smtp.timeout", "10000");
+		properties.put("mail.smtp.writetimeout", "10000");
+
+		Session session = Session.getInstance(properties);
+		MimeMessage message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(SMTP_AUTH_USER));
+		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipients, true));
+		message.setSubject(subject, "UTF-8");
+		message.setText(body, "UTF-8");
+		message.setSentDate(new Date());
+
+		SMTPTransport transport = (SMTPTransport) session.getTransport("smtp");
+		try {
+			transport.connect(SMTP_HOST_NAME, SMTP_HOST_PORT, SMTP_AUTH_USER, SMTP_AUTH_PWD);
+			transport.sendMessage(message, message.getAllRecipients());
+		} finally {
+			transport.close();
+		}
+	}
+
+	// Old per-report names kept as thin delegates so existing callers/schedulers don't change.
+	public Map<String, Object> sendSOWithDesignwherePONotDoneEmailToServer(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendSalesOrderEmailToServer(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendItemAddedEmailToServer(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendSOEmailToServer(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendEmailToServerForStockByItems(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendEmailToServerForStockByCustomerEmail(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendEmailToServerForActiveSO(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendEmailToServerForDCCreated(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
+	public Map<String, Object> sendEmailToServerForStockByCustomerEmailSchedular(Map<String, Object> m) throws IOException { return sendEmailToServer(m); }
 }

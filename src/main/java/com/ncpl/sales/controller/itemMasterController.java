@@ -105,13 +105,13 @@ public class itemMasterController {
 		String partyId =stock.getClientName();
 		String itemId=req.getParameter("itemId");
 		float assignedQuantity = stock.getQuantity();
-		Stock stockObj=stockService.saveStock(stock,partyId,itemId);
-		String storeName = req.getParameter("storeName");
-		String location = req.getParameter("locationInStore");
-	    //Updating stock after assigning to new comapany
-		stockService.updateStockAfterAssign(existingquantity,clientName,itemId,assignedQuantity,storeName,location);
-		
-	     return new ResponseEntity<>(stockObj, HttpStatus.OK);
+		try {
+			// existingquantity (from the UI) is intentionally ignored: stock is re-checked under a DB lock.
+			Stock stockObj=stockService.assignStock(stock,partyId,itemId,clientName,assignedQuantity);
+			return new ResponseEntity<>(stockObj, HttpStatus.OK);
+		} catch (IllegalArgumentException e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+		}
 	  }
 	/**
 	 * get list of stock

@@ -140,7 +140,7 @@ public class DeliveryChallanService {
 						validateDesignDeliveryQuantity(designItemsList, todayQty);
 						designItemsList.setDeliveredQty(designItemsList.getDeliveredQty()+todayQty);
 						designItemRepo.save(designItemsList);
-						Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
+						Stock stock = stockRepo.findStockForUpdate(itemId,clientId);
 						if (todayQty > 0) {
 							if (stock == null || stock.getQuantity() < todayQty) {
 								throw new IllegalArgumentException("Insufficient stock for item " + itemId + ". Available: " + (stock == null ? 0 : stock.getQuantity()) + ", requested: " + todayQty);
@@ -186,7 +186,7 @@ public class DeliveryChallanService {
 						float todayQty=deliveryChallanItems.getTodaysQty();
 						validateDesignDeliveryQuantity(designList.get(0), todayQty);
 						if (todayQty > 0) {
-							Stock stock = stockRepo.findStockByClientAndItemId(itemId,clientId);
+							Stock stock = stockRepo.findStockForUpdate(itemId,clientId);
 							if (stock == null || stock.getQuantity() < todayQty) {
 								throw new IllegalArgumentException("Insufficient stock for item " + itemId + ". Available: " + (stock == null ? 0 : stock.getQuantity()) + ", requested: " + todayQty);
 							}
