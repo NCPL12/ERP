@@ -94,7 +94,66 @@ function deleteRole(roleId, roleName) {
 	});
 }
 
+// "Edit SO quantity on locked items" flag for the selected role, saved immediately on change.
+var amdMailUsersLoaded = false;
+
+function loadSalesQtyFlag(roleId) {
+	$("#salesQtyFlagRow").show();
+	if (!amdMailUsersLoaded) {
+		$.ajax({
+			url: api.ROLE_API + "/mail-users",
+			type: "GET",
+			success: function (users) {
+				var opts = '<option value="">-- none --</option>';
+				$.each(users, function (i, u) {
+					opts += '<option value="' + escapeHtml(u.username) + '">' + escapeHtml(u.label) + '</option>';
+				});
+				$("#amdMailUser").html(opts);
+				amdMailUsersLoaded = true;
+			}
+		});
+	}
+	$.ajax({
+		url: api.ROLE_API + "/" + roleId + "/sales-qty-edit",
+		type: "GET",
+		success: function (resp) {
+			$("#salesQtyEditFlag").prop("checked", !!resp.enabled);
+			$("#amdMailUser").val(resp.mailUsername || "");
+		},
+		error: function (xhr) {
+			alert("Unable to load sales quantity setting. Status: " + xhr.status);
+		}
+	});
+}
+
+// Saves both the checkbox and the mail recipient for the selected role.
+function saveSalesQtyFlag(previousEnabled) {
+	$.ajax({
+		url: api.ROLE_API + "/" + selectedRoleId + "/sales-qty-edit",
+		type: "PUT",
+		data: {
+			enabled: $("#salesQtyEditFlag").is(":checked"),
+			mailUsername: $("#amdMailUser").val() || ""
+		},
+		success: function () {
+			if ($.success) { $.success("Sales quantity setting saved"); }
+		},
+		error: function (xhr) {
+			$("#salesQtyEditFlag").prop("checked", previousEnabled);
+			alert(xhr.responseText || ("Save failed. Status: " + xhr.status));
+		}
+	});
+}
+
+$(document).on("change", "#salesQtyEditFlag", function () {
+	saveSalesQtyFlag(!$(this).is(":checked"));
+});
+$(document).on("change", "#amdMailUser", function () {
+	saveSalesQtyFlag($("#salesQtyEditFlag").is(":checked"));
+});
+
 function selectRole(roleId) {
+	loadSalesQtyFlag(roleId);
 	selectedRoleId = roleId;
 	renderRoleList();
 	var hasEdit = window && window.hasUserManagementEdit ? window.hasUserManagementEdit : false;

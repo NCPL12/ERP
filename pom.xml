@@ -164,6 +164,10 @@
   			<plugin>
   			  <groupId>org.springframework.boot</groupId>
 		   	  <artifactId>spring-boot-maven-plugin</artifactId>
+  			  <configuration>
+  			    <!-- Dashboard snapshot + PDF uploads need more than the JVM default heap -->
+  			    <jvmArguments>-Xms512m -Xmx2g</jvmArguments>
+  			  </configuration>
   			</plugin>
   			<plugin>
   			  <groupId>org.codehaus.mojo</groupId>

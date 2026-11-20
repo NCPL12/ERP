@@ -320,6 +320,7 @@
 		STOCK_LIST_BY_ITEMID_AND_CLIENTID:parentApi+"/stock-list/by_itemId_clientId",
 		DC_EXIST:parentApi+"/check_dc_exists",
 		DC_EXIST_BULK:parentApi+"/check_dc_exists_bulk",
+		SO_QTY_EDIT_ME:parentApi+"/sales-qty-edit/me",
 		GET_DCITEMLISTByAllDC_BYSOID:parentApi+"/dc_itemlist_for_all_dc/by_soId",
 
 		GET_SALES_ITEMS_WITHOUT_DESIGN:parentApi+"/sales-items-without-design",

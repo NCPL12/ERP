@@ -30,6 +30,31 @@ public class Role extends TimeStampEntity {
 	@Column(name = "report_items", length = 1000)
 	private String reportItems;
 
+	// When true, users with this role may change the quantity of a sales item even
+	// after a PO / DC has been created for it (the sales order row is otherwise locked).
+	@Column(name = "sales_qty_edit_on_locked")
+	private Boolean salesQtyEditOnLocked;
+
+	// Username of the user who gets the amendment mail when a user with this role changes AMDQTY.
+	@Column(name = "amendment_mail_username", length = 50)
+	private String amendmentMailUsername;
+
+	public String getAmendmentMailUsername() {
+		return amendmentMailUsername;
+	}
+
+	public void setAmendmentMailUsername(String amendmentMailUsername) {
+		this.amendmentMailUsername = amendmentMailUsername;
+	}
+
+	public boolean isSalesQtyEditOnLocked() {
+		return Boolean.TRUE.equals(salesQtyEditOnLocked);
+	}
+
+	public void setSalesQtyEditOnLocked(boolean salesQtyEditOnLocked) {
+		this.salesQtyEditOnLocked = salesQtyEditOnLocked;
+	}
+
 	public String getDashboardTiles() {
 		return dashboardTiles;
 	}
