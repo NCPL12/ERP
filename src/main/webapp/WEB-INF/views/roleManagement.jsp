@@ -315,6 +315,19 @@ window.hasUserManagementEdit = ${canEditUserMgmt};
 							<div id="roleList"></div>
 						</div>
 						<div class="ra-grid-pane">
+							<div id="salesQtyFlagRow" style="display:none; padding:10px 12px; border-bottom:1px solid #e5e7eb;">
+								<label style="font-weight:normal; margin:0;">
+									<input type="checkbox" id="salesQtyEditFlag" ${canEditUserMgmt ? '' : 'disabled'}>
+									Allow changing Sales Order quantity on locked items (PO / DC already created)
+								</label>
+								<div style="margin-top:8px;">
+									<label style="font-weight:normal; margin:0;">Send amendment mail to:
+										<select id="amdMailUser" class="form-control" style="display:inline-block; width:auto; min-width:280px;" ${canEditUserMgmt ? '' : 'disabled'}>
+											<option value="">-- none --</option>
+										</select>
+									</label>
+								</div>
+							</div>
 							<table class="ra-grid">
 								<thead>
 									<tr>

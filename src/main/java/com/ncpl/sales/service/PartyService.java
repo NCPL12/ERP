@@ -22,6 +22,7 @@ import com.ncpl.sales.model.PartyContact;
 import com.ncpl.sales.model.Type;
 import com.ncpl.sales.repository.PartyRepo;
 import com.ncpl.sales.repository.projection.PartyDropdownProjection;
+import com.ncpl.sales.util.TextSanitizer;
 @Service
 public class PartyService {
 	@Autowired
@@ -45,10 +46,14 @@ public class PartyService {
 		//Setting party_type in database..
 		Optional<Type> typeObj = typeService.findTypeById(Integer.parseInt(party.getType()));
 		party.setParty_type(typeObj.get());
-		party.setPartyName(party.getPartyName().trim());
-		party.setAddr1(party.getAddr1().trim());
-		party.setPhone1(party.getPhone1().trim());
-		party.setPhone2(party.getPhone2().trim());
+		party.setPartyName(TextSanitizer.clean(party.getPartyName()));
+		party.setAddr1(TextSanitizer.clean(party.getAddr1()));
+		party.setAddr2(TextSanitizer.clean(party.getAddr2()));
+		party.setPin(TextSanitizer.cleanCode(party.getPin()));
+		party.setGst(TextSanitizer.cleanCode(party.getGst()));
+		party.setRemarks(TextSanitizer.clean(party.getRemarks()));
+		party.setPhone1(TextSanitizer.cleanCode(party.getPhone1()));
+		party.setPhone2(TextSanitizer.cleanCode(party.getPhone2()));
 	
 		List<PartyContact> contactList =party.getContacts();
 		if( contactList!=null){

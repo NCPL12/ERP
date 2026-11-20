@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.ncpl.sales.model.City;
 import com.ncpl.sales.model.PartyAddress;
 import com.ncpl.sales.repository.PartyAddressRepo;
+import com.ncpl.sales.util.TextSanitizer;
 
 @Service
 public class PartyAddressService {
@@ -25,7 +26,18 @@ public class PartyAddressService {
 		int cityId = partyContact.getCity();
 		Optional<City> city = cityservice.findCityById(cityId);
 		partyContact.setPartyaddr_city(city.get());
+		cleanAddressText(partyContact);
 		partyAddressRepo.save(partyContact);
+	}
+
+	// Removes pasted tabs/line breaks before the address is saved.
+	private void cleanAddressText(PartyAddress address) {
+		address.setAddr1(TextSanitizer.clean(address.getAddr1()));
+		address.setAddr2(TextSanitizer.clean(address.getAddr2()));
+		address.setPin(TextSanitizer.cleanCode(address.getPin()));
+		address.setGst(TextSanitizer.cleanCode(address.getGst()));
+		address.setPhone1(TextSanitizer.cleanCode(address.getPhone1()));
+		address.setPhone2(TextSanitizer.cleanCode(address.getPhone2()));
 	}
 
 	public List<PartyAddress> getAddressById(String partyId) {
@@ -63,6 +75,7 @@ public class PartyAddressService {
 	int cityId = partyAddress.getCity();
 	Optional<City> city = cityservice.findCityById(cityId);
 	partyAddress.setPartyaddr_city(city.get());
+	cleanAddressText(partyAddress);
 	//	PartyAddress paddressUpdate = partyAddressRepo.findById(partyAddress.getId());
 		partyAddressRepo.save(partyAddress);
 	}

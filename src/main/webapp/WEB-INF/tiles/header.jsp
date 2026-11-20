@@ -368,7 +368,7 @@
 						<!-- Navbar -->
 						<nav class="main-header navbar navbar-expand navbar-white navbar-light">
 							<!-- Left navbar links -->
-							<ul class="navbar-nav">
+							<ul class="navbar-nav ${pageHeader == 'Sales Order' ? 'sales-order-header-ul' : ''}">
 								<li class="nav-item">
 									<a data-widget="pushmenu" href="#" class="pushmenuLink" id="sidebarToggleBtn"
 										role="button" aria-label="Collapse sidebar" aria-expanded="true" title="Collapse sidebar">
@@ -492,6 +492,20 @@
 	       </li> -->
 								</c:if>
 								<c:if test="${pageHeader == 'Sales Order'}">
+									<style>
+										/* Sales Order header: let items wrap and keep Party fully visible (not pinned to the right edge) */
+										.sales-order-header-ul { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+										.sales-order-header-ul > li.form-inline { display: flex; align-items: center; flex-wrap: nowrap; margin: 0; }
+										.sales-order-header-ul > li.form-inline > span { white-space: nowrap; line-height: 24px; }
+										.sales-order-header-ul .PositionofTextbox { height: 24px !important; line-height: 22px; }
+										.sales-order-header-ul .select2-container--default .select2-selection--single { height: 24px; }
+										.sales-order-header-ul .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 22px; }
+										.sales-order-header-ul .select2-container--default .select2-selection--single .select2-selection__arrow { height: 22px; }
+										.sales-order-header-ul > li:has(#partyDropDown) {
+											position: static !important; top: auto !important; right: auto !important;
+											margin-left: auto; padding-right: 16px;
+										}
+									</style>
 									<li class="nav-item d-none d-sm-inline-block">
 										<a href="${pageContext.request.contextPath}/salesList"
 											class="nav-link salesList"><i class="fa fa-list-alt headerIconFont"></i></a>
@@ -500,6 +514,13 @@
 											&nbsp;</span>
 										<input type="text" name="clientPoNumber" id="clientPoNumber"
 											class="form-control PositionofTextbox fieldwidth150" />
+									</li>
+										<li class="form-inline"><span class="m-0 text-dark marginLeft7">PO PDF <span id="clientPoFileReq" class="text-danger">*</span> :&nbsp;</span>
+										<label for="clientPoFile" id="clientPoFileLabel" class="form-control PositionofTextbox text-center text-primary m-0"
+											title="Client PO PDF (required unless Non Billable)"
+											style="width: 120px; cursor: pointer; padding: 0 8px; margin: 0 14px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Choose PDF</label>
+										<input type="file" id="clientPoFile" name="clientPoFile" form="salesOrderForm1" accept="application/pdf" style="display: none;" />
+										<a id="clientPoFileDownload" href="#" class="btn btn-sm btn-outline-secondary ml-1" title="Download the saved Client PO PDF" style="display: none; height: 24px; line-height: 22px; padding: 0 8px; border-radius: 0; vertical-align: middle;"><i class="fa fa-download"></i></a>
 									</li>
 									<li class="form-inline"><span class="m-0 text-dark marginLeft30">Client PO.Date :
 											&nbsp;</span>

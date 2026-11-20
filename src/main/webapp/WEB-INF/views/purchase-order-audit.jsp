@@ -2,6 +2,7 @@
     pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="spring"%>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec"%>
 <!-- @D0017 Purchase Order audit log, mirrors sales-order-audit.jsp (see README.md) -->
@@ -175,15 +176,15 @@
                             <td>${audit.description}</td>
                             <td>
                                 <c:if test="${not empty audit.oldValues}">
-                                    <span class="json-data" onclick="showJsonData('${audit.oldValues}', 'Old Values')">
-                                        ${audit.oldValues}
+                                    <span class="json-data" data-json="${fn:escapeXml(audit.oldValues)}" data-title="Old Values" onclick="showJsonData(this)">
+                                        ${fn:escapeXml(audit.oldValues)}
                                     </span>
                                 </c:if>
                             </td>
                             <td>
                                 <c:if test="${not empty audit.newValues}">
-                                    <span class="json-data" onclick="showJsonData('${audit.newValues}', 'New Values')">
-                                        ${audit.newValues}
+                                    <span class="json-data" data-json="${fn:escapeXml(audit.newValues)}" data-title="New Values" onclick="showJsonData(this)">
+                                        ${fn:escapeXml(audit.newValues)}
                                     </span>
                                 </c:if>
                             </td>
@@ -263,14 +264,14 @@
 
                 let oldValuesHtml = '';
                 if (audit.oldValues) {
-                    const escapedOldValues = audit.oldValues.replace(/'/g, "\\'");
-                    oldValuesHtml = '<span class="json-data" onclick="showJsonData(\'' + escapedOldValues + '\', \'Old Values\')">' + audit.oldValues + '</span>';
+                    const escapedOldValues = escapeHtml(audit.oldValues);
+                    oldValuesHtml = '<span class="json-data" data-json="' + escapedOldValues + '" data-title="Old Values" onclick="showJsonData(this)">' + escapedOldValues + '</span>';
                 }
 
                 let newValuesHtml = '';
                 if (audit.newValues) {
-                    const escapedNewValues = audit.newValues.replace(/'/g, "\\'");
-                    newValuesHtml = '<span class="json-data" onclick="showJsonData(\'' + escapedNewValues + '\', \'New Values\')">' + audit.newValues + '</span>';
+                    const escapedNewValues = escapeHtml(audit.newValues);
+                    newValuesHtml = '<span class="json-data" data-json="' + escapedNewValues + '" data-title="New Values" onclick="showJsonData(this)">' + escapedNewValues + '</span>';
                 }
 
                 row.innerHTML =
@@ -305,7 +306,19 @@
                 });
         }
 
-        function showJsonData(jsonString, title) {
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // The JSON is read from the element's data-json attribute, so no JS string escaping is involved.
+        function showJsonData(el) {
+            const jsonString = el.dataset.json;
+            const title = el.dataset.title;
             try {
                 const jsonData = JSON.parse(jsonString);
                 document.getElementById('jsonModalTitle').textContent = title;

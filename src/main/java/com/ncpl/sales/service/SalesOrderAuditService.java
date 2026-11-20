@@ -45,6 +45,7 @@ public class SalesOrderAuditService {
 	/** Per–sales-line audit (tbl_sales_order_audit) */
 	public static final String ACTION_CREATE_SALES_ITEM = "CREATE_SALES_ITEM";
 	public static final String ACTION_UPDATE_SALES_ITEM = "UPDATE_SALES_ITEM";
+	public static final String ACTION_AMEND_QUANTITY = "AMEND_QUANTITY";
 	public static final String ACTION_DELETE_SALES_ITEM = "DELETE_SALES_ITEM";
 
 	/** Per–design-item audit */
@@ -303,6 +304,19 @@ public class SalesOrderAuditService {
 			}
 			Map<String, Object> o = oldM.get(id);
 			Map<String, Object> n = newM.get(id);
+			Object oldAmd = o.get("amendedQuantity");
+			Object newAmd = n.get("amendedQuantity");
+			if (!Objects.equals(oldAmd, newAmd)) {
+				Map<String, Object> oldAmdPayload = new LinkedHashMap<>();
+				oldAmdPayload.put("quantity", o.get("quantity"));
+				oldAmdPayload.put("amendedQuantity", oldAmd);
+				Map<String, Object> newAmdPayload = new LinkedHashMap<>();
+				newAmdPayload.put("quantity", n.get("quantity"));
+				newAmdPayload.put("amendedQuantity", newAmd);
+				logSalesItemChange(salesOrderId, id, ACTION_AMEND_QUANTITY, performedBy, oldAmdPayload, newAmdPayload,
+						"AMDQTY changed: " + oldAmd + " -> " + newAmd + ", total " + o.get("quantity") + " -> " + n.get("quantity"),
+						request);
+			}
 			if (!Objects.equals(salesItemMapForDiffCompare(o), salesItemMapForDiffCompare(n))) {
 				logSalesItemChange(salesOrderId, id, ACTION_UPDATE_SALES_ITEM, performedBy, o, n,
 						"Sales line updated: " + id, request);

@@ -440,7 +440,8 @@ public class SalesController {
 	}
 
 	@PostMapping("/add/salesOrder")
-	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req, @RequestParam("party") String partyId)
+	public String saveSalesOrder(@ModelAttribute @Valid SalesOrder salesOrder, Errors errors, HttpServletRequest req, @RequestParam("party") String partyId,
+			@RequestParam(value = "clientPoFile", required = false) MultipartFile clientPoFile)
 			throws Exception {
 
 		System.out.println("Party ID from request: " + partyId);
@@ -471,7 +472,27 @@ public class SalesController {
 			}
 			System.out.println("Error....." + errors.getFieldError());
 		}
-		salesService.savesales(salesOrder, partyId);
+
+		// Client PO PDF: required for every SO except Non Billable ones.
+		boolean hasNewPdf = clientPoFile != null && !clientPoFile.isEmpty();
+		if (hasNewPdf) {
+			String fileName = clientPoFile.getOriginalFilename();
+			boolean isPdf = fileName != null && fileName.toLowerCase().endsWith(".pdf");
+			if (!isPdf) {
+				throw new IllegalArgumentException("Client PO file must be a PDF");
+			}
+		}
+		String soIdForCheck = salesOrder.getId();
+		boolean isNewSo = soIdForCheck == null || soIdForCheck.isEmpty();
+		boolean alreadyHasPdf = !isNewSo && salesService.hasClientPoFile(soIdForCheck);
+		if (!SalesService.isNonBillablePo(salesOrder.getClientPoNumber()) && !hasNewPdf && !alreadyHasPdf) {
+			throw new IllegalArgumentException("Client PO PDF is required unless the Client PO is Non Billable");
+		}
+
+		SalesOrder savedSo = salesService.savesales(salesOrder, partyId);
+		if (hasNewPdf) {
+			salesService.storeFile(clientPoFile, savedSo.getId());
+		}
 
 		return "redirect:/salesList";
 
@@ -1563,6 +1584,14 @@ public class SalesController {
 		return new ResponseEntity<>(dcExists, HttpStatus.OK);
 	}
 
+	/** Whether the logged-in user may change quantity on locked sales items (role flag). */
+	@GetMapping("/api/sales-qty-edit/me")
+	public ResponseEntity<Map<String, Object>> salesQtyEditForMe() {
+		Map<String, Object> body = new HashMap<>();
+		body.put("allowed", salesService.currentUserCanEditLockedQty());
+		return ResponseEntity.ok(body);
+	}
+
 	//bulk version of check_dc_exists: one request for all items of a sales order, returns ids having DC/PO
 	@PostMapping("/api/check_dc_exists_bulk")
 	public ResponseEntity<?> checkForDcExistsBulk(@RequestParam("salesItemIds") List<String> salesItemIds) {
@@ -2603,6 +2632,13 @@ public class SalesController {
 	        
 	    }
 	    
+	    @GetMapping("api/clientPo/exists/{salesOrderId}")
+	    public ResponseEntity<Map<String, Object>> clientPoFileExists(@PathVariable("salesOrderId") String salesOrderId) {
+	        Map<String, Object> body = new HashMap<>();
+	        body.put("exists", salesService.hasClientPoFile(salesOrderId));
+	        return ResponseEntity.ok(body);
+	    }
+
 	    @GetMapping("api/clientPo/download/{salesOrderId}")
 	    public ResponseEntity<byte[]> downloadPdfFileById(@PathVariable("salesOrderId") String salesOrderId) {
 	        try {

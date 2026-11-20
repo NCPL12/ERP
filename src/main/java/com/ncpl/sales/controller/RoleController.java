@@ -201,6 +201,58 @@ public class RoleController {
 		return ResponseEntity.ok().build();
 	}
 
+	/** Whether this role may change sales item quantity on locked (PO/DC-created) sales orders. */
+	@GetMapping("/api/roles/{id}/sales-qty-edit")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
+	public ResponseEntity<?> getSalesQtyEdit(@PathVariable Long id) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		Map<String, Object> body = new HashMap<>();
+		body.put("enabled", role.isSalesQtyEditOnLocked());
+		body.put("mailUsername", role.getAmendmentMailUsername());
+		return ResponseEntity.ok(body);
+	}
+
+	/** Users that have an email address — the choices for the amendment mail recipient. */
+	@GetMapping("/api/roles/mail-users")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_VIEW')")
+	public List<Map<String, Object>> amendmentMailUsers() {
+		List<Map<String, Object>> rows = new ArrayList<>();
+		for (User u : userRepo.findAll()) {
+			if (u.getEmailId() != null && !u.getEmailId().trim().isEmpty()) {
+				Map<String, Object> row = new HashMap<>();
+				row.put("username", u.getUsername());
+				row.put("label", u.getUsername() + " (" + u.getEmailId().trim() + ")");
+				rows.add(row);
+			}
+		}
+		return rows;
+	}
+
+	@PutMapping("/api/roles/{id}/sales-qty-edit")
+	@ResponseBody
+	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
+	@Transactional
+	public ResponseEntity<?> saveSalesQtyEdit(@PathVariable Long id, @RequestParam("enabled") boolean enabled,
+			@RequestParam(value = "mailUsername", required = false) String mailUsername) {
+		Role role = roleRepo.findById(id).orElse(null);
+		if (role == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
+		}
+		String recipient = mailUsername == null ? "" : mailUsername.trim();
+		if (!recipient.isEmpty() && userRepo.findUserByUserName(recipient) == null) {
+			return ResponseEntity.badRequest().body("Unknown mail user: " + recipient);
+		}
+		role.setSalesQtyEditOnLocked(enabled);
+		role.setAmendmentMailUsername(recipient.isEmpty() ? null : recipient);
+		roleRepo.save(role);
+		return ResponseEntity.ok().build();
+	}
+
 	private boolean hasModuleView(Long roleId, String moduleName) {
 		for (RolePermission p : rolePermissionRepo.findByRole_RoleId(roleId)) {
 			if (moduleName.equals(p.getModule())) {

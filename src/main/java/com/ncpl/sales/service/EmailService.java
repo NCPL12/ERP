@@ -59,6 +59,7 @@ public class EmailService {
                     "javax.net.ssl.SSLSocketFactory");   
 	        prop.put("mail.smtp.auth", "true");
 	        prop.put("mail.smtp.ssl.enable", "true");
+	        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	        prop.put("mail.smtp.ssl.trust", "*");
 	        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	       
@@ -138,6 +139,7 @@ public class EmailService {
 	        properties.put("mail.smtp.port", String.valueOf(SMTP_HOST_PORT));
 	        properties.put("mail.smtp.auth", "true");
 	        properties.put("mail.smtp.ssl.enable", "true");
+	        properties.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	        properties.put("mail.smtp.ssl.checkserveridentity", "true");
 	        properties.put("mail.smtp.connectiontimeout", "5000");
 	        properties.put("mail.smtp.timeout", "10000");
@@ -171,6 +173,7 @@ public class EmailService {
                     "javax.net.ssl.SSLSocketFactory");   
 	        prop.put("mail.smtp.auth", "true");
 	        prop.put("mail.smtp.ssl.enable", "true");
+	        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	        prop.put("mail.smtp.ssl.trust", "*");
 	       
 	        
@@ -252,6 +255,7 @@ public class EmailService {
                     "javax.net.ssl.SSLSocketFactory");   
 	        prop.put("mail.smtp.auth", "true");
 	        prop.put("mail.smtp.ssl.enable", "true");
+	        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 	        prop.put("mail.smtp.ssl.trust", "*");
 	        
 	        Session session = Session.getInstance(prop, null);
@@ -329,6 +333,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -417,6 +422,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -497,6 +503,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -571,6 +578,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 
@@ -656,6 +664,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -736,6 +745,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -818,6 +828,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
@@ -893,6 +904,7 @@ public class EmailService {
 	                    "javax.net.ssl.SSLSocketFactory");   
 		        prop.put("mail.smtp.auth", "true");
 		        prop.put("mail.smtp.ssl.enable", "true");
+		        prop.put("mail.smtp.ssl.protocols", "TLSv1.2");
 		        prop.put("mail.smtp.ssl.trust", "*");
 		       
 		        
