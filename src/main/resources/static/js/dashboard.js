@@ -264,7 +264,7 @@ $(document).on('click',".clientPoUploadBtn",function(){
 	$("#salesOrderNum").val(salesOrderId);
 });
 
-if(user=="admin" || user=="ashwini"){
+if(canUploadSo){
 	$(document).on('click',".soUploadButton",function(){
 		$("#uploadForm")[0].reset();
 		$('#response').empty();

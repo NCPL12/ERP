@@ -3,6 +3,97 @@
  */
 var itemName;
 var unitName;
+
+// true when the logged-in user's role may change quantity on locked (PO/DC-created) sales items
+var canEditLockedQty = false;
+// Amendment mode (opened from the amendment mail link): the SO is read-only, except the
+// design button of items that were amended. Runs after the lock check so the lock cannot re-enable anything.
+function isAmendmentMode(){ return $("#amendmentMode").val() === "true"; }
+function applyAmendmentMode(){
+	$("#salesTable").addClass("amd-on");
+	$("#salesOrderForm1 input, #salesOrderForm1 select, #salesOrderForm1 textarea, #salesTable input, #salesTable select").attr("disabled", true);
+	$("#saveSoBtn, #saveSalesOrder, #resetSalesOrder, .add, .deleteButton").hide();
+	$("#salesTable > tbody > tr").each(function(i){
+		var amd = parseFloat($("#amdQty"+i).val()) || 0;
+		if(!canEditLockedQty){
+			// Non-permitted view: Qty holds the total, so show base = total - amendment
+			var total = parseFloat($("#qty"+i).val()) || 0;
+			$("#qty"+i).val(total - amd);
+			$("#totalQty"+i).val(total);
+		}
+		if(amd !== 0){
+				$(this).addClass("amd-changed");
+			enableDesignAddBtn(i);
+			$("#designTd"+i).css("visibility", "visible");
+		}
+	});
+}
+
+// AMDQTY / Total QTY cells: hidden unless the table has class amd-on (set only for permitted users).
+// A class rule (not inline display) so rows added later are shown too.
+$("<style>.amd-col{display:none !important}#salesTable.amd-on .amd-col{display:table-cell !important}"
+	+ "#salesTable tr.amd-changed > td{background:#fff3cd !important;box-shadow:inset 4px 0 0 #f0ad4e}"
+	+ "#salesTable tr.amd-changed input{background:#fff3cd !important;font-weight:bold}</style>").appendTo("head");
+$(function(){
+	$.get(api.SO_QTY_EDIT_ME, function(r){
+		canEditLockedQty = !!(r && r.allowed);
+		if(canEditLockedQty){
+			$("#salesTable").addClass("amd-on");
+			// totals rows sit after the two AMDQTY/Total QTY columns, so widen their spacer
+			$("#table-footer td[colspan='6']").attr("colspan", 8);
+			if(!$("#salesItemId0").val()){ applyAmdColumn(0); }
+		}
+	});
+});
+
+// AMDQTY columns (permitted users only): Qty = base quantity, AMDQTY = +/- amendment,
+// Total QTY = Qty + AMDQTY. The total is posted as items[i].quantity, so the saved quantity is the total.
+function applyAmdColumn(key){
+	if(!canEditLockedQty || $("#qty"+key).length==0){ return; }
+	$("#qty"+key).removeAttr("name");
+	// Qty of an existing item is locked for permitted users (change AMDQTY instead); new rows can still type Qty
+	if($("#salesItemId"+key).val()){ $("#qty"+key).attr("readonly", true); }
+	if($("#totalHidden"+key).length==0){
+		$("#qty"+key).after('<input type="hidden" id="totalHidden'+key+'" name="items['+key+'].quantity"/>');
+	}
+	recalcTotalQty(key);
+}
+function recalcTotalQty(key){
+	var base = parseFloat($("#qty"+key).val()) || 0;
+	var amd = parseFloat($("#amdQty"+key).val()) || 0;
+	var total = base + amd;
+	$("#totalQty"+key).val(total);
+	$("#totalHidden"+key).val(total);
+}
+$(document).on("change input", ".qty, .amdQty", function(){
+	if(!canEditLockedQty){ return; }
+	recalcTotalQty($(this).closest("tr").index());
+});
+
+// Non Billable client POs (any spelling, any case) do not need the client PO PDF.
+function isNonBillablePo(po){
+	if(!po){ return false; }
+	return String(po).toLowerCase().replace(/[\s-]/g,"").indexOf("nonbillable") !== -1;
+}
+
+// On edit: show a download link if this SO has a stored client PO PDF.
+// Defined at file scope so getSalesOrderById (outside the ready block) can call it.
+function showClientPoDownload(salesOrderId){
+	var $link = $("#clientPoFileDownload");
+	$link.hide();
+	if(!salesOrderId){ return; }
+	var base = api.FILE_DOWNLOAD;
+	$.ajax({
+		url: base.replace(/\/download$/, "/exists") + "/" + salesOrderId,
+		type: 'GET',
+		dataType: 'json',
+		success: function(resp){
+			if(resp && resp.exists){
+				$link.attr("href", base + "/" + salesOrderId).show();
+			}
+		}
+	});
+}
 var designTable
 var getAmountBound = false;
 var bulkLoading = false;
@@ -78,8 +169,25 @@ $(document).ready(function () {
 	 $(document).on('change','#clientPoNumber',function(){
 		var clientPo=$("#clientPoNumber").val();
 		$('#clientPo').val(clientPo);
+		updateClientPoFileRequirement();
 	 })
-     $(document).on('change','#clientPoDate',function(){
+     // Client PO PDF is required unless the PO number is Non Billable (existing SOs already have one saved)
+		 function updateClientPoFileRequirement(){
+			var isEdit = $("#soId").val() !== undefined && $("#soId").val() !== "";
+			var required = !isEdit && !isNonBillablePo($("#clientPoNumber").val());
+			$("#clientPoFileReq").toggle(required);
+			$("#clientPoFile").attr("title", isEdit ? "Leave empty to keep the PDF already saved." :
+				(required ? "Client PO PDF (required)" : "Client PO PDF (not needed for Non Billable)"));
+		 }
+		 $(document).on('change','#clientPoFile',function(){
+			var f = this.files && this.files[0];
+			$("#clientPoFileLabel").text(f ? f.name : "Choose PDF");
+			if(f && f.type !== "application/pdf" && !/\.pdf$/i.test(f.name)){
+				$.error("Client PO file must be a PDF");
+				$(this).val("");
+			}
+		 })
+	     $(document).on('change','#clientPoDate',function(){
 		var clientPoDate=$("#clientPoDate").val();
 		$('#poDate').val(clientPoDate);
 	 })
@@ -223,6 +331,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" id="hsnCode'+ arraycount +'" name="items['+arraycount+'].hsnCode" path="items['+arraycount+'].hsnCode"/></td>';
 	    columns += '<td width="5%"><input type="text" class="form-control PositionofTextbox" id="servicehsnCode'+ arraycount +'" name="items['+arraycount+'].servicehsnCode" path="items['+arraycount+'].servicehsnCode"/></td>';
 	    columns += '<td width="8%"><input type="text" class="form-control PositionofTextbox qty" id="qty'+ arraycount +'" name="items['+arraycount+'].quantity" path="items['+arraycount+'].qty" value="0"/><span id="qtyDiv'+arraycount+'"></span></td>';
+	    columns += '<td width="6%" class="amd-col"><input type="text" class="form-control PositionofTextbox amdQty alignright" id="amdQty'+ arraycount +'" name="items['+arraycount+'].amendedQuantity" value="0"/></td>';
+	    columns += '<td width="7%" class="amd-col"><input type="text" class="form-control PositionofTextbox totalQty alignright" id="totalQty'+ arraycount +'" readonly="readonly" value="0"/></td>';
 	    columns += '<td width="7%"><select class="form-control PositionofTextbox unit" id="unit'+arraycount+'" name="items['+arraycount+'].unit" path="items['+arraycount+'].unit" ><option value="">Select Unit:</option></select><span id="unitDiv'+arraycount+'"></span></td>';
 	    columns += '<td width="9%"><input type="text" class="form-control PositionofTextbox unitPrice alignright"  id="unitPrice'+ arraycount +'" name="items['+arraycount+'].unitPrice" path="items['+arraycount+'].unitPrice"  value="0.0"/><span id="unitPriceDiv'+arraycount+'"></span></td>';
 	    columns += '<td width="9%"><input type="text" class="form-control PositionofTextbox servicePrice alignright"  id="servicePrice'+ arraycount +'" name="items['+arraycount+'].servicePrice" path="items['+arraycount+'].serivicePrice"  value="0.0"/><span id="servicePriceDiv'+arraycount+'"></span></td>';
@@ -234,6 +344,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	    columns +='<td style="display:none" id="toggleBriefTd'+arraycount+'" class="toggleBriefTd hideTd"><input type="checkbox" id="toggleBrief'+arraycount+'" class="toggleBrief"></td>';
         newRow.append(columns);
          $("#table-body").append(newRow);
+         applyAmdColumn(arraycount);
          // Check if expand all header should be shown/hidden after adding new row
          if (!bulkLoading) { toggleExpandAllHeader(); }
         // Ensure no suggestions/autocomplete on description for new row as well
@@ -281,7 +392,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			$("#hsnCode"+index).attr("readonly",true);
 			$("#servicehsnCode"+index).attr("readonly",true);
 		}else{
-			$("#qty"+index).attr("readonly",false);
+			$("#qty"+index).attr("readonly", canEditLockedQty && !!$("#salesItemId"+index).val());
 			$("#servicePrice"+index).attr("readonly",false);
 			$("#unitPrice"+index).attr("readonly",false);
 			$("#modelNo"+index).attr("readonly",false);
@@ -334,6 +445,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 	//$('#clientPoDate').datepicker({ dateFormat: 'dd-mm-yy' });
 	//$('#clientPoNumber').attr("readonly","readonly");
 	$("#clientPoNumber,#clientPo").val(salesOrderObj.clientPoNumber);
+	showClientPoDownload(soId);
 	$("#taxDropDown").val(salesOrderObj.gstRate);
 
 		$.ajax({
@@ -369,7 +481,10 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				$("#modelNo"+key).val(value.modelNo);
 				$("#hsnCode"+key).val(value.hsnCode);
 				$("#servicehsnCode"+key).val(value.servicehsnCode);
-				$("#qty"+key).val(value.quantity);
+				var amdVal = parseFloat(value.amendedQuantity) || 0;
+				$("#qty"+key).val(canEditLockedQty ? value.quantity - amdVal : value.quantity);
+				$("#amdQty"+key).val(amdVal);
+				applyAmdColumn(key);
 				var unitPrice = commaSeparateNumber(value.unitPrice);
 				$("#unitPrice"+key).val(unitPrice);
 				var servicePrice = commaSeparateNumber(value.servicePrice);
@@ -396,7 +511,7 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				}else{
 					$("#servicePrice"+key).attr("readonly",false);
 					$("#unitPrice"+key).attr("readonly",false);
-					$("#qty"+key).attr("readonly",false);
+					$("#qty"+key).attr("readonly",canEditLockedQty);
 					$("#modelNo"+key).attr("readonly",false);
 					$("#hsnCode"+key).attr("readonly",false);
 					$("#servicehsnCode"+key).attr("readonly",false);
@@ -467,12 +582,16 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					if(idsWithDc.indexOf(id) !== -1){
 						anyDc = true;
 						row.find("input,select,button").attr("disabled",true);
+						if(canEditLockedQty){
+							row.find("input.amdQty").attr("disabled",false);
+						}
 						disableDesignAddBtn(key);
 					}else{
 						row.find("input,select,button").attr("disabled",false);
 						enableDesignAddBtn(key);
 					}
 				});
+				if(isAmendmentMode()){ applyAmendmentMode(); }
 				if(anyDc){
 					$('.toggleBrief').attr('disabled', false);
 					if(userName=="surendra" || userName=="ashwini"){
@@ -502,6 +621,9 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 			success : function(response) {
 				if(response == true){
 					$("#salesTable >tbody").find("tr:eq("+key+")").find("input,select,button").attr("disabled",true);
+					if(canEditLockedQty){
+						$("#salesTable >tbody").find("tr:eq("+key+")").find("input.amdQty").attr("disabled",false);
+					}
 					$('.toggleBrief').attr('disabled', false);
 					if(userName=="surendra" || userName=="ashwini"){
 						$('.slNo').attr('disabled', false);
@@ -1030,7 +1152,7 @@ function designTable2Json(){
 
 
 	function getAmount(){
-        $(document).on('change blur','.qty, .unitPrice, .servicePrice, #partyDropDown, .unit',function () {
+        $(document).on('change blur','.qty, .amdQty, .unitPrice, .servicePrice, #partyDropDown, .unit',function () {
             /*$(document).on('change','.servicePrice,.deleteButton,#salesTable,#partyDropDown',function () { */
             var index=$(this).closest("tr").index();
             var row=$('#salesTable > tbody  > tr').length;
@@ -1052,7 +1174,9 @@ function designTable2Json(){
             sp1 = sp1.replace(/,/g,"");
 
             //calculating total amount((Uprice+Sprice)*Quantity))..
-           parent.find('.amount').val((parseFloat(parent.find('.qty').val()) * parseFloat(up1))+(parseFloat(sp1)*parseFloat(parent.find('.qty').val()) ))
+           var lineQty = parseFloat(parent.find('.qty').val());
+           if(canEditLockedQty){ lineQty = lineQty + (parseFloat(parent.find('.amdQty').val()) || 0); }
+           parent.find('.amount').val((lineQty * parseFloat(up1))+(parseFloat(sp1)*lineQty ))
          //  parent.find('.amount').val(parseFloat(parent.find('.qtyInput').val()) * parseFloat(up1))
             $("#unitPrice"+index).val(commaSeparateNumber(up1));
            $("#servicePrice"+index).val(commaSeparateNumber(sp1));
@@ -1660,7 +1784,17 @@ $("#shippingAddressDropdown").change();
 			$("#clientPoDate").addClass('border-color');
 			checkDuplicate=true;
 		}
-		$('input').off('change.clrPoDate').on('change.clrPoDate', function(){
+		var clientPoFileEl = $("#clientPoFile")[0];
+			var clientPoFileAttached = clientPoFileEl && clientPoFileEl.files && clientPoFileEl.files.length > 0;
+			if(!isNonBillablePo(clientPoNumber) && !clientPoFileAttached){
+				e.preventDefault(e);
+				$.error("Please attach the Client PO PDF (not required for Non Billable)");
+				$("#clientPoFile").addClass('border-color');
+			}
+			$('input').off('change.clrPoFile').on('change.clrPoFile', function(){
+				$("#clientPoFile").removeClass('border-color');
+			})
+			$('input').off('change.clrPoDate').on('change.clrPoDate', function(){
 				$("#clientPoDate").removeClass('border-color');
 				checkDuplicate=false;
 		})
