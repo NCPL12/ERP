@@ -174,7 +174,7 @@
 			});
 
 		}
-	if(currentUser=="admin"){
+	if(canEditPurchase){
 			$(document).on('click',".poUploadButton",function(){
 				$("#poUploadForm")[0].reset();
 				$('#response').empty();
