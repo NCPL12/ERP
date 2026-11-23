@@ -156,25 +156,27 @@
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
   </dependencies>
   	<build>
-  		<plugins>
-  			<plugin>
-  			  <groupId>org.springframework.boot</groupId>
-		   	  <artifactId>spring-boot-maven-plugin</artifactId>
-			  <configuration>
-			    <!-- Dashboard snapshot + PDF uploads need more than the JVM default heap -->
-			    <jvmArguments>-Xms512m -Xmx2g</jvmArguments>
-			  </configuration>
-  			</plugin>
-  			<plugin>
-  			  <groupId>org.codehaus.mojo</groupId>
-  			  <artifactId>exec-maven-plugin</artifactId>
-  			  <version>3.1.0</version>
-  			  <configuration>
-  			    <mainClass>com.erp.stockreport.MonthlyStockReportService</mainClass>
-  			  </configuration>
-  			</plugin>
-  		</plugins>
-  	</build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <!-- Dashboard snapshot + PDF uploads need more than the JVM default heap -->
+                <jvmArguments>-Xms512m -Xmx2g</jvmArguments>
+            </configuration>
+        </plugin>
+
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <configuration>
+                <mainClass>com.erp.stockreport.MonthlyStockReportService</mainClass>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+git diff --check
   
   <profiles>
 		<!-- Activate for developement -->
