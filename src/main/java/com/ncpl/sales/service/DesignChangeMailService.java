@@ -47,10 +47,17 @@ public class DesignChangeMailService {
 	private String roleRecipient() {
 		User actor = userService.getCurrentUser();
 		Role role = actor == null || actor.getRole() == null ? null : roleRepo.findByName(actor.getRole());
-		if (role == null || role.getDesignMailUsername() == null) {
+		String username = role == null ? null : role.getDesignMailUsername();
+		if (username == null) {
+			// The acting user's own role (e.g. the amendment recipient's) has none: use the one set on any role.
+			// shortcut: first role found wins; if roles need different recipients, set it on each role.
+			username = roleRepo.findAll().stream().map(Role::getDesignMailUsername)
+					.filter(u -> u != null && !u.trim().isEmpty()).findFirst().orElse(null);
+		}
+		if (username == null) {
 			return null;
 		}
-		User target = userRepo.findUserByUserName(role.getDesignMailUsername());
+		User target = userRepo.findUserByUserName(username);
 		String email = target == null || target.getEmailId() == null ? "" : target.getEmailId().trim();
 		return email.isEmpty() ? null : email;
 	}
@@ -76,18 +83,7 @@ public class DesignChangeMailService {
 		String fromRole = roleRecipient();
 		final String to = fromRole != null ? fromRole : (recipients == null ? "" : recipients.trim());
 		if (to.isEmpty()) {
-			return;
-		}
-		// Mail only once the design is complete: every line is "Designed" (green tick), none still a red cross.
-		// Checked on the request thread so it sees this save's rows.
-		try {
-			Optional<SalesItem> first = salesService.getSalesItemObjById(salesItemId);
-			if (!first.isPresent() || first.get().getSalesOrder() == null
-					|| !salesService.getSalesItemListWithoutDesign(first.get().getSalesOrder().getId()).isEmpty()) {
-				return;
-			}
-		} catch (Exception e) {
-			log.warn("Design completeness check failed for sales item {}: {}", salesItemId, e.getMessage());
+			log.warn("Design change mail not sent for sales item {}: no recipient (set it on the role, or design.change.mail.to)", salesItemId);
 			return;
 		}
 		CompletableFuture.runAsync(() -> {
@@ -97,7 +93,7 @@ public class DesignChangeMailService {
 				String clientPo = si.isPresent() && si.get().getSalesOrder() != null
 						? String.valueOf(si.get().getSalesOrder().getClientPoNumber()) : "?";
 				StringBuilder body = new StringBuilder();
-				body.append("The design is complete (all line items designed).\n\n");
+				body.append("The design was updated.\n\n");
 				body.append("Sales Order: ").append(soId).append('\n');
 				body.append("Client PO: ").append(clientPo).append('\n');
 				body.append("Line item: ").append(si.isPresent() ? si.get().getDescription() : salesItemId).append('\n');
@@ -105,7 +101,7 @@ public class DesignChangeMailService {
 				for (String c : changes) {
 					body.append(" - ").append(c).append('\n');
 				}
-				emailService.sendErrorAlert(to,"[ERP] Design completed for " + soId, body.toString());
+				emailService.sendErrorAlert(to,"[ERP] Design updated for " + soId, body.toString());
 			} catch (Exception e) {
 				log.error("Could not send design change mail for sales item " + salesItemId, e);
 			}

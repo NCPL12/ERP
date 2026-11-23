@@ -99,20 +99,22 @@ var amdMailUsersLoaded = false;
 
 function loadSalesQtyFlag(roleId) {
 	$("#salesQtyFlagRow").show();
-	if (!amdMailUsersLoaded) {
-		$.ajax({
-			url: api.ROLE_API + "/mail-users",
-			type: "GET",
-			success: function (users) {
-				var opts = '<option value="">-- none --</option>';
-				$.each(users, function (i, u) {
-					opts += '<option value="' + escapeHtml(u.username) + '">' + escapeHtml(u.label) + '</option>';
-				});
-				$("#amdMailUser, #designMailUser").html(opts);
-				amdMailUsersLoaded = true;
-			}
+	// Options must exist before .val() is applied, so load the user list first, then the role's setting.
+	var usersReady = amdMailUsersLoaded ? $.Deferred().resolve() : $.ajax({
+		url: api.ROLE_API + "/mail-users",
+		type: "GET"
+	}).done(function (users) {
+		var opts = '<option value="">-- none --</option>';
+		$.each(users, function (i, u) {
+			opts += '<option value="' + escapeHtml(u.username) + '">' + escapeHtml(u.label) + '</option>';
 		});
-	}
+		$("#amdMailUser, #designMailUser").html(opts);
+		amdMailUsersLoaded = true;
+	});
+	usersReady.always(function () { loadSalesQtyFlagValues(roleId); });
+}
+
+function loadSalesQtyFlagValues(roleId) {
 	$.ajax({
 		url: api.ROLE_API + "/" + roleId + "/sales-qty-edit",
 		type: "GET",
