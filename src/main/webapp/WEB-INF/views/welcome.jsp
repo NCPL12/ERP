@@ -120,7 +120,7 @@ obj = obj.replace(/\&/g, "\"");
 				<%-- <tiles:insertAttribute name="pageHeader" /> --%>
 				<div id="salesDiv" class="card">
 					<div class="card-body table-responsive p-0">
-						<form:form id="salesOrderForm1" method="POST" modelAttribute="salesOrder"
+						<form:form id="salesOrderForm1" method="POST" modelAttribute="salesOrder" enctype="multipart/form-data"
 							action="${pageContext.request.contextPath}/add/salesOrder">
 							<input type="hidden" name="id" id="soId" />
 							<input type="hidden" name="party" id="party" />
@@ -140,6 +140,7 @@ obj = obj.replace(/\&/g, "\"");
 							<input type="hidden" name="responsiblePerson" id="responsiblePerson" />
 							<input type="hidden" name="shippingAddress1" id="shippingAddressPartyId" />
 							<div class="sales-items-scroll" role="region" aria-label="Sales order items" tabindex="0">
+							<input type="hidden" id="amendmentMode" value="${amendmentMode == true ? 'true' : 'false'}"/>
 							<table id="salesTable" class="table table-head-fixed table-hover">
 								<thead id="table-header font">
 									<tr>
@@ -150,6 +151,8 @@ obj = obj.replace(/\&/g, "\"");
 										<th width="5%" rowspan="2" class="thStyle">HSN</th>
 										<th width="5%" rowspan="2" class="thStyle">SAC</th>
 										<th width="8%" rowspan="2" class="thStyle">Qty</th>
+										<th width="6%" rowspan="2" class="thStyle amd-col">AMDQTY</th>
+										<th width="7%" rowspan="2" class="thStyle amd-col">Total QTY</th>
 										<th width="7%" rowspan="2" class="thStyle">Unit</th>
 										<th colspan="2" class="sales-price-header" style="text-align: center;">Price</th>
 										<th width="11%" rowspan="2" class="thStyle">Amount</th>
@@ -207,6 +210,8 @@ obj = obj.replace(/\&/g, "\"");
 												value="" />
 											<form:errors path="items[0].quantity" cssClass="error" /><span
 												id="qtyDiv0"></span></td>
+										<td width="6%" class="amd-col"><input type="text" id="amdQty0" name="items[0].amendedQuantity" class="form-control PositionofTextbox amdQty alignright" value="0" /></td>
+										<td width="7%" class="amd-col"><input type="text" id="totalQty0" readonly="readonly" class="form-control PositionofTextbox totalQty alignright" value="0" /></td>
 
 										<td width="7%">
 											<form:select class="form-control select2 PositionofTextbox unit" 
@@ -261,7 +266,7 @@ obj = obj.replace(/\&/g, "\"");
 										<td colspan="6" aria-hidden="true"></td>
 										<td class="task-label" style="text-align: right; white-space: nowrap;">Tax Rate</td>
 										<td><select id="taxDropDown" name="gstRate"
-												class="form-control" style="width: 100%; height: 32px; font-size: 14px; border-radius: 0;">
+												class="form-control" style="width: 100%; min-width: 130px; height: 32px; font-size: 14px; border-radius: 0;">
 												<option value="18">GST@18%</option>
 												<option value="12">GST@12%</option>
 												<option value="0">GST@0%</option>

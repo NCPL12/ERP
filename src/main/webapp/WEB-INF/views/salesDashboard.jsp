@@ -6,7 +6,7 @@
 <%@ taglib uri="http://tiles.apache.org/tags-tiles" prefix="tiles"%>
 <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
 <security:authorize access="hasAuthority('SALES_ORDER_EDIT')" var="canEditSalesOrder" />
-<!DOCTYPE html>
+<security:authorize access="hasAuthority('SALES_ORDER_EDIT')" var="canUploadSo" /><!DOCTYPE html>
 <html>
 <head>
 <meta charset="ISO-8859-1">
@@ -18,6 +18,7 @@ var role = ${role};
 var user = ${user};
 var pageContext = '${pageContext.request.contextPath}';
 var canEditSalesOrder = ${canEditSalesOrder};
+var canUploadSo = ${canUploadSo};
 </script> 
 
 <script src="<c:url value="/resources/js/dashboard.js" />"></script>
@@ -29,6 +30,7 @@ var canEditSalesOrder = ${canEditSalesOrder};
 }
 </style>
 </head>
+<body>
 <body class="hold-transition sidebar-mini layout-fixed">
 	<div class="wrapper">
 		<tiles:insertAttribute name="header" />
@@ -180,6 +182,12 @@ var canEditSalesOrder = ${canEditSalesOrder};
 				</form>
 				<div class="response" id="responseMessage"></div>
 				
+				<%-- <h1>Upload Sales Order Excel</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="file" accept=".xlsx, .xls">
+        <button type="submit">Upload</button>
+    </form>
+    <div id="response"></div> --%>
 			</div>
 					<!-- /.modal-content -->
 				</div>

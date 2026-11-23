@@ -71,6 +71,7 @@ import com.ncpl.sales.model.Party;
 import com.ncpl.sales.model.PurchaseItem;
 import com.ncpl.sales.model.PurchaseOrder;
 import com.ncpl.sales.model.SalesItem;
+import com.ncpl.sales.model.Role;
 import com.ncpl.sales.model.SalesOrder;
 import com.ncpl.sales.model.SalesOrderDesign;
 import com.ncpl.sales.model.Stages;
@@ -147,7 +148,13 @@ public class SalesService {
 	SalesOrderAuditService auditService;
 	@Autowired
 	UserService userService;
-	
+	@Autowired
+	com.ncpl.sales.repository.RoleRepo roleRepo;
+	@Autowired
+	com.ncpl.sales.security.UserRepo userRepo;
+	@org.springframework.beans.factory.annotation.Value("${app.base-url:http://localhost:8080/ncpl-sales}")
+	String appBaseUrl;
+
 	FileNameGenerator fileNameGenerator = new FileNameGenerator();
 	String fileName = fileNameGenerator.generateFileNameAsDate() + "sales_list_.xlsx";
 	String filePath = Constants.FILE_LOCATION + File.separator + fileName;
@@ -259,6 +266,10 @@ public class SalesService {
 			} catch (Exception e) {
 				log.warn("Could not snapshot sales items before save: {}", e.getMessage());
 			}
+
+			// Quantity of a locked item (PO/DC already created) may change only for a role with the flag.
+			preserveAmendmentForNonPermittedUser(oldOrder, salesorder);
+			enforceLockedQtyRule(oldOrder, salesorder);
 			
 			// Create a defensive copy of old values to ensure they don't get modified
 			SalesOrder oldOrderCopy = createSalesOrderCopy(oldOrder);
@@ -333,6 +344,7 @@ public class SalesService {
 						.buildSalesItemSnapshotMap(soObj.getItems());
 				auditService.diffAndLogSalesItemChanges(soObj.getId(), oldItemSnapshots, newItemSnapshots,
 						getCurrentUser(), null);
+				notifyAmendmentMail(oldItemSnapshots, soObj);
 			} catch (Exception e) {
 				System.err.println("Error logging audit for sales order update: " + e.getMessage());
 				e.printStackTrace();
@@ -354,6 +366,122 @@ public class SalesService {
 
 		return soObj;
 
+	}
+
+	/** True when the logged-in user's role has "edit SO quantity on locked items" enabled. */
+	public boolean currentUserCanEditLockedQty() {
+		try {
+			User user = userService.getCurrentUser();
+			if (user == null || user.getRole() == null) {
+				return false;
+			}
+			Role role = roleRepo.findByName(user.getRole());
+			return role != null && role.isSalesQtyEditOnLocked();
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	/**
+	 * After an SO save: if any AMDQTY changed, mail the recipient chosen on the actor's role
+	 * (Roles & Access) the changed items and a link to the amendment view. Never fails the save.
+	 */
+	private void notifyAmendmentMail(Map<String, Map<String, Object>> oldSnap, SalesOrder so) {
+		try {
+			if (oldSnap == null || so.getItems() == null) {
+				return;
+			}
+			List<String> lines = new ArrayList<>();
+			for (SalesItem it : so.getItems()) {
+				Map<String, Object> o = it.getId() == null ? null : oldSnap.get(it.getId());
+				if (o == null || o.get("amendedQuantity") == null) {
+					continue;
+				}
+				float oldAmd = ((Number) o.get("amendedQuantity")).floatValue();
+				if (Float.compare(oldAmd, it.getAmendedQuantity()) == 0) {
+					continue;
+				}
+				lines.add(String.format("%s : AMDQTY %s -> %s, Total %s -> %s", it.getDescription(),
+						oldAmd, it.getAmendedQuantity(), o.get("quantity"), it.getQuantity()));
+			}
+			if (lines.isEmpty()) {
+				return;
+			}
+			User actor = userService.getCurrentUser();
+			if (actor == null || actor.getRole() == null) {
+				return;
+			}
+			Role role = roleRepo.findByName(actor.getRole());
+			if (role == null || role.getAmendmentMailUsername() == null) {
+				return;
+			}
+			User recipient = userRepo.findUserByUserName(role.getAmendmentMailUsername());
+			if (recipient == null || recipient.getEmailId() == null || recipient.getEmailId().trim().isEmpty()) {
+				return;
+			}
+			String link = appBaseUrl + "/amendment/" + so.getId();
+			String subject = "Amended quantity - SO " + so.getId() + " (Client PO " + so.getClientPoNumber() + ")";
+			String body = "Amended quantities were added by " + actor.getUsername() + ":\n\n"
+					+ String.join("\n", lines) + "\n\nView and add design: " + link + "\n";
+			// Send in the background so a slow or unreachable SMTP server never delays the SO save.
+			final String to = recipient.getEmailId().trim();
+			java.util.concurrent.CompletableFuture.runAsync(() -> {
+				try {
+					emailService.sendErrorAlert(to, subject, body);
+				} catch (Exception ex) {
+					log.warn("Amendment mail not sent to {}: {}", to, ex.getMessage());
+				}
+			});
+		} catch (Exception e) {
+			log.warn("Amendment mail not sent: {}", e.getMessage());
+		}
+	}
+
+	/** AMDQTY (amendment) may be changed only by a role with the permission; others keep the stored value. */
+	private void preserveAmendmentForNonPermittedUser(SalesOrder oldOrder, SalesOrder newOrder) {
+		if (oldOrder.getItems() == null || newOrder.getItems() == null || currentUserCanEditLockedQty()) {
+			return;
+		}
+		Map<String, Float> oldAmd = new HashMap<>();
+		for (SalesItem it : oldOrder.getItems()) {
+			if (it.getId() != null) {
+				oldAmd.put(it.getId(), it.getAmendedQuantity());
+			}
+		}
+		for (SalesItem it : newOrder.getItems()) {
+			if (it.getId() != null && oldAmd.containsKey(it.getId())) {
+				it.setAmendedQuantity(oldAmd.get(it.getId()));
+			}
+		}
+	}
+
+	/** Rejects a quantity change on a locked sales item unless the current user's role allows it. */
+	private void enforceLockedQtyRule(SalesOrder oldOrder, SalesOrder newOrder) {
+		if (oldOrder.getItems() == null || newOrder.getItems() == null) {
+			return;
+		}
+		Map<String, Float> oldQty = new HashMap<>();
+		for (SalesItem it : oldOrder.getItems()) {
+			if (it.getId() != null) {
+				oldQty.put(it.getId(), it.getQuantity());
+			}
+		}
+		List<String> changedIds = new ArrayList<>();
+		for (SalesItem it : newOrder.getItems()) {
+			if (it.getId() != null && oldQty.containsKey(it.getId())
+					&& Float.compare(oldQty.get(it.getId()), it.getQuantity()) != 0) {
+				changedIds.add(it.getId());
+			}
+		}
+		if (changedIds.isEmpty()) {
+			return;
+		}
+		Set<String> locked = checkForDcExistsBulk(changedIds);
+		boolean changesLockedItem = changedIds.stream().anyMatch(locked::contains);
+		if (changesLockedItem && !currentUserCanEditLockedQty()) {
+			throw new IllegalArgumentException(
+					"Quantity of a sales item with a PO/DC already created can only be changed by a role that has permission");
+		}
 	}
 
 	private String getCurrentUser() {
@@ -1985,6 +2113,23 @@ public class SalesService {
 			}
 		}
 		return items;
+	}
+
+	/**
+	 * A client PO is "Non Billable" when its number contains "non billable" in any
+	 * spelling (Non Billable / Nonbillable / Non-Billable, any case). Such POs do not
+	 * need the client PO PDF attached.
+	 */
+	public static boolean isNonBillablePo(String clientPoNumber) {
+		if (clientPoNumber == null) {
+			return false;
+		}
+		return clientPoNumber.toLowerCase().replaceAll("[\\s-]", "").contains("nonbillable");
+	}
+
+	public boolean hasClientPoFile(String salesOrderId) {
+		return salesOrderId != null && !salesOrderId.isEmpty()
+				&& fileRepository.findBySalesOrderId(salesOrderId).isPresent();
 	}
 
 	public FileEntity storeFile(MultipartFile file,String salesOrderId) throws IOException {
