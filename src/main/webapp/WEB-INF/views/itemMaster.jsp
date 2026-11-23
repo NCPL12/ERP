@@ -49,7 +49,7 @@ var user = ${user};
 window.itemMasterLazyConfig = {
 	enabled: true,
 	toolTrackerOnly: false,
-	api: { list: '${pageContext.request.contextPath}/api/itemMaster/page' }
+	api: { list: '${pageContext.request.contextPath}/api/itemMaster/page', download: '${pageContext.request.contextPath}/itemist/Download' }
 };
 </script>
 <style type="text/css">

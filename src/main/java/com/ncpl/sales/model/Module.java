@@ -7,7 +7,7 @@ public enum Module {
 	RETURNABLE("/returnableList"), INVOICE("/invoiceList"), WORK_ORDER(null),
 	PURCHASE("/purchase"), GRN("/grnLists"), NON_BILLABLE(null),
 	REPORTS("/sales_report"), ARCHIVES("/salesList_archived"),
-	USER_MANAGEMENT("/user-management");
+	USER_MANAGEMENT("/user-management"), CASHFLOW_ANALYZER("/cashflow-analyzer/overview");
 
 	private final String menuPath;
 
@@ -34,11 +34,11 @@ public enum Module {
 
 	/** Whether a Delete checkbox is meaningful for this module in the permission grid. */
 	public boolean deletable() {
-		return this != DASHBOARD && this != REPORTS && this != ARCHIVES && this != COMPANY_ASSETS && this != DELIVERY_CHALLAN && this != GRN;
+		return this != DASHBOARD && this != REPORTS && this != ARCHIVES && this != CASHFLOW_ANALYZER && this != COMPANY_ASSETS && this != DELIVERY_CHALLAN && this != GRN;
 	}
 
 	/** Whether an Edit checkbox is meaningful for this module (DASHBOARD/REPORTS/ARCHIVES are view-only). */
 	public boolean editable() {
-		return this != DASHBOARD && this != REPORTS && this != ARCHIVES;
+		return this != DASHBOARD && this != REPORTS && this != ARCHIVES && this != CASHFLOW_ANALYZER;
 	}
 }

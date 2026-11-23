@@ -1,0 +1,296 @@
+:root {
+    color-scheme: light;
+    --theme-bg: #eef4fb;
+    --theme-surface: #ffffff;
+    --theme-surface-2: #f8fafc;
+    --theme-text: #0b1f46;
+    --theme-muted: #64748b;
+    --theme-border: #dbe4f0;
+    --theme-shadow: rgba(15, 38, 79, .15);
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+    --theme-bg: #07111f;
+    --theme-surface: #101c2d;
+    --theme-surface-2: #162438;
+    --theme-text: #e7eef9;
+    --theme-muted: #9fb0c6;
+    --theme-border: #293b53;
+    --theme-shadow: rgba(0, 0, 0, .38);
+}
+
+html[data-theme="dark"] body {
+    background: var(--theme-bg) !important;
+    color: var(--theme-text) !important;
+}
+
+html[data-theme="dark"] .container,
+html[data-theme="dark"] .container-fluid,
+html[data-theme="dark"] .content-wrapper,
+html[data-theme="dark"] .main-content {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .metric-tile,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .chart-card,
+html[data-theme="dark"] .table-card,
+html[data-theme="dark"] .analysis-card,
+html[data-theme="dark"] .outstanding-panel,
+html[data-theme="dark"] .outstanding-panel-header,
+html[data-theme="dark"] .outstanding-body,
+html[data-theme="dark"] .analysis-box,
+html[data-theme="dark"] .aging-card,
+html[data-theme="dark"] .filter-section,
+html[data-theme="dark"] .finance-sidebar,
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .dropdown-menu,
+html[data-theme="dark"] .offcanvas,
+html[data-theme="dark"] .login-shell,
+html[data-theme="dark"] .form-panel {
+    background: var(--theme-surface) !important;
+    border-color: var(--theme-border) !important;
+    color: var(--theme-text) !important;
+    box-shadow: 0 12px 30px var(--theme-shadow);
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6,
+html[data-theme="dark"] label,
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .tile-label,
+html[data-theme="dark"] .tile-value,
+html[data-theme="dark"] .modal-title,
+html[data-theme="dark"] strong {
+    color: var(--theme-text) !important;
+}
+
+html[data-theme="dark"] p,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .subtitle,
+html[data-theme="dark"] .tile-subtitle,
+html[data-theme="dark"] .sync-timestamp {
+    color: var(--theme-muted) !important;
+}
+
+html[data-theme="dark"] table,
+html[data-theme="dark"] .table {
+    --bs-table-bg: var(--theme-surface);
+    --bs-table-color: var(--theme-text);
+    --bs-table-border-color: var(--theme-border);
+    --bs-table-striped-bg: var(--theme-surface-2);
+    --bs-table-hover-bg: #1b2d45;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] thead,
+html[data-theme="dark"] th,
+html[data-theme="dark"] .table-light {
+    --bs-table-bg: #172740;
+    --bs-table-color: #dce8f8;
+    background: #172740 !important;
+    color: #dce8f8 !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] td,
+html[data-theme="dark"] tr {
+    color: var(--theme-text);
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] .table.outstanding-table tbody td {
+    color: #c5d2e3 !important;
+    border-bottom-color: #2b3d55 !important;
+}
+html[data-theme="dark"] .table.outstanding-table tbody .party-cell {
+    color: #e3edf9 !important;
+}
+html[data-theme="dark"] .table.outstanding-table tbody .bill-cell,
+html[data-theme="dark"] .table.outstanding-table tbody .col-date {
+    color: #b4c4d9 !important;
+}
+html[data-theme="dark"] .table.outstanding-table tbody .col-amount {
+    color: #e8f0fb !important;
+}
+html[data-theme="dark"] .table.outstanding-table tbody .text-danger {
+    color: #ff5a6a !important;
+}
+html[data-theme="dark"] .table.outstanding-table tbody tr:hover > td {
+    background: #182a42 !important;
+}
+html[data-theme="dark"] .invoice-detail-table tbody tr:hover > * {
+    background-color: #1b3049 !important;
+    color: #f1f5f9 !important;
+    box-shadow: none !important;
+}
+
+/* Table rows must contain only their declared cells. The legacy hover animation
+   uses row pseudo-elements, which browsers may lay out as an extra table cell. */
+table tbody tr::before,
+table tbody tr::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Full-screen finance analysis modals */
+html[data-theme="dark"] #agingAnalysisModal .modal-body,
+html[data-theme="dark"] #reconciliationModal .modal-body {
+    background: #0b1728 !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .page-header,
+html[data-theme="dark"] #agingAnalysisModal .filter-toolbar,
+html[data-theme="dark"] #agingAnalysisModal .summary-card,
+html[data-theme="dark"] #agingAnalysisModal .aging-card,
+html[data-theme="dark"] #agingAnalysisModal .aging-table,
+html[data-theme="dark"] #reconciliationModal .filter-toolbar,
+html[data-theme="dark"] #reconciliationModal .panel,
+html[data-theme="dark"] #reconciliationModal .panel-header,
+html[data-theme="dark"] #reconciliationModal .panel-body,
+html[data-theme="dark"] #reconciliationModal .entity-table,
+html[data-theme="dark"] #reconciliationModal .selection-summary {
+    background: #101e31 !important;
+    color: #e5edf8 !important;
+    border-color: #2c405a !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .aging-table tbody td,
+html[data-theme="dark"] #reconciliationModal .table tbody td,
+html[data-theme="dark"] #reconciliationModal .entity-grid {
+    color: #c7d5e7 !important;
+    border-color: #2c405a !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .aging-table tbody td:first-child,
+html[data-theme="dark"] #reconciliationModal .table tbody td:nth-child(2),
+html[data-theme="dark"] #reconciliationModal .entity-grid .name {
+    color: #edf3fc !important;
+}
+html[data-theme="dark"] #reconciliationModal .entity-grid.header,
+html[data-theme="dark"] #reconciliationModal .entity-body .entity-grid.entity-row:nth-child(odd),
+html[data-theme="dark"] #reconciliationModal .entity-body .entity-grid.entity-row:nth-child(even) {
+    background: #13243a !important;
+}
+html[data-theme="dark"] #reconciliationModal .entity-body .entity-grid.entity-row:nth-child(even) {
+    background: #172a42 !important;
+}
+html[data-theme="dark"] #reconciliationModal .invoice-row:hover > td {
+    background: #1b304a !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .aging-bucket-tabs .nav-link:not(.active) {
+    background: #13243a !important;
+    border-color: #3b526e !important;
+    color: #bdd2ed !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .filters-info,
+html[data-theme="dark"] #agingAnalysisModal .summary-card .label,
+html[data-theme="dark"] #reconciliationModal .selection-summary .metric span,
+html[data-theme="dark"] #reconciliationModal .selection-summary .context {
+    background: transparent !important;
+    color: #9fb1c8 !important;
+    border-color: #344a64 !important;
+}
+html[data-theme="dark"] #agingAnalysisModal .btn-outline-primary {
+    color: #8dbbff !important;
+    border-color: #4b82d1 !important;
+}
+html[data-theme="dark"] #agingAnalysisModal table tbody tr::before,
+html[data-theme="dark"] #reconciliationModal table tbody tr::before {
+    display: none !important;
+    content: none !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .input-group-text {
+    background: #0c1727 !important;
+    border-color: #344861 !important;
+    color: var(--theme-text) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color: #8092aa !important; }
+
+html[data-theme="dark"] .finance-heading-row,
+html[data-theme="dark"] .outstanding-toolbar,
+html[data-theme="dark"] .aging-summary,
+html[data-theme="dark"] .concentration-panel,
+html[data-theme="dark"] .nav-tabs .nav-link.active,
+html[data-theme="dark"] .list-group-item {
+    background: var(--theme-surface) !important;
+    color: var(--theme-text) !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] .outstanding-panel-header,
+html[data-theme="dark"] .outstanding-body { border-color: var(--theme-border) !important; }
+html[data-theme="dark"] .aging-card-label,
+html[data-theme="dark"] .aging-card-count,
+html[data-theme="dark"] .concentration-label,
+html[data-theme="dark"] .outstanding-panel-subtitle { color: var(--theme-muted) !important; }
+html[data-theme="dark"] .aging-bar,
+html[data-theme="dark"] .concentration-track { background: #2a3c53 !important; }
+
+html[data-theme="dark"] .finance-nav button,
+html[data-theme="dark"] .finance-nav a,
+html[data-theme="dark"] .finance-sidebar-footer button {
+    color: #b9c8dc;
+}
+
+html[data-theme="dark"] .finance-nav button:hover,
+html[data-theme="dark"] .finance-nav a:hover,
+html[data-theme="dark"] .finance-nav .active {
+    color: #bcd6ff !important;
+    background: #1a3152 !important;
+}
+
+html[data-theme="dark"] .sidebar-collapse-btn {
+    background: #16263c;
+    border-color: #3a4d67;
+    color: #dce8f8;
+}
+html[data-theme="dark"] .outstanding-close {
+    background: #20334c !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #3a516d !important;
+}
+html[data-theme="dark"] .outstanding-close:hover {
+    background: #334a67 !important;
+    color: #ff8c96 !important;
+}
+
+.theme-toggle {
+    border: 1px solid var(--theme-border);
+    background: var(--theme-surface-2);
+    color: var(--theme-text);
+    cursor: pointer;
+    transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle-floating {
+    position: fixed; right: 20px; bottom: 20px; z-index: 1080;
+    min-width: 44px; height: 44px; padding: 0 14px; border-radius: 22px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 8px 22px var(--theme-shadow); font-weight: 700;
+}
+.finance-theme-toggle {
+    width: 100%; padding: 11px 13px; border: 0; border-radius: 8px;
+    display: flex; align-items: center; gap: 12px; background: transparent; color: #526581;
+    font-size: 14px; font-weight: 650;
+}
+html[data-theme="dark"] .finance-theme-toggle { color: #b9c8dc; }
+html.sidebar-precollapsed .finance-theme-toggle { justify-content: center; }
+html.sidebar-precollapsed .finance-theme-toggle span { display: none; }
+
+@media (max-width: 600px) {
+    .theme-toggle-floating { right: 14px; bottom: 14px; }
+}
