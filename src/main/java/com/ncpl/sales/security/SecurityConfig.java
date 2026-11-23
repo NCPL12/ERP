@@ -11,6 +11,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.context.SecurityContextPersistenceFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Configuration
@@ -44,13 +47,23 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		@Override
 		 protected void configure(HttpSecurity http) throws Exception {
 		 http.addFilterAfter(userStatusFilter, SecurityContextPersistenceFilter.class);
-		 http.csrf().disable();
+		 // shortcut: CSRF checked only on destructive POSTs (forms and other ajax are not token-aware yet);
+		 // widen the matcher as each page is made to send the token.
+		 http.csrf()
+		     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+		     .requireCsrfProtectionMatcher(new OrRequestMatcher(
+		         new AntPathRequestMatcher("/api/purchase/delete", "POST"),
+		         new AntPathRequestMatcher("/api/item/delete/**", "POST"),
+		         new AntPathRequestMatcher("/api/make/delete", "POST"),
+		         new AntPathRequestMatcher("/api/add/stock", "POST"),
+		         new AntPathRequestMatcher("/api/update_po_archive", "POST"),
+		         new AntPathRequestMatcher("/api/update_po_unarchive", "POST")));
 		 // The persistent navigation shell embeds pages from this application only.
 		 http.headers().frameOptions().sameOrigin();
 		 http
 		 .authorizeRequests()
-		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**", "/audit/**", "/audit-test.html").permitAll()
-		 .antMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
+		 .antMatchers("/css/**", "/js/**", "/images/**","/resources/**", "/login/**").permitAll()
+		 .antMatchers("/audit/**", "/audit-test.html", "/api/audit/**").hasAuthority("SALES_ORDER_VIEW")
 		 .antMatchers(HttpMethod.POST, "/po_list/tally", "/po_list/tally/import").hasAuthority("PURCHASE_EDIT")
 		 .antMatchers(HttpMethod.POST, "/save/purchaseOrder", "/api/purchase/upload",
 		         "/api/update_po_archive", "/api/update_po_unarchive").hasAuthority("PURCHASE_EDIT")
@@ -111,6 +124,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		 .permitAll()
 		 .and()
 		 .logout()
+		 // With CSRF enabled Spring only accepts POST /logout; the menu links use GET.
+		 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
 		 .permitAll()
 		 .and()
 		 .exceptionHandling().accessDeniedPage("/access-denied");

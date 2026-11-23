@@ -52,12 +52,35 @@ public class SalesOrderDesignService {
 	StockService stockService;
 	@Autowired
 	SalesOrderAuditService auditService;
-	
+	@Autowired
+	DesignChangeMailService designMail;
+
 	public SalesOrderDesign save(SalesOrderDesign design) {
 		String soItemId = design.getSalesItemId();
 		List<DesignItems> items = design.getItems();
 		SalesOrderDesign soDesignObj = designSo.getDesginObjBySoItemId(soItemId);
 		SalesOrderDesign saved;
+
+		// Mail text, built before the new rows are appended: a repeat model is a second row, not a new model.
+		List<String> changes = new ArrayList<>();
+		for (DesignItems newItem : items) {
+			float existingQty = 0;
+			boolean exists = false;
+			if (soDesignObj != null) {
+				for (DesignItems old : soDesignObj.getItems()) {
+					if (old.getItemId().equals(newItem.getItemId())) {
+						exists = true;
+						existingQty += old.getQuantity();
+					}
+				}
+			}
+			String model = designMail.modelOf(newItem.getItemId());
+			changes.add(exists
+					? model + ": qty " + DesignChangeMailService.qty(existingQty) + " -> second row added, qty "
+							+ DesignChangeMailService.qty(newItem.getQuantity()) + " (total "
+							+ DesignChangeMailService.qty(existingQty + newItem.getQuantity()) + ")"
+					: model + ": not in design -> added, qty " + DesignChangeMailService.qty(newItem.getQuantity()));
+		}
 
 		if (soDesignObj != null) {
 			List<DesignItems> existingItems = soDesignObj.getItems();
@@ -79,6 +102,7 @@ public class SalesOrderDesignService {
 				auditService.logDesignItemCreated(salesOrderId, soItemId, newItem, saved.getId());
 			}
 		}
+		designMail.notifyChange(soItemId, changes);
 
 		return saved;
 	}
@@ -223,6 +247,9 @@ public class SalesOrderDesignService {
             if (salesOrderId != null) {
                 auditService.logDesignItemDeleted(salesOrderId, soItemId, itemToDelete, designId);
             }
+            designMail.notifyChange(soItemId, java.util.Collections.singletonList(
+                    designMail.modelOf(designItemId) + ": qty " + DesignChangeMailService.qty(itemToDelete.getQuantity())
+                            + " -> removed from design"));
 
             List<DesignItems> itemlist = designItemRepo.findDesignItemListByDesignId(designId);
             if (itemlist.isEmpty()) {

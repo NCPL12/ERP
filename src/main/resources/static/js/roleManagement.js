@@ -108,7 +108,7 @@ function loadSalesQtyFlag(roleId) {
 				$.each(users, function (i, u) {
 					opts += '<option value="' + escapeHtml(u.username) + '">' + escapeHtml(u.label) + '</option>';
 				});
-				$("#amdMailUser").html(opts);
+				$("#amdMailUser, #designMailUser").html(opts);
 				amdMailUsersLoaded = true;
 			}
 		});
@@ -119,6 +119,7 @@ function loadSalesQtyFlag(roleId) {
 		success: function (resp) {
 			$("#salesQtyEditFlag").prop("checked", !!resp.enabled);
 			$("#amdMailUser").val(resp.mailUsername || "");
+			$("#designMailUser").val(resp.designMailUsername || "");
 		},
 		error: function (xhr) {
 			alert("Unable to load sales quantity setting. Status: " + xhr.status);
@@ -133,7 +134,8 @@ function saveSalesQtyFlag(previousEnabled) {
 		type: "PUT",
 		data: {
 			enabled: $("#salesQtyEditFlag").is(":checked"),
-			mailUsername: $("#amdMailUser").val() || ""
+			mailUsername: $("#amdMailUser").val() || "",
+			designMailUsername: $("#designMailUser").val() || ""
 		},
 		success: function () {
 			if ($.success) { $.success("Sales quantity setting saved"); }
@@ -148,7 +150,7 @@ function saveSalesQtyFlag(previousEnabled) {
 $(document).on("change", "#salesQtyEditFlag", function () {
 	saveSalesQtyFlag(!$(this).is(":checked"));
 });
-$(document).on("change", "#amdMailUser", function () {
+$(document).on("change", "#amdMailUser, #designMailUser", function () {
 	saveSalesQtyFlag($("#salesQtyEditFlag").is(":checked"));
 });
 

@@ -6,6 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -54,9 +55,15 @@ public class UserStatusFilter extends OncePerRequestFilter {
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
 
-            User user = userService.findByUserName(authentication.getName());
+            // One lookup: it re-derives authorities (role edits apply immediately) and carries the enabled flag.
+            UserDetails fresh = null;
+            try {
+                fresh = userService.loadUserByUsername(authentication.getName());
+            } catch (UsernameNotFoundException deleted) {
+                // treated like a disabled account
+            }
 
-            if (user == null || !user.isEnabled()) {
+            if (fresh == null || !fresh.isEnabled()) {
                 SecurityContextHolder.clearContext();
 
                 HttpSession session = request.getSession(false);
@@ -72,10 +79,6 @@ public class UserStatusFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // Role/permission edits must take effect immediately, not just on next login —
-            // re-derive authorities from the DB on every request instead of trusting the
-            // ones cached in the session since login.
-            UserDetails fresh = userService.loadUserByUsername(authentication.getName());
             Authentication refreshed = new UsernamePasswordAuthenticationToken(
                     fresh, authentication.getCredentials(), fresh.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(refreshed);

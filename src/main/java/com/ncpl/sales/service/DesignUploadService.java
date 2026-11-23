@@ -61,6 +61,8 @@ public class DesignUploadService {
 	SalesOrderDesignItemsRepo designItemRepo;
 	@Autowired
 	SalesOrderAuditService auditService;
+	@Autowired
+	DesignChangeMailService designMail;
 	
 	@SuppressWarnings("unused")
 	public List<String> processExcelFile(MultipartFile file, String clientPoNum) {
@@ -68,6 +70,7 @@ public class DesignUploadService {
         Set<String> salesItemIdsWithDesigns = new HashSet<>();
         Map<String, Integer> designItemCounts = new HashMap<>();
         Map<String, String> salesOrderIdsMap = new HashMap<>();
+        Map<String, List<String>> mailChanges = new HashMap<>();
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -116,17 +119,24 @@ public class DesignUploadService {
 			            	errors.add("Row " + (rowNum + 1) + ": Model does not exists.");
 			            }
 			            else {
-			            Optional<DesignItems> designItemOpt = 
-				                designItemRepo.findDesignItemByItemIdAndDesignId(item.getId(),design.getId());
+			            // List + first: a model can now have two rows (amendment), Optional would throw on that.
+			            Optional<DesignItems> designItemOpt =
+				                designItemRepo.findDesignItemListByItemIdAndDesignId(item.getId(),design.getId()).stream().findFirst();
 			
 				            if (designItemOpt.isPresent()) {
 				            	DesignItems existing = designItemOpt.get();
+				                if (existing.getQuantity() != quantity) {
+				                	mailChanges.computeIfAbsent(salesItem.getId(), k -> new ArrayList<>()).add(modelName
+				                			+ ": qty " + DesignChangeMailService.qty(existing.getQuantity()) + " -> " + DesignChangeMailService.qty(quantity));
+				                }
 				                existing.setQuantity(quantity);
 				                designItemRepo.save(existing);
 				                salesItemIdsWithDesigns.add(salesItem.getId());
 				                designItemCounts.merge(salesItem.getId(), 1, Integer::sum);
 				                salesOrderIdsMap.put(salesItem.getId(), salesItem.getSalesOrder().getId());
 				            } else {
+				            	mailChanges.computeIfAbsent(salesItem.getId(), k -> new ArrayList<>()).add(modelName
+				            			+ ": not in design -> added, qty " + DesignChangeMailService.qty(quantity));
 				            	DesignItems newItem = new DesignItems();
 				                newItem.setSalesOrderDesign(design);
 				                newItem.setItemId(item.getId());
@@ -143,6 +153,7 @@ public class DesignUploadService {
 
 	        }
 	        
+	        mailChanges.forEach(designMail::notifyChange);
 	        for (String salesItemId : salesItemIdsWithDesigns) {
 	            try {
 	                String salesOrderId = salesOrderIdsMap.get(salesItemId);

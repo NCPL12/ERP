@@ -39,6 +39,18 @@ public class Role extends TimeStampEntity {
 	@Column(name = "amendment_mail_username", length = 50)
 	private String amendmentMailUsername;
 
+	// Username who gets the mail when a user with this role completes/changes a sales order design.
+	@Column(name = "design_mail_username", length = 50)
+	private String designMailUsername;
+
+	public String getDesignMailUsername() {
+		return designMailUsername;
+	}
+
+	public void setDesignMailUsername(String designMailUsername) {
+		this.designMailUsername = designMailUsername;
+	}
+
 	public String getAmendmentMailUsername() {
 		return amendmentMailUsername;
 	}

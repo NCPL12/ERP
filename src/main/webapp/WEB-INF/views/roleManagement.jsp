@@ -327,6 +327,13 @@ window.hasUserManagementEdit = ${canEditUserMgmt};
 										</select>
 									</label>
 								</div>
+								<div style="margin-top:8px;">
+									<label style="font-weight:normal; margin:0;">Send design completed mail to:
+										<select id="designMailUser" class="form-control" style="display:inline-block; width:auto; min-width:280px;" ${canEditUserMgmt ? '' : 'disabled'}>
+											<option value="">-- none --</option>
+										</select>
+									</label>
+								</div>
 							</div>
 							<table class="ra-grid">
 								<thead>

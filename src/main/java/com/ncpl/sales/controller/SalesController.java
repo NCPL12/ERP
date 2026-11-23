@@ -484,8 +484,8 @@ public class SalesController {
 		}
 		String soIdForCheck = salesOrder.getId();
 		boolean isNewSo = soIdForCheck == null || soIdForCheck.isEmpty();
-		boolean alreadyHasPdf = !isNewSo && salesService.hasClientPoFile(soIdForCheck);
-		if (!SalesService.isNonBillablePo(salesOrder.getClientPoNumber()) && !hasNewPdf && !alreadyHasPdf) {
+		// Only new SOs need the PDF; SOs created before this rule have none and must stay editable.
+		if (isNewSo && !SalesService.isNonBillablePo(salesOrder.getClientPoNumber()) && !hasNewPdf) {
 			throw new IllegalArgumentException("Client PO PDF is required unless the Client PO is Non Billable");
 		}
 

@@ -14,7 +14,7 @@ function applyAmendmentMode(){
 	$("#salesOrderForm1 input, #salesOrderForm1 select, #salesOrderForm1 textarea, #salesTable input, #salesTable select").attr("disabled", true);
 	$("#saveSoBtn, #saveSalesOrder, #resetSalesOrder, .add, .deleteButton").hide();
 	$("#salesTable > tbody > tr").each(function(i){
-		var amd = parseFloat($("#amdQty"+i).val()) || 0;
+		var amd = parseFloat(canEditLockedQty ? $("#amdHidden"+i).val() : $("#amdQty"+i).val()) || 0;
 		if(!canEditLockedQty){
 			// Non-permitted view: Qty holds the total, so show base = total - amendment
 			var total = parseFloat($("#qty"+i).val()) || 0;
@@ -51,23 +51,30 @@ $(function(){
 function applyAmdColumn(key){
 	if(!canEditLockedQty || $("#qty"+key).length==0){ return; }
 	$("#qty"+key).removeAttr("name");
+	// AMDQTY box is the editable new quantity (mirrors Qty); the +/- delta is derived and posted as amendedQuantity
+	$("#amdQty"+key).removeAttr("name");
 	// Qty of an existing item is locked for permitted users (change AMDQTY instead); new rows can still type Qty
 	if($("#salesItemId"+key).val()){ $("#qty"+key).attr("readonly", true); }
 	if($("#totalHidden"+key).length==0){
-		$("#qty"+key).after('<input type="hidden" id="totalHidden'+key+'" name="items['+key+'].quantity"/>');
+		$("#qty"+key).after('<input type="hidden" id="totalHidden'+key+'" name="items['+key+'].quantity"/>'
+			+ '<input type="hidden" id="amdHidden'+key+'" name="items['+key+'].amendedQuantity"/>');
 	}
 	recalcTotalQty(key);
 }
 function recalcTotalQty(key){
 	var base = parseFloat($("#qty"+key).val()) || 0;
-	var amd = parseFloat($("#amdQty"+key).val()) || 0;
-	var total = base + amd;
+	var total = parseFloat($("#amdQty"+key).val());
+	if(isNaN(total)){ total = base; }
 	$("#totalQty"+key).val(total);
 	$("#totalHidden"+key).val(total);
+	$("#amdHidden"+key).val(total - base);
 }
 $(document).on("change input", ".qty, .amdQty", function(){
 	if(!canEditLockedQty){ return; }
-	recalcTotalQty($(this).closest("tr").index());
+	var key = $(this).closest("tr").index();
+	// a typed Qty (new row only; existing rows are readonly) is copied into AMDQTY
+	if($(this).hasClass("qty")){ $("#amdQty"+key).val($(this).val()); }
+	recalcTotalQty(key);
 });
 
 // Non Billable client POs (any spelling, any case) do not need the client PO PDF.
@@ -483,7 +490,8 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 				$("#servicehsnCode"+key).val(value.servicehsnCode);
 				var amdVal = parseFloat(value.amendedQuantity) || 0;
 				$("#qty"+key).val(canEditLockedQty ? value.quantity - amdVal : value.quantity);
-				$("#amdQty"+key).val(amdVal);
+				// permitted users: AMDQTY box = current total (editable); others keep the hidden delta
+				$("#amdQty"+key).val(canEditLockedQty ? value.quantity : amdVal);
 				applyAmdColumn(key);
 				var unitPrice = commaSeparateNumber(value.unitPrice);
 				$("#unitPrice"+key).val(unitPrice);
@@ -809,6 +817,12 @@ $(document).on("blur", ".unitPrice,.servicePrice", function (e) {
 					return false;
 				}
 
+				// Amendment mode: a model already in the design may be added again as a second row.
+				if(isAmendmentMode()){
+					saveDesign(designJson);
+					return false;
+				}
+
 				$.ajax({
 					method:'GET',
 					url :api.DESIGN_VALIDATE + "?itemIdList="+itemIdList+ "&&salesItemId="+designJson.salesItemId,
@@ -961,7 +975,8 @@ function designTable2Json(){
 					"width":"10%",
 					"class":"styleOfSlNo",
 					render : function ( mData, type, row,meta ) {
-						return '<i class="deleteDesignBtn fa fa-trash " aria-hidden="true"></i>';
+						// amendment mode: designs can be added but not removed
+						return isAmendmentMode() ? '' : '<i class="deleteDesignBtn fa fa-trash " aria-hidden="true"></i>';
 					}
 				}
 				]
@@ -1175,7 +1190,7 @@ function designTable2Json(){
 
             //calculating total amount((Uprice+Sprice)*Quantity))..
            var lineQty = parseFloat(parent.find('.qty').val());
-           if(canEditLockedQty){ lineQty = lineQty + (parseFloat(parent.find('.amdQty').val()) || 0); }
+           if(canEditLockedQty){ var boxQty = parseFloat(parent.find('.amdQty').val()); if(!isNaN(boxQty)){ lineQty = boxQty; } }
            parent.find('.amount').val((lineQty * parseFloat(up1))+(parseFloat(sp1)*lineQty ))
          //  parent.find('.amount').val(parseFloat(parent.find('.qtyInput').val()) * parseFloat(up1))
             $("#unitPrice"+index).val(commaSeparateNumber(up1));

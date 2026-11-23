@@ -53,6 +53,14 @@
 <%@ include file="utility_js.jsp"%>
 
 <script>
+// CSRF: Spring sets an XSRF-TOKEN cookie; echo it back on every jQuery ajax call.
+$.ajaxSetup({ beforeSend: function (xhr) {
+  var m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+  if (m) xhr.setRequestHeader('X-XSRF-TOKEN', decodeURIComponent(m[1]));
+}});
+</script>
+
+<script>
 // Remove the service worker left by the retired offline feature.
 if ('serviceWorker' in navigator) {
   var legacyScope = new URL('${pageContext.request.contextPath}/', window.location.href).href;

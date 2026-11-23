@@ -213,6 +213,7 @@ public class RoleController {
 		Map<String, Object> body = new HashMap<>();
 		body.put("enabled", role.isSalesQtyEditOnLocked());
 		body.put("mailUsername", role.getAmendmentMailUsername());
+		body.put("designMailUsername", role.getDesignMailUsername());
 		return ResponseEntity.ok(body);
 	}
 
@@ -238,7 +239,8 @@ public class RoleController {
 	@PreAuthorize("hasAnyAuthority('ADMIN','SUPER ADMIN','USER_MANAGEMENT_EDIT')")
 	@Transactional
 	public ResponseEntity<?> saveSalesQtyEdit(@PathVariable Long id, @RequestParam("enabled") boolean enabled,
-			@RequestParam(value = "mailUsername", required = false) String mailUsername) {
+			@RequestParam(value = "mailUsername", required = false) String mailUsername,
+			@RequestParam(value = "designMailUsername", required = false) String designMailUsername) {
 		Role role = roleRepo.findById(id).orElse(null);
 		if (role == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found with ID: " + id);
@@ -247,6 +249,11 @@ public class RoleController {
 		if (!recipient.isEmpty() && userRepo.findUserByUserName(recipient) == null) {
 			return ResponseEntity.badRequest().body("Unknown mail user: " + recipient);
 		}
+		String designRecipient = designMailUsername == null ? "" : designMailUsername.trim();
+		if (!designRecipient.isEmpty() && userRepo.findUserByUserName(designRecipient) == null) {
+			return ResponseEntity.badRequest().body("Unknown mail user: " + designRecipient);
+		}
+		role.setDesignMailUsername(designRecipient.isEmpty() ? null : designRecipient);
 		role.setSalesQtyEditOnLocked(enabled);
 		role.setAmendmentMailUsername(recipient.isEmpty() ? null : recipient);
 		roleRepo.save(role);
