@@ -3,6 +3,7 @@ package com.ncpl.sales.exception;
 import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.ncpl.sales.model.ErrorResponse;
+import com.ncpl.sales.config.ErrorAlertFilter;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler{
@@ -19,12 +21,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler{
 	    }
 
 	@ExceptionHandler(value= {Exception.class})
-	public ResponseEntity<?> handleErrors(Exception e){
+	public ResponseEntity<?> handleErrors(Exception e, HttpServletRequest request){
 		// Client disconnected mid-response (closed tab, cancelled request) - the socket
 		// is already gone, so attempting to write a JSON error body just throws again.
 		if (isClientAbort(e)) {
 			return null;
 		}
+		request.setAttribute(ErrorAlertFilter.FAILURE_ATTRIBUTE, e);
 		e.printStackTrace();
 		ErrorResponse errorRexpo = new ErrorResponse();
 		errorRexpo.setErrorCode(HttpStatus.INTERNAL_SERVER_ERROR.value());

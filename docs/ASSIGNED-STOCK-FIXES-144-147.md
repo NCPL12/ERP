@@ -5,6 +5,10 @@ PR branch (`origin/features/monthly-stock`, commit `941db77`). Apply these
 changes with PR #57's monthly reporting code, not as a replacement for unrelated
 ERP or Cashflow changes.
 
+The PR has also been updated with `development` at `e3a5783`. Merge conflicts
+were resolved while retaining development's DC report implementation and README.
+After that merge, 56 related monthly-stock, DC and Tally tests passed.
+
 - **#144:** Missing PO prices are ignored in the average numerator and count,
   matching SQL AVG semantics. An all-null group has no average, and a real zero
   price remains a valid observation. Missing prices cannot crash GRN valuation.

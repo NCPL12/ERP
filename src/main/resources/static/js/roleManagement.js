@@ -2,24 +2,7 @@ var roles = [];
 var selectedRoleId = null;
 var currentGrid = [];
 var currentTiles = [];
-
-var MODULE_URLS = {
-	DASHBOARD: "/dashboard",
-	PARTY: "/partyList",
-	ITEM_MASTER: "/itemMaster",
-	COMPANY_ASSETS: "/companyAssets",
-	SALES_ORDER: "/salesList",
-	DELIVERY_CHALLAN: "/dcList",
-	RETURNABLE: "/returnableList",
-	INVOICE: "/invoiceList",
-	WORK_ORDER: "/workOrderList",
-	PURCHASE: "/purchase",
-	GRN: "/grnLists",
-	NON_BILLABLE: "/nonBillableList",
-	REPORTS: "/sales_report",
-	ARCHIVES: "/salesList_archived",
-	USER_MANAGEMENT: "/user-management"
-};
+var currentReports = [];   // NEW
 
 $(document).ready(function () {
 	loadRoles();
@@ -121,6 +104,7 @@ function selectRole(roleId) {
 	var currentRid = selectedRoleId;
 	currentGrid = [];
 	currentTiles = [];
+	currentReports = [];   // NEW
 
 	$.when(
 		$.ajax({
@@ -132,13 +116,19 @@ function selectRole(roleId) {
 			url: api.ROLE_API + "/" + roleId + "/dashboard-tiles",
 			type: "GET",
 			cache: false
+		}),
+		$.ajax({   // NEW
+			url: api.ROLE_API + "/" + roleId + "/report-items",
+			type: "GET",
+			cache: false
 		})
-	).done(function (permResp, tilesResp) {
+	).done(function (permResp, tilesResp, reportsResp) {
 		if (String(currentRid) !== String(selectedRoleId)) {
 			return;
 		}
 		currentGrid = permResp[0];
 		currentTiles = tilesResp[0];
+		currentReports = reportsResp[0];   // NEW
 		renderGrid();
 		updateRoleSummary();
 	}).fail(function (xhr) {
@@ -164,7 +154,7 @@ function updateRoleSummary() {
 function renderGrid() {
 	var rows = "";
 	$.each(currentGrid, function (i, row) {
-		var url = MODULE_URLS[row.module] || "";
+		var url = row.url || "";
 		rows += '<tr data-module="' + row.module + '" data-editable="' + row.editable + '" data-deletable="' + row.deletable + '">' +
 			'<td><span class="ra-module-name">' + row.label + '</span><span class="ra-module-url">' + url + '</span></td>' +
 			'<td><input type="checkbox" class="view-box" ' + (row.canView ? "checked" : "") + '></td>' +
@@ -174,6 +164,7 @@ function renderGrid() {
 	});
 	$("#permissionGridBody").html(rows);
 	renderDashboardTilesRow();
+	renderReportsRow();   // NEW
 }
 
 // No View, or the module has no such permission at all (e.g. DASHBOARD has no
@@ -205,6 +196,35 @@ function renderDashboardTilesRow() {
 		'<div class="ra-tiles-checks">' + boxes + '</div></div></td></tr>';
 	$('#permissionGridBody tr[data-module="DASHBOARD"]').after(row);
 }
+
+// NEW: which reports this role can open — only shown while the
+// REPORTS module's View box is ticked.
+function renderReportsRow() {
+	$("#permissionGridBody .reports-items-row").remove();
+	var viewOn = $('#permissionGridBody tr[data-module="REPORTS"] .view-box').is(":checked");
+	if (!viewOn || currentReports.length === 0) {
+		return;
+	}
+	var boxes = "";
+	$.each(currentReports, function (i, rep) {
+		var key = rep && rep.key ? escapeHtml(rep.key) : "";
+		var label = rep && rep.label ? escapeHtml(rep.label) : key;
+		boxes += '<label class="ra-tile-check"><input type="checkbox" class="report-box" data-report="' + key + '" ' +
+			(rep.visible ? "checked" : "") + '>&nbsp;' + label + '</label>';
+	});
+	var row = '<tr class="reports-items-row"><td colspan="4"><div class="ra-tiles-inline">' +
+		'<span class="ra-tiles-label">Report items</span>' +
+		'<div class="ra-tiles-checks">' + boxes + '</div></div></td></tr>';
+	$('#permissionGridBody tr[data-module="REPORTS"]').after(row);
+}
+
+$(document).on("change", "#permissionGridBody .report-box", function () {
+	var key = $(this).data("report");
+	var visible = $(this).is(":checked");
+	$.each(currentReports, function (i, report) {
+		if (report.key === key) report.visible = visible;
+	});
+});
 
 // Ticking Edit or Delete switches View on and locks it.
 $(document).on("change", "#permissionGridBody .edit-box, #permissionGridBody .delete-box", function () {
@@ -241,6 +261,9 @@ $(document).on("change", "#permissionGridBody .view-box", function () {
 	}
 	if (row.data("module") === "DASHBOARD") {
 		renderDashboardTilesRow();
+	}
+	if (row.data("module") === "REPORTS") {   // NEW
+		renderReportsRow();
 	}
 });
 
@@ -301,6 +324,26 @@ function savePermissions() {
 		return;
 	}
 
+	// NEW
+	var reportKeys = [];
+	$("#permissionGridBody .report-box:checked").each(function () {
+		var t = $(this).data("report");
+		if (t) {
+			reportKeys.push(String(t));
+		}
+	});
+
+	// Keep the selection when Reports view is temporarily switched off.
+	if (!$("#permissionGridBody .reports-items-row").length) {
+		reportKeys = currentReports.filter(function (report) { return report.visible; })
+			.map(function (report) { return report.key; });
+	}
+
+	if ($("#permissionGridBody .reports-items-row").length && reportKeys.length === 0) {
+		alert("At least one report must be enabled.");
+		return;
+	}
+
 	$.ajax({
 		url: api.ROLE_API + "/" + selectedRoleId + "/permissions",
 		type: "PUT",
@@ -313,9 +356,20 @@ function savePermissions() {
 				contentType: "application/json",
 				data: JSON.stringify(tileKeys),
 				success: function () {
-					alert("Permissions saved.");
-					loadRoles();
-					selectRole(selectedRoleId);
+					$.ajax({   // NEW
+						url: api.ROLE_API + "/" + selectedRoleId + "/report-items",
+						type: "PUT",
+						contentType: "application/json",
+						data: JSON.stringify(reportKeys),
+						success: function () {
+							alert("Permissions saved.");
+							loadRoles();
+							selectRole(selectedRoleId);
+						},
+						error: function (xhr) {
+							alert(xhr.responseText || ("Permissions saved, but report items failed. Status: " + xhr.status));
+						}
+					});
 				},
 				error: function (xhr) {
 					alert(xhr.responseText || ("Permissions saved, but dashboard tiles failed. Status: " + xhr.status));

@@ -22,6 +22,8 @@ public class UserService implements UserDetailsService{
 	EncryptedPasswordUtils encryptPasswd;
 	@Autowired
 	private com.ncpl.sales.repository.RolePermissionRepo rolePermissionRepo;
+	@Autowired
+	private com.ncpl.sales.repository.RoleRepo roleRepo;
 
 	//validating user using database
 		@Override
@@ -37,10 +39,21 @@ public class UserService implements UserDetailsService{
 			if (user.getRole() != null) {
 				grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole()));   // KEEP THIS — every existing hasAnyAuthority(role name) check still works
 
+				boolean canViewReports = false;
 				for (com.ncpl.sales.model.RolePermission p : rolePermissionRepo.findByRoleName(user.getRole())) {
 					if (p.isCanView())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_VIEW"));
 					if (p.isCanEdit())   grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_EDIT"));
 					if (p.isCanDelete()) grantedAuthorities.add(new SimpleGrantedAuthority(p.getModule() + "_DELETE"));
+					if ("REPORTS".equals(p.getModule()) && p.isCanView()) canViewReports = true;
+				}
+
+				if (canViewReports) {
+					com.ncpl.sales.model.Role roleObj = roleRepo.findByName(user.getRole());
+					if (roleObj != null) {
+						for (String key : com.ncpl.sales.model.ReportItem.visible(roleObj.getReportItems())) {
+							grantedAuthorities.add(new SimpleGrantedAuthority("REPORT_" + key));
+						}
+					}
 				}
 			}
 

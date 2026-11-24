@@ -655,6 +655,24 @@
 										<a href="${pageContext.request.contextPath}/dcList" class="nav-link dcList"><i
 												class="fa fa-list-alt headerIconFont"></i></a>
 									</li>
+									<li class="form-inline float-sm-right">
+										<span class="m-0 text-dark marginLeft7">Client : &nbsp;</span>
+										<select class="form-control select2 select2-hidden-accessible dropdownWidth230"
+											name="partyName" id="partyName">
+											<option value="">Select Client Name</option>
+										</select>
+									</li>
+									<li class="form-inline float-sm-right">
+										<span class="m-0 text-dark marginLeft7">Client PO Number : &nbsp;</span>
+										<select class="form-control select2 select2-hidden-accessible dropdownwidth150"
+											name="soNumber" id="clientPoDropdown">
+											<option value="">Select Client PO No.</option>
+										</select>
+									</li>
+									<li class="form-inline float-sm-right clientNamePos dropdownAllignTop15">
+										<span class="m-0 text-dark marginLeft30">Client Name : &nbsp;</span>
+										<span id="clientName" class="m-0 text-dark"></span>
+									</li>
 								</c:if>
 								<c:if test="${pageHeader == 'DC Dashboard'}">
 									<security:authorize access="hasAuthority('DELIVERY_CHALLAN_EDIT')">

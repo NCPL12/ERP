@@ -1,9 +1,32 @@
 package com.ncpl.sales.model;
 
 public enum Module {
-	DASHBOARD, PARTY, ITEM_MASTER, COMPANY_ASSETS, SALES_ORDER,
-	DELIVERY_CHALLAN, RETURNABLE, INVOICE, WORK_ORDER, PURCHASE,
-	GRN, NON_BILLABLE, REPORTS, ARCHIVES, USER_MANAGEMENT;
+	// A null path means the module has no sidebar entry and is omitted from Roles & Permissions.
+	DASHBOARD("/dashboard"), PARTY("/partyList"), ITEM_MASTER("/itemMaster"),
+	COMPANY_ASSETS(null), SALES_ORDER("/salesList"), DELIVERY_CHALLAN("/dcList"),
+	RETURNABLE("/returnableList"), INVOICE("/invoiceList"), WORK_ORDER(null),
+	PURCHASE("/purchase"), GRN("/grnLists"), NON_BILLABLE(null),
+	REPORTS("/sales_report"), ARCHIVES("/salesList_archived"),
+	USER_MANAGEMENT("/user-management");
+
+	private final String menuPath;
+
+	Module(String menuPath) {
+		this.menuPath = menuPath;
+	}
+
+	public String menuPath() {
+		return menuPath;
+	}
+
+	public boolean inMenu() {
+		return menuPath != null;
+	}
+
+	public static java.util.List<Module> menuModules() {
+		return java.util.Arrays.stream(values()).filter(Module::inMenu)
+				.collect(java.util.stream.Collectors.toList());
+	}
 
 	public String label() {
 		return name().replace('_', ' ');

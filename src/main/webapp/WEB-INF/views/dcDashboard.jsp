@@ -15,10 +15,10 @@
 <script src="<c:url value="/resources/js/dcDashboard.js" />"></script>
 <script type="text/javascript">
 var dcLists = [];
-var partyList = ${partyList};
+var partyList = [];
 var role = ${role};
+var archivePage = false;
 var pageContext = '${pageContext.request.contextPath}';
-var isArchivedPage = false;
 </script>
 </head>
 <body>
@@ -42,6 +42,7 @@ var isArchivedPage = false;
 							<th width="8%">Date</th>
 							<th width="8%">DC</th>
 							<th width="3%">View</th>
+							<th width="2%">Returnable</th>
 							<th width="4%">Archive</th>
 
 						</tr>

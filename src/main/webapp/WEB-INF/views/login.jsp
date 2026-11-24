@@ -129,6 +129,29 @@ body {
 			background: #ffffff;
 		}
 
+		.password-toggle {
+			border: 1px solid #cad6f5;
+			border-left: 0;
+			background: #f7f9fd;
+			color: #52617f;
+			padding: 0 14px;
+			cursor: pointer;
+		}
+
+		.password-toggle:focus-visible {
+			outline: 2px solid #4a7dff;
+			outline-offset: 2px;
+			z-index: 2;
+		}
+
+		#capsLockNotice {
+			color: #9a6700;
+			font-size: 0.82rem;
+			margin: 4px 0 16px;
+			padding-left: 42px;
+			min-height: 1.2em;
+		}
+
 		.btn-primary {
 			border: none;
 			background: linear-gradient(135deg, #4a7dff, #8ed4ff);
@@ -208,14 +231,20 @@ body {
 					</div>
 					<input type="text" name="username" class="form-control" placeholder="User Name" autocomplete="username" required>
 				</div>
-				<div class="input-group mb-4">
+				<div class="input-group mb-2">
 					<div class="input-group-prepend">
 						<div class="input-group-text">
 							<span class="fas fa-lock"></span>
 						</div>
 					</div>
-					<input type="password" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
+					<input type="password" id="loginPassword" name="password" class="form-control" placeholder="Password" autocomplete="current-password" required>
+					<div class="input-group-append">
+						<button type="button" class="password-toggle" id="togglePassword" aria-label="Show password" aria-pressed="false">
+							<span class="fas fa-eye" aria-hidden="true"></span>
+						</button>
+					</div>
 				</div>
+				<div id="capsLockNotice" role="status" aria-live="polite"></div>
 				<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
 				<button type="submit" class="btn btn-primary btn-block">Sign In</button>
 				<!-- <div class="meta-row">
@@ -225,8 +254,35 @@ body {
 			</form>
 		</section>
 	</div>
-</body>
+	<script>
+		(function () {
+			var password = document.getElementById('loginPassword');
+			var toggle = document.getElementById('togglePassword');
+			var capsLockNotice = document.getElementById('capsLockNotice');
 
+			toggle.addEventListener('click', function () {
+				var showing = password.type === 'password';
+				password.type = showing ? 'text' : 'password';
+				toggle.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
+				toggle.setAttribute('aria-pressed', String(showing));
+				toggle.querySelector('span').className = showing ? 'fas fa-eye-slash' : 'fas fa-eye';
+			});
 
+			function updateCapsLockNotice(event) {
+				capsLockNotice.textContent = event.getModifierState && event.getModifierState('CapsLock')
+					? 'Caps Lock is on.'
+					: '';
+			}
+
+			password.addEventListener('keydown', updateCapsLockNotice);
+			password.addEventListener('keyup', updateCapsLockNotice);
+			password.addEventListener('focus', function (event) {
+				updateCapsLockNotice(event);
+			});
+			password.addEventListener('blur', function () {
+				capsLockNotice.textContent = '';
+			});
+		})();
+	</script>
 </body>
 </html>

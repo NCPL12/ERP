@@ -20,6 +20,7 @@ import com.ncpl.sales.model.TdsItems;
 import com.ncpl.sales.repository.DashboardAggregateJdbcRepository;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 /**
  * Dashboard counts + the 7 dashboard list cards: in-memory snapshots for fast HTTP.
@@ -45,6 +46,7 @@ public class DashboardService {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    private volatile boolean shuttingDown;
     private volatile DashboardCountDto snapshot;
     private volatile DashboardListsDto listsSnapshot;
     private final Object snapshotLock = new Object();
@@ -54,6 +56,18 @@ public class DashboardService {
     public void warmupSnapshotAsync() {
         CompletableFuture.runAsync(this::recomputeSnapshotQuietly);
         CompletableFuture.runAsync(this::recomputeListsSnapshotQuietly);
+    }
+
+    /** Wait for active refreshes before Spring closes the JDBC and JPA resources. */
+    @PreDestroy
+    public void stopBackgroundRefreshes() {
+        shuttingDown = true;
+        synchronized (snapshotLock) {
+            // Wait for a count refresh already using the database.
+        }
+        synchronized (listsSnapshotLock) {
+            // Wait for a list refresh already using the database.
+        }
     }
 
     /**
@@ -113,11 +127,17 @@ public class DashboardService {
 
     /** Invoked by {@link DashboardCountsRefreshScheduler}. */
     public void scheduledRefreshSnapshot() {
+        if (shuttingDown) {
+            return;
+        }
         recomputeSnapshotQuietly();
         recomputeListsSnapshotQuietly();
     }
 
     private void recomputeSnapshotQuietly() {
+        if (shuttingDown) {
+            return;
+        }
         try {
             recomputeSnapshot();
         } catch (Exception e) {
@@ -127,13 +147,22 @@ public class DashboardService {
 
     private void recomputeSnapshot() {
         synchronized (snapshotLock) {
+            if (shuttingDown) {
+                return;
+            }
             snapshot = loadCounts();
         }
     }
 
     private void recomputeListsSnapshotQuietly() {
+        if (shuttingDown) {
+            return;
+        }
         try {
             synchronized (listsSnapshotLock) {
+                if (shuttingDown) {
+                    return;
+                }
                 listsSnapshot = loadLists();
             }
         } catch (Exception e) {

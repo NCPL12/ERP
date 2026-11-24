@@ -26,7 +26,7 @@ var unitsList=${unitsList};
 var purchaseOrderObj =null;
 var role=${role};
 </script>
-<script src="<c:url value="/resources/js/purchaseOrder.js" />"></script>
+<script src="<c:url value="/resources/js/purchaseOrder.js?v=20261014-po-lookup" />"></script>
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
 <script src="${RESOURCES}js/common.js" ></script>
 

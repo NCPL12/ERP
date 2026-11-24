@@ -104,6 +104,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Controller
 public class PurchaseController {
@@ -189,7 +190,7 @@ public class PurchaseController {
 		 User userObj  = userService.getCurrentUser();
 		 String role = userObj.getRole();
 		 List<SalesOrder> salesList = salesService.findAllSalesOrderList();
-		 List<ItemMaster> itemList=itemMasterService.getItemList();
+		 List<Map<String,Object>> itemList=itemMasterService.getPoLookupItems();
 		 List<Units> unitsList = itemMasterService.getUnitList();
 		 model.addAttribute("salesOrderList",mapper.writeValueAsString(salesList));
 		 List<Party> partyList=partyService.getPartyListbyTypeSupplier();
@@ -202,6 +203,7 @@ public class PurchaseController {
 	 }
 
 	@PostMapping("/save/purchaseOrder")
+	@PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 	public  String savePurchaseOrder(PurchaseOrder purchaseOrder,HttpServletRequest req, RedirectAttributes redirectAttr) {
 		System.out.println(purchaseOrder);
 	String salesOrderId = req.getParameter("salesOrder");
@@ -232,6 +234,7 @@ public class PurchaseController {
 	
 	//display purchace items in edit page
 	@GetMapping("/purchase/view")
+	@PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 	public String displayEditPurchaseOrder(@RequestParam("poNumber") String poNumber, Model model) throws JsonProcessingException {
 		
 		// Get latest purchase order directly (no version lookup)
@@ -240,7 +243,7 @@ public class PurchaseController {
 		User userObj  = userService.getCurrentUser();
 		String role = userObj.getRole();
 		List<SalesItem> salesItemList = salesService.getAllSalesItemList();
-		 List<ItemMaster> itemList=itemMasterService.getItemList();
+		 List<Map<String,Object>> itemList=itemMasterService.getPoLookupItems();
 		List<Party> partyList = partyService.getPartyListbyTypeSupplier();
 		 List<Units> unitsList = itemMasterService.getUnitList();
 		ObjectMapper mapper = utilService.getObjectMapper();
@@ -798,29 +801,33 @@ public class PurchaseController {
 		return "goodsReceiptNote";
 	}
 	
+	private void populateGrnModel(Model model, Grn grnObj) throws JsonProcessingException {
+		List<Map<String, Object>> poList = purchaseService.findAllPoNumbersAndDates();
+		List<String> grnInvoiceNumbers = grnService.getAllInvoiceNumbers();
+		List<Map<String, Object>> itemList = itemMasterService.getItemIdAndModelList();
+		ObjectMapper mapper = utilService.getObjectMapper();
+
+		model.addAttribute("grn", new Grn());
+		model.addAttribute("poList", mapper.writeValueAsString(poList));
+		model.addAttribute("itemList", mapper.writeValueAsString(itemList));
+		model.addAttribute("grnList", mapper.writeValueAsString(grnInvoiceNumbers));
+		if (grnObj != null) {
+			model.addAttribute("grnObj", mapper.writeValueAsString(grnObj));
+		}
+		// The edit page only needs purchase items from this GRN's purchase order.
+		List<PurchaseItem> purchaseItemList = grnObj == null || grnObj.getPoNumber() == null
+				? java.util.Collections.<PurchaseItem>emptyList()
+				: purchaseItemService.getPurchaseItemsByPoNumber(grnObj.getPoNumber());
+		model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
+	}
+
 	@GetMapping("/new_grn")
 	public String getNewGrn(Model model, HttpServletRequest req) throws JsonProcessingException {
 		Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
-		List<Map<String, Object>> poList = purchaseService.findAllPoNumbersAndDates();
-		List<String> grnInvoiceNumbers = grnService.getAllInvoiceNumbers();
-		List<Map<String, Object>> itemList=itemMasterService.getItemIdAndModelList();
-        ObjectMapper mapper=utilService.getObjectMapper();
-        model.addAttribute("grn", new Grn());
-		 model.addAttribute("poList", mapper.writeValueAsString(poList));
-		 model.addAttribute("itemList", mapper.writeValueAsString(itemList));
-		 model.addAttribute("grnList", mapper.writeValueAsString(grnInvoiceNumbers));
-		 model.addAttribute("pageHeader","New Grn");
-		 if(flashMap!=null) {
-				Grn grnObj =  (Grn) flashMap.get("grnObj");
-				model.addAttribute("grnObj",mapper.writeValueAsString(grnObj) );
-				// purchaseItemList is only needed to repopulate an existing GRN being
-				// edited (see newGoodsReceiptNote.js) - skip the full-table fetch otherwise
-				List<PurchaseItem> purchaseItemList = purchaseItemService.getAllPurchaseItems();
-				model.addAttribute("purchaseItemList", mapper.writeValueAsString(purchaseItemList));
-			} else {
-				model.addAttribute("purchaseItemList", "[]");
-			}
-			return "newGoodsReceiptNote";
+		Grn grnObj = flashMap != null ? (Grn) flashMap.get("grnObj") : null;
+		populateGrnModel(model, grnObj);
+		model.addAttribute("pageHeader", "New Grn");
+		return "newGoodsReceiptNote";
 	}
 	
 	@GetMapping("/api/getPurchaseItemList")
@@ -955,6 +962,7 @@ public class PurchaseController {
 	 }
 	
 	@PostMapping(path="/api/purchase/delete")
+	@PreAuthorize("hasAuthority('PURCHASE_DELETE')")
 	  public ResponseEntity<?> deleteItem(@RequestParam("id") int id) {
 		try {
 			boolean isDeleted=purchaseItemService.deletePurchaseItem(id);
@@ -1044,31 +1052,22 @@ public class PurchaseController {
 		return new ResponseEntity<>(purchasecopy,HttpStatus.OK) ;
 	}
 	
-	/**
-	 * redirecting to grn view page
-	 * @param grnId
-	 * @param redirectAttr
-	 * @param model
-	 * @return
-	 */
-	 @GetMapping("/api/grn/view")
-		public String displayGrnView(@RequestParam("grnId") String grnId,RedirectAttributes redirectAttr, Model model){
-			
-			Optional<Grn> grn =grnService.getGrnById(grnId);
-			redirectAttr.addFlashAttribute("grnObj",grn.get());
-			return "redirect:/new_grn";
-		}
+	@GetMapping("/api/grn/view")
+	public String displayGrnView(@RequestParam("grnId") String grnId, RedirectAttributes redirectAttr) {
+		redirectAttr.addAttribute("grnId", grnId);
+		return "redirect:/grn/{grnId}";
+	}
 
-	 @GetMapping("/grn/{grnId:.+}")
-		public String viewGrn(@org.springframework.web.bind.annotation.PathVariable("grnId") String grnId, RedirectAttributes redirectAttr){
-			// JS does window.location = pageContext+"/grn/"+grnId (grnId like "GRN 8732-071026" → GRN%208732-071026)
-			Optional<Grn> grn = grnService.getGrnById(grnId);
-			if (grn.isPresent()) {
-				redirectAttr.addFlashAttribute("grnObj", grn.get());
-				return "redirect:/new_grn";
-			}
+	@GetMapping("/grn/{grnId:.+}")
+	public String viewGrn(@PathVariable("grnId") String grnId, Model model) throws JsonProcessingException {
+		Optional<Grn> grn = grnService.getGrnById(grnId);
+		if (!grn.isPresent()) {
 			return "redirect:/grnLists";
 		}
+		populateGrnModel(model, grn.get());
+		model.addAttribute("pageHeader", "New Grn");
+		return "newGoodsReceiptNote";
+	}
 	 @GetMapping("/api/grn_items_by_grnId")
 	 public  ResponseEntity<?> getGrnItemListByGrnId(@RequestParam("grnId")  String  grnId,Model model) {
 		 List<GrnItems> grnItems=grnService.getGrnListById(grnId);
@@ -1084,24 +1083,30 @@ public class PurchaseController {
 	  */
 	 @GetMapping("/deliveryChallan")
 		public String deliveryChallanPage(Model model,HttpServletRequest req) throws JsonProcessingException {
-		 Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
-		 	List<Party> partyList = partyService.getPartyList();
-		 	List<Party> clientList = partyService.getPartyListByTypeCustomer();
-			List<ItemMaster> itemList=itemMasterService.getItemList();
-			 List<SalesOrder> salesList = salesService.findAllSalesOrderList();
-			ObjectMapper mapper = utilService.getObjectMapper();
-			 model.addAttribute("salesOrderList",mapper.writeValueAsString(salesList));
-			model.addAttribute("partyList", mapper.writeValueAsString(partyList));
-			model.addAttribute("clientList", mapper.writeValueAsString(clientList));
-			 model.addAttribute("itemList", mapper.writeValueAsString(itemList));
-			model.addAttribute("pageHeader", "Delivery Challan");
-			 if(flashMap!=null) {
-				 DeliveryChallan dcObj =  (DeliveryChallan) flashMap.get("dcObj");
-					model.addAttribute("dcObj",mapper.writeValueAsString(dcObj) );
-					
-			}
-			
+			Map<String, ?> flashMap = RequestContextUtils.getInputFlashMap(req);
+			DeliveryChallan dcObj = flashMap != null && flashMap.get("dcObj") instanceof DeliveryChallan
+					? (DeliveryChallan) flashMap.get("dcObj") : null;
+			populateDeliveryChallanModel(model, dcObj);
 			return "deliveryChallan";
+		}
+
+		private void populateDeliveryChallanModel(Model model, DeliveryChallan dcObj) throws JsonProcessingException {
+			List<Party> clientList = partyService.getPartyListByTypeCustomer();
+			ObjectMapper mapper = utilService.getObjectMapper();
+			model.addAttribute("clientList", mapper.writeValueAsString(clientList));
+			List<Map<String, String>> clientPoOptions = new ArrayList<>();
+			for (Object[] row : salesService.getDcClientPoOptions()) {
+				Map<String, String> option = new HashMap<>();
+				option.put("id", (String) row[0]);
+				option.put("clientPoNumber", (String) row[1]);
+				option.put("partyId", (String) row[2]);
+				clientPoOptions.add(option);
+			}
+			model.addAttribute("clientPoOptions", mapper.writeValueAsString(clientPoOptions));
+			model.addAttribute("pageHeader", "Delivery Challan");
+			if (dcObj != null) {
+				model.addAttribute("dcObj", mapper.writeValueAsString(dcObj));
+			}
 		}
 	 /**
 	  * delivery challan dashboard
@@ -1124,12 +1129,10 @@ public class PurchaseController {
 	 
 	 @GetMapping("/dcList")
 	 public String deliveryChallanDashboard(Model model) throws JsonProcessingException {
-	     List<Party> partyList = partyService.getPartyList();
 	     User userObj  = userService.getCurrentUser();
 	     String role = userObj.getRole();
 
 	     ObjectMapper mapper = utilService.getObjectMapper();
-	     model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 	     model.addAttribute("role", mapper.writeValueAsString(role));
 	     model.addAttribute("pageHeader","DC Dashboard");
 
@@ -1311,38 +1314,26 @@ public class PurchaseController {
 	 }
 	 
 
-	 /**
-	  * dc view page
-	  * @param dcId
-	  * @param redirectAttr
-	  * @param model
-	  * @return
-	  */
-	 
+	 @GetMapping({"/dc/{dcId:\\d+}", "/dc/{dcId:\\d+}/"})
+	 public String viewDc(@PathVariable("dcId") int dcId, Model model) throws JsonProcessingException {
+		 Optional<DeliveryChallan> dc = deliveryChallanService.getDcById(dcId);
+		 if (!dc.isPresent()) {
+			 return "redirect:/dcList";
+		 }
+		 Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(dc.get().getSoNumber());
+		 if (!salesOrder.isPresent() || salesOrder.get().getParty() == null) {
+			 return "redirect:/dcList";
+		 }
+		 dc.get().set("clientName", salesOrder.get().getParty().getPartyName());
+		 dc.get().set("clientPoNumber", salesOrder.get().getClientPoNumber());
+		 populateDeliveryChallanModel(model, dc.get());
+		 return "deliveryChallan";
+	 }
+
 	 @GetMapping("/api/dc/view")
-		public String displayDcView(@RequestParam("dcId") int dcId,RedirectAttributes redirectAttr, Model model){
-			
-			Optional<DeliveryChallan> dc =deliveryChallanService.getDcById(dcId);
-			if(dc.isPresent()) {
-				String soNumber=dc.get().getSoNumber();
-				Optional<SalesOrder> salesOrder = salesService.getSalesOrderById(soNumber);
-				if(salesOrder.isPresent()) {
-					Party party = salesOrder.get().getParty();
-					String partyName = party.getPartyName();
-					partyName = partyName.replace("\"", "&");
-					partyName = partyName.replace("'", "&");
-					String clientPo = salesOrder.get().getClientPoNumber();
-					clientPo = clientPo.replace("'", "&");
-					clientPo = clientPo.replace("\"", "&");
-					dc.get().set("clientPoNumber",clientPo);
-					dc.get().set("clientName",partyName);
-					redirectAttr.addFlashAttribute("dcObj",dc.get());
-					return "redirect:/deliveryChallan";
-				}
-			}
-			// If DC not found, redirect back to DC list
-			return "redirect:/dcList";
-		}
+	 public String displayDcView(@RequestParam("dcId") int dcId) {
+		 return "redirect:/dc/" + dcId + "/";
+	 }
 	 
 	 @SuppressWarnings({ "rawtypes", "unused" })
 	@GetMapping("/invoice/details/{invNumber}")
@@ -2007,10 +1998,7 @@ public class PurchaseController {
 			 	User userObj  = userService.getCurrentUser();
 				String role = userObj.getRole();
 				System.out.println("[DC_ARCHIVED] got current user in " + (System.currentTimeMillis()-t0) + "ms");
-				List<Party> partyList = partyService.getPartyList();
-				System.out.println("[DC_ARCHIVED] got partyList (" + partyList.size() + " rows) in " + (System.currentTimeMillis()-t0) + "ms");
 		         ObjectMapper mapper=utilService.getObjectMapper();
-		     	 model.addAttribute("partyList", mapper.writeValueAsString(partyList));
 		     	model.addAttribute("role", mapper.writeValueAsString(role));
 				 model.addAttribute("pageHeader","Archived DC");
 				 System.out.println("[DC_ARCHIVED] request finished in " + (System.currentTimeMillis()-t0) + "ms, returning view");
@@ -2032,12 +2020,14 @@ public class PurchaseController {
 			}	
 		 
 		 @PostMapping("/api/update_po_archive")
+		 @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 			public ResponseEntity<?> updatePoArchive(@RequestParam("poNum") String poNum) {
 				purchaseService.archivePO(poNum);
 				return new ResponseEntity<>(HttpStatus.OK);
 			}
 		 
 		 @PostMapping("/api/update_po_unarchive")
+		 @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 			public ResponseEntity<?> updatePoUnArchive(@RequestParam("poNum") String poNum) {
 			 purchaseService.unArchivePO(poNum);
 				return new ResponseEntity<>(HttpStatus.OK);
@@ -2067,6 +2057,7 @@ public class PurchaseController {
 			}
 
 		 @PostMapping("/api/purchase/upload")
+		 @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
 		    public ResponseEntity<?> uploadExcel(@RequestParam("file") MultipartFile file) throws Exception {
 		    	 if (file.isEmpty()) {
 		             return ResponseEntity.badRequest().body("Please upload a file.");

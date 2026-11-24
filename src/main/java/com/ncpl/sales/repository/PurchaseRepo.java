@@ -15,12 +15,16 @@ import com.ncpl.sales.model.PurchaseOrder;
 
 @Repository
 public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
+	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=false AND po.created>=:fromDate AND po.created<:toDate ORDER BY po.created ASC")
+	List<PurchaseOrder> findActiveOrdersForTally(@Param("fromDate") Timestamp fromDate, @Param("toDate") Timestamp toDate);
+
 	
 	@Query("SELECT po FROM PurchaseOrder po where po.poNumber = ?1 AND po.version = ?2")
 	public Optional<PurchaseOrder> findPurchaseOrderByNoAndVersion(String poNumber, String version);
 	@Query(" from PurchaseOrder where party_id=?1")
 	public List<PurchaseOrder> getPurchaseListByPartyId(String partyId);
-	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2")
+	// archive=0 excludes deleted/archived POs so they are not sent to Tally or listed by date
+	@Query(" from PurchaseOrder where created>= :d1  and created<= :d2 and archive=0")
 	public List<PurchaseOrder> findPurchaseOrderListByDate(Timestamp d1, Timestamp d2);
 	@Query("SELECT po FROM PurchaseOrder po WHERE po.archive=0 ORDER BY po.created DESC")
 	public List<PurchaseOrder> findAllPO();
@@ -36,7 +40,7 @@ public interface PurchaseRepo extends JpaRepository<PurchaseOrder, String> {
 	// NOT EXISTS instead of NOT IN: lets MySQL stop at the first matching grn per PO (needs an index on tbl_grn.po_number)
 	@Query(value = "SELECT po.* FROM tbl_purchase_order po WHERE po.archive=0 AND NOT EXISTS (SELECT 1 FROM tbl_grn g WHERE g.po_number = po.po_number)",nativeQuery = true)
 	public List<PurchaseOrder> getPurchaseListWhereGrnNotDone();
-	/*@Query(value="SELECT distinct po.*, \r\n" + 
+	/*@Query(value="SELECT distinct po.*, \r\n" +
 			"    ( SELECT sum(pi.quantity)\r\n" + 
 			"      FROM tbl_purchase_items pi \r\n" + 
 			"      WHERE po.po_number=pi.po_number and po.archive=0) poQty,\r\n" + 

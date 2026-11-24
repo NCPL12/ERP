@@ -411,7 +411,7 @@
 				<put-attribute name="header" value="/WEB-INF/tiles/header.jsp" />
 				<put-attribute name="pageHeader" value="/WEB-INF/tiles/pageHeader.jsp" />
 				<put-attribute name="sideMenu" value="/WEB-INF/tiles/leftMenuBar.jsp" />
-				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" /> 
-				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" /> 
+				<put-attribute name="footer" value="/WEB-INF/tiles/footer.jsp" />
+				<put-attribute name="header-resources" value="/WEB-INF/tiles/header-resources.jsp" />
 			</definition>
 </tiles-definitions>

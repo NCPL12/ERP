@@ -6,7 +6,8 @@ var returnableTable;
 
 $(document).ready( function () {
 	returnableTable = $('#returnableItemsList').DataTable({
-		processing: true,
+		processing: false,
+		language: { processing: "", loadingRecords: "" },
 		serverSide: true,
 		autoWidth: false,
 		responsive: false,
@@ -56,7 +57,7 @@ $(document).ready( function () {
 		  render: function(d){ if(!d) return ""; var dt=new Date(d); if(isNaN(dt.getTime())) return d; var dd=("0"+dt.getDate()).slice(-2); var m=dt.getMonth()+1; var yyyy=dt.getFullYear(); var hh=("0"+dt.getHours()).slice(-2); var mm=("0"+dt.getMinutes()).slice(-2); return dd+"-"+m+"-"+yyyy+" "+hh+":"+mm; }
 		},
 		{ "title":"Returned Qty", "data":"returnedQty", "width":"8%", "className":"text-center text-nowrap" }
-    	]
+        ]
     });
 
     // double-click → view page like DC: /api/dc/view?dcId= → /deliveryChallan (read-only)
@@ -77,8 +78,9 @@ $(document).ready( function () {
     // keep filter input compact
     $filter.find("label").css({ margin:0, "white-space":"nowrap" });
 
-    // AdminLTE sidebar collapse/expand and window resize: recalc widths so table fills full content width (no blank on right)
-    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust().draw(false); } }
+    // Recalculate widths without drawing: a draw makes another server request and
+    // would cause an endless request loop when called from the draw event below.
+    function adjustReturnableTable(){ if(returnableTable) { returnableTable.columns.adjust(); } }
     $(document).on('collapsed.lte.pushmenu expanded.lte.pushmenu collapsed.pushMenu expanded.pushMenu', function(){ setTimeout(adjustReturnableTable, 350); });
     $(window).on('resize', adjustReturnableTable);
     // also after initial draw

@@ -132,6 +132,34 @@ public class EmailService {
 	        }
 	    }
 
+	    public void sendErrorAlert(String recipients, String subject, String body) throws MessagingException {
+	        Properties properties = new Properties();
+	        properties.put("mail.smtp.host", SMTP_HOST_NAME);
+	        properties.put("mail.smtp.port", String.valueOf(SMTP_HOST_PORT));
+	        properties.put("mail.smtp.auth", "true");
+	        properties.put("mail.smtp.ssl.enable", "true");
+	        properties.put("mail.smtp.ssl.checkserveridentity", "true");
+	        properties.put("mail.smtp.connectiontimeout", "5000");
+	        properties.put("mail.smtp.timeout", "10000");
+	        properties.put("mail.smtp.writetimeout", "10000");
+
+	        Session session = Session.getInstance(properties);
+	        MimeMessage message = new MimeMessage(session);
+	        message.setFrom(new InternetAddress(SMTP_AUTH_USER));
+	        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipients, true));
+	        message.setSubject(subject, "UTF-8");
+	        message.setText(body, "UTF-8");
+	        message.setSentDate(new Date());
+
+	        SMTPTransport transport = (SMTPTransport) session.getTransport("smtp");
+	        try {
+	            transport.connect(SMTP_HOST_NAME, SMTP_HOST_PORT, SMTP_AUTH_USER, SMTP_AUTH_PWD);
+	            transport.sendMessage(message, message.getAllRecipients());
+	        } finally {
+	            transport.close();
+	        }
+	    }
+
 	    public Map<String, Object> sendSOWithDesignwherePONotDoneEmailToServer(Map<String, Object> emailContents) throws IOException {
 	        Properties prop = System.getProperties();
 	        prop.put("mail.smtp.host", SMTP_HOST_NAME); //optional, defined in SMTPTransport

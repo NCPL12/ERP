@@ -356,10 +356,16 @@ public class GrnService {
 
 	public Optional<Grn> getGrnById(String grnId) {
 		Optional<Grn> grn = grnRepo.findById(grnId);
+		if (!grn.isPresent()) {
+			return grn;
+		}
 		String poNumber = grn.get().getPoNumber();
-		Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNumber);
-		Date poDate = poObj.get().getCreated();
-		grn.get().set("poDate", poDate);
+		if (poNumber != null) {
+			Optional<PurchaseOrder> poObj = purchaseOrderService.findById(poNumber);
+			if (poObj.isPresent()) {
+				grn.get().set("poDate", poObj.get().getCreated());
+			}
+		}
 		return grn;
 	}
 

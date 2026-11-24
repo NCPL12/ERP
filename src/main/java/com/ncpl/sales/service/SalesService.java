@@ -189,6 +189,10 @@ public class SalesService {
 		return salesOrderList;
 	}
 
+	public List<Object[]> getDcClientPoOptions() {
+		return salesrepo.findDcClientPoOptions();
+	}
+
 	// Saving SalesOrder to a repository
 	public SalesOrder savesales(SalesOrder salesorder, String partyId) throws Exception {
 		SalesOrder soObj;

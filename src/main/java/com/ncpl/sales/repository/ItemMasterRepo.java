@@ -15,6 +15,9 @@ import com.ncpl.sales.model.ItemMaster;
 
 @Repository
 public interface ItemMasterRepo extends JpaRepository<ItemMaster,String>{
+    @Query("SELECT new map(im.id as id, im.model as model, im.itemName as itemName, im.hsnCode as hsnCode, im.gst as gst, u.name as unitName, u.id as unitId) FROM ItemMaster im LEFT JOIN im.item_units u ORDER BY lower(im.model), im.id")
+    List<java.util.Map<String,Object>> findPoLookupItems();
+
 
 	@Query(" from ItemMaster where model=?1 ")
 	public ItemMaster getItemByModelNo(String model);

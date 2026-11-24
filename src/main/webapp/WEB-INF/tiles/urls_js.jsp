@@ -387,8 +387,7 @@
 		COMPANY_ASSET_CANDIDATES:parentApi+"/company_asset_candidates",
 		ASSET_TYPE_LIST:parentApi+"/asset_type/list",
 		ASSET_TYPE_ADD:parentApi+"/asset_type/add",
-		EMPLOYEE_MANAGEMENT_LIST:parentApi+"/employees/all",
-		EMPLOYEE_MANAGEMENT_SAVE:parentApi+"/employees",
+		EMPLOYEE_OPTIONS:parentApi+"/employees/all",
 		DELETE_COMPANY_ASSET:contextRoot+"companyAssets/",
 
 
