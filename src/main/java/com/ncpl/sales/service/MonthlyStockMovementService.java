@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.persistence.TemporalType;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,14 @@ public class MonthlyStockMovementService {
         return boundary.toLocalDateTime().atZone(java.time.ZoneId.of(snapshotZone)).toInstant().toEpochMilli();
     }
 
+    // Calendar carries the business zone through Hibernate's JDBC timestamp binding.
+    // A plain Timestamp is otherwise rebound in the application server's default zone.
+    private java.util.Calendar businessBoundary(Timestamp boundary) {
+        java.util.Calendar calendar = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone(snapshotZone));
+        calendar.setTimeInMillis(snapshotCutoff(boundary));
+        return calendar;
+    }
+
     public MonthlyStockMovementService(MonthlyStockMovementRepo movementRepository) {
         this.movementRepository = movementRepository;
     }
@@ -55,16 +64,18 @@ public class MonthlyStockMovementService {
             throw new IllegalArgumentException("A valid monthly date range is required");
         }
 
-        Map<String, BigDecimal> openingQty = loadStockSnapshot(snapshotCutoff(fromInclusive) - 1L);
         java.time.LocalDate reportEndDate = toInclusive.toLocalDateTime().toLocalDate();
+        Timestamp start = Timestamp.valueOf(fromInclusive.toLocalDateTime().toLocalDate().atStartOfDay());
+        Timestamp endExclusive = Timestamp.valueOf(reportEndDate.plusDays(1).atStartOfDay());
+        Map<String, BigDecimal> openingQty = loadStockSnapshot(snapshotCutoff(start) - 1L);
         Map<String, BigDecimal> closingQty = reportEndDate.equals(java.time.LocalDate.now(java.time.ZoneId.of(snapshotZone)))
-                ? loadCurrentStock() : loadStockSnapshot(snapshotCutoff(toInclusive));
-        Map<String, GrnSummary> grn = loadGrnSummary(fromInclusive, toInclusive);
-        Map<String, DcSummary> dcMovements = loadDcSummary(fromInclusive, toInclusive);
+                ? loadCurrentStock() : loadStockSnapshot(snapshotCutoff(endExclusive) - 1L);
         Map<String, BigDecimal> averagePoPrices = loadAveragePoPrices();
+        Map<String, GrnSummary> grn = loadGrnSummary(start, endExclusive, averagePoPrices);
+        Map<String, DcSummary> dcMovements = loadDcSummary(start, endExclusive, averagePoPrices);
         Map<String, BigDecimal> latestSupplyPrices = loadLatestSupplyPrices();
         Map<String, BigDecimal> latestGrnPrices = loadLastGrnRateBefore(
-                new Timestamp(toInclusive.getTime() + 1L));
+                endExclusive);
 
         Map<String, BigDecimal> openingRates = new LinkedHashMap<String, BigDecimal>();
         Map<String, BigDecimal> openingValues = new LinkedHashMap<String, BigDecimal>();
@@ -268,19 +279,19 @@ public class MonthlyStockMovementService {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, GrnSummary> loadGrnSummary(Timestamp fromInclusive, Timestamp toInclusive) {
-        Map<String, BigDecimal> rates = loadAveragePoPrices();
+    private Map<String, GrnSummary> loadGrnSummary(Timestamp fromInclusive, Timestamp toExclusive, Map<String, BigDecimal> rates) {
         List<Object[]> values = entityManager.createNativeQuery(
                 "SELECT pi.model_no, gi.received_quantity FROM tbl_grn_items gi "
                 + "JOIN tbl_purchase_items pi ON pi.purchase_item_id = CAST(gi.po_item_id AS UNSIGNED) "
                 + "JOIN tbl_item_master im ON im.id=pi.model_no "
-                + "WHERE gi.updated >= :fromDate AND gi.updated <= :toDate "
+                + "WHERE gi.updated >= :fromDate AND gi.updated < :toDate "
                 + "AND gi.po_item_id REGEXP '^[0-9]+$'")
-                .setParameter("fromDate", fromInclusive).setParameter("toDate", toInclusive).getResultList();
+                .setParameter("fromDate", businessBoundary(fromInclusive), TemporalType.TIMESTAMP)
+                .setParameter("toDate", businessBoundary(toExclusive), TemporalType.TIMESTAMP).getResultList();
         Map<String, GrnSummary> result = new LinkedHashMap<String, GrnSummary>();
         for (Object[] row : values) {
             String id=stringValue(row[0]); float qty=((Number)row[1]).floatValue();
-            BigDecimal amount=StockReportMoney.amount(qty, rates.get(id));
+            BigDecimal amount=StockReportMoney.amount(qty, value(rates.get(id)));
             GrnSummary previous=result.get(id);
             result.put(id,new GrnSummary(StockReportMoney.source(qty).add(previous==null?ZERO:previous.quantity),
                     previous==null?1L:previous.occurrences+1L, amount.add(previous==null?ZERO:previous.amount)));
@@ -289,17 +300,17 @@ public class MonthlyStockMovementService {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, DcSummary> loadDcSummary(Timestamp fromInclusive, Timestamp toInclusive) {
-        Map<String, BigDecimal> rates = loadAveragePoPrices();
+    private Map<String, DcSummary> loadDcSummary(Timestamp fromInclusive, Timestamp toExclusive, Map<String, BigDecimal> rates) {
         List<Object[]> values=entityManager.createNativeQuery(
                 "SELECT di.item_id, dci.todays_qty FROM tbl_dc_items dci "
                 + "JOIN sales_order_design sd ON sd.sales_item_id=dci.description "
                 + "JOIN sales_order_design_items di ON di.design_id=sd.design_id "
                 + "JOIN tbl_sales_item si ON si.id=dci.description "
                 + "JOIN tbl_item_master im ON im.id=di.item_id "
-                + "WHERE dci.created >= :fromDate AND dci.created <= :toDate "
+                + "WHERE dci.created >= :fromDate AND dci.created < :toDate "
                 + "AND dci.todays_qty<>0 AND im.model IS NOT NULL AND im.model<>''")
-                .setParameter("fromDate",fromInclusive).setParameter("toDate",toInclusive).getResultList();
+                .setParameter("fromDate",businessBoundary(fromInclusive),TemporalType.TIMESTAMP)
+                .setParameter("toDate",businessBoundary(toExclusive),TemporalType.TIMESTAMP).getResultList();
         Map<String, DcSummary> result=new LinkedHashMap<String, DcSummary>();
         for(Object[] row:values){
             String id=stringValue(row[0]); if(!rates.containsKey(id))continue;
@@ -331,6 +342,8 @@ public class MonthlyStockMovementService {
         Map<String,BigDecimal> sums=new LinkedHashMap<String,BigDecimal>();
         Map<String,Integer> counts=new LinkedHashMap<String,Integer>();
         for(Object[] row:values){String id=stringValue(row[0]);
+            // Match SQL AVG: missing prices are not zero-valued observations.
+            if (row[1] == null) continue;
             BigDecimal value=StockReportMoney.source(((Number)row[1]).floatValue());
             sums.put(id,value.add(sums.containsKey(id)?sums.get(id):ZERO));
             counts.put(id,counts.containsKey(id)?counts.get(id)+1:1);
@@ -352,7 +365,7 @@ public class MonthlyStockMovementService {
                 + "  ON latest.model_no = pi.model_no AND latest.max_updated = gi.updated "
                 + "WHERE gi.updated < :beforeDate AND gi.received_quantity > 0";
         List<Object[]> values = entityManager.createNativeQuery(sql)
-                .setParameter("beforeDate", beforeExclusive).getResultList();
+                .setParameter("beforeDate", businessBoundary(beforeExclusive), TemporalType.TIMESTAMP).getResultList();
         Map<String, BigDecimal> result = new LinkedHashMap<String, BigDecimal>();
         for (Object[] row : values) result.put(stringValue(row[0]), decimal(row[1]));
         return result;
@@ -368,7 +381,7 @@ public class MonthlyStockMovementService {
     }
 
     private static BigDecimal quantity(BigDecimal input) {
-        return value(input).setScale(2, RoundingMode.HALF_UP);
+        return value(input).setScale(6, RoundingMode.HALF_UP);
     }
 
     private static BigDecimal moneyRate(BigDecimal input) {
