@@ -1674,6 +1674,37 @@ public class SalesController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.ncpl.sales.service.TallyPurchaseOrderAutoSync tallyPoAutoSync;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.ncpl.sales.service.TallyPurchaseOrderJobs tallyPoJobs;
+
+    @PreAuthorize("hasAuthority('PURCHASE_EDIT')")
+    @PostMapping("/po_list/tally/jobs")
+    @ResponseBody
+    public ResponseEntity<?> startTallyPoJob(@RequestParam("poListByFromDate") String from,
+                                            @RequestParam("poListByToDate") String to) {
+        try {
+            Timestamp[] dates=purchaseOrderDateRange(from,to);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(tallyPoJobs.start(dates[0],dates[1]));
+        } catch(IllegalArgumentException | ParseException error) {
+            return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("message",error.getMessage()));
+        } catch(IllegalStateException error) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Collections.singletonMap("message",error.getMessage()));
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
+    @GetMapping("/po_list/tally/jobs/current")
+    @ResponseBody
+    public Map<String,Object> currentTallyPoJob() {return tallyPoJobs.current();}
+
+    @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
+    @GetMapping("/po_list/tally/jobs/{jobId}")
+    @ResponseBody
+    public ResponseEntity<?> tallyPoJob(@org.springframework.web.bind.annotation.PathVariable String jobId) {
+        Map<String,Object> job=tallyPoJobs.get(jobId);
+        return job==null?ResponseEntity.notFound().build():ResponseEntity.ok(job);
+    }
+
     @GetMapping("/po_list/tally/sync-status")
     @org.springframework.web.bind.annotation.ResponseBody
     @PreAuthorize("hasAnyAuthority('ADMIN','PURCHASE','SUPER ADMIN','SALES','PURCHASE_VIEW','PURCHASE_EDIT')")
@@ -1750,6 +1781,11 @@ public class SalesController {
 
 	private List<PurchaseOrder> purchaseOrdersForDateRange(String fromDateString, String toDateString)
 			throws ParseException {
+        Timestamp[] dates=purchaseOrderDateRange(fromDateString,toDateString);
+        return purchaseOrderService.getPurchaseOrderListByDate(dates[0],dates[1]);
+    }
+
+    private Timestamp[] purchaseOrderDateRange(String fromDateString, String toDateString) throws ParseException {
 		SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
 		format.setLenient(false);
         format.setTimeZone(tallyPurchaseOrderService.getBusinessTimeZone());
@@ -1764,9 +1800,9 @@ public class SalesController {
 		end.set(Calendar.MINUTE, 59);
 		end.set(Calendar.SECOND, 59);
         end.set(Calendar.MILLISECOND, 999);
-		return purchaseOrderService.getPurchaseOrderListByDate(
+        return new Timestamp[] {
 				convertDate.convertJavaDateToSqlDate(fromDate),
-				convertDate.convertJavaDateToSqlDate(end.getTime()));
+				convertDate.convertJavaDateToSqlDate(end.getTime())};
 	}
 
 

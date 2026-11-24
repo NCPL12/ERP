@@ -22,6 +22,7 @@ async function check(failure, canEdit = true) {
     $: () => ({text(value) { this.value = value; return this; }}),
     bootbox: {confirm:options=>{dialog=options;},prompt:options=>{dialog=options;},alert:message=>alerts.push(message)},
     AbortController,
+    attachTallyPoExport:()=>{},window:{fetch:()=>{}},FormData:function(){},
     setTimeout:(fn, delay)=>{if(delay === 0) timers.push(fn);return 1;},clearTimeout:()=>{},setInterval:()=>{},
     fetch: async url=> {
       calls.push(url);
@@ -42,19 +43,7 @@ async function check(failure, canEdit = true) {
   assert.strictEqual(elements.checkTallyPo.disabled,false);
   if(failure) assert.strictEqual(elements.tallyPoConnectionStatus.textContent,'Tally offline');
   else assert.strictEqual(elements.tallyPoConnectionStatus.textContent,'Neptune is ready');
-  // A delegated date validator can cancel after the form's own submit listener.
-  const form = elements.poLostByDateForm, send = elements.send;
-  send.innerHTML = 'Send to Tally';
-  const event = {submitter:send,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;}};
-  form.submit(event);event.preventDefault();timers.splice(0).forEach(fn=>fn());
-  assert.strictEqual(form.dataset.exportRunning,undefined);
-  assert.strictEqual(send.innerHTML,'Send to Tally');
-  if (!failure && canEdit) {
-    form.submit({submitter:send});timers.splice(0).forEach(fn=>fn());
-    assert.strictEqual(form.dataset.exportRunning,'true');assert.strictEqual(send.disabled,true);
-    const duplicate={submitter:send,preventDefault(){this.cancelled=true;}};
-    form.submit(duplicate);assert.strictEqual(duplicate.cancelled,true);
-  }
+  // Background export/reconnect behavior is exercised in po-tally-jobs.test.cjs.
   sandbox.submitTallyReview('PO/1','accept');
   assert.strictEqual(submitted.length,0);dialog.callback(true);
   assert.strictEqual(submitted[0].action,'/ncpl-sales/po_list/tally/review/accept');

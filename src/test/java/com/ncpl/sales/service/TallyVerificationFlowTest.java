@@ -41,11 +41,19 @@ class TallyVerificationFlowTest {
             ReflectionTestUtils.setField(service,"companyName","Company A");ReflectionTestUtils.setField(service,"syncStateFile",state.toString());
             PurchaseOrder po=new PurchaseOrder();po.setPoNumber("PO-1");po.setCreated(Date.from(Instant.parse("2026-10-01T06:00:00Z")));Party party=new Party();party.setPartyName("Vendor");po.setParty(party);
             PurchaseItem item=new PurchaseItem();item.setModelNo("ITEM-1");item.setQuantity(1.234f);item.setUnitPrice(10);item.setAmount(12.34f);po.setItems(Collections.singletonList(item));
-            TallyPurchaseOrderService.ExportResult result=service.exportAllPending(Collections.singletonList(po));
+            List<Map<String,Object>> observed=new ArrayList<>();
+            TallyPurchaseOrderService.ExportResult result=service.exportAllPending(Collections.singletonList(po),observed::add);
             assertThat(result.getFailed()).isEqualTo(1);assertThat(result.getImported()).isZero();
             if(duplicate){assertThat(writes.get()).isZero();assertThat(result.getRecords().get(0).getMessage()).contains("Multiple Tally POs");}
             else {assertThat(writes.get()).isEqualTo(1);assertThat(result.getRecords().get(0).getMessage()).contains("verification failed").contains("inventory");}
             assertThat((Properties)ReflectionTestUtils.getField(service,"verifiedStates")).isEmpty();
+            assertThat(observed.stream().map(p->p.get("stage")).collect(java.util.stream.Collectors.toList()))
+                .contains("Reading Tally groups","Reading Tally ledgers","Reading Tally stock items",
+                    "Reading Tally units","Reading existing Tally purchase orders","Checking required Tally masters","Completed");
+            assertThat(observed.get(observed.size()-1)).containsEntry("processed",1).containsEntry("failed",1).containsEntry("running",false);
+            int count=observed.size();
+            service.loadOptions();
+            assertThat(observed).hasSize(count); // A subsequent connection check cannot update the finished job.
         }finally{server.stop(0);Files.deleteIfExists(state);}
     }
     private String voucher(String id){return "<VOUCHER><VOUCHERNUMBER>PO-1</VOUCHERNUMBER><DATE>20261001</DATE><MASTERID>"+id+"</MASTERID><GUID>guid-"+id+"</GUID><NARRATION>Imported from ERP</NARRATION></VOUCHER>";}

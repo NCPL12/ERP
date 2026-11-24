@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="<c:url value="/resources/css/purchaseOrder.css" />">
 <link rel="stylesheet" href="<c:url value="/resources/css/salesReport.css" />">
 <script src="<c:url value="/resources/js/pageHeader.js" />"></script>
+<script src="<c:url value="/resources/js/tallyPoExport.js?v=20261124" />"></script>
 <script defer src="<c:url value="/resources/js/salesReport.js?v=20260929-tally-po" />"></script>
 <script type="text/javascript">
 var clientList=${clientList};
@@ -446,6 +447,7 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
                                    <c:if test="${not empty tallyPoReviewError}"><div class="alert alert-danger py-2"><c:out value="${tallyPoReviewError}" /></div></c:if>
                                    <p class="text-muted mb-2">Tally purchase and GST ledgers are selected automatically from each ERP PO and item master.</p>
 								   <small id="tallyPoConnectionStatus" class="form-text text-info">Checking Tally connection...</small>
+                                   <div id="tallyPoLiveResult" class="table-responsive mt-2" style="max-height:320px" aria-live="polite"></div>
 								 </div>
 								 <div class="card-footer d-flex justify-content-end" style="gap: 6px;">
 								  <button type="button" id="checkTallyPo" class="btn btn-default btn-sm"><i class="fa fa-fw fa-refresh"></i> Check Tally</button>
@@ -769,25 +771,35 @@ var stockSummaryError = '<c:out value="${stockSummaryError}" escapeXml="true"/>'
     }
     refreshPoAutoSyncStatus();
     setInterval(refreshPoAutoSyncStatus, 15000);
-    document.getElementById('poLostByDateForm').addEventListener('submit', function(event) {
-        var button = event.submitter || document.activeElement;
-        if (!button || (button.getAttribute('formaction') || '').indexOf('/tally/import') < 0) return;
-        if (this.dataset.exportRunning === 'true') { event.preventDefault(); return; }
-        var form = this;
-        var originalLabel = button.innerHTML;
-        this.dataset.exportRunning = 'true';
-        button.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Sending and verifying POs...';
-        document.getElementById('tallyPoConnectionStatus').textContent = 'Export in progress. Please wait for the verified result.';
-        // Disable after the browser has captured the submitter URL and method.
-        setTimeout(function() {
-            if (event.defaultPrevented) {
-                delete form.dataset.exportRunning;
-                button.innerHTML = originalLabel;
-                document.getElementById('tallyPoConnectionStatus').textContent = 'Correct the dates and try sending again.';
-                return;
-            }
-            button.disabled = true;
-        }, 0);
+    attachTallyPoExport({
+        form:document.getElementById('poLostByDateForm'),
+        button:document.querySelector('[data-can-export]'),
+        label:document.getElementById('tallyPoConnectionStatus'),
+        base:'${pageContext.request.contextPath}/po_list/tally/jobs',
+        fetch:window.fetch.bind(window), delay:setTimeout, cancel:clearTimeout,
+        activeElement:function() {return document.activeElement;},
+        formData:function(form) {
+            var data=new FormData(form);
+            <c:if test="${not empty _csrf}">data.append('<c:out value="${_csrf.parameterName}"/>','<c:out value="${_csrf.token}"/>');</c:if>
+            return data;
+        },
+        render:function(result) {
+            var container=document.getElementById('tallyPoLiveResult');
+            container.textContent='';
+            var summary=document.createElement('p');
+            summary.textContent='Total: '+result.total+' | Exported: '+result.imported+' | Skipped: '+result.skipped+' | Failed: '+result.failed;
+            container.appendChild(summary);
+            var table=document.createElement('table');table.className='table table-sm table-bordered';
+            var header=document.createElement('tr');
+            ['ERP PO number','Status','Details'].forEach(function(title) {var th=document.createElement('th');th.textContent=title;header.appendChild(th);});
+            table.appendChild(header);
+            (result.records || []).forEach(function(record) {
+                var row=document.createElement('tr');
+                [record.poNumber,record.status,record.message].forEach(function(value) {var cell=document.createElement('td');cell.textContent=value;row.appendChild(cell);});
+                table.appendChild(row);
+            });
+            container.appendChild(table);
+        }
     });
     </script>
     </security:authorize>

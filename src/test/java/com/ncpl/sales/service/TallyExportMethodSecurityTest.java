@@ -17,6 +17,9 @@ class TallyExportMethodSecurityTest {
     @Test void bothPostsDenyRevokedEditPermissionBeforeCallingExporter() throws Exception {
         com.ncpl.sales.controller.SalesController target=new com.ncpl.sales.controller.SalesController();
         TallyPurchaseOrderService exporter=mock(TallyPurchaseOrderService.class);
+        TallyPurchaseOrderJobs jobs=mock(TallyPurchaseOrderJobs.class);
+        when(jobs.start(any(),any())).thenReturn(Collections.singletonMap("running",true));
+        ReflectionTestUtils.setField(target,"tallyPoJobs",jobs);
         PurchaseOrderService orders=mock(PurchaseOrderService.class);
         when(orders.getPurchaseOrderListByDate(any(),any())).thenReturn(Collections.emptyList());
         when(exporter.getBusinessTimeZone()).thenReturn(TimeZone.getTimeZone("Asia/Kolkata"));
@@ -36,11 +39,14 @@ class TallyExportMethodSecurityTest {
             for(String role:Arrays.asList("SALES","PURCHASE","ADMIN")) {
                 SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("revoked","",Collections.singletonList(new SimpleGrantedAuthority(role))));
                 assertThatThrownBy(()->secured.sendPurchaseOrdersToTally("01-10-2026","31-10-2026")).isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+                assertThatThrownBy(()->secured.startTallyPoJob("01-10-2026","31-10-2026")).isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
                 assertThatThrownBy(()->secured.importPurchaseOrdersToTally("01-10-2026","31-10-2026",new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap())).isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
             }
             verify(exporter,never()).exportAllPending(anyList());
+            verify(jobs,never()).start(any(),any());
             SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("editor","",Collections.singletonList(new SimpleGrantedAuthority("PURCHASE_EDIT"))));
             assertThat(secured.sendPurchaseOrdersToTally("01-10-2026","31-10-2026").getStatusCodeValue()).isEqualTo(200);
+            assertThat(secured.startTallyPoJob("01-10-2026","31-10-2026").getStatusCodeValue()).isEqualTo(202);
             assertThat(secured.importPurchaseOrdersToTally("01-10-2026","31-10-2026",new org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap())).isEqualTo("redirect:/sales_report");
             verify(exporter,times(2)).exportAllPending(anyList());
         }finally{SecurityContextHolder.clearContext();}
