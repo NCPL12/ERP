@@ -3,7 +3,9 @@ const vm = require('vm');
 const assert = require('assert');
 const path = require('path');
 const jsp = fs.readFileSync(path.join(__dirname, '../../main/webapp/WEB-INF/views/salesReport.jsp'), 'utf8');
-const source = jsp.slice(jsp.indexOf('    function refreshPoTallyConnection()'), jsp.lastIndexOf('</script>'));
+const source = jsp.slice(jsp.indexOf('    function refreshPoTallyConnection()'), jsp.lastIndexOf('</script>'))
+  .replace(/<c:if test="\$\{not empty _csrf\}">[\s\S]*?<\/c:if>/g, '')
+  .replaceAll('${pageContext.request.contextPath}', '/ncpl-sales');
 async function check(failure, canEdit = true) {
   const elements = {};
   ['checkTallyPo','tallyPoConnectionStatus','tallyPoAutoSyncStatus','poLostByDateForm','send'].forEach(id => elements[id] = { dataset:{}, disabled:false, getAttribute() { return String(canEdit); }, textContent:'', addEventListener(type, fn) { this[type] = fn; }});
@@ -13,6 +15,7 @@ async function check(failure, canEdit = true) {
   const sandbox = {
     document: {getElementById: id=>elements[id],querySelector:()=>elements.send},
     AbortController,
+    attachTallyPoExport:()=>{},window:{fetch:()=>{}},FormData:function(){},
     setTimeout:()=>1,clearTimeout:()=>{},setInterval:()=>{},
     fetch: async url=> {
       calls.push(url);
