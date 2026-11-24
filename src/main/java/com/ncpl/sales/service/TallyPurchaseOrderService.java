@@ -109,6 +109,21 @@ public class TallyPurchaseOrderService {
         return exportWithLock(purchaseOrders, false);
     }
 
+    // Per-worker observer prevents a concurrent scheduled refresh from appearing
+    // in another browser job's progress. Existing synchronous API stays compatible.
+    private final ThreadLocal<java.util.function.Consumer<Map<String,Object>>> progressObserver = new ThreadLocal<>();
+    ExportResult exportAllPending(List<PurchaseOrder> orders, java.util.function.Consumer<Map<String,Object>> observer) throws Exception {
+        progressObserver.set(observer);
+        try { return exportAllPending(orders); }
+        finally { progressObserver.remove(); }
+    }
+
+    private void setProgress(Map<String,Object> next) {
+        progress = Collections.unmodifiableMap(next);
+        java.util.function.Consumer<Map<String,Object>> observer = progressObserver.get();
+        if (observer != null) observer.accept(progress);
+    }
+
     public ExportResult exportChangedOrders(List<PurchaseOrder> purchaseOrders) throws Exception {
         return exportWithLock(purchaseOrders, true);
     }
@@ -160,6 +175,12 @@ public class TallyPurchaseOrderService {
     private int progressImported, progressUpdated, progressSkipped, progressFailed;
     private long lastProgressPublishedAt;
     public Map<String,Object> getProgress() { return progress; }
+    private void preparationProgress(String stage) {
+        if (progressObserver.get() == null) return;
+        Map<String,Object> next = new LinkedHashMap<>(progress);
+        next.put("stage",stage);
+        setProgress(next);
+    }
     private void publishProgress(String stage, int total, List<ExportLine> current) {
         long now=System.currentTimeMillis();
         int processed=progressOffset+(current == null ? 0 : current.size());
@@ -168,7 +189,7 @@ public class TallyPurchaseOrderService {
         Map<String,Object> next = new LinkedHashMap<>();
         next.put("stage",stage); next.put("total",total); next.put("processed",processed);
         next.put("imported",progressImported); next.put("updated",progressUpdated); next.put("skipped",progressSkipped); next.put("failed",progressFailed);
-        next.put("running",exportRunning.get()); progress=Collections.unmodifiableMap(next);
+        next.put("running",exportRunning.get()); setProgress(next);
         lastProgressPublishedAt=now;
     }
 
@@ -220,13 +241,15 @@ public class TallyPurchaseOrderService {
         } catch (Exception error) {
             Map<String,Object> errorProgress=new LinkedHashMap<>(progress);
             errorProgress.put("stage", "Stopped: " + safeMessage(error));
-            progress=Collections.unmodifiableMap(errorProgress);
+            setProgress(errorProgress);
             throw error;
         } finally {
-            saveVerifiedStates();
-            exportRunning.set(false);
-            Map<String,Object> finalProgress=new LinkedHashMap<>(progress); finalProgress.put("running",false); if ("Batch verified".equals(finalProgress.get("stage"))) finalProgress.put("stage","Completed"); progress=Collections.unmodifiableMap(finalProgress);
-            TallySyncCoordinator.release();
+            try { saveVerifiedStates(); }
+            finally {
+                exportRunning.set(false);
+                TallySyncCoordinator.release();
+                Map<String,Object> finalProgress=new LinkedHashMap<>(progress); finalProgress.put("running",false); if ("Batch verified".equals(finalProgress.get("stage"))) finalProgress.put("stage","Completed"); setProgress(finalProgress);
+            }
         }
     }
 
@@ -244,6 +267,7 @@ public class TallyPurchaseOrderService {
         MasterSnapshot snapshot = loadMasterSnapshot(true);
         List<PurchaseOrder> safeOrders = new ArrayList<>();
         for (PurchaseOrder po : purchaseOrders) if (po != null && !po.isArchive() && !snapshot.ambiguousNumbers.contains(normalize(po.getPoNumber()))) safeOrders.add(po);
+        preparationProgress("Checking required Tally masters");
         ensureRequiredMasters(safeOrders, snapshot);
 
         int imported = 0;
@@ -755,9 +779,13 @@ public class TallyPurchaseOrderService {
     }
 
     private MasterSnapshot loadMasterSnapshot(boolean includeOrders) throws Exception {
+        preparationProgress("Reading Tally groups");
         Document groupsDocument = parseXml(post(buildCollectionRequest("ErpTallyGroups", "Group", "Name,Parent")));
+        preparationProgress("Reading Tally ledgers");
         Document ledgersDocument = parseXml(post(buildCollectionRequest("ErpTallyLedgers", "Ledger", "Name,Parent")));
+        preparationProgress("Reading Tally stock items");
         Document stockDocument = parseXml(includeOrders ? post(buildCollectionRequest("ErpTallyStockItems", "StockItem", "Name,BaseUnits")) : "<ENVELOPE/>");
+        preparationProgress("Reading Tally units");
         Document unitsDocument = parseXml(includeOrders ? post(buildCollectionRequest("ErpTallyUnits", "Unit", "Name,DecimalPlaces")) : "<ENVELOPE/>");
 
         Map<String, String> groupParents = new HashMap<>();
@@ -797,6 +825,7 @@ public class TallyPurchaseOrderService {
         Map<String, ExistingVoucher> purchaseOrders = new HashMap<>();
         Set<String> ambiguousNumbers = new HashSet<>();
         if (includeOrders) {
+            preparationProgress("Reading existing Tally purchase orders");
             Document ordersDocument = parseXml(post(buildPurchaseOrdersRequest()));
             NodeList vouchers = ordersDocument.getElementsByTagName("VOUCHER");
             for (int i = 0; i < vouchers.getLength(); i++) {
