@@ -54,7 +54,7 @@ public class MonthlyStockBaselineImportService {
                 record.setClosingRate(rate);
                 record.setClosingValue(quantity.multiply(rate).setScale(2, RoundingMode.HALF_UP));
                 record.setFrozen(true);
-                record.setSource(sourceName);
+                record.setSource(sourceName + (quantity.signum() != 0 && rate.signum() == 0 ? " [PRICE MISSING]" : ""));
                 record.setCreatedAt(LocalDateTime.now());
                 records.add(record);
             }

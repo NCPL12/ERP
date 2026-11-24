@@ -1,5 +1,13 @@
 # Neptune ERP
 
+## Monthly stock feature deployment
+
+Review this feature through PR #57 into `development`; keep `main` unchanged.
+See [monthly stock setup and Finance baseline import](docs/README-MONTHLY-STOCK.md)
+and [assigned stock fixes #144–147](docs/ASSIGNED-STOCK-FIXES-144-147.md).
+Merging code does not import Finance baseline rows. Generated builds and local
+backups remain excluded; build the deployment artifact from source.
+
 [ERP wiki](wiki/Home.md) · [Getting started](wiki/Getting-Started.md) · [User workflows](wiki/User-Workflows.md) · [Architecture](wiki/Architecture.md)
 
 [Draft release notes](RELEASE_NOTES.md)

@@ -1,4 +1,6 @@
 /bin/
+
+# Generated output, local caches, runtime data and handoff copies
 /target/
 
 # Generated output, local caches, runtime data and handoff copies
