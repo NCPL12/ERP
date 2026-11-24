@@ -8,7 +8,7 @@ const source = jsp.slice(jsp.indexOf('    function refreshPoTallyConnection()'),
   .replaceAll('${pageContext.request.contextPath}', '/ncpl-sales');
 async function check(failure, canEdit = true) {
   const elements = {};
-  ['checkTallyPo','tallyPoConnectionStatus','tallyPoAutoSyncStatus','poLostByDateForm','send'].forEach(id => elements[id] = { dataset:{}, disabled:false, getAttribute() { return String(canEdit); }, textContent:'', addEventListener(type, fn) { this[type] = fn; }});
+  ['checkTallyPo','tallyPoConnectionStatus','tallyPoAutoSyncStatus','tallyPoSavedIssues','poLostByDateForm','send'].forEach(id => elements[id] = { dataset:{}, disabled:false, getAttribute() { return String(canEdit); }, textContent:'', addEventListener(type, fn) { this[type] = fn; }});
   elements.poLostByDateForm.fromDate = '01-09-2026';
   elements.poLostByDateForm.toDate = '30-09-2026';
   const calls = [];
